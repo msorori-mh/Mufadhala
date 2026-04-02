@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,57 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { GraduationCap, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-// بيانات تجريبية - سيتم استبدالها من قاعدة البيانات لاحقاً
-const universities = [
-  {
-    id: "saba",
-    name: "جامعة إقليم سبأ",
-    colleges: [
-      {
-        id: "medicine",
-        name: "كلية الطب",
-        departments: [{ id: "general-med", name: "طب بشري" }],
-      },
-      {
-        id: "cs",
-        name: "كلية الحاسوب",
-        departments: [
-          { id: "cs-dept", name: "علوم الحاسوب" },
-          { id: "is-dept", name: "نظم المعلومات الحاسوبية" },
-          { id: "it-dept", name: "تكنولوجيا المعلومات" },
-          { id: "cyber-dept", name: "الأمن السيبراني" },
-          { id: "ai-dept", name: "الذكاء الاصطناعي" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "aden",
-    name: "جامعة عدن",
-    colleges: [
-      {
-        id: "medicine",
-        name: "كلية الطب",
-        departments: [
-          { id: "general-med", name: "طب بشري" },
-          { id: "dental", name: "طب أسنان" },
-          { id: "pharmacy", name: "صيدلة" },
-          { id: "lab", name: "مختبرات" },
-        ],
-      },
-      {
-        id: "cs",
-        name: "كلية الحاسوب",
-        departments: [
-          { id: "cs-dept", name: "علوم الحاسوب" },
-          { id: "is-dept", name: "نظم المعلومات" },
-          { id: "it-dept", name: "تكنولوجيا المعلومات" },
-        ],
-      },
-    ],
-  },
-];
+import type { Tables } from "@/integrations/supabase/types";
 
 const governorates = [
   "عدن", "تعز", "مأرب", "حضرموت", "شبوة", "أبين", "لحج", "الضالع",
@@ -71,6 +21,11 @@ const Register = () => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+
+  // Data from database
+  const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
+  const [colleges, setColleges] = useState<Tables<"colleges">[]>([]);
+  const [majors, setMajors] = useState<Tables<"majors">[]>([]);
 
   // Step 1 - Account
   const [email, setEmail] = useState("");
@@ -89,10 +44,59 @@ const Register = () => {
   // Step 3 - Academic
   const [universityId, setUniversityId] = useState("");
   const [collegeId, setCollegeId] = useState("");
-  const [departmentId, setDepartmentId] = useState("");
+  const [majorId, setMajorId] = useState("");
 
-  const selectedUniversity = universities.find((u) => u.id === universityId);
-  const selectedCollege = selectedUniversity?.colleges.find((c) => c.id === collegeId);
+  const filteredColleges = colleges.filter((c) => c.university_id === universityId);
+  const filteredMajors = majors.filter((m) => m.college_id === collegeId);
+
+  // Fetch universities on mount
+  useEffect(() => {
+    const fetchUniversities = async () => {
+      const { data } = await supabase
+        .from("universities")
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order");
+      if (data) setUniversities(data);
+    };
+    fetchUniversities();
+  }, []);
+
+  // Fetch colleges when university changes
+  useEffect(() => {
+    if (!universityId) {
+      setColleges([]);
+      return;
+    }
+    const fetchColleges = async () => {
+      const { data } = await supabase
+        .from("colleges")
+        .select("*")
+        .eq("university_id", universityId)
+        .eq("is_active", true)
+        .order("display_order");
+      if (data) setColleges(data);
+    };
+    fetchColleges();
+  }, [universityId]);
+
+  // Fetch majors when college changes
+  useEffect(() => {
+    if (!collegeId) {
+      setMajors([]);
+      return;
+    }
+    const fetchMajors = async () => {
+      const { data } = await supabase
+        .from("majors")
+        .select("*")
+        .eq("college_id", collegeId)
+        .eq("is_active", true)
+        .order("display_order");
+      if (data) setMajors(data);
+    };
+    fetchMajors();
+  }, [collegeId]);
 
   const validateStep1 = () => {
     if (!email || !password || !confirmPassword) {
@@ -124,7 +128,7 @@ const Register = () => {
   };
 
   const validateStep3 = () => {
-    if (!universityId || !collegeId || !departmentId) {
+    if (!universityId || !collegeId || !majorId) {
       toast({ variant: "destructive", title: "يرجى اختيار الجامعة والكلية والتخصص" });
       return false;
     }
@@ -141,7 +145,6 @@ const Register = () => {
     if (!validateStep3()) return;
 
     setLoading(true);
-    const fullName = `${firstName} ${secondName} ${thirdName} ${fourthName}`;
 
     const { error } = await supabase.auth.signUp({
       email,
@@ -149,13 +152,16 @@ const Register = () => {
       options: {
         emailRedirectTo: window.location.origin,
         data: {
-          full_name: fullName,
+          first_name: firstName,
+          second_name: secondName,
+          third_name: thirdName,
+          fourth_name: fourthName,
           governorate,
           high_school_gpa: parseFloat(highSchoolGPA),
           coordination_number: coordinationNumber,
           university_id: universityId,
           college_id: collegeId,
-          department_id: departmentId,
+          major_id: majorId,
         },
       },
     });
@@ -332,13 +338,13 @@ const Register = () => {
                       onValueChange={(v) => {
                         setUniversityId(v);
                         setCollegeId("");
-                        setDepartmentId("");
+                        setMajorId("");
                       }}
                     >
                       <SelectTrigger><SelectValue placeholder="اختر الجامعة" /></SelectTrigger>
                       <SelectContent>
                         {universities.map((u) => (
-                          <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                          <SelectItem key={u.id} value={u.id}>{u.name_ar}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -351,13 +357,13 @@ const Register = () => {
                         value={collegeId}
                         onValueChange={(v) => {
                           setCollegeId(v);
-                          setDepartmentId("");
+                          setMajorId("");
                         }}
                       >
                         <SelectTrigger><SelectValue placeholder="اختر الكلية" /></SelectTrigger>
                         <SelectContent>
-                          {selectedUniversity?.colleges.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          {filteredColleges.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>{c.name_ar}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -367,11 +373,11 @@ const Register = () => {
                   {collegeId && (
                     <div className="space-y-2">
                       <Label>التخصص</Label>
-                      <Select value={departmentId} onValueChange={setDepartmentId}>
+                      <Select value={majorId} onValueChange={setMajorId}>
                         <SelectTrigger><SelectValue placeholder="اختر التخصص" /></SelectTrigger>
                         <SelectContent>
-                          {selectedCollege?.departments.map((d) => (
-                            <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                          {filteredMajors.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>{m.name_ar}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
