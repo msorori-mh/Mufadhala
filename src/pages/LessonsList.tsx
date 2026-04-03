@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { GraduationCap, BookOpen, ArrowRight, ChevronLeft, Loader2, CheckCircle2, Search, X } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface Lesson {
   id: string;
@@ -89,9 +90,12 @@ const LessonsList = () => {
             <GraduationCap className="w-6 h-6" />
             <span className="text-lg font-bold">المحتوى التعليمي</span>
           </div>
-          <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white">
-            <Link to="/dashboard"><ChevronLeft className="w-4 h-4 ml-1" />الرئيسية</Link>
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white">
+              <Link to="/dashboard"><ChevronLeft className="w-4 h-4 ml-1" />الرئيسية</Link>
+            </Button>
+          </div>
         </div>
       </header>
 

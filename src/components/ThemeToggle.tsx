@@ -2,7 +2,7 @@ import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
 
-const ThemeToggle = ({ variant = "header" }: { variant?: "header" | "default" }) => {
+const ThemeToggle = ({ variant = "header" }: { variant?: "header" | "default" | "sidebar" }) => {
   const { theme, setTheme } = useTheme();
 
   const toggle = () => setTheme(theme === "dark" ? "light" : "dark");
@@ -17,6 +17,18 @@ const ThemeToggle = ({ variant = "header" }: { variant?: "header" | "default" })
       >
         {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
       </Button>
+    );
+  }
+
+  if (variant === "sidebar") {
+    return (
+      <button
+        onClick={toggle}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground w-full"
+      >
+        {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        {theme === "dark" ? "الوضع الفاتح" : "الوضع المظلم"}
+      </button>
     );
   }
 

@@ -6,6 +6,7 @@ import {
   GraduationCap, LayoutDashboard, Building2, BookOpen, Users,
   LogOut, ChevronLeft, BarChart3, FileText
 } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const navItems = [
   { path: "/admin", label: "لوحة التحكم", icon: LayoutDashboard },
@@ -63,6 +64,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         </nav>
 
         <div className="p-3 border-t space-y-1">
+          <ThemeToggle variant="sidebar" />
           <Link
             to="/dashboard"
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -88,6 +90,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             <span className="font-bold text-sm">لوحة الإدارة</span>
           </div>
           <div className="flex gap-1">
+            <ThemeToggle />
             <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white">
               <Link to="/dashboard"><ChevronLeft className="w-4 h-4" /></Link>
             </Button>

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { GraduationCap, ArrowRight, User, School, Save, Loader2 } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
@@ -203,17 +204,20 @@ const StudentProfile = () => {
             <GraduationCap className="w-6 h-6" />
             <span className="text-lg font-bold">مفاضلة</span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            asChild
-            className="text-white hover:bg-white/20 hover:text-white"
-          >
-            <Link to="/dashboard">
-              <ArrowRight className="w-4 h-4 ml-1" />
-              العودة
-            </Link>
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="text-white hover:bg-white/20 hover:text-white"
+            >
+              <Link to="/dashboard">
+                <ArrowRight className="w-4 h-4 ml-1" />
+                العودة
+              </Link>
+            </Button>
+          </div>
         </div>
       </header>
 

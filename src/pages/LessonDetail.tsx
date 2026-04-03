@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ChevronLeft, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 import { toast } from "sonner";
 
 interface Lesson {
@@ -119,9 +120,12 @@ const LessonDetail = () => {
             <BookOpen className="w-5 h-5 shrink-0" />
             <span className="font-bold truncate">{lesson.title}</span>
           </div>
-          <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white shrink-0">
-            <Link to="/lessons"><ChevronLeft className="w-4 h-4 ml-1" />الدروس</Link>
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white shrink-0">
+              <Link to="/lessons"><ChevronLeft className="w-4 h-4 ml-1" />الدروس</Link>
+            </Button>
+          </div>
         </div>
       </header>
 

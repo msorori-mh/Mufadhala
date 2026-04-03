@@ -10,6 +10,7 @@ import {
   GraduationCap, ChevronLeft, Clock, AlertTriangle, CheckCircle2,
   XCircle, Loader2, Play, Trophy, RotateCcw
 } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const MAX_QUESTIONS = 45;
 const TOTAL_TIME = 90 * 60; // 90 min in seconds
@@ -225,7 +226,7 @@ const ExamSimulator = () => {
         <header className="gradient-primary text-white px-4 py-4">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2"><GraduationCap className="w-6 h-6" /><span className="font-bold text-lg">محاكاة الاختبار</span></div>
-            <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white"><Link to="/dashboard"><ChevronLeft className="w-4 h-4 ml-1" />الرئيسية</Link></Button>
+            <div className="flex items-center gap-1"><ThemeToggle /><Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white"><Link to="/dashboard"><ChevronLeft className="w-4 h-4 ml-1" />الرئيسية</Link></Button></div>
           </div>
         </header>
         <main className="max-w-4xl mx-auto px-4 py-12 text-center">
@@ -248,7 +249,7 @@ const ExamSimulator = () => {
         <header className="gradient-primary text-white px-4 py-4">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2"><GraduationCap className="w-6 h-6" /><span className="font-bold text-lg">محاكاة الاختبار</span></div>
-            <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white"><Link to="/dashboard"><ChevronLeft className="w-4 h-4 ml-1" />الرئيسية</Link></Button>
+            <div className="flex items-center gap-1"><ThemeToggle /><Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white"><Link to="/dashboard"><ChevronLeft className="w-4 h-4 ml-1" />الرئيسية</Link></Button></div>
           </div>
         </header>
 
@@ -413,7 +414,7 @@ const ExamSimulator = () => {
       <header className="gradient-primary text-white px-4 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2"><GraduationCap className="w-6 h-6" /><span className="font-bold text-lg">نتيجة الاختبار</span></div>
-          <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white"><Link to="/dashboard"><ChevronLeft className="w-4 h-4 ml-1" />الرئيسية</Link></Button>
+            <div className="flex items-center gap-1"><ThemeToggle /><Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white"><Link to="/dashboard"><ChevronLeft className="w-4 h-4 ml-1" />الرئيسية</Link></Button></div>
         </div>
       </header>
 
