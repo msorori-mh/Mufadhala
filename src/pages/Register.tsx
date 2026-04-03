@@ -350,6 +350,7 @@ const Register = () => {
                   <div className="space-y-2">
                     <Label>الكلية</Label>
                     <Select
+                      key={`college-${universityId}`}
                       value={collegeId}
                       onValueChange={(v) => {
                         setCollegeId(v);
@@ -369,6 +370,7 @@ const Register = () => {
                   <div className="space-y-2">
                     <Label>التخصص</Label>
                     <Select
+                      key={`major-${collegeId}`}
                       value={majorId}
                       onValueChange={setMajorId}
                       disabled={!collegeId || majors.length === 0}

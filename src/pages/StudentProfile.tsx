@@ -333,6 +333,7 @@ const StudentProfile = () => {
             <div className="space-y-1.5">
               <Label className="text-xs">الكلية</Label>
               <Select
+                key={`college-${universityId}`}
                 value={collegeId}
                 onValueChange={(v) => {
                   setCollegeId(v);
@@ -352,6 +353,7 @@ const StudentProfile = () => {
             <div className="space-y-1.5">
               <Label className="text-xs">التخصص</Label>
               <Select
+                key={`major-${collegeId}`}
                 value={majorId}
                 onValueChange={setMajorId}
                 disabled={!collegeId || majors.length === 0}
