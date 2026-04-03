@@ -64,7 +64,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         </nav>
 
         <div className="p-3 border-t space-y-1">
-          <ThemeToggle variant="default" />
+          <ThemeToggle variant="sidebar" />
           <Link
             to="/dashboard"
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
