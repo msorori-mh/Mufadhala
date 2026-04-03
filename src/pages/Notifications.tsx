@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { GraduationCap, ArrowRight, Bell, Check, Loader2 } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
