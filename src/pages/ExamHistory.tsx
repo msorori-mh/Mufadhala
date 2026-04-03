@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { GraduationCap, ChevronLeft, Loader2, Trophy, Clock, CalendarDays } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface AttemptWithMajor {
   id: string;
