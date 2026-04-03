@@ -58,6 +58,50 @@ export type Database = {
           },
         ]
       }
+      lessons: {
+        Row: {
+          content: string
+          created_at: string
+          display_order: number
+          id: string
+          is_published: boolean
+          major_id: string
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_published?: boolean
+          major_id: string
+          summary?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_published?: boolean
+          major_id?: string
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_major_id_fkey"
+            columns: ["major_id"]
+            isOneToOne: false
+            referencedRelation: "majors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       majors: {
         Row: {
           code: string
@@ -134,6 +178,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      questions: {
+        Row: {
+          correct_option: string
+          created_at: string
+          display_order: number
+          explanation: string
+          id: string
+          lesson_id: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_text: string
+          updated_at: string
+        }
+        Insert: {
+          correct_option?: string
+          created_at?: string
+          display_order?: number
+          explanation?: string
+          id?: string
+          lesson_id: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_text: string
+          updated_at?: string
+        }
+        Update: {
+          correct_option?: string
+          created_at?: string
+          display_order?: number
+          explanation?: string
+          id?: string
+          lesson_id?: string
+          option_a?: string
+          option_b?: string
+          option_c?: string
+          option_d?: string
+          question_text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       students: {
         Row: {
