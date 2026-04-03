@@ -99,8 +99,21 @@ const AdminContent = () => {
   useEffect(() => { if (!authLoading) fetchData(); }, [authLoading]);
 
   const filteredColleges = filterUni ? colleges.filter((c: any) => c.university_id === filterUni) : colleges;
-  const filteredMajors = filterCollege ? majors.filter((m: any) => m.college_id === filterCollege) : majors;
-  const filteredLessons = filterMajor ? lessons.filter((l) => l.major_id === filterMajor) : lessons;
+  const filteredMajors = filterCollege ? majors.filter((m: any) => m.college_id === filterCollege) : (filterUni ? majors.filter((m: any) => filteredColleges.some((c: any) => c.id === m.college_id)) : majors);
+  
+  const filteredLessons = (() => {
+    if (filterMajor) return lessons.filter((l) => l.major_id === filterMajor);
+    if (filterCollege) {
+      const collegeMajorIds = majors.filter((m: any) => m.college_id === filterCollege).map((m: any) => m.id);
+      return lessons.filter((l) => collegeMajorIds.includes(l.major_id));
+    }
+    if (filterUni) {
+      const uniCollegeIds = colleges.filter((c: any) => c.university_id === filterUni).map((c: any) => c.id);
+      const uniMajorIds = majors.filter((m: any) => uniCollegeIds.includes(m.college_id)).map((m: any) => m.id);
+      return lessons.filter((l) => uniMajorIds.includes(l.major_id));
+    }
+    return lessons;
+  })();
 
   const getMajorName = (id: string) => majors.find((m: any) => m.id === id)?.name_ar || "";
 
