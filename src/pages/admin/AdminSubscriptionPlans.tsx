@@ -33,7 +33,6 @@ const AdminSubscriptionPlans = () => {
         setPriceZoneA((s.price_zone_a || 3000).toString());
         setPriceZoneB((s.price_zone_b || 7000).toString());
         setCurrency(s.currency);
-        setDurationMonths(s.duration_months.toString());
         setDescription(s.description || "");
       }
       setLoading(false);
