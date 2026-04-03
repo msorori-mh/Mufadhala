@@ -22,7 +22,7 @@ const ZONE_A_GOVERNORATES = [
 
 interface FullSettings {
   price: number; price_zone_a: number; price_zone_b: number;
-  currency: string; duration_months: number; description: string | null;
+  currency: string; description: string | null;
 }
 
 interface PaymentMethod {
