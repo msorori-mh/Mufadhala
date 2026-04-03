@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import {
-  GraduationCap, LayoutDashboard, Building2, BookOpen, Users,
+  GraduationCap, LayoutDashboard, Building2, BookOpen, Users, UserCog,
   LogOut, ChevronLeft, BarChart3, FileText
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
