@@ -1,10 +1,12 @@
 import { format } from "date-fns";
-import { CalendarIcon, X } from "lucide-react";
+import { CalendarIcon, X, Download, FileSpreadsheet, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { type ExportData, exportToExcel, exportToPDF } from "@/lib/exportReport";
 import type { Tables } from "@/integrations/supabase/types";
 
 const GOVERNORATES = [
@@ -27,11 +29,14 @@ interface ReportFiltersProps {
   showUniversity?: boolean;
   showGovernorate?: boolean;
   showDate?: boolean;
+  exportData?: ExportData;
+  exportFilename?: string;
 }
 
 const ReportFilters = ({
   filters, onChange, universities = [],
   showUniversity = true, showGovernorate = true, showDate = true,
+  exportData, exportFilename = "تقرير",
 }: ReportFiltersProps) => {
   const hasFilters = filters.dateFrom || filters.dateTo || filters.universityId || filters.governorate;
 
@@ -89,6 +94,23 @@ const ReportFilters = ({
         <Button variant="ghost" size="sm" className="h-8 text-xs text-destructive hover:text-destructive gap-1" onClick={() => onChange({})}>
           <X className="w-3.5 h-3.5" /> مسح الفلاتر
         </Button>
+      )}
+      {exportData && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 mr-auto">
+              <Download className="w-3.5 h-3.5" /> تصدير
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => exportToExcel(exportData, exportFilename)} className="gap-2 text-xs">
+              <FileSpreadsheet className="w-4 h-4" /> تصدير Excel
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => exportToPDF(exportData, exportFilename)} className="gap-2 text-xs">
+              <FileText className="w-4 h-4" /> تصدير PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
     </div>
   );
