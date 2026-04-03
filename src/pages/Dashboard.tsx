@@ -48,6 +48,7 @@ const Dashboard = () => {
 
   const cards = [
     { path: "/profile", title: "الملف الشخصي", desc: "عرض وتعديل بياناتك الأكاديمية", icon: UserCircle, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" },
+    { path: "/lessons", title: "المحتوى التعليمي", desc: "تدرّب على دروس وأسئلة تخصصك", icon: BookOpen, color: "border-r-secondary", iconColor: "text-secondary", bgColor: "bg-secondary/10" },
     { path: "/notifications", title: "الإشعارات", desc: "آخر التحديثات والإعلانات", icon: Bell, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10", badge: unreadCount },
   ];
 
