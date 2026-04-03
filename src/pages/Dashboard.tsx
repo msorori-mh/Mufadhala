@@ -31,6 +31,7 @@ const Dashboard = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [attempts, setAttempts] = useState<ExamAttemptRow[]>([]);
   const [lessonCount, setLessonCount] = useState(0);
+  const [completedLessons, setCompletedLessons] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
