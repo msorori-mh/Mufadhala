@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      admission_requirements: {
+        Row: {
+          available_seats: number
+          competition_period_id: string
+          created_at: string
+          id: string
+          major_id: string
+          min_gpa: number
+          updated_at: string
+        }
+        Insert: {
+          available_seats?: number
+          competition_period_id: string
+          created_at?: string
+          id?: string
+          major_id: string
+          min_gpa?: number
+          updated_at?: string
+        }
+        Update: {
+          available_seats?: number
+          competition_period_id?: string
+          created_at?: string
+          id?: string
+          major_id?: string
+          min_gpa?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_requirements_competition_period_id_fkey"
+            columns: ["competition_period_id"]
+            isOneToOne: false
+            referencedRelation: "competition_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_requirements_major_id_fkey"
+            columns: ["major_id"]
+            isOneToOne: false
+            referencedRelation: "majors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       colleges: {
         Row: {
           code: string
@@ -58,6 +103,130 @@ export type Database = {
           },
         ]
       }
+      competition_applications: {
+        Row: {
+          accepted_major_id: string | null
+          choice_1_major_id: string | null
+          choice_2_major_id: string | null
+          choice_3_major_id: string | null
+          competition_period_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          rank_score: number | null
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_major_id?: string | null
+          choice_1_major_id?: string | null
+          choice_2_major_id?: string | null
+          choice_3_major_id?: string | null
+          competition_period_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          rank_score?: number | null
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_major_id?: string | null
+          choice_1_major_id?: string | null
+          choice_2_major_id?: string | null
+          choice_3_major_id?: string | null
+          competition_period_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          rank_score?: number | null
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_applications_accepted_major_id_fkey"
+            columns: ["accepted_major_id"]
+            isOneToOne: false
+            referencedRelation: "majors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_applications_choice_1_major_id_fkey"
+            columns: ["choice_1_major_id"]
+            isOneToOne: false
+            referencedRelation: "majors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_applications_choice_2_major_id_fkey"
+            columns: ["choice_2_major_id"]
+            isOneToOne: false
+            referencedRelation: "majors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_applications_choice_3_major_id_fkey"
+            columns: ["choice_3_major_id"]
+            isOneToOne: false
+            referencedRelation: "majors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_applications_competition_period_id_fkey"
+            columns: ["competition_period_id"]
+            isOneToOne: false
+            referencedRelation: "competition_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_applications_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_periods: {
+        Row: {
+          academic_year: string
+          created_at: string
+          end_date: string
+          id: string
+          name_ar: string
+          name_en: string | null
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year: string
+          created_at?: string
+          end_date: string
+          id?: string
+          name_ar: string
+          name_en?: string | null
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          name_ar?: string
+          name_en?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       majors: {
         Row: {
           code: string
@@ -101,6 +270,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          link: string | null
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message: string
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       students: {
         Row: {
