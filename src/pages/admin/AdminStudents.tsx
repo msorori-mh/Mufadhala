@@ -132,7 +132,7 @@ const AdminStudents = () => {
     else { toast({ title: "تم الحذف" }); fetchData(); }
   };
 
-  if (authLoading || loading) return <AdminLayout><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></AdminLayout>;
+  if (authLoading || loading || scopeLoading) return <AdminLayout><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></AdminLayout>;
 
   return (
     <AdminLayout>
