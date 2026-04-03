@@ -15,6 +15,7 @@ const navItems = [
   { path: "/admin/majors", label: "التخصصات", icon: BookOpen },
   { path: "/admin/students", label: "الطلاب", icon: Users },
   { path: "/admin/content", label: "المحتوى", icon: FileText },
+  { path: "/admin/users", label: "المستخدمون", icon: UserCog },
   { path: "/admin/reports", label: "التقارير", icon: BarChart3 },
 ];
 
