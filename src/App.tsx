@@ -25,6 +25,7 @@ import AdminReportsStudents from "./pages/admin/AdminReportsStudents";
 import AdminReportsPayments from "./pages/admin/AdminReportsPayments";
 import AdminReportsSubscriptions from "./pages/admin/AdminReportsSubscriptions";
 import AdminReportsExams from "./pages/admin/AdminReportsExams";
+import AdminReportsComparison from "./pages/admin/AdminReportsComparison";
 import AdminContent from "./pages/admin/AdminContent";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminSubscriptionPlans from "./pages/admin/AdminSubscriptionPlans";
