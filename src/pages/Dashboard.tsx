@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { GraduationCap, LogOut, UserCircle, Bell, Shield, BookOpen } from "lucide-react";
+import { GraduationCap, LogOut, UserCircle, Bell, Shield, BookOpen, ClipboardCheck } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 const Dashboard = () => {
@@ -49,6 +49,7 @@ const Dashboard = () => {
   const cards = [
     { path: "/profile", title: "الملف الشخصي", desc: "عرض وتعديل بياناتك الأكاديمية", icon: UserCircle, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" },
     { path: "/lessons", title: "المحتوى التعليمي", desc: "تدرّب على دروس وأسئلة تخصصك", icon: BookOpen, color: "border-r-secondary", iconColor: "text-secondary", bgColor: "bg-secondary/10" },
+    { path: "/exam", title: "محاكاة الاختبار", desc: "45 سؤال في 90 دقيقة تحت الضغط", icon: ClipboardCheck, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" },
     { path: "/notifications", title: "الإشعارات", desc: "آخر التحديثات والإعلانات", icon: Bell, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10", badge: unreadCount },
   ];
 

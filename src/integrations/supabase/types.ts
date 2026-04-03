@@ -58,6 +58,57 @@ export type Database = {
           },
         ]
       }
+      exam_attempts: {
+        Row: {
+          answers: Json
+          completed_at: string | null
+          created_at: string
+          id: string
+          major_id: string
+          score: number
+          started_at: string
+          student_id: string
+          total: number
+        }
+        Insert: {
+          answers?: Json
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          major_id: string
+          score?: number
+          started_at?: string
+          student_id: string
+          total?: number
+        }
+        Update: {
+          answers?: Json
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          major_id?: string
+          score?: number
+          started_at?: string
+          student_id?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_attempts_major_id_fkey"
+            columns: ["major_id"]
+            isOneToOne: false
+            referencedRelation: "majors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_attempts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lessons: {
         Row: {
           content: string
