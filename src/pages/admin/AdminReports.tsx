@@ -50,7 +50,17 @@ const AdminReports = () => {
     fetch();
   }, [authLoading]);
 
-  if (authLoading || loading) {
+  const { loading: scopeLoading, getAllowedMajorIds } = useModeratorScope(
+    user?.id, isAdmin, universities, colleges, majors
+  );
+
+  const scopedStudents = useMemo(() => {
+    const allowed = getAllowedMajorIds();
+    if (!allowed) return students;
+    return students.filter((s) => s.major_id && allowed.has(s.major_id));
+  }, [students, getAllowedMajorIds, isAdmin]);
+
+  if (authLoading || loading || scopeLoading) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-64">
