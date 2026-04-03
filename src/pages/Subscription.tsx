@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import NavLink from "@/components/NavLink";
+import {
 import {
   Loader2, CreditCard, Upload, CheckCircle, Clock, XCircle,
   Building, ArrowLeftRight, ChevronRight, GraduationCap
