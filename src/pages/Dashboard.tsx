@@ -150,6 +150,7 @@ const Dashboard = () => {
             <span className="text-lg font-bold">مفاضلة</span>
           </div>
           <div className="flex items-center gap-1">
+            <ThemeToggle />
             {isStaff && (
               <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white">
                 <Link to="/admin"><Shield className="w-4 h-4 ml-1" />الإدارة</Link>
