@@ -52,17 +52,20 @@ const Dashboard = () => {
       if (s) {
         setStudent(s);
         // Fetch exam attempts and lesson count for this student
-        const [{ data: exams }, { data: lessons }] = await Promise.all([
+        const [{ data: exams }, { data: lessons }, { data: progress }] = await Promise.all([
           supabase.from("exam_attempts").select("id, score, total, completed_at, major_id")
             .eq("student_id", s.id).not("completed_at", "is", null)
             .order("completed_at", { ascending: true }),
           s.major_id
-            ? supabase.from("lessons").select("id", { count: "exact", head: true })
+            ? supabase.from("lessons").select("id")
                 .eq("major_id", s.major_id).eq("is_published", true)
-            : Promise.resolve({ data: null, count: 0 }),
+            : Promise.resolve({ data: [] }),
+          supabase.from("lesson_progress").select("id")
+            .eq("student_id", s.id).eq("is_completed", true),
         ]);
         if (exams) setAttempts(exams);
-        setLessonCount((lessons as any)?.length ?? 0);
+        setLessonCount(lessons?.length ?? 0);
+        setCompletedLessons(progress?.length ?? 0);
       }
       if (roles) setIsStaff(roles.some((r) => r.role === "admin" || r.role === "moderator"));
       setUnreadCount((notifs as any)?.count ?? 0);
