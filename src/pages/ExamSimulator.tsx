@@ -41,8 +41,9 @@ interface ExamAttempt {
 type Phase = "intro" | "exam" | "result";
 
 const ExamSimulator = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isStaff } = useAuth();
   const navigate = useNavigate();
+  const { isActive: hasActiveSubscription, loading: subLoading } = useSubscription(user?.id);
 
   const [student, setStudent] = useState<any>(null);
   const [majorName, setMajorName] = useState("");
