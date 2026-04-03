@@ -378,7 +378,12 @@ const AdminContent = () => {
             <h1 className="text-2xl font-bold">المحتوى التعليمي</h1>
             <p className="text-sm text-muted-foreground">{filteredLessons.length} درس</p>
           </div>
-          <Button onClick={openCreateLesson} size="sm"><Plus className="w-4 h-4 ml-1" />إضافة درس</Button>
+          <div className="flex gap-2">
+            <Button onClick={() => { setImportMajorId(filterMajor); setImportDialogOpen(true); }} size="sm" variant="outline">
+              <Upload className="w-4 h-4 ml-1" />استيراد
+            </Button>
+            <Button onClick={openCreateLesson} size="sm"><Plus className="w-4 h-4 ml-1" />إضافة درس</Button>
+          </div>
         </div>
 
         {/* Filters */}
