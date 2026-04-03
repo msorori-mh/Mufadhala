@@ -39,16 +39,14 @@ const AdminPayments = () => {
   const [tab, setTab] = useState("pending");
 
   const fetchData = async () => {
-    const [{ data: r }, { data: s }, { data: m }, { data: st }] = await Promise.all([
+    const [{ data: r }, { data: s }, { data: m }] = await Promise.all([
       supabase.from("payment_requests").select("*").order("created_at", { ascending: false }),
       supabase.from("students").select("user_id, first_name, second_name, third_name, fourth_name"),
       supabase.from("payment_methods").select("id, name, type"),
-      supabase.from("subscription_settings" as any).select("duration_months").limit(1),
     ]);
     if (r) setRequests(r as PaymentRequest[]);
     if (s) setStudents(s);
     if (m) setMethods(m as { id: string; name: string; type: string }[]);
-    if (st && (st as any[]).length > 0) setDurationMonths((st as any[])[0].duration_months || 5);
     setLoading(false);
   };
 
