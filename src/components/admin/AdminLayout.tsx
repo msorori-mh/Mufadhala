@@ -28,6 +28,7 @@ const reportSubItems = [
   { path: "/admin/reports/payments", label: "الدفع والإيرادات", icon: DollarSign },
   { path: "/admin/reports/subscriptions", label: "الاشتراكات", icon: ListChecks },
   { path: "/admin/reports/exams", label: "الاختبارات", icon: ClipboardCheck },
+  { path: "/admin/reports/comparison", label: "مقارنة الفترات", icon: BarChart3 },
 ];
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
