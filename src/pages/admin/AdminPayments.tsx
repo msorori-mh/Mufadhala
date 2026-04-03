@@ -83,10 +83,8 @@ const AdminPayments = () => {
 
     if (selectedRequest.subscription_id) {
       const now = new Date();
-      const expiresAt = new Date(now);
-      expiresAt.setMonth(expiresAt.getMonth() + durationMonths);
       await supabase.from("subscriptions").update({
-        status: "active", starts_at: now.toISOString(), expires_at: expiresAt.toISOString(),
+        status: "active", starts_at: now.toISOString(),
       }).eq("id", selectedRequest.subscription_id);
     }
     toast({ title: "تمت الموافقة على الطلب وتفعيل الاشتراك" });
