@@ -89,6 +89,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             <span className="font-bold text-sm">لوحة الإدارة</span>
           </div>
           <div className="flex gap-1">
+            <ThemeToggle />
             <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white">
               <Link to="/dashboard"><ChevronLeft className="w-4 h-4" /></Link>
             </Button>
