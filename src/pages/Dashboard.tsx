@@ -187,6 +187,30 @@ const Dashboard = () => {
           </div>
         )}
 
+        {/* Lesson Progress */}
+        {lessonCount > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-secondary" />
+                تقدم الدروس
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">الدروس المكتملة</span>
+                <span className="font-semibold text-foreground">{completedLessons}/{lessonCount}</span>
+              </div>
+              <Progress value={lessonCount > 0 ? (completedLessons / lessonCount) * 100 : 0} className="h-3" />
+              <p className="text-xs text-muted-foreground">
+                {completedLessons === lessonCount && lessonCount > 0
+                  ? "🎉 أكملت جميع الدروس!"
+                  : `${lessonCount - completedLessons} درس متبقي`}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Performance Progress */}
         {totalExams > 0 && (
           <Card>
