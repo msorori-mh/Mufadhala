@@ -9,15 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Loader2, CreditCard, Upload, CheckCircle, Clock, XCircle,
+  Loader2, CreditCard, Upload, CheckCircle, Clock,
   Building, ArrowLeftRight, ChevronRight, GraduationCap
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
-interface Plan {
-  id: string; name: string; description: string;
-  duration_type: string; duration_months: number;
-  price: number; currency: string;
+interface Settings {
+  price: number; currency: string; duration_months: number; description: string | null;
 }
 
 interface PaymentMethod {
@@ -26,8 +24,8 @@ interface PaymentMethod {
   details: string | null;
 }
 
-interface Subscription {
-  id: string; plan_id: string | null; status: string;
+interface SubRecord {
+  id: string; status: string;
   starts_at: string | null; expires_at: string | null;
 }
 
@@ -40,52 +38,42 @@ const Subscription = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [plans, setPlans] = useState<Plan[]>([]);
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [subscription, setSubscription] = useState<SubRecord | null>(null);
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Flow state
-  const [step, setStep] = useState<"status" | "plan" | "method" | "upload">("status");
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [step, setStep] = useState<"status" | "method" | "upload">("status");
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (authLoading || !user) return;
-    const fetch = async () => {
-      const [{ data: p }, { data: m }, { data: sub }, { data: pr }] = await Promise.all([
-        supabase.from("subscription_plans").select("*").eq("is_active", true).order("sort_order"),
+    const fetchAll = async () => {
+      const [{ data: st }, { data: m }, { data: sub }, { data: pr }] = await Promise.all([
+        supabase.from("subscription_settings" as any).select("*").limit(1),
         supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
         supabase.from("subscriptions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1),
         supabase.from("payment_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       ]);
-      if (p) setPlans(p as Plan[]);
-      if (m) setMethods(m as PaymentMethod[]);
-      if (sub && sub.length > 0) setSubscription(sub[0] as Subscription);
-      if (pr) setPaymentRequests(pr as PaymentRequest[]);
+      if (st && (st as any[]).length > 0) setSettings((st as any[])[0] as Settings);
+      if (m) setMethods(m as any as PaymentMethod[]);
+      if (sub && sub.length > 0) setSubscription(sub[0] as any as SubRecord);
+      if (pr) setPaymentRequests(pr as any as PaymentRequest[]);
 
-      // Determine initial step
       if (sub && sub.length > 0) {
-        const s = sub[0] as Subscription;
-        if (s.status === "active") setStep("status");
-        else if (s.status === "pending") setStep("status");
-        else setStep("plan");
+        const s = sub[0];
+        if (s.status === "active" || s.status === "pending") setStep("status");
+        else setStep("method");
       } else {
-        setStep("plan");
+        setStep("method");
       }
       setLoading(false);
     };
-    fetch();
+    fetchAll();
   }, [authLoading, user]);
-
-  const handleSelectPlan = (plan: Plan) => {
-    setSelectedPlan(plan);
-    setStep("method");
-  };
 
   const handleSelectMethod = (method: PaymentMethod) => {
     setSelectedMethod(method);
@@ -93,10 +81,9 @@ const Subscription = () => {
   };
 
   const handleSubmit = async () => {
-    if (!user || !selectedPlan || !selectedMethod || !receiptFile) return;
+    if (!user || !selectedMethod || !receiptFile || !settings) return;
     setSubmitting(true);
 
-    // Upload receipt
     const ext = receiptFile.name.split(".").pop();
     const filePath = `${user.id}/${Date.now()}.${ext}`;
     const { error: uploadErr } = await supabase.storage.from("receipts").upload(filePath, receiptFile);
@@ -107,11 +94,9 @@ const Subscription = () => {
     }
 
     const { data: urlData } = supabase.storage.from("receipts").getPublicUrl(filePath);
-    const receiptUrl = urlData.publicUrl;
 
-    // Create subscription
     const { data: newSub, error: subErr } = await supabase.from("subscriptions").insert({
-      user_id: user.id, plan_id: selectedPlan.id, status: "pending",
+      user_id: user.id, status: "pending",
     }).select().single();
 
     if (subErr) {
@@ -120,15 +105,13 @@ const Subscription = () => {
       return;
     }
 
-    // Create payment request
     const { error: prErr } = await supabase.from("payment_requests").insert({
       user_id: user.id,
       subscription_id: newSub.id,
       payment_method_id: selectedMethod.id,
-      plan_id: selectedPlan.id,
-      amount: selectedPlan.price,
-      currency: selectedPlan.currency,
-      receipt_url: receiptUrl,
+      amount: settings.price,
+      currency: settings.currency,
+      receipt_url: urlData.publicUrl,
       status: "pending",
     });
 
@@ -136,7 +119,7 @@ const Subscription = () => {
       toast({ variant: "destructive", title: prErr.message });
     } else {
       toast({ title: "تم إرسال طلب الدفع بنجاح! سيتم مراجعته قريباً" });
-      setSubscription(newSub as Subscription);
+      setSubscription({ id: newSub.id, status: "pending", starts_at: null, expires_at: null });
       setStep("status");
     }
     setSubmitting(false);
@@ -152,11 +135,9 @@ const Subscription = () => {
 
   const isActive = subscription?.status === "active";
   const isPending = subscription?.status === "pending";
-  const hasPendingPayment = paymentRequests.some((pr) => pr.status === "pending");
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="gradient-primary text-white px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -173,8 +154,6 @@ const Subscription = () => {
       </header>
 
       <div className="max-w-lg mx-auto p-4 space-y-4">
-
-        {/* Active Subscription Status */}
         {step === "status" && isActive && subscription && (
           <Card className="border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900">
             <CardContent className="py-6 text-center">
@@ -185,64 +164,31 @@ const Subscription = () => {
                   ينتهي في: {new Date(subscription.expires_at).toLocaleDateString("ar")}
                 </p>
               )}
-              <Button variant="outline" className="mt-4" onClick={() => navigate("/dashboard")}>
-                العودة للوحة التحكم
-              </Button>
+              <Button variant="outline" className="mt-4" onClick={() => navigate("/dashboard")}>العودة للوحة التحكم</Button>
             </CardContent>
           </Card>
         )}
 
-        {/* Pending Status */}
         {step === "status" && isPending && (
           <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-900">
             <CardContent className="py-6 text-center">
               <Clock className="w-12 h-12 text-yellow-600 mx-auto mb-3" />
               <h2 className="text-lg font-bold text-yellow-700 dark:text-yellow-400">طلبك قيد المراجعة</h2>
-              <p className="text-sm text-yellow-600 dark:text-yellow-500 mt-1">
-                سيتم مراجعة طلب الدفع وتفعيل اشتراكك في أقرب وقت
-              </p>
+              <p className="text-sm text-yellow-600 dark:text-yellow-500 mt-1">سيتم مراجعة طلب الدفع وتفعيل اشتراكك في أقرب وقت</p>
             </CardContent>
           </Card>
         )}
 
-        {/* Plan Selection */}
-        {step === "plan" && (
+        {step === "method" && settings && (
           <div className="space-y-3">
-            <h2 className="text-lg font-bold">اختر خطة الاشتراك</h2>
-            <p className="text-sm text-muted-foreground">اختر الخطة المناسبة لك للوصول إلى جميع المحتويات التعليمية</p>
-            {plans.map((plan) => (
-              <Card key={plan.id} className="cursor-pointer hover:border-primary transition-colors" onClick={() => handleSelectPlan(plan)}>
-                <CardContent className="py-4 px-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-bold">{plan.name}</p>
-                      {plan.description && <p className="text-xs text-muted-foreground mt-1">{plan.description}</p>}
-                      <p className="text-xs text-muted-foreground mt-1">{plan.duration_months} شهر</p>
-                    </div>
-                    <div className="text-left">
-                      <p className="text-lg font-bold text-primary">{plan.price.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">{plan.currency}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {plans.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">لا توجد خطط اشتراك متاحة حالياً</p>
-            )}
-          </div>
-        )}
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="py-4 text-center">
+                <p className="text-2xl font-bold text-primary">{settings.price.toLocaleString()} {settings.currency}</p>
+                {settings.description && <p className="text-sm text-muted-foreground mt-1">{settings.description}</p>}
+                <p className="text-xs text-muted-foreground mt-1">{settings.duration_months} شهر</p>
+              </CardContent>
+            </Card>
 
-        {/* Payment Method Selection */}
-        {step === "method" && selectedPlan && (
-          <div className="space-y-3">
-            <Button variant="ghost" size="sm" onClick={() => setStep("plan")} className="mb-2">
-              <ChevronRight className="w-4 h-4 ml-1" /> العودة
-            </Button>
-            <div className="bg-muted rounded-lg p-3 text-sm">
-              <span className="text-muted-foreground">الخطة:</span>{" "}
-              <span className="font-semibold">{selectedPlan.name}</span> — {selectedPlan.price.toLocaleString()} {selectedPlan.currency}
-            </div>
             <h2 className="text-lg font-bold">اختر طريقة الدفع</h2>
             <p className="text-sm text-muted-foreground">قم بالتحويل إلى أحد الحسابات التالية ثم ارفع سند التحويل</p>
 
@@ -276,62 +222,38 @@ const Subscription = () => {
                 ))}
               </div>
             )}
+
+            {methods.length === 0 && <p className="text-center text-muted-foreground py-8">لا توجد طرق دفع متاحة حالياً</p>}
           </div>
         )}
 
-        {/* Upload Receipt */}
-        {step === "upload" && selectedPlan && selectedMethod && (
+        {step === "upload" && settings && selectedMethod && (
           <div className="space-y-4">
             <Button variant="ghost" size="sm" onClick={() => setStep("method")} className="mb-2">
               <ChevronRight className="w-4 h-4 ml-1" /> العودة
             </Button>
-
             <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
-              <div><span className="text-muted-foreground">الخطة:</span> <span className="font-semibold">{selectedPlan.name}</span></div>
-              <div><span className="text-muted-foreground">المبلغ:</span> <span className="font-semibold">{selectedPlan.price.toLocaleString()} {selectedPlan.currency}</span></div>
+              <div><span className="text-muted-foreground">المبلغ:</span> <span className="font-semibold">{settings.price.toLocaleString()} {settings.currency}</span></div>
               <div><span className="text-muted-foreground">طريقة الدفع:</span> <span className="font-semibold">{selectedMethod.name}</span></div>
               {selectedMethod.account_number && (
                 <div><span className="text-muted-foreground">الحساب:</span> <span className="font-semibold">{selectedMethod.account_number}</span></div>
               )}
             </div>
-
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">رفع سند التحويل</CardTitle>
-              </CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-base">رفع سند التحويل</CardTitle></CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    قم بتحويل المبلغ إلى الحساب المحدد أعلاه، ثم ارفع صورة سند التحويل هنا
-                  </p>
+                  <p className="text-sm text-muted-foreground">قم بتحويل المبلغ إلى الحساب المحدد أعلاه، ثم ارفع صورة سند التحويل هنا</p>
                   <div className="border-2 border-dashed rounded-lg p-6 text-center">
                     <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
                     <Label htmlFor="receipt" className="cursor-pointer text-primary text-sm font-medium">
                       {receiptFile ? receiptFile.name : "اضغط لاختيار الصورة"}
                     </Label>
-                    <Input
-                      id="receipt"
-                      type="file"
-                      accept="image/*,.pdf"
-                      className="hidden"
-                      onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
-                    />
-                    {receiptFile && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {(receiptFile.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    )}
+                    <Input id="receipt" type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => setReceiptFile(e.target.files?.[0] || null)} />
+                    {receiptFile && <p className="text-xs text-muted-foreground mt-1">{(receiptFile.size / 1024 / 1024).toFixed(2)} MB</p>}
                   </div>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={!receiptFile || submitting}
-                    className="w-full"
-                  >
-                    {submitting ? (
-                      <><Loader2 className="w-4 h-4 ml-1 animate-spin" /> جاري الإرسال...</>
-                    ) : (
-                      <><CreditCard className="w-4 h-4 ml-1" /> إرسال طلب الدفع</>
-                    )}
+                  <Button onClick={handleSubmit} disabled={!receiptFile || submitting} className="w-full">
+                    {submitting ? <><Loader2 className="w-4 h-4 ml-1 animate-spin" /> جاري الإرسال...</> : <><CreditCard className="w-4 h-4 ml-1" /> إرسال طلب الدفع</>}
                   </Button>
                 </div>
               </CardContent>
@@ -339,7 +261,6 @@ const Subscription = () => {
           </div>
         )}
 
-        {/* Payment History */}
         {paymentRequests.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground">سجل الطلبات</h3>
@@ -351,16 +272,11 @@ const Subscription = () => {
                       <p className="text-sm font-medium">{pr.amount.toLocaleString()} {pr.currency}</p>
                       <p className="text-xs text-muted-foreground">{new Date(pr.created_at).toLocaleDateString("ar")}</p>
                     </div>
-                    <Badge variant={
-                      pr.status === "approved" ? "default" :
-                      pr.status === "rejected" ? "destructive" : "outline"
-                    }>
+                    <Badge variant={pr.status === "approved" ? "default" : pr.status === "rejected" ? "destructive" : "outline"}>
                       {pr.status === "approved" ? "مقبول" : pr.status === "rejected" ? "مرفوض" : "معلق"}
                     </Badge>
                   </div>
-                  {pr.admin_notes && pr.status === "rejected" && (
-                    <p className="text-xs text-destructive mt-1">السبب: {pr.admin_notes}</p>
-                  )}
+                  {pr.admin_notes && pr.status === "rejected" && <p className="text-xs text-destructive mt-1">السبب: {pr.admin_notes}</p>}
                 </CardContent>
               </Card>
             ))}

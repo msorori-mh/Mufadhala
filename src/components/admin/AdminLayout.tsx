@@ -16,7 +16,7 @@ const navItems = [
   { path: "/admin/students", label: "الطلاب", icon: Users },
   { path: "/admin/content", label: "المحتوى", icon: FileText },
   { path: "/admin/users", label: "المستخدمون", icon: UserCog },
-  { path: "/admin/subscription-plans", label: "خطط الاشتراك", icon: ListChecks },
+  { path: "/admin/subscription-plans", label: "إعدادات الاشتراك", icon: ListChecks },
   { path: "/admin/payment-methods", label: "طرق الدفع", icon: Wallet },
   { path: "/admin/payments", label: "طلبات الدفع", icon: CreditCard },
   { path: "/admin/reports", label: "التقارير", icon: BarChart3 },
