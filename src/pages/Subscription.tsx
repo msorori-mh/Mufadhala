@@ -14,8 +14,15 @@ import {
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
-interface Settings {
-  price: number; currency: string; duration_months: number; description: string | null;
+// Zone A governorates (Ansar Allah areas)
+const ZONE_A_GOVERNORATES = [
+  "صنعاء", "أمانة العاصمة", "عمران", "ذمار", "إب", "الحديدة",
+  "صعدة", "حجة", "المحويت", "ريمة", "تعز",
+];
+
+interface FullSettings {
+  price: number; price_zone_a: number; price_zone_b: number;
+  currency: string; duration_months: number; description: string | null;
 }
 
 interface PaymentMethod {
@@ -34,14 +41,21 @@ interface PaymentRequest {
   currency: string; created_at: string; admin_notes: string | null;
 }
 
+const getStudentPrice = (settings: FullSettings, governorate: string | null): number => {
+  if (!governorate) return settings.price;
+  if (ZONE_A_GOVERNORATES.some((g) => governorate.includes(g))) return settings.price_zone_a;
+  return settings.price_zone_b;
+};
+
 const Subscription = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const [settings, setSettings] = useState<FullSettings | null>(null);
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [subscription, setSubscription] = useState<SubRecord | null>(null);
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
+  const [studentGovernorate, setStudentGovernorate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [step, setStep] = useState<"status" | "method" | "upload">("status");
@@ -52,16 +66,18 @@ const Subscription = () => {
   useEffect(() => {
     if (authLoading || !user) return;
     const fetchAll = async () => {
-      const [{ data: st }, { data: m }, { data: sub }, { data: pr }] = await Promise.all([
+      const [{ data: st }, { data: m }, { data: sub }, { data: pr }, { data: student }] = await Promise.all([
         supabase.from("subscription_settings" as any).select("*").limit(1),
         supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
         supabase.from("subscriptions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1),
         supabase.from("payment_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("students").select("governorate").eq("user_id", user.id).limit(1),
       ]);
-      if (st && (st as any[]).length > 0) setSettings((st as any[])[0] as Settings);
+      if (st && (st as any[]).length > 0) setSettings((st as any[])[0] as FullSettings);
       if (m) setMethods(m as any as PaymentMethod[]);
       if (sub && sub.length > 0) setSubscription(sub[0] as any as SubRecord);
       if (pr) setPaymentRequests(pr as any as PaymentRequest[]);
+      if (student && student.length > 0) setStudentGovernorate(student[0].governorate);
 
       if (sub && sub.length > 0) {
         const s = sub[0];
@@ -74,6 +90,8 @@ const Subscription = () => {
     };
     fetchAll();
   }, [authLoading, user]);
+
+  const studentPrice = settings ? getStudentPrice(settings, studentGovernorate) : 0;
 
   const handleSelectMethod = (method: PaymentMethod) => {
     setSelectedMethod(method);
@@ -109,7 +127,7 @@ const Subscription = () => {
       user_id: user.id,
       subscription_id: newSub.id,
       payment_method_id: selectedMethod.id,
-      amount: settings.price,
+      amount: studentPrice,
       currency: settings.currency,
       receipt_url: urlData.publicUrl,
       status: "pending",
@@ -135,6 +153,9 @@ const Subscription = () => {
 
   const isActive = subscription?.status === "active";
   const isPending = subscription?.status === "pending";
+  const zoneName = studentGovernorate
+    ? ZONE_A_GOVERNORATES.some((g) => studentGovernorate.includes(g)) ? "المنطقة أ" : "المنطقة ب"
+    : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -183,7 +204,8 @@ const Subscription = () => {
           <div className="space-y-3">
             <Card className="bg-primary/5 border-primary/20">
               <CardContent className="py-4 text-center">
-                <p className="text-2xl font-bold text-primary">{settings.price.toLocaleString()} {settings.currency}</p>
+                <p className="text-2xl font-bold text-primary">{studentPrice.toLocaleString()} {settings.currency}</p>
+                {zoneName && <p className="text-xs text-muted-foreground mt-1">{zoneName} — {studentGovernorate}</p>}
                 {settings.description && <p className="text-sm text-muted-foreground mt-1">{settings.description}</p>}
                 <p className="text-xs text-muted-foreground mt-1">{settings.duration_months} شهر</p>
               </CardContent>
@@ -233,7 +255,7 @@ const Subscription = () => {
               <ChevronRight className="w-4 h-4 ml-1" /> العودة
             </Button>
             <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
-              <div><span className="text-muted-foreground">المبلغ:</span> <span className="font-semibold">{settings.price.toLocaleString()} {settings.currency}</span></div>
+              <div><span className="text-muted-foreground">المبلغ:</span> <span className="font-semibold">{studentPrice.toLocaleString()} {settings.currency}</span></div>
               <div><span className="text-muted-foreground">طريقة الدفع:</span> <span className="font-semibold">{selectedMethod.name}</span></div>
               {selectedMethod.account_number && (
                 <div><span className="text-muted-foreground">الحساب:</span> <span className="font-semibold">{selectedMethod.account_number}</span></div>
