@@ -3,9 +3,25 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { GraduationCap, LogOut, UserCircle, Bell, Shield, BookOpen, ClipboardCheck } from "lucide-react";
+import {
+  GraduationCap, LogOut, UserCircle, Bell, Shield, BookOpen,
+  ClipboardCheck, Trophy, TrendingUp, Target, BarChart3
+} from "lucide-react";
+import {
+  ChartContainer, ChartTooltip, ChartTooltipContent
+} from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, LineChart, Line, ResponsiveContainer } from "recharts";
 import type { Tables } from "@/integrations/supabase/types";
+
+interface ExamAttemptRow {
+  id: string;
+  score: number;
+  total: number;
+  completed_at: string | null;
+  major_id: string;
+}
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -13,6 +29,9 @@ const Dashboard = () => {
   const [student, setStudent] = useState<Tables<"students"> | null>(null);
   const [isStaff, setIsStaff] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [attempts, setAttempts] = useState<ExamAttemptRow[]>([]);
+  const [lessonCount, setLessonCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -29,9 +48,24 @@ const Dashboard = () => {
         supabase.from("user_roles").select("role").eq("user_id", session.user.id),
         supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", session.user.id).eq("is_read", false),
       ]);
-      if (s) setStudent(s);
+      if (s) {
+        setStudent(s);
+        // Fetch exam attempts and lesson count for this student
+        const [{ data: exams }, { data: lessons }] = await Promise.all([
+          supabase.from("exam_attempts").select("id, score, total, completed_at, major_id")
+            .eq("student_id", s.id).not("completed_at", "is", null)
+            .order("completed_at", { ascending: true }),
+          s.major_id
+            ? supabase.from("lessons").select("id", { count: "exact", head: true })
+                .eq("major_id", s.major_id).eq("is_published", true)
+            : Promise.resolve({ data: null, count: 0 }),
+        ]);
+        if (exams) setAttempts(exams);
+        setLessonCount((lessons as any)?.length ?? 0);
+      }
       if (roles) setIsStaff(roles.some((r) => r.role === "admin" || r.role === "moderator"));
       setUnreadCount((notifs as any)?.count ?? 0);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -46,15 +80,63 @@ const Dashboard = () => {
     ? `${student.first_name || ""} ${student.fourth_name || ""}`.trim() || "طالب"
     : user?.user_metadata?.first_name || "طالب";
 
-  const cards = [
-    { path: "/profile", title: "الملف الشخصي", desc: "عرض وتعديل بياناتك الأكاديمية", icon: UserCircle, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" },
-    { path: "/lessons", title: "المحتوى التعليمي", desc: "تدرّب على دروس وأسئلة تخصصك", icon: BookOpen, color: "border-r-secondary", iconColor: "text-secondary", bgColor: "bg-secondary/10" },
-    { path: "/exam", title: "محاكاة الاختبار", desc: "45 سؤال في 90 دقيقة تحت الضغط", icon: ClipboardCheck, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" },
-    { path: "/notifications", title: "الإشعارات", desc: "آخر التحديثات والإعلانات", icon: Bell, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10", badge: unreadCount },
+  // Stats calculations
+  const totalExams = attempts.length;
+  const avgScore = totalExams > 0
+    ? Math.round(attempts.reduce((sum, a) => sum + (a.score / a.total) * 100, 0) / totalExams)
+    : 0;
+  const bestScore = totalExams > 0
+    ? Math.round(Math.max(...attempts.map(a => (a.score / a.total) * 100)))
+    : 0;
+  const lastScore = totalExams > 0
+    ? Math.round((attempts[attempts.length - 1].score / attempts[attempts.length - 1].total) * 100)
+    : 0;
+
+  // Chart data - last 10 attempts
+  const chartData = attempts.slice(-10).map((a, i) => ({
+    name: `${i + 1}`,
+    score: Math.round((a.score / a.total) * 100),
+  }));
+
+  // Score distribution
+  const distribution = [
+    { range: "0-40", count: 0, fill: "hsl(var(--destructive))" },
+    { range: "41-60", count: 0, fill: "hsl(var(--warning))" },
+    { range: "61-80", count: 0, fill: "hsl(var(--primary))" },
+    { range: "81-100", count: 0, fill: "hsl(var(--success))" },
+  ];
+  attempts.forEach(a => {
+    const pct = (a.score / a.total) * 100;
+    if (pct <= 40) distribution[0].count++;
+    else if (pct <= 60) distribution[1].count++;
+    else if (pct <= 80) distribution[2].count++;
+    else distribution[3].count++;
+  });
+
+  const chartConfig = {
+    score: { label: "النتيجة %", color: "hsl(var(--primary))" },
+  };
+  const barConfig = {
+    count: { label: "عدد المحاولات", color: "hsl(var(--primary))" },
+  };
+
+  const statCards = [
+    { label: "إجمالي الاختبارات", value: totalExams, icon: ClipboardCheck, color: "text-primary", bg: "bg-primary/10" },
+    { label: "المعدل العام", value: `${avgScore}%`, icon: TrendingUp, color: "text-accent", bg: "bg-accent/10" },
+    { label: "أفضل نتيجة", value: `${bestScore}%`, icon: Trophy, color: "text-secondary", bg: "bg-secondary/10" },
+    { label: "آخر نتيجة", value: `${lastScore}%`, icon: Target, color: "text-primary", bg: "bg-primary/10" },
+  ];
+
+  const navCards = [
+    { path: "/profile", title: "الملف الشخصي", desc: "عرض وتعديل بياناتك", icon: UserCircle, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" },
+    { path: "/lessons", title: "المحتوى التعليمي", desc: "تدرّب على الدروس والأسئلة", icon: BookOpen, color: "border-r-secondary", iconColor: "text-secondary", bgColor: "bg-secondary/10" },
+    { path: "/exam", title: "محاكاة الاختبار", desc: "45 سؤال في 90 دقيقة", icon: ClipboardCheck, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" },
+    { path: "/notifications", title: "الإشعارات", desc: "آخر التحديثات", icon: Bell, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10", badge: unreadCount },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" dir="rtl">
+      {/* Header */}
       <header className="gradient-primary text-white px-4 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -74,14 +156,109 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-foreground mb-1">مرحباً، {userName}</h1>
-        <p className="text-muted-foreground mb-6">
-          {student?.gpa ? `معدلك: ${student.gpa}% • اختر تخصصك وابدأ التدريب` : "أكمل ملفك الشخصي للبدء"}
-        </p>
+      <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        {/* Welcome */}
+        <div>
+          <h1 className="text-2xl font-bold text-foreground mb-1">مرحباً، {userName}</h1>
+          <p className="text-muted-foreground">
+            {student?.gpa ? `معدلك: ${student.gpa}% • اختر تخصصك وابدأ التدريب` : "أكمل ملفك الشخصي للبدء"}
+          </p>
+        </div>
 
+        {/* Stats Cards */}
+        {totalExams > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {statCards.map((s) => (
+              <Card key={s.label} className="relative overflow-hidden">
+                <CardContent className="p-4 flex flex-col items-center text-center gap-1">
+                  <div className={`w-9 h-9 rounded-lg ${s.bg} flex items-center justify-center mb-1`}>
+                    <s.icon className={`w-4 h-4 ${s.color}`} />
+                  </div>
+                  <span className="text-2xl font-bold text-foreground">{s.value}</span>
+                  <span className="text-xs text-muted-foreground">{s.label}</span>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Performance Progress */}
+        {totalExams > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-primary" />
+                مستوى الأداء
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">المعدل العام</span>
+                <span className="font-semibold text-foreground">{avgScore}%</span>
+              </div>
+              <Progress value={avgScore} className="h-3" />
+              <p className="text-xs text-muted-foreground">
+                {avgScore >= 80 ? "🎉 أداء ممتاز! واصل التميز" :
+                 avgScore >= 60 ? "👍 أداء جيد، يمكنك التحسن أكثر" :
+                 avgScore >= 40 ? "📚 تحتاج مراجعة إضافية" :
+                 "⚠️ ركّز على الدروس قبل إعادة الاختبار"}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Charts Row */}
+        {totalExams >= 2 && (
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Score Trend */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">تطور النتائج</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={chartConfig} className="h-[200px] w-full">
+                  <LineChart data={chartData}>
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line
+                      type="monotone"
+                      dataKey="score"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2.5}
+                      dot={{ r: 4, fill: "hsl(var(--primary))" }}
+                    />
+                  </LineChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            {/* Score Distribution */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">توزيع الدرجات</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={barConfig} className="h-[200px] w-full">
+                  <BarChart data={distribution}>
+                    <XAxis dataKey="range" tick={{ fontSize: 12 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                      {distribution.map((entry, idx) => (
+                        <Bar key={idx} dataKey="count" fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Navigation Cards */}
         <div className="grid gap-4 md:grid-cols-2">
-          {cards.map((card) => (
+          {navCards.map((card) => (
             <Link key={card.path} to={card.path} className="block">
               <Card className={`cursor-pointer hover:shadow-md transition-shadow border-r-4 ${card.color} h-full`}>
                 <CardHeader className="pb-2">
