@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
+import ReportFilters, { type ReportFilterValues } from "@/components/admin/ReportFilters";
 import { Loader2, ClipboardCheck, TrendingUp, BookOpen } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
@@ -25,27 +26,49 @@ const AdminReportsExams = () => {
   const [loading, setLoading] = useState(true);
   const [exams, setExams] = useState<ExamRow[]>([]);
   const [majors, setMajors] = useState<Tables<"majors">[]>([]);
+  const [students, setStudents] = useState<Tables<"students">[]>([]);
+  const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
+  const [filters, setFilters] = useState<ReportFilterValues>({});
 
   useEffect(() => {
     if (authLoading) return;
     Promise.all([
       supabase.from("exam_attempts").select("id, student_id, major_id, score, total, completed_at").not("completed_at", "is", null),
       supabase.from("majors").select("*").order("display_order"),
-    ]).then(([{ data: e }, { data: m }]) => {
+      supabase.from("students").select("*"),
+      supabase.from("universities").select("*").order("display_order"),
+    ]).then(([{ data: e }, { data: m }, { data: s }, { data: u }]) => {
       if (e) setExams(e as ExamRow[]);
       if (m) setMajors(m);
+      if (s) setStudents(s);
+      if (u) setUniversities(u);
       setLoading(false);
     });
   }, [authLoading]);
 
+  const filtered = useMemo(() => {
+    let list = exams;
+    if (filters.dateFrom) list = list.filter((e) => e.completed_at && new Date(e.completed_at) >= filters.dateFrom!);
+    if (filters.dateTo) { const end = new Date(filters.dateTo); end.setHours(23, 59, 59); list = list.filter((e) => e.completed_at && new Date(e.completed_at) <= end); }
+    if (filters.universityId || filters.governorate) {
+      const studentIds = new Set(students.filter((s) => {
+        if (filters.universityId && s.university_id !== filters.universityId) return false;
+        if (filters.governorate && s.governorate !== filters.governorate) return false;
+        return true;
+      }).map((s) => s.id));
+      list = list.filter((e) => studentIds.has(e.student_id));
+    }
+    return list;
+  }, [exams, students, filters]);
+
   if (authLoading || loading) return <AdminLayout><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></AdminLayout>;
 
-  const total = exams.length;
-  const overallAvg = total > 0 ? Math.round(exams.reduce((s, e) => s + (e.score / e.total) * 100, 0) / total) : 0;
-  const passRate = total > 0 ? Math.round((exams.filter((e) => (e.score / e.total) * 100 >= 60).length / total) * 100) : 0;
+  const total = filtered.length;
+  const overallAvg = total > 0 ? Math.round(filtered.reduce((s, e) => s + (e.score / e.total) * 100, 0) / total) : 0;
+  const passRate = total > 0 ? Math.round((filtered.filter((e) => (e.score / e.total) * 100 >= 60).length / total) * 100) : 0;
 
   const majorStats = majors.map((m) => {
-    const me = exams.filter((e) => e.major_id === m.id);
+    const me = filtered.filter((e) => e.major_id === m.id);
     if (me.length === 0) return null;
     const avg = Math.round(me.reduce((s, e) => s + (e.score / e.total) * 100, 0) / me.length);
     const pass = Math.round((me.filter((e) => (e.score / e.total) * 100 >= 60).length / me.length) * 100);
@@ -53,16 +76,17 @@ const AdminReportsExams = () => {
   }).filter(Boolean).sort((a, b) => b!.count - a!.count).slice(0, 10) as { name: string; avg: number; passRate: number; count: number }[];
 
   const dist = [
-    { range: "90-100%", count: exams.filter((e) => (e.score / e.total) * 100 >= 90).length, fill: "#10b981" },
-    { range: "70-89%", count: exams.filter((e) => { const p = (e.score / e.total) * 100; return p >= 70 && p < 90; }).length, fill: "#3b82f6" },
-    { range: "50-69%", count: exams.filter((e) => { const p = (e.score / e.total) * 100; return p >= 50 && p < 70; }).length, fill: "#f59e0b" },
-    { range: "أقل من 50%", count: exams.filter((e) => (e.score / e.total) * 100 < 50).length, fill: "#ef4444" },
+    { range: "90-100%", count: filtered.filter((e) => (e.score / e.total) * 100 >= 90).length, fill: "#10b981" },
+    { range: "70-89%", count: filtered.filter((e) => { const p = (e.score / e.total) * 100; return p >= 70 && p < 90; }).length, fill: "#3b82f6" },
+    { range: "50-69%", count: filtered.filter((e) => { const p = (e.score / e.total) * 100; return p >= 50 && p < 70; }).length, fill: "#f59e0b" },
+    { range: "أقل من 50%", count: filtered.filter((e) => (e.score / e.total) * 100 < 50).length, fill: "#ef4444" },
   ].filter((d) => d.count > 0);
 
   return (
     <AdminLayout>
       <div className="space-y-4">
         <div><h1 className="text-2xl font-bold text-foreground">تقارير الاختبارات</h1><p className="text-sm text-muted-foreground">{total} اختبار مكتمل</p></div>
+        <ReportFilters filters={filters} onChange={setFilters} universities={universities} showGovernorate showUniversity showDate />
         <div className="grid grid-cols-3 gap-3">
           <StatCard icon={ClipboardCheck} label="إجمالي الاختبارات" value={total} color="bg-primary/10 text-primary" />
           <StatCard icon={TrendingUp} label="المعدل العام" value={`${overallAvg}%`} color="bg-accent/10 text-accent" />

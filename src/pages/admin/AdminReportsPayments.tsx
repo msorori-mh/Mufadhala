@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
+import ReportFilters, { type ReportFilterValues } from "@/components/admin/ReportFilters";
 import { Loader2, DollarSign, CreditCard } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -28,25 +29,44 @@ const AdminReportsPayments = () => {
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [students, setStudents] = useState<Tables<"students">[]>([]);
+  const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
+  const [filters, setFilters] = useState<ReportFilterValues>({});
 
   useEffect(() => {
     if (authLoading) return;
     Promise.all([
       supabase.from("payment_requests").select("id, amount, currency, status, created_at, user_id"),
       supabase.from("students").select("*"),
-    ]).then(([{ data: p }, { data: s }]) => {
+      supabase.from("universities").select("*").order("display_order"),
+    ]).then(([{ data: p }, { data: s }, { data: u }]) => {
       if (p) setPayments(p as PaymentRow[]);
       if (s) setStudents(s);
+      if (u) setUniversities(u);
       setLoading(false);
     });
   }, [authLoading]);
 
+  const filtered = useMemo(() => {
+    let list = payments;
+    if (filters.dateFrom) list = list.filter((p) => new Date(p.created_at) >= filters.dateFrom!);
+    if (filters.dateTo) { const end = new Date(filters.dateTo); end.setHours(23, 59, 59); list = list.filter((p) => new Date(p.created_at) <= end); }
+    if (filters.universityId || filters.governorate) {
+      const userIds = new Set(students.filter((s) => {
+        if (filters.universityId && s.university_id !== filters.universityId) return false;
+        if (filters.governorate && s.governorate !== filters.governorate) return false;
+        return true;
+      }).map((s) => s.user_id));
+      list = list.filter((p) => userIds.has(p.user_id));
+    }
+    return list;
+  }, [payments, students, filters]);
+
   if (authLoading || loading) return <AdminLayout><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></AdminLayout>;
 
-  const approved = payments.filter((p) => p.status === "approved");
+  const approved = filtered.filter((p) => p.status === "approved");
   const totalRevenue = approved.reduce((s, p) => s + p.amount, 0);
-  const pending = payments.filter((p) => p.status === "pending").length;
-  const rejected = payments.filter((p) => p.status === "rejected").length;
+  const pending = filtered.filter((p) => p.status === "pending").length;
+  const rejected = filtered.filter((p) => p.status === "rejected").length;
 
   const statusData = [
     { name: "مقبول", value: approved.length, fill: "#10b981" },
@@ -73,17 +93,18 @@ const AdminReportsPayments = () => {
   return (
     <AdminLayout>
       <div className="space-y-4">
-        <div><h1 className="text-2xl font-bold text-foreground">تقارير الدفع والإيرادات</h1><p className="text-sm text-muted-foreground">{payments.length} طلب دفع • {approved.length} مقبول</p></div>
+        <div><h1 className="text-2xl font-bold text-foreground">تقارير الدفع والإيرادات</h1><p className="text-sm text-muted-foreground">{filtered.length} طلب دفع • {approved.length} مقبول</p></div>
+        <ReportFilters filters={filters} onChange={setFilters} universities={universities} showGovernorate showUniversity showDate />
         <div className="grid grid-cols-2 gap-3">
           <StatCard icon={DollarSign} label="إجمالي الإيرادات" value={totalRevenue.toLocaleString()} sub="ريال يمني" color="bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400" />
-          <StatCard icon={CreditCard} label="إجمالي الطلبات" value={payments.length} sub={`${pending} معلق`} color="bg-primary/10 text-primary" />
+          <StatCard icon={CreditCard} label="إجمالي الطلبات" value={filtered.length} sub={`${pending} معلق`} color="bg-primary/10 text-primary" />
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           {statusData.length > 0 && <Card><CardHeader className="pb-2"><CardTitle className="text-base">حالة الطلبات</CardTitle></CardHeader><CardContent><div className="h-56"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={statusData} cx="50%" cy="50%" innerRadius={45} outerRadius={80} dataKey="value" nameKey="name" label={({ name, value }) => `${name}: ${value}`} labelLine={false} fontSize={11}>{statusData.map((d, i) => <Cell key={i} fill={d.fill} />)}</Pie><Tooltip contentStyle={tooltipStyle} /></PieChart></ResponsiveContainer></div></CardContent></Card>}
           {revenueByZone.length > 0 && <Card><CardHeader className="pb-2"><CardTitle className="text-base">الإيرادات حسب المنطقة</CardTitle></CardHeader><CardContent><div className="h-56"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={revenueByZone} cx="50%" cy="50%" innerRadius={45} outerRadius={80} dataKey="value" nameKey="name" label={({ name, value }) => `${name}: ${value.toLocaleString()}`} labelLine={false} fontSize={11}>{revenueByZone.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Pie><Tooltip contentStyle={tooltipStyle} /></PieChart></ResponsiveContainer></div></CardContent></Card>}
         </div>
         {revenueChart.length > 1 && <Card><CardHeader className="pb-2"><CardTitle className="text-base">الإيرادات الشهرية</CardTitle></CardHeader><CardContent><div className="h-56"><ResponsiveContainer width="100%" height="100%"><LineChart data={revenueChart}><CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis dataKey="name" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} /><YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} /><Tooltip contentStyle={tooltipStyle} /><Line type="monotone" dataKey="amount" name="الإيرادات" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} /></LineChart></ResponsiveContainer></div></CardContent></Card>}
-        {payments.length === 0 && <p className="text-center text-muted-foreground py-8">لا توجد بيانات دفع بعد</p>}
+        {filtered.length === 0 && <p className="text-center text-muted-foreground py-8">لا توجد بيانات دفع بعد</p>}
       </div>
     </AdminLayout>
   );

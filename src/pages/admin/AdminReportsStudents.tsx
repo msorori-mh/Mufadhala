@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useModeratorScope } from "@/hooks/useModeratorScope";
 import AdminLayout from "@/components/admin/AdminLayout";
+import ReportFilters, { type ReportFilterValues } from "@/components/admin/ReportFilters";
 import { Loader2, Users, TrendingUp } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -34,6 +35,7 @@ const AdminReportsStudents = () => {
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
   const [colleges, setColleges] = useState<Tables<"colleges">[]>([]);
   const [majors, setMajors] = useState<Tables<"majors">[]>([]);
+  const [filters, setFilters] = useState<ReportFilterValues>({});
 
   useEffect(() => {
     if (authLoading) return;
@@ -50,30 +52,36 @@ const AdminReportsStudents = () => {
   }, [authLoading]);
 
   const { loading: scopeLoading, getAllowedMajorIds } = useModeratorScope(user?.id, isAdmin, universities, colleges, majors);
-  const scopedStudents = useMemo(() => {
+
+  const filteredStudents = useMemo(() => {
     const allowed = getAllowedMajorIds();
-    if (!allowed) return students;
-    return students.filter((s) => s.major_id && allowed.has(s.major_id));
-  }, [students, getAllowedMajorIds, isAdmin]);
+    let list = allowed ? students.filter((s) => s.major_id && allowed.has(s.major_id)) : students;
+    if (filters.dateFrom) list = list.filter((s) => new Date(s.created_at) >= filters.dateFrom!);
+    if (filters.dateTo) { const end = new Date(filters.dateTo); end.setHours(23, 59, 59); list = list.filter((s) => new Date(s.created_at) <= end); }
+    if (filters.universityId) list = list.filter((s) => s.university_id === filters.universityId);
+    if (filters.governorate) list = list.filter((s) => s.governorate === filters.governorate);
+    return list;
+  }, [students, getAllowedMajorIds, isAdmin, filters]);
 
   if (authLoading || loading || scopeLoading) return <AdminLayout><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></AdminLayout>;
 
-  const uniCounts = universities.map((u) => ({ name: u.name_ar.length > 20 ? u.name_ar.slice(0, 18) + "…" : u.name_ar, count: scopedStudents.filter((s) => s.university_id === u.id).length })).filter((d) => d.count > 0);
-  const collegeCounts = colleges.map((c) => ({ name: c.name_ar.length > 20 ? c.name_ar.slice(0, 18) + "…" : c.name_ar, count: scopedStudents.filter((s) => s.college_id === c.id).length })).filter((d) => d.count > 0).sort((a, b) => b.count - a.count).slice(0, 10);
+  const uniCounts = universities.map((u) => ({ name: u.name_ar.length > 20 ? u.name_ar.slice(0, 18) + "…" : u.name_ar, count: filteredStudents.filter((s) => s.university_id === u.id).length })).filter((d) => d.count > 0);
+  const collegeCounts = colleges.map((c) => ({ name: c.name_ar.length > 20 ? c.name_ar.slice(0, 18) + "…" : c.name_ar, count: filteredStudents.filter((s) => s.college_id === c.id).length })).filter((d) => d.count > 0).sort((a, b) => b.count - a.count).slice(0, 10);
   const govMap: Record<string, number> = {};
-  scopedStudents.forEach((s) => { govMap[s.governorate || "غير محدد"] = (govMap[s.governorate || "غير محدد"] || 0) + 1; });
+  filteredStudents.forEach((s) => { govMap[s.governorate || "غير محدد"] = (govMap[s.governorate || "غير محدد"] || 0) + 1; });
   const govData = Object.entries(govMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   const gpaRanges = [{ label: "90-100%", min: 90, max: 100 }, { label: "80-89%", min: 80, max: 89.99 }, { label: "70-79%", min: 70, max: 79.99 }, { label: "60-69%", min: 60, max: 69.99 }, { label: "أقل من 60%", min: 0, max: 59.99 }];
-  const gpaData = gpaRanges.map((r) => ({ name: r.label, count: scopedStudents.filter((s) => s.gpa !== null && s.gpa >= r.min && s.gpa <= r.max).length })).filter((d) => d.count > 0);
-  const majorCounts = majors.map((m) => ({ name: m.name_ar.length > 20 ? m.name_ar.slice(0, 18) + "…" : m.name_ar, count: scopedStudents.filter((s) => s.major_id === m.id).length })).filter((d) => d.count > 0).sort((a, b) => b.count - a.count).slice(0, 10);
-  const avgGpa = scopedStudents.filter((s) => s.gpa).length > 0 ? (scopedStudents.filter((s) => s.gpa).reduce((sum, s) => sum + (s.gpa || 0), 0) / scopedStudents.filter((s) => s.gpa).length).toFixed(1) : "—";
+  const gpaData = gpaRanges.map((r) => ({ name: r.label, count: filteredStudents.filter((s) => s.gpa !== null && s.gpa >= r.min && s.gpa <= r.max).length })).filter((d) => d.count > 0);
+  const majorCounts = majors.map((m) => ({ name: m.name_ar.length > 20 ? m.name_ar.slice(0, 18) + "…" : m.name_ar, count: filteredStudents.filter((s) => s.major_id === m.id).length })).filter((d) => d.count > 0).sort((a, b) => b.count - a.count).slice(0, 10);
+  const avgGpa = filteredStudents.filter((s) => s.gpa).length > 0 ? (filteredStudents.filter((s) => s.gpa).reduce((sum, s) => sum + (s.gpa || 0), 0) / filteredStudents.filter((s) => s.gpa).length).toFixed(1) : "—";
 
   return (
     <AdminLayout>
       <div className="space-y-4">
-        <div><h1 className="text-2xl font-bold text-foreground">تقارير الطلاب</h1><p className="text-sm text-muted-foreground">{scopedStudents.length} طالب • متوسط المعدل: {avgGpa}%</p></div>
+        <div><h1 className="text-2xl font-bold text-foreground">تقارير الطلاب</h1><p className="text-sm text-muted-foreground">{filteredStudents.length} طالب • متوسط المعدل: {avgGpa}%</p></div>
+        <ReportFilters filters={filters} onChange={setFilters} universities={universities} showGovernorate showUniversity showDate />
         <div className="grid grid-cols-2 gap-3">
-          <StatCard icon={Users} label="إجمالي الطلاب" value={scopedStudents.length} color="bg-primary/10 text-primary" />
+          <StatCard icon={Users} label="إجمالي الطلاب" value={filteredStudents.length} color="bg-primary/10 text-primary" />
           <StatCard icon={TrendingUp} label="متوسط المعدل" value={`${avgGpa}%`} color="bg-accent/10 text-accent" />
         </div>
         {gpaData.length > 0 && <Card><CardHeader className="pb-2"><CardTitle className="text-base">توزيع المعدلات</CardTitle></CardHeader><CardContent><div className="h-56"><ResponsiveContainer width="100%" height="100%"><BarChart data={gpaData} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis type="number" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} /><YAxis dataKey="name" type="category" width={85} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} /><Tooltip contentStyle={tooltipStyle} /><Bar dataKey="count" name="عدد الطلاب" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} /></BarChart></ResponsiveContainer></div></CardContent></Card>}
