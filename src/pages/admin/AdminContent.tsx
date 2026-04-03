@@ -587,7 +587,7 @@ const AdminContent = () => {
               <Label>التخصص *</Label>
               <select value={importMajorId} onChange={(e) => setImportMajorId(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                 <option value="">اختر التخصص</option>
-                {majors.map((m: any) => <option key={m.id} value={m.id}>{m.name_ar}</option>)}
+                {scopedMajors.map((m: any) => <option key={m.id} value={m.id}>{m.name_ar}</option>)}
               </select>
             </div>
 
