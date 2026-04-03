@@ -12,6 +12,7 @@ import Notifications from "./pages/Notifications";
 import LessonsList from "./pages/LessonsList";
 import LessonDetail from "./pages/LessonDetail";
 import ExamSimulator from "./pages/ExamSimulator";
+import ExamHistory from "./pages/ExamHistory";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUniversities from "./pages/admin/AdminUniversities";
 import AdminColleges from "./pages/admin/AdminColleges";
