@@ -30,7 +30,6 @@ const AdminPayments = () => {
   const [requests, setRequests] = useState<PaymentRequest[]>([]);
   const [students, setStudents] = useState<StudentInfo[]>([]);
   const [methods, setMethods] = useState<{ id: string; name: string; type: string }[]>([]);
-  const [durationMonths, setDurationMonths] = useState(5);
   const [loading, setLoading] = useState(true);
   const [reviewDialog, setReviewDialog] = useState(false);
   const [receiptDialog, setReceiptDialog] = useState(false);
@@ -40,16 +39,14 @@ const AdminPayments = () => {
   const [tab, setTab] = useState("pending");
 
   const fetchData = async () => {
-    const [{ data: r }, { data: s }, { data: m }, { data: st }] = await Promise.all([
+    const [{ data: r }, { data: s }, { data: m }] = await Promise.all([
       supabase.from("payment_requests").select("*").order("created_at", { ascending: false }),
       supabase.from("students").select("user_id, first_name, second_name, third_name, fourth_name"),
       supabase.from("payment_methods").select("id, name, type"),
-      supabase.from("subscription_settings" as any).select("duration_months").limit(1),
     ]);
     if (r) setRequests(r as PaymentRequest[]);
     if (s) setStudents(s);
     if (m) setMethods(m as { id: string; name: string; type: string }[]);
-    if (st && (st as any[]).length > 0) setDurationMonths((st as any[])[0].duration_months || 5);
     setLoading(false);
   };
 
@@ -86,10 +83,8 @@ const AdminPayments = () => {
 
     if (selectedRequest.subscription_id) {
       const now = new Date();
-      const expiresAt = new Date(now);
-      expiresAt.setMonth(expiresAt.getMonth() + durationMonths);
       await supabase.from("subscriptions").update({
-        status: "active", starts_at: now.toISOString(), expires_at: expiresAt.toISOString(),
+        status: "active", starts_at: now.toISOString(),
       }).eq("id", selectedRequest.subscription_id);
     }
     toast({ title: "تمت الموافقة على الطلب وتفعيل الاشتراك" });

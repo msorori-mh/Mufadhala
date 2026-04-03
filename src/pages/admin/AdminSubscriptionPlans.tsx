@@ -20,7 +20,6 @@ const AdminSubscriptionPlans = () => {
   const [priceZoneA, setPriceZoneA] = useState("3000");
   const [priceZoneB, setPriceZoneB] = useState("7000");
   const [currency, setCurrency] = useState("YER");
-  const [durationMonths, setDurationMonths] = useState("5");
   const [description, setDescription] = useState("");
 
   useEffect(() => {
@@ -33,7 +32,6 @@ const AdminSubscriptionPlans = () => {
         setPriceZoneA((s.price_zone_a || 3000).toString());
         setPriceZoneB((s.price_zone_b || 7000).toString());
         setCurrency(s.currency);
-        setDurationMonths(s.duration_months.toString());
         setDescription(s.description || "");
       }
       setLoading(false);
@@ -51,7 +49,6 @@ const AdminSubscriptionPlans = () => {
       price_zone_a: Number(priceZoneA),
       price_zone_b: Number(priceZoneB),
       currency,
-      duration_months: Number(durationMonths),
       description,
     };
 
@@ -71,7 +68,7 @@ const AdminSubscriptionPlans = () => {
       <div className="space-y-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2"><Settings className="w-6 h-6" /> إعدادات الاشتراك</h1>
-          <p className="text-sm text-muted-foreground">تحديد سعر ومدة الاشتراك للطلاب</p>
+          <p className="text-sm text-muted-foreground">تحديد سعر الاشتراك للطلاب</p>
         </div>
         <Card>
           <CardHeader><CardTitle className="text-base">بيانات الاشتراك</CardTitle></CardHeader>
@@ -98,10 +95,7 @@ const AdminSubscriptionPlans = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2"><Label>العملة</Label><Input value={currency} onChange={(e) => setCurrency(e.target.value)} /></div>
-              <div className="space-y-2"><Label>المدة (أشهر) *</Label><Input type="number" value={durationMonths} onChange={(e) => setDurationMonths(e.target.value)} /></div>
-            </div>
+            <div className="space-y-2"><Label>العملة</Label><Input value={currency} onChange={(e) => setCurrency(e.target.value)} /></div>
             <div className="space-y-2"><Label>وصف (اختياري)</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="مثال: اشتراك لفترة القبول" /></div>
             <Button onClick={handleSave} disabled={saving} className="w-full">
               {saving ? <><Loader2 className="w-4 h-4 ml-1 animate-spin" /> جاري الحفظ...</> : <><Save className="w-4 h-4 ml-1" /> حفظ الإعدادات</>}
