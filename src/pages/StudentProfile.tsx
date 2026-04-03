@@ -313,56 +313,54 @@ const StudentProfile = () => {
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label className="text-xs">الجامعة</Label>
-              <Select
+              <select
                 value={universityId}
-                onValueChange={(v) => {
-                  setUniversityId(v);
+                onChange={(e) => {
+                  setUniversityId(e.target.value);
                   setCollegeId("");
                   setMajorId("");
                 }}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
-                <SelectTrigger><SelectValue placeholder="اختر الجامعة" /></SelectTrigger>
-                <SelectContent>
-                  {universities.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>{u.name_ar}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">اختر الجامعة</option>
+                {universities.map((u) => (
+                  <option key={u.id} value={u.id}>{u.name_ar}</option>
+                ))}
+              </select>
             </div>
 
-            {universityId && (
-              <div className="space-y-1.5">
-                <Label className="text-xs">الكلية</Label>
-                <Select
-                  value={collegeId}
-                  onValueChange={(v) => {
-                    setCollegeId(v);
-                    setMajorId("");
-                  }}
-                >
-                  <SelectTrigger><SelectValue placeholder="اختر الكلية" /></SelectTrigger>
-                  <SelectContent>
-                    {colleges.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name_ar}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="space-y-1.5">
+              <Label className="text-xs">الكلية</Label>
+              <select
+                value={collegeId}
+                onChange={(e) => {
+                  setCollegeId(e.target.value);
+                  setMajorId("");
+                }}
+                disabled={!universityId || colleges.length === 0}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">{!universityId ? "اختر الجامعة أولاً" : "اختر الكلية"}</option>
+                {colleges.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name_ar}</option>
+                ))}
+              </select>
+            </div>
 
-            {collegeId && (
-              <div className="space-y-1.5">
-                <Label className="text-xs">التخصص</Label>
-                <Select value={majorId} onValueChange={setMajorId}>
-                  <SelectTrigger><SelectValue placeholder="اختر التخصص" /></SelectTrigger>
-                  <SelectContent>
-                    {majors.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>{m.name_ar}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="space-y-1.5">
+              <Label className="text-xs">التخصص</Label>
+              <select
+                value={majorId}
+                onChange={(e) => setMajorId(e.target.value)}
+                disabled={!collegeId || majors.length === 0}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">{!collegeId ? "اختر الكلية أولاً" : "اختر التخصص"}</option>
+                {majors.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name_ar}</option>
+                ))}
+              </select>
+            </div>
           </CardContent>
         </Card>
 
