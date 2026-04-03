@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import {
   GraduationCap, LayoutDashboard, Building2, BookOpen, Users, UserCog,
-  LogOut, ChevronLeft, BarChart3, FileText
+  LogOut, ChevronLeft, BarChart3, FileText, CreditCard, Wallet, ListChecks
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
