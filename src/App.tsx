@@ -13,6 +13,7 @@ import LessonsList from "./pages/LessonsList";
 import LessonDetail from "./pages/LessonDetail";
 import ExamSimulator from "./pages/ExamSimulator";
 import ExamHistory from "./pages/ExamHistory";
+import StudentPerformance from "./pages/StudentPerformance";
 import Subscription from "./pages/Subscription";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUniversities from "./pages/admin/AdminUniversities";
