@@ -25,7 +25,7 @@ const COLORS = [
 ];
 
 const AdminReports = () => {
-  const { loading: authLoading } = useAuth("moderator");
+  const { loading: authLoading, isAdmin, user } = useAuth("moderator");
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<Tables<"students">[]>([]);
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
