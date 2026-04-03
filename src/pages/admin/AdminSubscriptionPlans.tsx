@@ -20,7 +20,6 @@ const AdminSubscriptionPlans = () => {
   const [priceZoneA, setPriceZoneA] = useState("3000");
   const [priceZoneB, setPriceZoneB] = useState("7000");
   const [currency, setCurrency] = useState("YER");
-  const [currency, setCurrency] = useState("YER");
   const [description, setDescription] = useState("");
 
   useEffect(() => {
