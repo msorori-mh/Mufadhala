@@ -8,16 +8,12 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import StudentProfile from "./pages/StudentProfile";
-import CompetitionApply from "./pages/CompetitionApply";
-import CompareMajors from "./pages/CompareMajors";
 import Notifications from "./pages/Notifications";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUniversities from "./pages/admin/AdminUniversities";
 import AdminColleges from "./pages/admin/AdminColleges";
 import AdminMajors from "./pages/admin/AdminMajors";
 import AdminStudents from "./pages/admin/AdminStudents";
-import AdminPeriods from "./pages/admin/AdminPeriods";
-import AdminRequirements from "./pages/admin/AdminRequirements";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,16 +30,12 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<StudentProfile />} />
-          <Route path="/competition" element={<CompetitionApply />} />
-          <Route path="/compare" element={<CompareMajors />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/universities" element={<AdminUniversities />} />
           <Route path="/admin/colleges" element={<AdminColleges />} />
           <Route path="/admin/majors" element={<AdminMajors />} />
           <Route path="/admin/students" element={<AdminStudents />} />
-          <Route path="/admin/periods" element={<AdminPeriods />} />
-          <Route path="/admin/requirements" element={<AdminRequirements />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

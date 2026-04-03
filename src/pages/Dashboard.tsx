@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { GraduationCap, LogOut, UserCircle, Send, BarChart3, Bell, Shield } from "lucide-react";
+import { GraduationCap, LogOut, UserCircle, Bell, Shield } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 const Dashboard = () => {
@@ -47,10 +47,8 @@ const Dashboard = () => {
     : user?.user_metadata?.first_name || "طالب";
 
   const cards = [
-    { path: "/profile", title: "الملف الشخصي", desc: "عرض وتعديل بياناتك", icon: UserCircle, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" },
-    { path: "/competition", title: "التقديم على المفاضلة", desc: "قدّم على التخصصات المتاحة", icon: Send, color: "border-r-secondary", iconColor: "text-secondary", bgColor: "bg-secondary/10" },
-    { path: "/compare", title: "مقارنة التخصصات", desc: "قارن متطلبات القبول والمقاعد", icon: BarChart3, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10" },
-    { path: "/notifications", title: "الإشعارات", desc: "آخر التحديثات والنتائج", icon: Bell, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10", badge: unreadCount },
+    { path: "/profile", title: "الملف الشخصي", desc: "عرض وتعديل بياناتك الأكاديمية", icon: UserCircle, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" },
+    { path: "/notifications", title: "الإشعارات", desc: "آخر التحديثات والإعلانات", icon: Bell, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10", badge: unreadCount },
   ];
 
   return (
@@ -77,7 +75,7 @@ const Dashboard = () => {
       <main className="max-w-4xl mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold text-foreground mb-1">مرحباً، {userName}</h1>
         <p className="text-muted-foreground mb-6">
-          {student?.gpa ? `معدلك: ${student.gpa}%` : "أكمل ملفك الشخصي للبدء"}
+          {student?.gpa ? `معدلك: ${student.gpa}% • اختر تخصصك وابدأ التدريب` : "أكمل ملفك الشخصي للبدء"}
         </p>
 
         <div className="grid gap-4 md:grid-cols-2">

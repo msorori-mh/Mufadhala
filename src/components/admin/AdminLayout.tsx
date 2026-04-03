@@ -13,8 +13,6 @@ const navItems = [
   { path: "/admin/colleges", label: "الكليات", icon: Building2 },
   { path: "/admin/majors", label: "التخصصات", icon: BookOpen },
   { path: "/admin/students", label: "الطلاب", icon: Users },
-  { path: "/admin/periods", label: "فترات المفاضلة", icon: Calendar },
-  { path: "/admin/requirements", label: "متطلبات القبول", icon: Settings },
 ];
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
