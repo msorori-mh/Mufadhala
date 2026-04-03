@@ -140,7 +140,7 @@ const AdminReports = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">التقارير والإحصائيات</h1>
           <p className="text-sm text-muted-foreground">
-            إجمالي الطلاب: {students.length} • متوسط المعدل: {avgGpa}%
+            إجمالي الطلاب: {scopedStudents.length} • متوسط المعدل: {avgGpa}%
           </p>
         </div>
 
