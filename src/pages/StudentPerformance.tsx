@@ -41,7 +41,7 @@ const tooltipStyle = {
 const StudentPerformance = () => {
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [studentId, setStudentId] = useState<string | null>(null);
+  const [, setStudentId] = useState<string | null>(null);
   const [majorId, setMajorId] = useState<string | null>(null);
   const [majorName, setMajorName] = useState("");
   const [attempts, setAttempts] = useState<ExamRow[]>([]);
