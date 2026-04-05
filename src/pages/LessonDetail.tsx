@@ -288,6 +288,9 @@ const LessonDetail = () => {
                 )}
               </>
             )}
+
+          <TabsContent value="reviews" className="mt-4">
+            <LessonReviews lessonId={id!} studentId={studentId} />
           </TabsContent>
         </Tabs>
         </>
