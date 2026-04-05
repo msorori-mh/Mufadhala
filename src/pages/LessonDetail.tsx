@@ -7,8 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
-import { ChevronLeft, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check, Lock } from "lucide-react";
+import { ChevronLeft, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check, Lock, Star } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import LessonReviews from "@/components/LessonReviews";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
