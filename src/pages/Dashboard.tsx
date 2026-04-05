@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, LineChart, Line, ResponsiveContainer } from "recharts";
 import type { Tables } from "@/integrations/supabase/types";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 interface ExamAttemptRow {
   id: string;
@@ -75,6 +76,21 @@ const Dashboard = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Realtime: update unread count when new notification arrives
+  useRealtimeNotifications(user?.id);
+
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`dashboard-notif-count-${user.id}`)
+      .on("postgres_changes", {
+        event: "INSERT", schema: "public", table: "notifications",
+        filter: `user_id=eq.${user.id}`,
+      }, () => setUnreadCount((c) => c + 1))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
