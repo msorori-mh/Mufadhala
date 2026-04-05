@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
   GraduationCap, LogOut, UserCircle, Bell, Shield, BookOpen,
-  ClipboardCheck, Trophy, TrendingUp, Target, BarChart3, CreditCard
+  ClipboardCheck, Trophy, TrendingUp, Target, BarChart3, CreditCard, Search
 } from "lucide-react";
 import {
   ChartContainer, ChartTooltip, ChartTooltipContent
