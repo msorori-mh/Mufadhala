@@ -115,20 +115,22 @@ const ExamSimulator = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (questionTimerRef.current) clearInterval(questionTimerRef.current);
 
-    const score = questions.filter((q) => finalAnswers[q.id] === q.correct_option).length;
-    setResultScore(score);
-    setResultTotal(questions.length);
-
-    // Insert completed attempt (no UPDATE needed — prevents score tampering)
+    // Submit answers to server-side edge function for secure score calculation
     if (student) {
-      await supabase.from("exam_attempts").insert({
-        student_id: student.id,
-        major_id: student.major_id!,
-        score,
-        total: questions.length,
-        answers: finalAnswers,
-        completed_at: new Date().toISOString(),
+      const { data, error } = await supabase.functions.invoke("submit-exam", {
+        body: { answers: finalAnswers },
       });
+
+      if (error || !data?.success) {
+        console.error("Exam submission failed:", error || data?.error);
+        // Fallback: show client-calculated score but it won't be saved
+        const clientScore = questions.filter((q) => finalAnswers[q.id] === q.correct_option).length;
+        setResultScore(clientScore);
+        setResultTotal(questions.length);
+      } else {
+        setResultScore(data.score);
+        setResultTotal(data.total);
+      }
     }
 
     setPhase("result");
