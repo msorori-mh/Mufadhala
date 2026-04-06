@@ -7,7 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { GraduationCap, BookOpen, ArrowRight, ChevronLeft, Loader2, CheckCircle2, Search, X } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { GraduationCap, BookOpen, ArrowRight, ChevronLeft, Loader2, CheckCircle2, Search, X, Lock, Sparkles } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
 interface Lesson {
@@ -16,6 +17,7 @@ interface Lesson {
   title: string;
   summary: string;
   display_order: number;
+  is_free: boolean;
 }
 
 const LessonsList = () => {
