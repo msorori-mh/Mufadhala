@@ -75,6 +75,8 @@ const ExamSimulator = () => {
   const [totalTimeLeft, setTotalTimeLeft] = useState(TOTAL_TIME);
   const [questionTimeLeft, setQuestionTimeLeft] = useState(PER_QUESTION_TIME);
   const [_attemptId, setAttemptId] = useState<string | null>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [timerPaused, setTimerPaused] = useState(false);
 
   // Result state
   const [resultScore, setResultScore] = useState(0);
