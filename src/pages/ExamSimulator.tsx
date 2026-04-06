@@ -377,7 +377,7 @@ const ExamSimulator = () => {
                     <button
                       key={opt}
                       onClick={() => selectAnswer(opt)}
-                      className={`flex items-center gap-3 w-full text-right p-4 rounded-xl border-2 transition-all text-sm ${
+                      className={`flex items-center gap-2 sm:gap-3 w-full text-right p-3 sm:p-4 rounded-xl border-2 transition-all text-sm ${
                         isSelected
                           ? "border-primary bg-primary/10 shadow-sm"
                           : "border-border hover:border-primary/50 hover:bg-muted"

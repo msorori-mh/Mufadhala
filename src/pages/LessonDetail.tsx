@@ -168,11 +168,11 @@ const LessonDetail = () => {
         </div>
 
         <Tabs defaultValue="content" dir="rtl">
-          <TabsList className="w-full grid grid-cols-4">
-            <TabsTrigger value="content" className="flex items-center gap-1 text-xs"><FileText className="w-3.5 h-3.5" />الشرح</TabsTrigger>
-            <TabsTrigger value="summary" className="flex items-center gap-1 text-xs"><BookOpen className="w-3.5 h-3.5" />الملخص</TabsTrigger>
-            <TabsTrigger value="quiz" className="flex items-center gap-1 text-xs"><HelpCircle className="w-3.5 h-3.5" />الأسئلة</TabsTrigger>
-            <TabsTrigger value="reviews" className="flex items-center gap-1 text-xs"><Star className="w-3.5 h-3.5" />التقييمات</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-4 h-auto">
+            <TabsTrigger value="content" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الشرح</TabsTrigger>
+            <TabsTrigger value="summary" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><BookOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الملخص</TabsTrigger>
+            <TabsTrigger value="quiz" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><HelpCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الأسئلة</TabsTrigger>
+            <TabsTrigger value="reviews" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><Star className="w-3 h-3 sm:w-3.5 sm:h-3.5" />التقييمات</TabsTrigger>
           </TabsList>
 
           <TabsContent value="content" className="mt-4">
