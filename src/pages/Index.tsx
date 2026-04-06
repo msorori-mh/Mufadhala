@@ -1,8 +1,9 @@
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, BookOpen, ClipboardCheck, TrendingUp } from "lucide-react";
 
-const Index = () => {
+const Index = React.forwardRef<HTMLDivElement>((_, ref) => {
   const navigate = useNavigate();
 
   const features = [
@@ -24,7 +25,7 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div ref={ref} className="min-h-screen flex flex-col">
       {/* Hero Section */}
       <section className="gradient-hero relative overflow-hidden flex-1 flex items-center justify-center px-4 py-16 min-h-[70vh]">
         <div className="absolute inset-0 opacity-10">
@@ -97,6 +98,8 @@ const Index = () => {
       </footer>
     </div>
   );
-};
+});
+
+Index.displayName = "Index";
 
 export default Index;

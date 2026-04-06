@@ -1,3 +1,4 @@
+import React from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Home, BookOpen, ClipboardCheck, Bell, User } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -10,18 +11,17 @@ const navItems = [
   { path: "/profile", icon: User, label: "حسابي" },
 ];
 
-const MobileBottomNav = () => {
+const MobileBottomNav = React.forwardRef<HTMLElement>((_, ref) => {
   const location = useLocation();
   const isMobile = useIsMobile();
 
   if (!isMobile) return null;
 
-  // Don't show on public pages
   const publicPaths = ["/", "/login", "/register"];
   if (publicPaths.includes(location.pathname)) return null;
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 bg-card border-t border-border pb-safe">
+    <nav ref={ref} className="fixed bottom-0 inset-x-0 z-50 bg-card border-t border-border pb-safe">
       <div className="flex items-center justify-around h-14">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path || 
@@ -44,6 +44,8 @@ const MobileBottomNav = () => {
       </div>
     </nav>
   );
-};
+});
+
+MobileBottomNav.displayName = "MobileBottomNav";
 
 export default MobileBottomNav;
