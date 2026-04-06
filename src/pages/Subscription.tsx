@@ -174,7 +174,7 @@ const Subscription = () => {
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto p-4 space-y-4">
+      <div className="max-w-lg mx-auto p-4 pb-20 md:pb-4 space-y-4">
         {step === "status" && isActive && subscription && (
           <Card className="border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900">
             <CardContent className="py-6 text-center">

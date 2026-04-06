@@ -162,27 +162,27 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       {/* Header */}
-      <header className="gradient-primary text-white px-4 py-4">
+      <header className="gradient-primary text-white px-4 py-3 md:py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <GraduationCap className="w-6 h-6" />
-            <span className="text-lg font-bold">مفاضلة</span>
+            <span className="text-lg font-bold hidden sm:inline">مفاضلة</span>
           </div>
           <div className="flex items-center gap-1">
             <ThemeToggle />
             {isStaff && (
               <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white">
-                <Link to="/admin"><Shield className="w-4 h-4 ml-1" />الإدارة</Link>
+                <Link to="/admin"><Shield className="w-4 h-4 sm:ml-1" /><span className="hidden sm:inline">الإدارة</span></Link>
               </Button>
             )}
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-white hover:bg-white/20 hover:text-white">
-              <LogOut className="w-4 h-4 ml-1" />خروج
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-white hover:bg-white/20 hover:text-white">
+              <LogOut className="w-4 h-4" />
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6 space-y-6">
         {/* Welcome */}
         <div>
           <h1 className="text-2xl font-bold text-foreground mb-1">مرحباً، {userName}</h1>
@@ -193,15 +193,15 @@ const Dashboard = () => {
 
         {/* Stats Cards */}
         {totalExams > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
             {statCards.map((s) => (
               <Card key={s.label} className="relative overflow-hidden">
-                <CardContent className="p-4 flex flex-col items-center text-center gap-1">
-                  <div className={`w-9 h-9 rounded-lg ${s.bg} flex items-center justify-center mb-1`}>
+                <CardContent className="p-3 sm:p-4 flex flex-col items-center text-center gap-0.5 sm:gap-1">
+                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${s.bg} flex items-center justify-center mb-0.5 sm:mb-1`}>
                     <s.icon className={`w-4 h-4 ${s.color}`} />
                   </div>
-                  <span className="text-2xl font-bold text-foreground">{s.value}</span>
-                  <span className="text-xs text-muted-foreground">{s.label}</span>
+                  <span className="text-xl sm:text-2xl font-bold text-foreground">{s.value}</span>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">{s.label}</span>
                 </CardContent>
               </Card>
             ))}
@@ -259,7 +259,7 @@ const Dashboard = () => {
 
         {/* Charts Row */}
         {totalExams >= 2 && (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
             {/* Score Trend */}
             <Card>
               <CardHeader className="pb-2">
@@ -307,7 +307,7 @@ const Dashboard = () => {
         )}
 
         {/* Navigation Cards */}
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
           {navCards.map((card) => (
             <Link key={card.path} to={card.path} className="block">
               <Card className={`cursor-pointer hover:shadow-md transition-shadow border-r-4 ${card.color} h-full`}>

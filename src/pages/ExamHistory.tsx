@@ -91,7 +91,7 @@ const ExamHistory = () => {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6">
         <h1 className="text-2xl font-bold text-foreground mb-1">سجل الاختبارات السابقة</h1>
         <p className="text-sm text-muted-foreground mb-6">{attempts.length} محاولة مكتملة</p>
 

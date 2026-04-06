@@ -256,7 +256,7 @@ const ExamSimulator = () => {
           </div>
         </header>
 
-        <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        <main className="max-w-2xl mx-auto px-4 py-6 pb-20 md:pb-6 space-y-6">
           <div>
             <h1 className="text-2xl font-bold text-foreground">محاكاة اختبار {majorName}</h1>
             <p className="text-sm text-muted-foreground mt-1">تدرّب تحت ضغط الوقت كاختبار المفاضلة الحقيقي</p>
@@ -377,7 +377,7 @@ const ExamSimulator = () => {
                     <button
                       key={opt}
                       onClick={() => selectAnswer(opt)}
-                      className={`flex items-center gap-3 w-full text-right p-4 rounded-xl border-2 transition-all text-sm ${
+                      className={`flex items-center gap-2 sm:gap-3 w-full text-right p-3 sm:p-4 rounded-xl border-2 transition-all text-sm ${
                         isSelected
                           ? "border-primary bg-primary/10 shadow-sm"
                           : "border-border hover:border-primary/50 hover:bg-muted"

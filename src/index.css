@@ -107,6 +107,14 @@
 }
 
 @layer utilities {
+  /* Safe area for notched devices */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .mb-bottom-nav {
+    margin-bottom: 3.5rem;
+  }
+
   .gradient-primary {
     background: linear-gradient(135deg, hsl(217, 85%, 45%), hsl(217, 85%, 60%));
   }
