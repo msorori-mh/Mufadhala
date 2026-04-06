@@ -184,9 +184,9 @@ const AdminPayments = () => {
                 <div className="flex justify-between"><span className="text-muted-foreground">طريقة الدفع:</span><span className="font-medium">{getMethodName(selectedRequest.payment_method_id)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">التاريخ:</span><span className="font-medium">{new Date(selectedRequest.created_at).toLocaleDateString("ar")}</span></div>
               </div>
-              {selectedRequest.receipt_url && (
+              {signedReceiptUrl && (
                 <div className="rounded-lg overflow-hidden border">
-                  <img src={selectedRequest.receipt_url} alt="سند الدفع" className="w-full max-h-64 object-contain bg-muted" />
+                  <img src={signedReceiptUrl} alt="سند الدفع" className="w-full max-h-64 object-contain bg-muted" />
                 </div>
               )}
               <div className="space-y-2"><Label>ملاحظات الإدارة</Label><Textarea value={adminNotes} onChange={(e) => setAdminNotes(e.target.value)} placeholder="ملاحظات أو سبب الرفض..." /></div>
