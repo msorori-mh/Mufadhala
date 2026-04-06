@@ -76,6 +76,7 @@ const AdminReportsSubscriptions = () => {
 
   return (
     <AdminLayout>
+      <PermissionGate permission="reports">
       <div className="space-y-4">
         <div><h1 className="text-2xl font-bold text-foreground">تقارير الاشتراكات</h1><p className="text-sm text-muted-foreground">{filtered.length} اشتراك • {active} فعال</p></div>
         {(() => { const ed: ExportData = { title: "تقرير الاشتراكات", summary: { "الإجمالي": filtered.length, "فعال": active, "معلق": pending, "منتهي": expired, "ملغي": cancelled, "معدل التحويل": `${conversionRate}%` }, headers: ["معرف المستخدم", "الحالة", "تاريخ الإنشاء"], rows: filtered.map((s) => [s.user_id, s.status === "active" ? "فعال" : s.status === "pending" ? "معلق" : s.status === "expired" ? "منتهي" : "ملغي", new Date(s.created_at).toLocaleDateString("ar")]) }; return <ReportFilters filters={filters} onChange={setFilters} universities={universities} showGovernorate showUniversity showDate exportData={ed} exportFilename="تقرير_الاشتراكات" />; })()}
