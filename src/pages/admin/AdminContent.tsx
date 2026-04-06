@@ -547,6 +547,13 @@ const AdminContent = () => {
                 <Label>منشور</Label>
               </div>
             </div>
+            <div className="flex items-center gap-2 p-3 rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900">
+              <Switch checked={lessonFree} onCheckedChange={setLessonFree} />
+              <div>
+                <Label className="text-sm">درس مجاني</Label>
+                <p className="text-xs text-muted-foreground">يمكن للطلاب الوصول للمحتوى الكامل بدون اشتراك</p>
+              </div>
+            </div>
             <Button onClick={handleSaveLesson} disabled={saving} className="w-full">{saving ? "جاري الحفظ..." : "حفظ"}</Button>
           </div>
         </DialogContent>
