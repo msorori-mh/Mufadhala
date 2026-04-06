@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GraduationCap, ChevronLeft, ChevronRight, Eye, EyeOff, Check, X } from "lucide-react";
+import { GraduationCap, ChevronLeft, ChevronRight, Eye, EyeOff, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
@@ -92,21 +92,6 @@ const Register = () => {
     fetchMajors();
   }, [collegeId]);
 
-  const passwordChecks = useMemo(() => {
-    const hasMinLength = password.length >= 8;
-    const hasUppercase = /[A-Z]/.test(password);
-    const hasLowercase = /[a-z]/.test(password);
-    const hasNumber = /\d/.test(password);
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    const passed = [hasMinLength, hasUppercase, hasLowercase, hasNumber, hasSpecial].filter(Boolean).length;
-    const strength = passed <= 2 ? "weak" : passed <= 3 ? "medium" : "strong";
-    const strengthPct = (passed / 5) * 100;
-    return { hasMinLength, hasUppercase, hasLowercase, hasNumber, hasSpecial, passed, strength, strengthPct };
-  }, [password]);
-
-  const strengthLabel = { weak: "ضعيفة", medium: "متوسطة", strong: "قوية" } as const;
-  const strengthColor = { weak: "bg-destructive", medium: "bg-yellow-500", strong: "bg-green-500" } as const;
-
   const validateStep1 = () => {
     if (!email || !password || !confirmPassword) {
       toast({ variant: "destructive", title: "يرجى ملء جميع الحقول" });
@@ -114,10 +99,6 @@ const Register = () => {
     }
     if (password.length < 8) {
       toast({ variant: "destructive", title: "كلمة المرور يجب أن تكون 8 أحرف على الأقل" });
-      return false;
-    }
-    if (passwordChecks.strength === "weak") {
-      toast({ variant: "destructive", title: "كلمة المرور ضعيفة جداً، حاول إضافة أحرف كبيرة وأرقام ورموز" });
       return false;
     }
     if (password !== confirmPassword) {
@@ -267,41 +248,6 @@ const Register = () => {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                    {/* Password strength indicator */}
-                    {password && (
-                      <div className="space-y-2 mt-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">قوة كلمة المرور:</span>
-                          <span className={`text-xs font-bold ${passwordChecks.strength === "weak" ? "text-destructive" : passwordChecks.strength === "medium" ? "text-yellow-600" : "text-green-600"}`}>
-                            {strengthLabel[passwordChecks.strength]}
-                          </span>
-                        </div>
-                        <div className="h-2 rounded-full bg-muted overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-300 ${strengthColor[passwordChecks.strength]}`}
-                            style={{ width: `${passwordChecks.strengthPct}%` }}
-                          />
-                        </div>
-                        <div className="grid grid-cols-1 gap-1 text-xs">
-                          {[
-                            { check: passwordChecks.hasMinLength, label: "8 أحرف على الأقل" },
-                            { check: passwordChecks.hasUppercase, label: "حرف كبير (A-Z)" },
-                            { check: passwordChecks.hasLowercase, label: "حرف صغير (a-z)" },
-                            { check: passwordChecks.hasNumber, label: "رقم (0-9)" },
-                            { check: passwordChecks.hasSpecial, label: "رمز خاص (!@#$...)" },
-                          ].map(({ check, label }) => (
-                            <div key={label} className="flex items-center gap-1.5">
-                              {check ? (
-                                <Check className="w-3.5 h-3.5 text-green-600" />
-                              ) : (
-                                <X className="w-3.5 h-3.5 text-muted-foreground" />
-                              )}
-                              <span className={check ? "text-green-600" : "text-muted-foreground"}>{label}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>تأكيد كلمة المرور</Label>
