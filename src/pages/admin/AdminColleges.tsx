@@ -67,7 +67,15 @@ const AdminColleges = () => {
   const handleSave = async () => {
     if (!nameAr || !code || !universityId) { toast({ variant: "destructive", title: "يرجى ملء الحقول المطلوبة" }); return; }
     setSaving(true);
-    const payload = { name_ar: nameAr, name_en: nameEn || null, code, university_id: universityId, is_active: isActive, display_order: displayOrder };
+    const docsArray = requiredDocs.trim() ? requiredDocs.split("\n").map(d => d.trim()).filter(Boolean) : null;
+    const payload = {
+      name_ar: nameAr, name_en: nameEn || null, code, university_id: universityId, is_active: isActive, display_order: displayOrder,
+      min_gpa: minGpa ? Number(minGpa) : null,
+      acceptance_rate: acceptanceRate ? Number(acceptanceRate) : null,
+      required_documents: docsArray,
+      registration_deadline: registrationDeadline || null,
+      notes: notes || null,
+    };
     if (editing) {
       const { error } = await supabase.from("colleges").update(payload).eq("id", editing.id);
       if (error) toast({ variant: "destructive", title: error.message }); else toast({ title: "تم التحديث" });
