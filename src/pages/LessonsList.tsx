@@ -22,6 +22,7 @@ interface Lesson {
 
 const LessonsList = () => {
   const { user, loading: authLoading } = useAuth();
+  const { isActive: hasSubscription, loading: subLoading } = useSubscription(user?.id);
   const navigate = useNavigate();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [student, setStudent] = useState<any>(null);
