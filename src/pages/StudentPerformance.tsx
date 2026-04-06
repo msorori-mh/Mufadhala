@@ -79,8 +79,8 @@ const StudentPerformance = () => {
         setLessons(les as LessonRow[]);
         const lessonIds = les.map((l) => l.id);
         if (lessonIds.length > 0) {
-          const { data: qs } = await supabase.from("questions").select("id, lesson_id, correct_option").in("lesson_id", lessonIds);
-        if (qs) setQuestions(qs as QuestionRow[]);
+          const { data: qs } = await supabase.from("questions").select("id, lesson_id, correct_option, subject").in("lesson_id", lessonIds);
+          if (qs) setQuestions(qs as QuestionRow[]);
         }
       }
       if (prog) setCompletedLessonIds(new Set(prog.map((p) => p.lesson_id)));
