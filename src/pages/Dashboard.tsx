@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import ThemeToggle from "@/components/ThemeToggle";
+import MotivationalBanner from "@/components/MotivationalBanner";
 import {
   GraduationCap, LogOut, UserCircle, Bell, Shield, BookOpen,
   ClipboardCheck, Trophy, TrendingUp, Target, BarChart3, CreditCard, Search
@@ -34,6 +35,7 @@ const Dashboard = () => {
   const [attempts, setAttempts] = useState<ExamAttemptRow[]>([]);
   const [lessonCount, setLessonCount] = useState(0);
   const [completedLessons, setCompletedLessons] = useState(0);
+  const [collegeName, setCollegeName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -68,6 +70,11 @@ const Dashboard = () => {
         if (exams) setAttempts(exams);
         setLessonCount(lessons?.length ?? 0);
         setCompletedLessons(progress?.length ?? 0);
+        // Fetch college name
+        if (s.college_id) {
+          const { data: college } = await supabase.from("colleges").select("name_ar").eq("id", s.college_id).maybeSingle();
+          if (college) setCollegeName(college.name_ar);
+        }
       }
       if (roles) setIsStaff(roles.some((r) => r.role === "admin" || r.role === "moderator"));
       setUnreadCount((notifs as any)?.count ?? 0);
@@ -190,6 +197,9 @@ const Dashboard = () => {
             {student?.gpa ? `معدلك: ${student.gpa}% • ابدأ التدريب على تخصصك الآن` : "أكمل ملفك الشخصي للبدء"}
           </p>
         </div>
+
+        {/* Motivational Banner */}
+        <MotivationalBanner collegeName={collegeName} avgScore={avgScore} />
 
         {/* Stats Cards */}
         {totalExams > 0 && (
