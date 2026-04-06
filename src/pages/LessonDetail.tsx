@@ -111,8 +111,8 @@ const LessonDetail = () => {
     );
   }
 
-  // Content gating: staff can always access, students need active subscription
-  const canAccess = isStaff || hasActiveSubscription;
+  // Content gating: staff always, free lessons always, otherwise need subscription
+  const canAccess = isStaff || hasActiveSubscription || (lesson?.is_free === true);
 
   if (!lesson) {
     return (
