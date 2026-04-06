@@ -166,6 +166,22 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
         </div>
 
+        {/* Desktop top bar */}
+        <div className="hidden md:flex items-center justify-between px-6 py-3 border-b bg-card">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => navigate(1)}>
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-destructive hover:bg-destructive/10">
+            <LogOut className="w-4 h-4 ml-1" />
+            تسجيل الخروج
+          </Button>
+        </div>
+
         <main className="flex-1 p-4 md:p-6 overflow-auto">
           {children}
         </main>
