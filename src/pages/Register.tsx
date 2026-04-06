@@ -22,6 +22,7 @@ const Register = () => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Data from database
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
