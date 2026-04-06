@@ -32,6 +32,7 @@ const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [student, setStudent] = useState<Tables<"students"> | null>(null);
   const [isStaff, setIsStaff] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [attempts, setAttempts] = useState<ExamAttemptRow[]>([]);
   const [lessonCount, setLessonCount] = useState(0);
@@ -77,7 +78,10 @@ const Dashboard = () => {
           if (college) setCollegeName(college.name_ar);
         }
       }
-      if (roles) setIsStaff(roles.some((r) => r.role === "admin" || r.role === "moderator"));
+      if (roles) {
+        setIsStaff(roles.some((r) => r.role === "admin" || r.role === "moderator"));
+        setIsAdmin(roles.some((r) => r.role === "admin"));
+      }
       setUnreadCount((notifs as any)?.count ?? 0);
       setLoading(false);
     });
@@ -105,9 +109,11 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const userName = student
-    ? `${student.first_name || ""} ${student.fourth_name || ""}`.trim() || "طالب"
-    : user?.user_metadata?.first_name || "طالب";
+  const userName = isAdmin
+    ? "مدير النظام"
+    : student
+      ? `${student.first_name || ""} ${student.fourth_name || ""}`.trim() || "طالب"
+      : user?.user_metadata?.first_name || "طالب";
 
   // Stats calculations
   const totalExams = attempts.length;
@@ -157,8 +163,8 @@ const Dashboard = () => {
   ];
 
   const navCards = [
-    { path: "/profile", title: "الملف الشخصي", desc: "عرض وتعديل بياناتك", icon: UserCircle, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" },
-    { path: "/subscription", title: "الاشتراك", desc: "إدارة اشتراكك والدفع", icon: CreditCard, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10" },
+    ...(!isAdmin ? [{ path: "/profile", title: "الملف الشخصي", desc: "عرض وتعديل بياناتك", icon: UserCircle, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" }] : []),
+    ...(!isAdmin ? [{ path: "/subscription", title: "الاشتراك", desc: "إدارة اشتراكك والدفع", icon: CreditCard, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10" }] : []),
     { path: "/lessons", title: "المحتوى التعليمي", desc: "تدرّب على الدروس والأسئلة", icon: BookOpen, color: "border-r-secondary", iconColor: "text-secondary", bgColor: "bg-secondary/10" },
     { path: "/search", title: "البحث المتقدم", desc: "ابحث في الدروس والأسئلة بالتخصص والكلية", icon: Search, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10" },
     { path: "/exam", title: "محاكاة الاختبار", desc: "45 سؤال في 90 دقيقة", icon: ClipboardCheck, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" },
@@ -195,13 +201,15 @@ const Dashboard = () => {
         {/* Welcome */}
         <div>
           <h1 className="text-2xl font-bold text-foreground mb-1">مرحباً، {userName}</h1>
-          <p className="text-muted-foreground">
-            {student?.gpa ? `معدلك: ${student.gpa}% • ابدأ التدريب على تخصصك الآن` : "أكمل ملفك الشخصي للبدء"}
-          </p>
+          {!isAdmin && (
+            <p className="text-muted-foreground">
+              {student?.gpa ? `معدلك: ${student.gpa}% • ابدأ التدريب على تخصصك الآن` : "أكمل ملفك الشخصي للبدء"}
+            </p>
+          )}
         </div>
 
-        {/* Motivational Banner */}
-        <MotivationalBanner collegeName={collegeName} avgScore={avgScore} />
+        {/* Motivational Banner - only for students */}
+        {!isAdmin && <MotivationalBanner collegeName={collegeName} avgScore={avgScore} />}
 
         {/* Stats Cards */}
         {totalExams > 0 && (
