@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Search, ShieldPlus, Trash2, UserCog, Settings2 } from "lucide-react";
+import { Loader2, Search, ShieldPlus, Trash2, UserCog, Settings2, KeyRound } from "lucide-react";
+import { ALL_PERMISSIONS, PERMISSION_LABELS, type ModeratorPermission } from "@/hooks/useModeratorPermissions";
 
 type AppRole = "admin" | "moderator" | "student";
 
@@ -27,6 +29,7 @@ interface UserWithRoles {
   name: string;
   roles: AppRole[];
   scopes: ScopeRow[];
+  permissions: ModeratorPermission[];
 }
 
 const ROLE_LABELS: Record<AppRole, string> = {
@@ -72,11 +75,18 @@ const AdminUsers = () => {
   const [scopeId, setScopeId] = useState("");
   const [scopeUniFilter, setScopeUniFilter] = useState("");
 
+  // Permissions dialog
+  const [permDialogOpen, setPermDialogOpen] = useState(false);
+  const [permUser, setPermUser] = useState<UserWithRoles | null>(null);
+  const [selectedPerms, setSelectedPerms] = useState<ModeratorPermission[]>([]);
+  const [permSaving, setPermSaving] = useState(false);
+
   const fetchUsers = async () => {
-    const [{ data: students }, { data: allRoles }, { data: allScopes }, { data: u }, { data: c }, { data: m }] = await Promise.all([
+    const [{ data: students }, { data: allRoles }, { data: allScopes }, { data: allPerms }, { data: u }, { data: c }, { data: m }] = await Promise.all([
       supabase.from("students").select("user_id, first_name, second_name, third_name, fourth_name"),
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("moderator_scopes").select("*"),
+      supabase.from("moderator_permissions").select("user_id, permission"),
       supabase.from("universities").select("*").order("display_order"),
       supabase.from("colleges").select("*").order("display_order"),
       supabase.from("majors").select("*").order("display_order"),
@@ -101,17 +111,25 @@ const AdminUsers = () => {
       scopesMap.set(s.user_id, list);
     });
 
+    const permsMap = new Map<string, ModeratorPermission[]>();
+    (allPerms || []).forEach((p: any) => {
+      const list = permsMap.get(p.user_id) || [];
+      list.push(p.permission as ModeratorPermission);
+      permsMap.set(p.user_id, list);
+    });
+
     const userList: UserWithRoles[] = students.map((s) => ({
       user_id: s.user_id,
       name: [s.first_name, s.second_name, s.third_name, s.fourth_name].filter(Boolean).join(" ") || "بدون اسم",
       roles: rolesMap.get(s.user_id) || ["student"],
       scopes: scopesMap.get(s.user_id) || [],
+      permissions: permsMap.get(s.user_id) || [],
     }));
 
     const studentUserIds = new Set(students.map((s) => s.user_id));
     rolesMap.forEach((roles, userId) => {
       if (!studentUserIds.has(userId)) {
-        userList.push({ user_id: userId, name: "مستخدم", roles, scopes: scopesMap.get(userId) || [] });
+        userList.push({ user_id: userId, name: "مستخدم", roles, scopes: scopesMap.get(userId) || [], permissions: permsMap.get(userId) || [] });
       }
     });
 
@@ -169,7 +187,6 @@ const AdminUsers = () => {
     setSaving(true);
 
     if (scopeIsGlobal) {
-      // Remove all existing scopes and add global
       await supabase.from("moderator_scopes").delete().eq("user_id", scopeUser.user_id);
       const { error } = await supabase.from("moderator_scopes").insert({
         user_id: scopeUser.user_id,
@@ -180,7 +197,6 @@ const AdminUsers = () => {
       else toast({ title: "تم تعيين المشرف كعام" });
     } else {
       if (!scopeId) { setSaving(false); return; }
-      // Remove global scope if exists
       await supabase.from("moderator_scopes").delete().eq("user_id", scopeUser.user_id).eq("is_global", true);
       const { error } = await supabase.from("moderator_scopes").insert({
         user_id: scopeUser.user_id,
@@ -220,6 +236,46 @@ const AdminUsers = () => {
     if (scopeType === "college") return scopeFilteredColleges.map((c: any) => ({ id: c.id, label: c.name_ar }));
     if (scopeType === "major") return scopeFilteredMajors.map((m: any) => ({ id: m.id, label: m.name_ar }));
     return [];
+  };
+
+  // Permissions management
+  const openPermDialog = (user: UserWithRoles) => {
+    setPermUser(user);
+    setSelectedPerms([...user.permissions]);
+    setPermDialogOpen(true);
+  };
+
+  const handleTogglePerm = (perm: ModeratorPermission) => {
+    setSelectedPerms((prev) =>
+      prev.includes(perm) ? prev.filter((p) => p !== perm) : [...prev, perm]
+    );
+  };
+
+  const handleSavePerms = async () => {
+    if (!permUser) return;
+    setPermSaving(true);
+
+    // Delete all existing permissions for this user
+    await supabase.from("moderator_permissions").delete().eq("user_id", permUser.user_id);
+
+    // Insert selected permissions
+    if (selectedPerms.length > 0) {
+      const rows = selectedPerms.map((p) => ({
+        user_id: permUser.user_id,
+        permission: p,
+      }));
+      const { error } = await supabase.from("moderator_permissions").insert(rows);
+      if (error) {
+        toast({ variant: "destructive", title: error.message });
+        setPermSaving(false);
+        return;
+      }
+    }
+
+    toast({ title: "تم حفظ الصلاحيات بنجاح" });
+    setPermSaving(false);
+    setPermDialogOpen(false);
+    fetchUsers();
   };
 
   if (authLoading || loading) {
@@ -280,15 +336,33 @@ const AdminUsers = () => {
                     {u.roles.includes("moderator") && u.scopes.length === 0 && (
                       <p className="text-[10px] text-amber-500 mt-1">⚠️ مشرف بدون نطاق محدد</p>
                     )}
+                    {/* Show permissions for moderators */}
+                    {u.roles.includes("moderator") && u.permissions.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {u.permissions.map((perm) => (
+                          <Badge key={perm} variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20">
+                            🔑 {PERMISSION_LABELS[perm]}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    {u.roles.includes("moderator") && u.permissions.length === 0 && (
+                      <p className="text-[10px] text-amber-500 mt-0.5">⚠️ مشرف بدون صلاحيات محددة</p>
+                    )}
                   </div>
                   <div className="flex flex-col gap-1 shrink-0">
                     <Button variant="outline" size="sm" onClick={() => openAddRole(u)}>
                       <ShieldPlus className="w-4 h-4 ml-1" />دور
                     </Button>
                     {u.roles.includes("moderator") && (
-                      <Button variant="outline" size="sm" onClick={() => openScopeDialog(u)}>
-                        <Settings2 className="w-4 h-4 ml-1" />نطاق
-                      </Button>
+                      <>
+                        <Button variant="outline" size="sm" onClick={() => openScopeDialog(u)}>
+                          <Settings2 className="w-4 h-4 ml-1" />نطاق
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => openPermDialog(u)}>
+                          <KeyRound className="w-4 h-4 ml-1" />صلاحيات
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -326,7 +400,6 @@ const AdminUsers = () => {
             <DialogDescription>حدد نطاق صلاحيات المشرف - عام أو مقيّد بجامعات/كليات/تخصصات</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {/* Current scopes */}
             {scopeUser && scopeUser.scopes.length > 0 && (
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">النطاقات الحالية:</Label>
@@ -395,6 +468,55 @@ const AdminUsers = () => {
                 {saving ? "جاري الحفظ..." : "إضافة النطاق"}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Permissions Dialog */}
+      <Dialog open={permDialogOpen} onOpenChange={setPermDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><KeyRound className="w-5 h-5" />صلاحيات المشرف: {permUser?.name}</DialogTitle>
+            <DialogDescription>حدد الصفحات والوظائف التي يمكن لهذا المشرف الوصول إليها</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-3">
+              {ALL_PERMISSIONS.map((perm) => (
+                <div key={perm} className="flex items-center gap-3">
+                  <Checkbox
+                    id={`perm-${perm}`}
+                    checked={selectedPerms.includes(perm)}
+                    onCheckedChange={() => handleTogglePerm(perm)}
+                  />
+                  <Label htmlFor={`perm-${perm}`} className="text-sm cursor-pointer">
+                    {PERMISSION_LABELS[perm]}
+                  </Label>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedPerms([...ALL_PERMISSIONS])}
+                className="flex-1"
+              >
+                تحديد الكل
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedPerms([])}
+                className="flex-1"
+              >
+                إلغاء الكل
+              </Button>
+            </div>
+
+            <Button onClick={handleSavePerms} disabled={permSaving} className="w-full">
+              {permSaving ? "جاري الحفظ..." : "حفظ الصلاحيات"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
