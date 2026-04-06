@@ -114,9 +114,6 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 
         <div className="p-3 border-t space-y-1">
           <ThemeToggle variant="sidebar" />
-          <Link to="/dashboard" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
-            <ChevronLeft className="w-4 h-4" /> لوحة الطالب
-          </Link>
           <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 w-full">
             <LogOut className="w-4 h-4" /> تسجيل الخروج
           </button>
