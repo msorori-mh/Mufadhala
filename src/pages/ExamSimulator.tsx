@@ -139,7 +139,7 @@ const ExamSimulator = () => {
         .eq("student_id", student.id).order("created_at", { ascending: false });
       if (data) setPastAttempts(data as ExamAttempt[]);
     }
-  }, [attemptId, student]);
+  }, [student]);
 
   const moveToNext = useCallback((currentAnswers: Record<string, string>, questions: Question[], idx: number) => {
     if (idx >= questions.length - 1) {
