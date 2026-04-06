@@ -37,8 +37,19 @@ const Login = () => {
         return;
       }
 
+      // Check if profile is complete
+      const { data: student } = await supabase
+        .from("students")
+        .select("major_id")
+        .eq("user_id", result.session?.user?.id ?? "")
+        .maybeSingle();
+
       toast({ title: "تم تسجيل الدخول بنجاح" });
-      navigate("/dashboard");
+      if (!student?.major_id) {
+        navigate("/complete-profile");
+      } else {
+        navigate("/dashboard");
+      }
     } catch {
       toast({
         variant: "destructive",
