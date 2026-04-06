@@ -702,6 +702,52 @@ const ExamSimulator = () => {
           </CardContent>
         </Card>
 
+        {/* Share Result */}
+        <Card>
+          <CardContent className="py-4">
+            <p className="text-sm font-semibold text-muted-foreground mb-3 text-center">شارك نتيجتك</p>
+            <div className="flex gap-2 justify-center flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => {
+                  const text = `حققت ${percentage}% (${resultScore}/${resultTotal}) في اختبار المحاكاة على تطبيق قَبُول! 🎓\nhttps://uni-admission-coach.lovable.app`;
+                  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+                }}
+              >
+                <MessageCircle className="w-4 h-4" />
+                واتساب
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => {
+                  const text = `حققت ${percentage}% في اختبار المحاكاة على #قَبُول 🎓✨`;
+                  const url = "https://uni-admission-coach.lovable.app";
+                  window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");
+                }}
+              >
+                <Share2 className="w-4 h-4" />
+                X
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => {
+                  const text = `حققت ${percentage}% (${resultScore}/${resultTotal}) في اختبار المحاكاة على تطبيق قَبُول! 🎓\nhttps://uni-admission-coach.lovable.app`;
+                  navigator.clipboard.writeText(text);
+                  toast({ title: "تم النسخ", description: "تم نسخ النتيجة إلى الحافظة" });
+                }}
+              >
+                <Copy className="w-4 h-4" />
+                نسخ
+              </Button>
+            </div>
+          </CardContent>
+
         {/* Review answers */}
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-muted-foreground">مراجعة الإجابات</h3>
