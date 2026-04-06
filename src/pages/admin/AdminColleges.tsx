@@ -132,6 +132,7 @@ const AdminColleges = () => {
           ))}
         </div>
       </div>
+      </PermissionGate>
     </AdminLayout>
   );
 };

@@ -642,6 +642,7 @@ const AdminContent = () => {
           </div>
         </DialogContent>
       </Dialog>
+      </PermissionGate>
     </AdminLayout>
   );
 };

@@ -105,6 +105,7 @@ const AdminSubscriptionPlans = () => {
           </CardContent>
         </Card>
       </div>
+      </PermissionGate>
     </AdminLayout>
   );
 };

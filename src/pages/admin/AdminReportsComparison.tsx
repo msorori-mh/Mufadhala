@@ -269,6 +269,7 @@ const AdminReportsComparison = () => {
           </CardContent>
         </Card>
       </div>
+      </PermissionGate>
     </AdminLayout>
   );
 };

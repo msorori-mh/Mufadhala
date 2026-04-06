@@ -148,6 +148,7 @@ const AdminMajors = () => {
           ))}
         </div>
       </div>
+      </PermissionGate>
     </AdminLayout>
   );
 };

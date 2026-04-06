@@ -361,6 +361,7 @@ const AdminStudents = () => {
           </div>
         </DialogContent>
       </Dialog>
+      </PermissionGate>
     </AdminLayout>
   );
 };

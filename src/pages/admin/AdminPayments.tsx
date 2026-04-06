@@ -207,6 +207,7 @@ const AdminPayments = () => {
           {signedReceiptUrl && <img src={signedReceiptUrl} alt="سند الدفع" className="w-full rounded-lg" />}
         </DialogContent>
       </Dialog>
+      </PermissionGate>
     </AdminLayout>
   );
 };
