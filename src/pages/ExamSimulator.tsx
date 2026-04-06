@@ -258,7 +258,7 @@ const ExamSimulator = () => {
         <main className="max-w-2xl mx-auto px-4 py-6 pb-20 md:pb-6 space-y-6">
           <div>
             <h1 className="text-2xl font-bold text-foreground">محاكاة اختبار {majorName}</h1>
-            <p className="text-sm text-muted-foreground mt-1">تدرّب تحت ضغط الوقت كاختبار المفاضلة الحقيقي</p>
+            <p className="text-sm text-muted-foreground mt-1">تدرب بذكاء.. لتضمن القبول.</p>
           </div>
 
           <Card>

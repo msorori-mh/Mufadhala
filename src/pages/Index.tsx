@@ -10,7 +10,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, ref) => {
     {
       icon: BookOpen,
       title: "محتوى تعليمي شامل",
-      description: "ملخصات ودروس مُعدّة بعناية لجميع مواد اختبار المفاضلة",
+      description: "ملخصات ودروس مُعدّة بعناية لجميع مواد اختبار القبول",
     },
     {
       icon: ClipboardCheck,
@@ -39,10 +39,10 @@ const Index = React.forwardRef<HTMLDivElement>((_, ref) => {
           </div>
           
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
-            مفاضلة
+            قَبُول
           </h1>
           <p className="text-lg md:text-xl text-white/85 mb-8 leading-relaxed">
-            منصتك الذكية للتحضير لاختبارات القبول الجامعي
+            قَبُول.. خطوتك الأولى نحو كليات القمة.
           </p>
           
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -93,7 +93,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, ref) => {
       {/* Footer */}
       <footer className="bg-card border-t py-6 px-4 text-center">
         <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} مفاضلة - جميع الحقوق محفوظة
+          © {new Date().getFullYear()} قَبُول | Qubool - جميع الحقوق محفوظة
         </p>
       </footer>
     </div>

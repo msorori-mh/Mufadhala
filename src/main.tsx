@@ -4,7 +4,7 @@ import App from "./App.tsx";
 import "./index.css";
 
 createRoot(document.getElementById("root")!).render(
-  <ThemeProvider attribute="class" defaultTheme="light" storageKey="mufadala-theme">
+  <ThemeProvider attribute="class" defaultTheme="light" storageKey="qubool-theme">
     <App />
   </ThemeProvider>
 );

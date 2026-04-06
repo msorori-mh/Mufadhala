@@ -8,7 +8,7 @@ type Message = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const DAILY_LIMIT = 20;
-const STORAGE_KEY = "mufadala_chat_usage";
+const STORAGE_KEY = "qubool_chat_usage";
 
 function getDailyUsage(): { count: number; date: string } {
   try {
@@ -175,7 +175,7 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
           <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-primary/5 rounded-t-2xl">
             <div className="flex items-center gap-2">
               <Bot className="h-5 w-5 text-primary" />
-              <span className="font-bold text-sm text-foreground">مساعد مفاضلة</span>
+              <span className="font-bold text-sm text-foreground">مساعد قَبُول</span>
             </div>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setOpen(false)}>
               <X className="h-4 w-4" />
@@ -187,7 +187,7 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-2 px-4">
                 <Bot className="h-10 w-10 text-primary/40" />
-                <p className="text-sm">مرحباً! أنا مساعد مفاضلة الذكي 👋</p>
+                <p className="text-sm">مرحباً! أنا مساعد قَبُول الذكي 👋</p>
                 <p className="text-xs">اسألني عن الدروس، الاختبارات، أو أي شيء يخص المنصة</p>
               </div>
             )}
