@@ -259,7 +259,7 @@ const Dashboard = () => {
 
         {/* Charts Row */}
         {totalExams >= 2 && (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
             {/* Score Trend */}
             <Card>
               <CardHeader className="pb-2">
