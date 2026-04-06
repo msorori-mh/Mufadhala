@@ -37,6 +37,7 @@ const AdminPayments = () => {
   const [adminNotes, setAdminNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState("pending");
+  const [signedReceiptUrl, setSignedReceiptUrl] = useState<string | null>(null);
 
   const fetchData = async () => {
     const [{ data: r }, { data: s }, { data: m }] = await Promise.all([
@@ -69,8 +70,27 @@ const AdminPayments = () => {
     }
   };
 
-  const handleReview = (req: PaymentRequest) => { setSelectedRequest(req); setAdminNotes(req.admin_notes || ""); setReviewDialog(true); };
-  const handleViewReceipt = (req: PaymentRequest) => { setSelectedRequest(req); setReceiptDialog(true); };
+  const handleReview = async (req: PaymentRequest) => {
+    setSelectedRequest(req);
+    setAdminNotes(req.admin_notes || "");
+    if (req.receipt_url) {
+      const { data } = await supabase.storage.from("receipts").createSignedUrl(req.receipt_url, 3600);
+      setSignedReceiptUrl(data?.signedUrl || null);
+    } else {
+      setSignedReceiptUrl(null);
+    }
+    setReviewDialog(true);
+  };
+  const handleViewReceipt = async (req: PaymentRequest) => {
+    setSelectedRequest(req);
+    if (req.receipt_url) {
+      const { data } = await supabase.storage.from("receipts").createSignedUrl(req.receipt_url, 3600);
+      setSignedReceiptUrl(data?.signedUrl || null);
+    } else {
+      setSignedReceiptUrl(null);
+    }
+    setReceiptDialog(true);
+  };
 
   const handleApprove = async () => {
     if (!selectedRequest || !user) return;
@@ -164,9 +184,9 @@ const AdminPayments = () => {
                 <div className="flex justify-between"><span className="text-muted-foreground">طريقة الدفع:</span><span className="font-medium">{getMethodName(selectedRequest.payment_method_id)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">التاريخ:</span><span className="font-medium">{new Date(selectedRequest.created_at).toLocaleDateString("ar")}</span></div>
               </div>
-              {selectedRequest.receipt_url && (
+              {signedReceiptUrl && (
                 <div className="rounded-lg overflow-hidden border">
-                  <img src={selectedRequest.receipt_url} alt="سند الدفع" className="w-full max-h-64 object-contain bg-muted" />
+                  <img src={signedReceiptUrl} alt="سند الدفع" className="w-full max-h-64 object-contain bg-muted" />
                 </div>
               )}
               <div className="space-y-2"><Label>ملاحظات الإدارة</Label><Textarea value={adminNotes} onChange={(e) => setAdminNotes(e.target.value)} placeholder="ملاحظات أو سبب الرفض..." /></div>
@@ -182,7 +202,7 @@ const AdminPayments = () => {
       <Dialog open={receiptDialog} onOpenChange={setReceiptDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>سند الدفع</DialogTitle></DialogHeader>
-          {selectedRequest?.receipt_url && <img src={selectedRequest.receipt_url} alt="سند الدفع" className="w-full rounded-lg" />}
+          {signedReceiptUrl && <img src={signedReceiptUrl} alt="سند الدفع" className="w-full rounded-lg" />}
         </DialogContent>
       </Dialog>
     </AdminLayout>

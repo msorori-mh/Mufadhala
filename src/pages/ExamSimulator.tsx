@@ -58,7 +58,7 @@ const ExamSimulator = () => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [totalTimeLeft, setTotalTimeLeft] = useState(TOTAL_TIME);
   const [questionTimeLeft, setQuestionTimeLeft] = useState(PER_QUESTION_TIME);
-  const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [_attemptId, setAttemptId] = useState<string | null>(null);
 
   // Result state
   const [resultScore, setResultScore] = useState(0);
@@ -119,14 +119,16 @@ const ExamSimulator = () => {
     setResultScore(score);
     setResultTotal(questions.length);
 
-    // Save attempt
-    if (attemptId) {
-      await supabase.from("exam_attempts").update({
+    // Insert completed attempt (no UPDATE needed — prevents score tampering)
+    if (student) {
+      await supabase.from("exam_attempts").insert({
+        student_id: student.id,
+        major_id: student.major_id!,
         score,
         total: questions.length,
         answers: finalAnswers,
         completed_at: new Date().toISOString(),
-      }).eq("id", attemptId);
+      });
     }
 
     setPhase("result");
@@ -137,7 +139,7 @@ const ExamSimulator = () => {
         .eq("student_id", student.id).order("created_at", { ascending: false });
       if (data) setPastAttempts(data as ExamAttempt[]);
     }
-  }, [attemptId, student]);
+  }, [student]);
 
   const moveToNext = useCallback((currentAnswers: Record<string, string>, questions: Question[], idx: number) => {
     if (idx >= questions.length - 1) {
@@ -187,13 +189,8 @@ const ExamSimulator = () => {
     setTotalTimeLeft(TOTAL_TIME);
     setQuestionTimeLeft(PER_QUESTION_TIME);
 
-    const { data } = await supabase.from("exam_attempts").insert({
-      student_id: student.id,
-      major_id: student.major_id,
-      total: picked.length,
-    }).select("id").single();
-
-    if (data) setAttemptId(data.id);
+    // Don't insert attempt yet — wait until exam is finished to prevent score tampering
+    setAttemptId(null);
     setPhase("exam");
   };
 
