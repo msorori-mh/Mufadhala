@@ -216,6 +216,8 @@ const ExamSimulator = () => {
   }, [student, isOffline, isOfflineExam]);
 
   const moveToNext = useCallback((currentAnswers: Record<string, string>, questions: Question[], idx: number) => {
+    setShowExplanation(false);
+    setTimerPaused(false);
     if (idx >= questions.length - 1) {
       finishExam(currentAnswers, questions);
     } else {
