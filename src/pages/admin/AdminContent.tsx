@@ -587,6 +587,12 @@ const AdminContent = () => {
           <DialogHeader><DialogTitle>{editingQuestion ? "تعديل سؤال" : "إضافة سؤال"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
+              <Label>المادة</Label>
+              <select value={questionSubject} onChange={(e) => setQuestionSubject(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                {SUBJECT_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
               <Label>نص السؤال *</Label>
               <Textarea value={questionText} onChange={(e) => setQuestionText(e.target.value)} rows={3} />
             </div>
