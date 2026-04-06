@@ -156,7 +156,7 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
   };
 
   return (
-    <div ref={ref} className="fixed bottom-20 left-4 z-50 sm:bottom-6 sm:left-auto sm:right-6">
+    <div ref={ref} className="fixed bottom-24 right-4 z-50 sm:bottom-8 sm:right-8">
       {/* Chat bubble button */}
       {!open && (
         <Button
