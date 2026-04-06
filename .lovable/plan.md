@@ -1,24 +1,32 @@
 
-## نظام الدفع والاشتراكات - خطة التنفيذ
 
-### المرحلة 1: قاعدة البيانات
-إنشاء 4 جداول أساسية مع سياسات الأمان:
-- **subscription_plans** — خطط الاشتراك (اسم، مدة، سعر، عملة)
-- **payment_methods** — طرق الدفع (بنك/صرافة، اسم الحساب، رقم الحساب)
-- **subscriptions** — اشتراكات الطلاب (الخطة، الحالة، تاريخ البدء والانتهاء)
-- **payment_requests** — طلبات الدفع (المبلغ، سند التحويل، حالة المراجعة)
-- **Storage bucket: receipts** — لتخزين صور سندات التحويل
-- **دوال**: `has_active_subscription()` + trigger إشعار الأدمن
+## ملخص المشاكل
 
-### المرحلة 2: واجهات الأدمن (3 صفحات)
-- `/admin/subscription-plans` — إدارة خطط الاشتراك (إضافة/تعديل/تفعيل)
-- `/admin/payment-methods` — إدارة طرق الدفع (بنوك + صرافات)
-- `/admin/payments` — مراجعة طلبات الدفع (موافقة/رفض + عرض السند)
+هناك نوعان من المشاكل في سجل الكونسول:
 
-### المرحلة 3: واجهة الطالب
-- صفحة الاشتراك — اختيار الخطة → اختيار طريقة الدفع → رفع السند → إرسال الطلب
-- تقييد المحتوى (Content Gating) — الطالب بدون اشتراك فعال لا يمكنه الوصول للدروس
+### 1. خطأ "Function components cannot be given refs" (Error)
+- يظهر لمكوّنَي `Index` و `MobileBottomNav`
+- **السبب**: React Router v6 يحاول تمرير `ref` للمكوّنات المباشرة داخل `<Route element>` وكذلك المكوّنات الموضوعة مباشرة داخل `<BrowserRouter>`. هذه المكوّنات عادية (function components) ولا تدعم refs.
+- **الحل**: ليس خطأً حقيقياً يؤثر على العمل، لكن يمكن إسكاته بلف المكوّنات بـ `React.forwardRef` إذا أردنا نظافة الكونسول.
 
-### ملاحظات تخصيص:
-- لا يوجد `grade_id` أو `semester` (النظام يعتمد على تخصصات وليس صفوف)
-- الاشتراك مرتبط بالمستخدم مباشرة وليس بتخصص محدد
+### 2. تحذيرات React Router Future Flags (Warning)
+- `v7_startTransition` و `v7_relativeSplatPath`
+- **السبب**: React Router v6 يُحذّر من تغييرات قادمة في v7.
+- **الحل**: إضافة `future` flags إلى `<BrowserRouter>` لإسكات التحذيرات.
+
+---
+
+## خطة الإصلاح
+
+### الخطوة 1: إضافة Future Flags لـ BrowserRouter
+في `src/App.tsx`، تعديل `<BrowserRouter>` ليصبح:
+```tsx
+<BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+```
+
+### الخطوة 2: لف المكوّنات بـ forwardRef
+- **`src/pages/Index.tsx`**: لف المكوّن بـ `React.forwardRef`
+- **`src/components/MobileBottomNav.tsx`**: لف المكوّن بـ `React.forwardRef`
+
+هذه تغييرات بسيطة لا تؤثر على الوظائف، فقط تنظّف سجل الأخطاء.
+
