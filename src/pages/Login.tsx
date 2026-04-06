@@ -39,10 +39,12 @@ const Login = () => {
       }
 
       // Check if profile is complete
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id ?? "";
       const { data: student } = await supabase
         .from("students")
         .select("major_id")
-        .eq("user_id", result.session?.user?.id ?? "")
+        .eq("user_id", userId)
         .maybeSingle();
 
       toast({ title: "تم تسجيل الدخول بنجاح" });
