@@ -35,6 +35,7 @@ const Dashboard = () => {
   const [attempts, setAttempts] = useState<ExamAttemptRow[]>([]);
   const [lessonCount, setLessonCount] = useState(0);
   const [completedLessons, setCompletedLessons] = useState(0);
+  const [collegeName, setCollegeName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
