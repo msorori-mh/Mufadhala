@@ -90,6 +90,7 @@ function App() {
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/subscription-plans" element={<AdminSubscriptionPlans />} />
               <Route path="/admin/payment-methods" element={<AdminPaymentMethods />} />
+              <Route path="/admin/promo-codes" element={<AdminPromoCodes />} />
               <Route path="/admin/payments" element={<AdminPayments />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

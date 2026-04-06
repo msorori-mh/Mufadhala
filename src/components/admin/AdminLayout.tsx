@@ -27,7 +27,8 @@ const mainNavItems: NavItem[] = [
   { path: "/admin/students", label: "الطلاب", icon: Users, permission: "students" },
   { path: "/admin/content", label: "المحتوى", icon: FileText, permission: "content" },
   { path: "/admin/users", label: "المستخدمون", icon: UserCog, permission: "admin_only" },
-  { path: "/admin/subscription-plans", label: "إعدادات الاشتراك", icon: ListChecks, permission: "subscriptions" },
+  { path: "/admin/subscription-plans", label: "خطط الاشتراك", icon: ListChecks, permission: "subscriptions" },
+  { path: "/admin/promo-codes", label: "أكواد الخصم", icon: CreditCard, permission: "subscriptions" },
   { path: "/admin/payment-methods", label: "طرق الدفع", icon: Wallet, permission: "payment_methods" },
   { path: "/admin/payments", label: "طلبات الدفع", icon: CreditCard, permission: "payments" },
 ];
