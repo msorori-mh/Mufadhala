@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+
 import ThemeToggle from "@/components/ThemeToggle";
 import {
   GraduationCap, ChevronLeft, Loader2, Search, MapPin, FileText,
