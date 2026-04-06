@@ -94,6 +94,7 @@ const AdminReportsPayments = () => {
 
   return (
     <AdminLayout>
+      <PermissionGate permission="reports">
       <div className="space-y-4">
         <div><h1 className="text-2xl font-bold text-foreground">تقارير الدفع والإيرادات</h1><p className="text-sm text-muted-foreground">{filtered.length} طلب دفع • {approved.length} مقبول</p></div>
         {(() => { const ed: ExportData = { title: "تقرير الدفع والإيرادات", summary: { "إجمالي الإيرادات": `${totalRevenue.toLocaleString()} ريال`, "المقبولة": approved.length, "المعلقة": pending, "المرفوضة": rejected }, headers: ["المبلغ", "العملة", "الحالة", "التاريخ"], rows: filtered.map((p) => [p.amount, p.currency, p.status === "approved" ? "مقبول" : p.status === "pending" ? "معلق" : "مرفوض", new Date(p.created_at).toLocaleDateString("ar")]) }; return <ReportFilters filters={filters} onChange={setFilters} universities={universities} showGovernorate showUniversity showDate exportData={ed} exportFilename="تقرير_الدفع" />; })()}
