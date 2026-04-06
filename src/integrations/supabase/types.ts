@@ -421,6 +421,7 @@ export type Database = {
           currency: string
           id: string
           payment_method_id: string | null
+          promo_code_id: string | null
           receipt_url: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -435,6 +436,7 @@ export type Database = {
           currency?: string
           id?: string
           payment_method_id?: string | null
+          promo_code_id?: string | null
           receipt_url?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -449,6 +451,7 @@ export type Database = {
           currency?: string
           id?: string
           payment_method_id?: string | null
+          promo_code_id?: string | null
           receipt_url?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -465,6 +468,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payment_requests_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "payment_requests_subscription_id_fkey"
             columns: ["subscription_id"]
             isOneToOne: false
@@ -472,6 +482,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      promo_codes: {
+        Row: {
+          code: string
+          created_at: string
+          discount_percent: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          used_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_percent?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          used_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_percent?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          used_count?: number
+        }
+        Relationships: []
       }
       questions: {
         Row: {
@@ -599,6 +642,60 @@ export type Database = {
           },
         ]
       }
+      subscription_plans: {
+        Row: {
+          allowed_major_ids: string[] | null
+          created_at: string
+          currency: string
+          description: string | null
+          display_order: number
+          features: string[] | null
+          id: string
+          is_active: boolean
+          is_free: boolean
+          name: string
+          price_default: number
+          price_zone_a: number
+          price_zone_b: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_major_ids?: string[] | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          display_order?: number
+          features?: string[] | null
+          id?: string
+          is_active?: boolean
+          is_free?: boolean
+          name: string
+          price_default?: number
+          price_zone_a?: number
+          price_zone_b?: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_major_ids?: string[] | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          display_order?: number
+          features?: string[] | null
+          id?: string
+          is_active?: boolean
+          is_free?: boolean
+          name?: string
+          price_default?: number
+          price_zone_a?: number
+          price_zone_b?: number
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscription_settings: {
         Row: {
           currency: string
@@ -637,8 +734,10 @@ export type Database = {
           created_at: string
           expires_at: string | null
           id: string
+          plan_id: string | null
           starts_at: string | null
           status: string
+          trial_ends_at: string | null
           updated_at: string
           user_id: string
         }
@@ -646,8 +745,10 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          plan_id?: string | null
           starts_at?: string | null
           status?: string
+          trial_ends_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -655,12 +756,22 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          plan_id?: string | null
           starts_at?: string | null
           status?: string
+          trial_ends_at?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       universities: {
         Row: {
