@@ -242,6 +242,7 @@ const AdminContent = () => {
     setOptionD(q.option_d);
     setCorrectOption(q.correct_option);
     setExplanation(q.explanation);
+    setQuestionSubject(q.subject || "general");
     setQuestionOrder(q.display_order);
     setQuestionDialogOpen(true);
   };
