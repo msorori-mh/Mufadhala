@@ -25,7 +25,7 @@ interface StudentInfo {
 }
 
 const AdminPayments = () => {
-  const { loading: authLoading, user } = useAuth("admin");
+  const { loading: authLoading, user } = useAuth("moderator");
   const { toast } = useToast();
   const [requests, setRequests] = useState<PaymentRequest[]>([]);
   const [students, setStudents] = useState<StudentInfo[]>([]);

@@ -25,7 +25,7 @@ interface PaymentMethod {
 }
 
 const AdminPaymentMethods = () => {
-  const { loading: authLoading } = useAuth("admin");
+  const { loading: authLoading } = useAuth("moderator");
   const { toast } = useToast();
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);

@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Settings } from "lucide-react";
 
 const AdminSubscriptionPlans = () => {
-  const { loading: authLoading } = useAuth("admin");
+  const { loading: authLoading } = useAuth("moderator");
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
