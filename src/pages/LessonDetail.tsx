@@ -40,7 +40,8 @@ const LessonDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading, isStaff } = useAuth();
   const navigate = useNavigate();
-  const { isActive: hasActiveSubscription, loading: subLoading } = useSubscription(user?.id);
+  const { isActive: hasActiveSubscription, loading: subLoading, planId } = useSubscription(user?.id);
+  const [planCoversLesson, setPlanCoversLesson] = useState(true);
   const isOffline = useOfflineStatus();
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
