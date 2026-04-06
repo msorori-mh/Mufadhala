@@ -34,6 +34,7 @@ import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 import AdminPayments from "./pages/admin/AdminPayments";
 import NotFound from "./pages/NotFound";
 import MobileBottomNav from "./components/MobileBottomNav";
+import ChatWidget from "./components/ChatWidget";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +77,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
         <MobileBottomNav />
+        <ChatWidget />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
