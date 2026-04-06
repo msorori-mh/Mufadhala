@@ -249,7 +249,9 @@ const LessonDetail = () => {
                 <Lock className="w-12 h-12 text-yellow-600 mx-auto mb-3" />
                 <h2 className="text-lg font-bold text-yellow-700 dark:text-yellow-400">المحتوى الكامل مقفل</h2>
                 <p className="text-sm text-yellow-600 dark:text-yellow-500 mt-2">
-                  يمكنك قراءة الملخص مجاناً. لفتح الشرح الكامل والأسئلة والتقييمات، فعّل اشتراكك
+                  {hasActiveSubscription && !planCoversLesson
+                    ? "باقتك الحالية لا تغطي هذا التخصص. يمكنك ترقية اشتراكك للوصول لجميع التخصصات"
+                    : "يمكنك قراءة الملخص مجاناً. لفتح الشرح الكامل والأسئلة والتقييمات، فعّل اشتراكك"}
                 </p>
                 <Button className="mt-4" onClick={() => navigate("/subscription")}>
                   تفعيل الاشتراك
