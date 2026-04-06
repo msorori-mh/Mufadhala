@@ -80,9 +80,9 @@ const AchievementsBadges = ({ stats }: AchievementsBadgesProps) => {
               <Award className="w-4 h-4 text-primary" />
               الإنجازات
             </span>
-            <span className="text-xs font-normal text-muted-foreground">
-              {unlockedCount}/{items.length}
-            </span>
+            <Link to="/achievements" className="text-xs font-normal text-primary hover:underline">
+              {unlockedCount}/{items.length} — عرض الكل
+            </Link>
           </CardTitle>
         </CardHeader>
         <CardContent>
