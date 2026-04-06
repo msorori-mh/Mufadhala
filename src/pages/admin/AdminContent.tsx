@@ -227,6 +227,7 @@ const AdminContent = () => {
     setOptionD("");
     setCorrectOption("a");
     setExplanation("");
+    setQuestionSubject("general");
     setQuestionOrder(questions.filter((q) => q.lesson_id === lessonId).length);
     setQuestionDialogOpen(true);
   };
