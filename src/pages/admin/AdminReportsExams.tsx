@@ -86,6 +86,7 @@ const AdminReportsExams = () => {
 
   return (
     <AdminLayout>
+      <PermissionGate permission="reports">
       <div className="space-y-4">
         <div><h1 className="text-2xl font-bold text-foreground">تقارير الاختبارات</h1><p className="text-sm text-muted-foreground">{total} اختبار مكتمل</p></div>
         {(() => { const ed: ExportData = { title: "تقرير الاختبارات", summary: { "الإجمالي": total, "المعدل العام": `${overallAvg}%`, "نسبة النجاح": `${passRate}%` }, headers: ["التخصص", "عدد المحاولات", "المتوسط", "نسبة النجاح"], rows: majorStats.map((m) => [m.name, m.count, `${m.avg}%`, `${m.passRate}%`]) }; return <ReportFilters filters={filters} onChange={setFilters} universities={universities} showGovernorate showUniversity showDate exportData={ed} exportFilename="تقرير_الاختبارات" />; })()}
