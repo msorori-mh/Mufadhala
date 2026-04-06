@@ -5,8 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import {
   GraduationCap, LayoutDashboard, Building2, BookOpen, Users, UserCog,
-  LogOut, ChevronLeft, ChevronDown, ChevronUp, BarChart3, FileText,
-  CreditCard, Wallet, ListChecks, DollarSign, ClipboardCheck,
+  LogOut, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, BarChart3, FileText,
+  CreditCard, Wallet, ListChecks, DollarSign, ClipboardCheck, ArrowRight, ArrowLeft,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -131,9 +131,15 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             <span className="font-bold text-sm">لوحة الإدارة</span>
           </div>
           <div className="flex gap-1">
+            <Button variant="ghost" size="sm" onClick={() => navigate(1)} className="text-white hover:bg-white/20 hover:text-white">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-white hover:bg-white/20 hover:text-white">
+              <ArrowRight className="w-4 h-4" />
+            </Button>
             <ThemeToggle />
-            <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white">
-              <Link to="/dashboard"><ChevronLeft className="w-4 h-4" /></Link>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-white hover:bg-white/20 hover:text-white">
+              <LogOut className="w-4 h-4" />
             </Button>
           </div>
         </header>
@@ -158,6 +164,22 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
               );
             })}
           </div>
+        </div>
+
+        {/* Desktop top bar */}
+        <div className="hidden md:flex items-center justify-between px-6 py-3 border-b bg-card">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => navigate(1)}>
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-destructive hover:bg-destructive/10">
+            <LogOut className="w-4 h-4 ml-1" />
+            تسجيل الخروج
+          </Button>
         </div>
 
         <main className="flex-1 p-4 md:p-6 overflow-auto">
