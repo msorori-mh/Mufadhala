@@ -700,6 +700,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_leaderboard: {
+        Args: { _limit?: number; _major_id?: string }
+        Returns: {
+          avg_score: number
+          best_score: number
+          college_name: string
+          first_name: string
+          fourth_name: string
+          major_name: string
+          rank: number
+          student_id: string
+          total_exams: number
+        }[]
+      }
       has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
