@@ -57,8 +57,11 @@ const AdminColleges = () => {
     setDialogOpen(true);
   };
 
-  const openEdit = (c: Tables<"colleges">) => {
-    setEditing(c); setNameAr(c.name_ar); setNameEn(c.name_en || ""); setCode(c.code); setUniversityId(c.university_id); setIsActive(c.is_active); setDisplayOrder(c.display_order); setDialogOpen(true);
+  const openEdit = (c: any) => {
+    setEditing(c); setNameAr(c.name_ar); setNameEn(c.name_en || ""); setCode(c.code); setUniversityId(c.university_id); setIsActive(c.is_active); setDisplayOrder(c.display_order);
+    setMinGpa(c.min_gpa != null ? String(c.min_gpa) : ""); setAcceptanceRate(c.acceptance_rate != null ? String(c.acceptance_rate) : "");
+    setRequiredDocs(c.required_documents ? c.required_documents.join("\n") : ""); setRegistrationDeadline(c.registration_deadline || ""); setNotes(c.notes || "");
+    setDialogOpen(true);
   };
 
   const handleSave = async () => {
