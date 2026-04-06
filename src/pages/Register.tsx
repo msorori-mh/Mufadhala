@@ -35,12 +35,8 @@ const Register = () => {
 
   // Step 2 - Personal
   const [firstName, setFirstName] = useState("");
-  const [secondName, setSecondName] = useState("");
-  const [thirdName, setThirdName] = useState("");
   const [fourthName, setFourthName] = useState("");
   const [governorate, setGovernorate] = useState("");
-  const [highSchoolGPA, setHighSchoolGPA] = useState("");
-  const [coordinationNumber, setCoordinationNumber] = useState("");
 
   // Step 3 - Academic
   const [universityId, setUniversityId] = useState("");
@@ -132,13 +128,8 @@ const Register = () => {
   };
 
   const validateStep2 = () => {
-    if (!firstName || !secondName || !thirdName || !fourthName || !governorate || !highSchoolGPA) {
+    if (!firstName || !fourthName || !governorate) {
       toast({ variant: "destructive", title: "يرجى ملء جميع الحقول المطلوبة" });
-      return false;
-    }
-    const gpa = parseFloat(highSchoolGPA);
-    if (isNaN(gpa) || gpa < 0 || gpa > 100) {
-      toast({ variant: "destructive", title: "يرجى إدخال معدل صحيح بين 0 و 100" });
       return false;
     }
     return true;
@@ -170,12 +161,8 @@ const Register = () => {
         emailRedirectTo: window.location.origin,
         data: {
           first_name: firstName,
-          second_name: secondName,
-          third_name: thirdName,
           fourth_name: fourthName,
           governorate,
-          high_school_gpa: parseFloat(highSchoolGPA),
-          coordination_number: coordinationNumber,
           university_id: universityId,
           college_id: collegeId,
           major_id: majorId,
@@ -340,36 +327,13 @@ const Register = () => {
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label>الاسم الأول</Label>
-                      <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>اسم الأب</Label>
-                      <Input value={secondName} onChange={(e) => setSecondName(e.target.value)} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>اسم الجد</Label>
-                      <Input value={thirdName} onChange={(e) => setThirdName(e.target.value)} required />
+                      <Label>الاسم</Label>
+                      <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="مثال: أحمد" required />
                     </div>
                     <div className="space-y-2">
                       <Label>اللقب</Label>
-                      <Input value={fourthName} onChange={(e) => setFourthName(e.target.value)} required />
+                      <Input value={fourthName} onChange={(e) => setFourthName(e.target.value)} placeholder="مثال: العمري" required />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>معدل الثانوية (%)</Label>
-                    <Input
-                      type="number"
-                      placeholder="مثال: 85.5"
-                      value={highSchoolGPA}
-                      onChange={(e) => setHighSchoolGPA(e.target.value)}
-                      dir="ltr"
-                      className="text-left"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      required
-                    />
                   </div>
                   <div className="space-y-2">
                     <Label>المحافظة</Label>
@@ -381,16 +345,6 @@ const Register = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>رقم التنسيق <span className="text-muted-foreground text-xs">(اختياري)</span></Label>
-                    <Input
-                      value={coordinationNumber}
-                      onChange={(e) => setCoordinationNumber(e.target.value)}
-                      placeholder="أدخل رقم التنسيق إن وجد"
-                      dir="ltr"
-                      className="text-left"
-                    />
                   </div>
                 </>
               )}
