@@ -33,6 +33,15 @@ serve(async (req) => {
   }
 
   try {
+    // Server-side rate limiting by IP
+    const clientIp = getClientIp(req);
+    if (!checkIpLimit(clientIp)) {
+      return new Response(
+        JSON.stringify({ error: "لقد وصلت للحد اليومي من الرسائل. حاول مرة أخرى غداً!" }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { messages } = await req.json();
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
