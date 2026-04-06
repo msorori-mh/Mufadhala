@@ -39,7 +39,20 @@ interface Question {
   correct_option: string;
   explanation: string;
   display_order: number;
+  subject: string;
 }
+
+const SUBJECT_OPTIONS = [
+  { value: "general", label: "عام" },
+  { value: "biology", label: "أحياء" },
+  { value: "chemistry", label: "كيمياء" },
+  { value: "physics", label: "فيزياء" },
+  { value: "math", label: "رياضيات" },
+  { value: "english", label: "إنجليزي" },
+  { value: "iq", label: "ذكاء (IQ)" },
+];
+
+const getSubjectLabel = (value: string) => SUBJECT_OPTIONS.find(s => s.value === value)?.label || value;
 
 const AdminContent = () => {
   const { user, loading: authLoading, isAdmin } = useAuth("moderator");
