@@ -7,11 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
-import { ChevronLeft, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check, Lock, Star } from "lucide-react";
+import { ChevronLeft, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check, Lock, Star, Download, Trash2, WifiOff } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import LessonReviews from "@/components/LessonReviews";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useOfflineStatus } from "@/hooks/useOfflineStatus";
+import { saveLesson as saveLessonOffline, getLesson as getOfflineLesson, removeLesson as removeOfflineLesson, type OfflineLesson } from "@/lib/offlineStorage";
 
 interface Lesson {
   id: string;
@@ -38,12 +40,16 @@ const LessonDetail = () => {
   const { user, loading: authLoading, isStaff } = useAuth();
   const navigate = useNavigate();
   const { isActive: hasActiveSubscription, loading: subLoading } = useSubscription(user?.id);
-  
+  const isOffline = useOfflineStatus();
+
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCompleted, setIsCompleted] = useState(false);
   const [studentId, setStudentId] = useState<string | null>(null);
+  const [isSavedOffline, setIsSavedOffline] = useState(false);
+  const [savingOffline, setSavingOffline] = useState(false);
+  const [isFromCache, setIsFromCache] = useState(false);
 
   // Quiz state
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -51,7 +57,22 @@ const LessonDetail = () => {
 
   useEffect(() => {
     if (authLoading || !id || !user) return;
-    const fetch = async () => {
+    const fetchData = async () => {
+      // Check if saved offline
+      const cached = await getOfflineLesson(id);
+      if (cached) setIsSavedOffline(true);
+
+      if (isOffline) {
+        // Load from cache
+        if (cached) {
+          setLesson({ id: cached.id, title: cached.title, content: cached.content, summary: cached.summary, is_free: cached.is_free });
+          setQuestions(cached.questions as Question[]);
+          setIsFromCache(true);
+        }
+        setLoading(false);
+        return;
+      }
+
       const [{ data: l }, { data: q }, { data: s }] = await Promise.all([
         supabase.from("lessons").select("id, title, content, summary, is_free").eq("id", id).maybeSingle(),
         supabase.from("questions").select("*").eq("lesson_id", id).order("display_order"),
@@ -61,7 +82,6 @@ const LessonDetail = () => {
       if (q) setQuestions(q as Question[]);
       if (s) {
         setStudentId(s.id);
-        // Check if lesson is already completed
         const { data: progress } = await supabase
           .from("lesson_progress")
           .select("is_completed")
@@ -72,8 +92,37 @@ const LessonDetail = () => {
       }
       setLoading(false);
     };
-    fetch();
-  }, [authLoading, id, user]);
+    fetchData();
+  }, [authLoading, id, user, isOffline]);
+
+  const handleSaveOffline = async () => {
+    if (!lesson || !id) return;
+    setSavingOffline(true);
+    try {
+      const offlineData: OfflineLesson = {
+        id: lesson.id,
+        title: lesson.title,
+        content: lesson.content,
+        summary: lesson.summary,
+        is_free: lesson.is_free,
+        questions: questions,
+        savedAt: new Date().toISOString(),
+      };
+      await saveLessonOffline(offlineData);
+      setIsSavedOffline(true);
+      toast.success("تم حفظ الدرس للقراءة بدون إنترنت");
+    } catch {
+      toast.error("فشل حفظ الدرس");
+    }
+    setSavingOffline(false);
+  };
+
+  const handleRemoveOffline = async () => {
+    if (!id) return;
+    await removeOfflineLesson(id);
+    setIsSavedOffline(false);
+    toast.success("تم حذف النسخة المحفوظة");
+  };
 
   const handleAnswer = (questionId: string, option: string) => {
     if (submitted) return;
@@ -111,13 +160,17 @@ const LessonDetail = () => {
     );
   }
 
-  // Content gating: staff always, free lessons always, otherwise need subscription
-  const canAccess = isStaff || hasActiveSubscription || (lesson?.is_free === true);
+  const canAccess = isStaff || hasActiveSubscription || (lesson?.is_free === true) || isFromCache;
 
   if (!lesson) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">الدرس غير موجود</p>
+      <div className="min-h-screen bg-background flex items-center justify-center flex-col gap-3">
+        <p className="text-muted-foreground">{isOffline ? "الدرس غير محفوظ للقراءة أوفلاين" : "الدرس غير موجود"}</p>
+        {isOffline && (
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/lessons">العودة للدروس</Link>
+          </Button>
+        )}
       </div>
     );
   }
@@ -131,6 +184,20 @@ const LessonDetail = () => {
             <span className="font-bold truncate">{lesson.title}</span>
           </div>
           <div className="flex items-center gap-1">
+            {/* Offline save/remove button */}
+            {canAccess && !isOffline && (
+              isSavedOffline ? (
+                <Button variant="ghost" size="sm" onClick={handleRemoveOffline} className="text-white hover:bg-white/20 hover:text-white gap-1">
+                  <Trash2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">حذف المحفوظ</span>
+                </Button>
+              ) : (
+                <Button variant="ghost" size="sm" onClick={handleSaveOffline} disabled={savingOffline} className="text-white hover:bg-white/20 hover:text-white gap-1">
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">حفظ أوفلاين</span>
+                </Button>
+              )
+            )}
             <ThemeToggle />
             <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white shrink-0">
               <Link to="/lessons"><ChevronLeft className="w-4 h-4 ml-1" />الدروس</Link>
@@ -139,10 +206,17 @@ const LessonDetail = () => {
         </div>
       </header>
 
+      {/* Offline banner */}
+      {isFromCache && (
+        <div className="bg-yellow-100 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-300 text-center text-sm py-2 px-4 flex items-center justify-center gap-2">
+          <WifiOff className="w-4 h-4" />
+          أنت تقرأ نسخة محفوظة — بعض الميزات غير متاحة بدون إنترنت
+        </div>
+      )}
+
       <main className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6">
         {!canAccess ? (
           <div className="space-y-4">
-            {/* Show summary for free */}
             {lesson.summary && (
               <Card>
                 <CardContent className="py-6 px-5">
@@ -172,23 +246,32 @@ const LessonDetail = () => {
           <>
         {/* Completion button */}
         <div className="mb-4 flex items-center justify-between">
-          {isCompleted ? (
-            <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 gap-1">
-              <Check className="w-3 h-3" /> مكتمل
-            </Badge>
-          ) : (
-            <Button variant="outline" size="sm" onClick={markComplete} className="gap-1">
-              <Check className="w-4 h-4" /> تحديد كمكتمل
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {isCompleted ? (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 gap-1">
+                <Check className="w-3 h-3" /> مكتمل
+              </Badge>
+            ) : !isOffline ? (
+              <Button variant="outline" size="sm" onClick={markComplete} className="gap-1">
+                <Check className="w-4 h-4" /> تحديد كمكتمل
+              </Button>
+            ) : null}
+            {isSavedOffline && !isOffline && (
+              <Badge variant="outline" className="text-xs gap-1 border-primary/40 text-primary">
+                <Download className="w-3 h-3" /> محفوظ أوفلاين
+              </Badge>
+            )}
+          </div>
         </div>
 
         <Tabs defaultValue="content" dir="rtl">
-          <TabsList className="w-full grid grid-cols-4 h-auto">
+          <TabsList className={`w-full grid h-auto ${isFromCache ? "grid-cols-3" : "grid-cols-4"}`}>
             <TabsTrigger value="content" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الشرح</TabsTrigger>
             <TabsTrigger value="summary" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><BookOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الملخص</TabsTrigger>
             <TabsTrigger value="quiz" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><HelpCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الأسئلة</TabsTrigger>
-            <TabsTrigger value="reviews" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><Star className="w-3 h-3 sm:w-3.5 sm:h-3.5" />التقييمات</TabsTrigger>
+            {!isFromCache && (
+              <TabsTrigger value="reviews" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><Star className="w-3 h-3 sm:w-3.5 sm:h-3.5" />التقييمات</TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="content" className="mt-4">
@@ -306,9 +389,11 @@ const LessonDetail = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="reviews" className="mt-4">
-            <LessonReviews lessonId={id!} studentId={studentId} />
-          </TabsContent>
+          {!isFromCache && (
+            <TabsContent value="reviews" className="mt-4">
+              <LessonReviews lessonId={id!} studentId={studentId} />
+            </TabsContent>
+          )}
         </Tabs>
         </>
         )}

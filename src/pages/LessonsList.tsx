@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
-import { GraduationCap, BookOpen, ArrowRight, ChevronLeft, Loader2, CheckCircle2, Search, X, Lock, Sparkles } from "lucide-react";
+import { GraduationCap, BookOpen, ArrowRight, ChevronLeft, Loader2, CheckCircle2, Search, X, Lock, Sparkles, Download, WifiOff } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useOfflineStatus } from "@/hooks/useOfflineStatus";
+import { getSavedLessonIds, getAllSavedLessons } from "@/lib/offlineStorage";
 
 interface Lesson {
   id: string;
@@ -24,24 +26,47 @@ const LessonsList = () => {
   const { user, loading: authLoading, isAdmin, isModerator } = useAuth();
   const { isActive: hasSubscription, loading: subLoading } = useSubscription(user?.id);
   const navigate = useNavigate();
+  const isOffline = useOfflineStatus();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [student, setStudent] = useState<any>(null);
   const [majorName, setMajorName] = useState("");
   const [loading, setLoading] = useState(true);
   const [questionCounts, setQuestionCounts] = useState<Record<string, number>>({});
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
+  const [savedOfflineIds, setSavedOfflineIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Redirect admin/moderator to admin content page
   useEffect(() => {
     if (!authLoading && (isAdmin || isModerator)) {
       navigate("/admin/content", { replace: true });
     }
   }, [authLoading, isAdmin, isModerator, navigate]);
 
+  // Load saved offline IDs
+  useEffect(() => {
+    getSavedLessonIds().then(setSavedOfflineIds).catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (authLoading || !user) return;
-    const fetch = async () => {
+
+    const fetchData = async () => {
+      // If offline, load from IndexedDB
+      if (isOffline) {
+        const saved = await getAllSavedLessons();
+        const offlineLessons: Lesson[] = saved.map(l => ({
+          id: l.id,
+          major_id: "",
+          title: l.title,
+          summary: l.summary,
+          display_order: 0,
+          is_free: l.is_free,
+        }));
+        setLessons(offlineLessons);
+        setLoading(false);
+        return;
+      }
+
       const { data: s } = await supabase.from("students").select("*").eq("user_id", user.id).maybeSingle();
       if (!s?.major_id) { setLoading(false); return; }
       setStudent(s);
@@ -70,8 +95,8 @@ const LessonsList = () => {
       }
       setLoading(false);
     };
-    fetch();
-  }, [authLoading, user]);
+    fetchData();
+  }, [authLoading, user, isOffline]);
 
   const filteredLessons = useMemo(() => {
     if (!searchQuery.trim()) return lessons;
@@ -108,8 +133,16 @@ const LessonsList = () => {
         </div>
       </header>
 
+      {/* Offline banner */}
+      {isOffline && (
+        <div className="bg-yellow-100 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-300 text-center text-sm py-2 px-4 flex items-center justify-center gap-2">
+          <WifiOff className="w-4 h-4" />
+          أنت في وضع أوفلاين — يتم عرض الدروس المحفوظة فقط
+        </div>
+      )}
+
       <main className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6">
-        {!student?.major_id ? (
+        {!isOffline && !student?.major_id ? (
           <div className="text-center py-12">
             <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
             <p className="text-lg font-semibold text-foreground">لم يتم اختيار تخصص بعد</p>
@@ -119,8 +152,12 @@ const LessonsList = () => {
         ) : (
           <>
             <div className="mb-4">
-              <h1 className="text-2xl font-bold text-foreground">دروس {majorName}</h1>
-              <p className="text-sm text-muted-foreground">{lessons.length} درس متاح للتدريب</p>
+              <h1 className="text-2xl font-bold text-foreground">
+                {isOffline ? "الدروس المحفوظة" : `دروس ${majorName}`}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {isOffline ? `${lessons.length} درس محفوظ للقراءة أوفلاين` : `${lessons.length} درس متاح للتدريب`}
+              </p>
             </div>
 
             {/* Search */}
@@ -145,8 +182,8 @@ const LessonsList = () => {
               </div>
             )}
 
-            {/* Progress bar */}
-            {lessons.length > 0 && !searchQuery && (
+            {/* Progress bar - only when online */}
+            {!isOffline && lessons.length > 0 && !searchQuery && (
               <Card className="mb-5">
                 <CardContent className="py-4 px-4 space-y-2">
                   <div className="flex justify-between text-sm">
@@ -165,6 +202,12 @@ const LessonsList = () => {
                     <Search className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                     <p className="text-muted-foreground">لا توجد نتائج لـ "{searchQuery}"</p>
                   </>
+                ) : isOffline ? (
+                  <>
+                    <WifiOff className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">لا توجد دروس محفوظة للقراءة أوفلاين</p>
+                    <p className="text-xs text-muted-foreground mt-1">احفظ الدروس من داخل صفحة الدرس عند الاتصال بالإنترنت</p>
+                  </>
                 ) : (
                   <>
                     <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
@@ -182,7 +225,8 @@ const LessonsList = () => {
               {filteredLessons.map((lesson, i) => {
                 const done = completedLessons.has(lesson.id);
                 const originalIndex = lessons.findIndex(l => l.id === lesson.id);
-                const isLocked = !hasSubscription && !lesson.is_free;
+                const isLocked = !isOffline && !hasSubscription && !lesson.is_free;
+                const isSavedOffline = savedOfflineIds.has(lesson.id);
                 return (
                   <Link key={lesson.id} to={`/lessons/${lesson.id}`} className="block">
                     <Card className={`hover:shadow-md transition-shadow cursor-pointer border-r-4 ${done ? "border-r-green-500" : isLocked ? "border-r-muted-foreground/30" : "border-r-primary"}`}>
@@ -194,17 +238,22 @@ const LessonsList = () => {
                                 {done ? <CheckCircle2 className="w-4 h-4" /> : isLocked ? <Lock className="w-3.5 h-3.5" /> : originalIndex + 1}
                               </span>
                               <p className="font-semibold text-foreground">{lesson.title}</p>
-                              {lesson.is_free && !hasSubscription && (
+                              {lesson.is_free && !hasSubscription && !isOffline && (
                                 <Badge variant="outline" className="text-xs border-green-500 text-green-600 gap-0.5">
                                   <Sparkles className="w-3 h-3" /> مجاني
                                 </Badge>
                               )}
+                              {isSavedOffline && !isOffline && (
+                                <Download className="w-3.5 h-3.5 text-primary shrink-0" />
+                              )}
                             </div>
                             {lesson.summary && <p className="text-sm text-muted-foreground mt-1 mr-9 line-clamp-2">{lesson.summary}</p>}
                             <div className="mt-2 mr-9 flex gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                {questionCounts[lesson.id] || 0} سؤال
-                              </Badge>
+                              {!isOffline && (
+                                <Badge variant="outline" className="text-xs">
+                                  {questionCounts[lesson.id] || 0} سؤال
+                                </Badge>
+                              )}
                               {done && (
                                 <Badge className="text-xs bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400">
                                   مكتمل
