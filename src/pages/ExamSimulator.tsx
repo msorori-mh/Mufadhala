@@ -14,7 +14,8 @@ import {
 } from "@/lib/offlineStorage";
 import {
   GraduationCap, ChevronLeft, Clock, AlertTriangle, CheckCircle2,
-  XCircle, Loader2, Play, Trophy, RotateCcw, Download, WifiOff, CloudUpload
+  XCircle, Loader2, Play, Trophy, RotateCcw, Download, WifiOff, CloudUpload,
+  Share2, Copy, MessageCircle,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
