@@ -164,6 +164,33 @@ const AdminPaymentMethods = () => {
           </div>
         )}
 
+        {ewallets.length > 0 && (
+          <div>
+            <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1"><Smartphone className="w-4 h-4" /> المحافظ الإلكترونية</h2>
+            <div className="space-y-2">
+              {ewallets.map((m) => (
+                <Card key={m.id}>
+                  <CardContent className="py-3 px-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-sm">{m.name}</p>
+                          <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
+                        </div>
+                        {m.account_number && <p className="text-xs text-muted-foreground mt-1">رقم المحفظة: {m.account_number}</p>}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(m)}><Pencil className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(m.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
         {methods.length === 0 && <p className="text-center text-muted-foreground py-8">لا توجد طرق دفع بعد</p>}
       </div>
 
