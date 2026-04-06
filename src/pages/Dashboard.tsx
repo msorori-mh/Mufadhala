@@ -193,15 +193,15 @@ const Dashboard = () => {
 
         {/* Stats Cards */}
         {totalExams > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
             {statCards.map((s) => (
               <Card key={s.label} className="relative overflow-hidden">
-                <CardContent className="p-4 flex flex-col items-center text-center gap-1">
-                  <div className={`w-9 h-9 rounded-lg ${s.bg} flex items-center justify-center mb-1`}>
+                <CardContent className="p-3 sm:p-4 flex flex-col items-center text-center gap-0.5 sm:gap-1">
+                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${s.bg} flex items-center justify-center mb-0.5 sm:mb-1`}>
                     <s.icon className={`w-4 h-4 ${s.color}`} />
                   </div>
-                  <span className="text-2xl font-bold text-foreground">{s.value}</span>
-                  <span className="text-xs text-muted-foreground">{s.label}</span>
+                  <span className="text-xl sm:text-2xl font-bold text-foreground">{s.value}</span>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">{s.label}</span>
                 </CardContent>
               </Card>
             ))}
