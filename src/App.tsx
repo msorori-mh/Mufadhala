@@ -17,6 +17,7 @@ import StudentPerformance from "./pages/StudentPerformance";
 import Subscription from "./pages/Subscription";
 import SearchContent from "./pages/SearchContent";
 import Leaderboard from "./pages/Leaderboard";
+import Achievements from "./pages/Achievements";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUniversities from "./pages/admin/AdminUniversities";
 import AdminColleges from "./pages/admin/AdminColleges";
@@ -60,6 +61,7 @@ const App = () => (
           <Route path="/subscription" element={<Subscription />} />
           <Route path="/search" element={<SearchContent />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/achievements" element={<Achievements />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/universities" element={<AdminUniversities />} />
           <Route path="/admin/colleges" element={<AdminColleges />} />

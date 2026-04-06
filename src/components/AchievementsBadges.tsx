@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { achievements, type AchievementStats } from "@/data/achievements";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Award } from "lucide-react";
@@ -80,9 +81,9 @@ const AchievementsBadges = ({ stats }: AchievementsBadgesProps) => {
               <Award className="w-4 h-4 text-primary" />
               الإنجازات
             </span>
-            <span className="text-xs font-normal text-muted-foreground">
-              {unlockedCount}/{items.length}
-            </span>
+            <Link to="/achievements" className="text-xs font-normal text-primary hover:underline">
+              {unlockedCount}/{items.length} — عرض الكل
+            </Link>
           </CardTitle>
         </CardHeader>
         <CardContent>
