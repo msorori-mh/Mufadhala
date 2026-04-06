@@ -93,6 +93,7 @@ const AdminContent = () => {
   const [optionD, setOptionD] = useState("");
   const [correctOption, setCorrectOption] = useState("a");
   const [explanation, setExplanation] = useState("");
+  const [questionSubject, setQuestionSubject] = useState("general");
   const [questionOrder, setQuestionOrder] = useState(0);
 
   // Selected lesson for questions
