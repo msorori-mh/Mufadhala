@@ -78,7 +78,10 @@ const Dashboard = () => {
           if (college) setCollegeName(college.name_ar);
         }
       }
-      if (roles) setIsStaff(roles.some((r) => r.role === "admin" || r.role === "moderator"));
+      if (roles) {
+        setIsStaff(roles.some((r) => r.role === "admin" || r.role === "moderator"));
+        setIsAdmin(roles.some((r) => r.role === "admin"));
+      }
       setUnreadCount((notifs as any)?.count ?? 0);
       setLoading(false);
     });
