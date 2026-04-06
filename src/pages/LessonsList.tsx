@@ -41,8 +41,7 @@ const LessonsList = () => {
 
       const [{ data: major }, { data: ls }] = await Promise.all([
         supabase.from("majors").select("name_ar").eq("id", s.major_id).maybeSingle(),
-        supabase.from("lessons").select("id, major_id, title, summary, display_order, is_free")
-          .eq("major_id", s.major_id).eq("is_published", true).order("display_order"),
+        supabase.rpc("get_published_lessons_list", { _major_id: s.major_id }),
       ]);
       if (major) setMajorName(major.name_ar);
       if (ls) {
