@@ -154,8 +154,37 @@ const StudentPerformance = () => {
     { name: "متبقي", value: Math.max(0, lessons.length - completedLessonIds.size) },
   ];
 
-  // Radar chart data for lesson coverage
-  const radarData = lessons.slice(0, 8).map((l) => {
+  // Subject-based radar chart data (using question subjects from exam answers)
+  const subjectPerformance = (() => {
+    const subjectStats: Record<string, { correct: number; total: number }> = {};
+    // Analyze all exam attempts answers against questions
+    attempts.forEach((a) => {
+      if (!a.completed_at) return;
+      const answerData = (a as any).answers;
+      if (!Array.isArray(answerData)) return;
+      answerData.forEach((ans: any) => {
+        if (!ans.question_id || !ans.selected) return;
+        const q = questions.find((qq) => qq.id === ans.question_id);
+        if (!q) return;
+        const subj = q.subject || "general";
+        if (!subjectStats[subj]) subjectStats[subj] = { correct: 0, total: 0 };
+        subjectStats[subj].total++;
+        if (ans.selected === q.correct_option) subjectStats[subj].correct++;
+      });
+    });
+    return subjectStats;
+  })();
+
+  const radarData = Object.entries(subjectPerformance)
+    .filter(([, v]) => v.total >= 1)
+    .map(([key, v]) => ({
+      subject: SUBJECT_LABELS[key] || key,
+      coverage: Math.round((v.correct / v.total) * 100),
+      fullMark: 100,
+    }));
+
+  // If no subject data from answers, fallback to lesson-based radar
+  const fallbackRadarData = radarData.length < 3 ? lessons.slice(0, 8).map((l) => {
     const qCount = questions.filter((q) => q.lesson_id === l.id).length;
     const isCompleted = completedLessonIds.has(l.id);
     return {
@@ -163,7 +192,15 @@ const StudentPerformance = () => {
       coverage: isCompleted ? 100 : qCount > 0 ? 50 : 0,
       fullMark: 100,
     };
-  });
+  }) : radarData;
+
+  const finalRadarData = radarData.length >= 3 ? radarData : fallbackRadarData;
+
+  // Smart recommendations based on weakest subjects
+  const recommendations = Object.entries(subjectPerformance)
+    .filter(([, v]) => v.total >= 2)
+    .map(([key, v]) => ({ subject: key, label: SUBJECT_LABELS[key] || key, pct: Math.round((v.correct / v.total) * 100) }))
+    .sort((a, b) => a.pct - b.pct);
 
   // Performance level
   const getLevel = (avg: number) => {
