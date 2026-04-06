@@ -435,18 +435,23 @@ const AdminContent = () => {
               >
                 <CardContent className="py-3 px-4">
                   <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-semibold text-sm">{l.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{getMajorName(l.major_id)}</p>
-                      <div className="flex gap-1 mt-1">
-                        <Badge variant={l.is_published ? "default" : "secondary"} className="text-[10px]">
-                          {l.is_published ? "منشور" : "مسودة"}
-                        </Badge>
-                        <Badge variant="outline" className="text-[10px]">
-                          {questions.filter((q) => q.lesson_id === l.id).length} سؤال
-                        </Badge>
+                      <div>
+                        <p className="font-semibold text-sm">{l.title}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{getMajorName(l.major_id)}</p>
+                        <div className="flex gap-1 mt-1 flex-wrap">
+                          <Badge variant={l.is_published ? "default" : "secondary"} className="text-[10px]">
+                            {l.is_published ? "منشور" : "مسودة"}
+                          </Badge>
+                          {l.is_free && (
+                            <Badge variant="outline" className="text-[10px] border-green-500 text-green-600 gap-0.5">
+                              <Sparkles className="w-2.5 h-2.5" /> مجاني
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="text-[10px]">
+                            {questions.filter((q) => q.lesson_id === l.id).length} سؤال
+                          </Badge>
+                        </div>
                       </div>
-                    </div>
                     <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                       <Button variant="ghost" size="icon" onClick={() => openEditLesson(l)}><Pencil className="w-4 h-4" /></Button>
                       {isAdmin && <Button variant="ghost" size="icon" onClick={() => handleDeleteLesson(l.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
