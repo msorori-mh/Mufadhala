@@ -29,6 +29,11 @@ const AdminColleges = () => {
   const [universityId, setUniversityId] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [displayOrder, setDisplayOrder] = useState(0);
+  const [minGpa, setMinGpa] = useState<string>("");
+  const [acceptanceRate, setAcceptanceRate] = useState<string>("");
+  const [requiredDocs, setRequiredDocs] = useState("");
+  const [registrationDeadline, setRegistrationDeadline] = useState("");
+  const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
   const fetchData = async () => {
