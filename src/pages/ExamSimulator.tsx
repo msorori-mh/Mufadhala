@@ -33,6 +33,7 @@ interface Question {
   option_d: string;
   correct_option: string;
   explanation: string;
+  subject?: string;
 }
 
 interface ExamAttempt {
@@ -74,6 +75,8 @@ const ExamSimulator = () => {
   const [totalTimeLeft, setTotalTimeLeft] = useState(TOTAL_TIME);
   const [questionTimeLeft, setQuestionTimeLeft] = useState(PER_QUESTION_TIME);
   const [_attemptId, setAttemptId] = useState<string | null>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [timerPaused, setTimerPaused] = useState(false);
 
   // Result state
   const [resultScore, setResultScore] = useState(0);
@@ -213,6 +216,8 @@ const ExamSimulator = () => {
   }, [student, isOffline, isOfflineExam]);
 
   const moveToNext = useCallback((currentAnswers: Record<string, string>, questions: Question[], idx: number) => {
+    setShowExplanation(false);
+    setTimerPaused(false);
     if (idx >= questions.length - 1) {
       finishExam(currentAnswers, questions);
     } else {
@@ -223,7 +228,7 @@ const ExamSimulator = () => {
 
   // Total timer
   useEffect(() => {
-    if (phase !== "exam") return;
+    if (phase !== "exam" || timerPaused) return;
     timerRef.current = setInterval(() => {
       setTotalTimeLeft((prev) => {
         if (prev <= 1) {
@@ -234,11 +239,11 @@ const ExamSimulator = () => {
       });
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [phase, answers, examQuestions, finishExam]);
+  }, [phase, answers, examQuestions, finishExam, timerPaused]);
 
   // Per-question timer
   useEffect(() => {
-    if (phase !== "exam") return;
+    if (phase !== "exam" || timerPaused) return;
     questionTimerRef.current = setInterval(() => {
       setQuestionTimeLeft((prev) => {
         if (prev <= 1) {
@@ -249,7 +254,7 @@ const ExamSimulator = () => {
       });
     }, 1000);
     return () => { if (questionTimerRef.current) clearInterval(questionTimerRef.current); };
-  }, [phase, currentIndex, answers, examQuestions, moveToNext]);
+  }, [phase, currentIndex, answers, examQuestions, moveToNext, timerPaused]);
 
   const downloadForOffline = async () => {
     if (!student?.major_id || allQuestions.length === 0) return;
@@ -309,13 +314,30 @@ const ExamSimulator = () => {
   };
 
   const selectAnswer = (option: string) => {
+    if (showExplanation) return; // prevent double-click during explanation
     const q = examQuestions[currentIndex];
     const newAnswers = { ...answers, [q.id]: option };
     setAnswers(newAnswers);
 
-    setTimeout(() => {
-      moveToNext(newAnswers, examQuestions, currentIndex);
-    }, 300);
+    const isCorrect = option === q.correct_option;
+    if (isCorrect) {
+      // Correct: brief positive feedback then move on
+      setTimeout(() => {
+        setShowExplanation(false);
+        moveToNext(newAnswers, examQuestions, currentIndex);
+      }, 800);
+    } else {
+      // Wrong: pause timer, show explanation
+      setTimerPaused(true);
+      setShowExplanation(true);
+    }
+  };
+
+  const dismissExplanation = () => {
+    setShowExplanation(false);
+    setTimerPaused(false);
+    const newAnswers = answers;
+    moveToNext(newAnswers, examQuestions, currentIndex);
   };
 
   const formatTime = (seconds: number) => {
@@ -546,25 +568,48 @@ const ExamSimulator = () => {
         <main className="flex-1 max-w-2xl mx-auto px-4 py-6 w-full">
           <Card>
             <CardContent className="py-6 px-5">
+              {/* Subject badge */}
+              {q.subject && q.subject !== "general" && (
+                <Badge variant="outline" className="mb-2 text-xs">
+                  {q.subject === "biology" ? "أحياء" : q.subject === "chemistry" ? "كيمياء" : q.subject === "physics" ? "فيزياء" : q.subject === "math" ? "رياضيات" : q.subject === "english" ? "إنجليزي" : q.subject === "iq" ? "ذكاء" : q.subject}
+                </Badge>
+              )}
               <p className="font-semibold text-foreground text-base mb-5">{currentIndex + 1}. {q.question_text}</p>
               <div className="space-y-3">
                 {(["a", "b", "c", "d"] as const).map((opt) => {
                   const text = q[`option_${opt}` as keyof Question] as string;
-                  const isSelected = answers[q.id] === opt;
+                  const userAnswer = answers[q.id];
+                  const isSelected = userAnswer === opt;
+                  const isCorrectOpt = q.correct_option === opt;
+                  const answered = !!userAnswer;
+
+                  let optClass = "border-border hover:border-primary/50 hover:bg-muted";
+                  if (answered && showExplanation) {
+                    if (isCorrectOpt) optClass = "border-green-500 bg-green-50 dark:bg-green-950/30";
+                    else if (isSelected) optClass = "border-destructive bg-destructive/10";
+                    else optClass = "border-border opacity-50";
+                  } else if (answered && isSelected && !showExplanation) {
+                    // Correct answer brief highlight
+                    optClass = "border-green-500 bg-green-50 dark:bg-green-950/30";
+                  } else if (isSelected) {
+                    optClass = "border-primary bg-primary/10 shadow-sm";
+                  }
+
                   return (
                     <button
                       key={opt}
                       onClick={() => selectAnswer(opt)}
-                      className={`flex items-center gap-2 sm:gap-3 w-full text-right p-3 sm:p-4 rounded-xl border-2 transition-all text-sm ${
-                        isSelected
-                          ? "border-primary bg-primary/10 shadow-sm"
-                          : "border-border hover:border-primary/50 hover:bg-muted"
-                      }`}
+                      disabled={!!userAnswer}
+                      className={`flex items-center gap-2 sm:gap-3 w-full text-right p-3 sm:p-4 rounded-xl border-2 transition-all text-sm ${optClass}`}
                     >
                       <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
+                        answered && showExplanation && isCorrectOpt ? "bg-green-500 text-white" :
+                        answered && showExplanation && isSelected ? "bg-destructive text-destructive-foreground" :
                         isSelected ? "bg-primary text-primary-foreground" : "bg-muted"
                       }`}>
-                        {opt.toUpperCase()}
+                        {answered && showExplanation && isCorrectOpt ? <CheckCircle2 className="w-4 h-4" /> :
+                         answered && showExplanation && isSelected ? <XCircle className="w-4 h-4" /> :
+                         opt.toUpperCase()}
                       </span>
                       <span className="flex-1">{text}</span>
                     </button>
@@ -572,22 +617,42 @@ const ExamSimulator = () => {
                 })}
               </div>
 
-              <div className="flex items-center justify-between mt-6">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => moveToNext(answers, examQuestions, currentIndex)}
-                >
-                  تخطي →
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => finishExam(answers, examQuestions)}
-                >
-                  إنهاء الاختبار
-                </Button>
-              </div>
+              {/* Instant explanation */}
+              {showExplanation && (
+                <div className="mt-4 p-4 rounded-lg bg-destructive/5 border border-destructive/20 space-y-2">
+                  <p className="text-sm font-semibold text-destructive flex items-center gap-1">
+                    <XCircle className="w-4 h-4" /> إجابة خاطئة
+                  </p>
+                  <p className="text-sm text-foreground">
+                    الإجابة الصحيحة: <strong className="text-green-600">{(q as any)[`option_${q.correct_option}`]}</strong>
+                  </p>
+                  {q.explanation && (
+                    <p className="text-sm text-muted-foreground">{q.explanation}</p>
+                  )}
+                  <Button size="sm" onClick={dismissExplanation} className="mt-2">
+                    التالي ←
+                  </Button>
+                </div>
+              )}
+
+              {!showExplanation && (
+                <div className="flex items-center justify-between mt-6">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => moveToNext(answers, examQuestions, currentIndex)}
+                  >
+                    تخطي →
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => finishExam(answers, examQuestions)}
+                  >
+                    إنهاء الاختبار
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </main>

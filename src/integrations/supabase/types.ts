@@ -16,35 +16,50 @@ export type Database = {
     Tables: {
       colleges: {
         Row: {
+          acceptance_rate: number | null
           code: string
           created_at: string
           display_order: number
           id: string
           is_active: boolean
+          min_gpa: number | null
           name_ar: string
           name_en: string | null
+          notes: string | null
+          registration_deadline: string | null
+          required_documents: string[] | null
           university_id: string
           updated_at: string
         }
         Insert: {
+          acceptance_rate?: number | null
           code: string
           created_at?: string
           display_order?: number
           id?: string
           is_active?: boolean
+          min_gpa?: number | null
           name_ar: string
           name_en?: string | null
+          notes?: string | null
+          registration_deadline?: string | null
+          required_documents?: string[] | null
           university_id: string
           updated_at?: string
         }
         Update: {
+          acceptance_rate?: number | null
           code?: string
           created_at?: string
           display_order?: number
           id?: string
           is_active?: boolean
+          min_gpa?: number | null
           name_ar?: string
           name_en?: string | null
+          notes?: string | null
+          registration_deadline?: string | null
+          required_documents?: string[] | null
           university_id?: string
           updated_at?: string
         }
@@ -529,6 +544,7 @@ export type Database = {
           option_c: string
           option_d: string
           question_text: string
+          subject: string
           updated_at: string
         }
         Insert: {
@@ -543,6 +559,7 @@ export type Database = {
           option_c: string
           option_d: string
           question_text: string
+          subject?: string
           updated_at?: string
         }
         Update: {
@@ -557,6 +574,7 @@ export type Database = {
           option_c?: string
           option_d?: string
           question_text?: string
+          subject?: string
           updated_at?: string
         }
         Relationships: [

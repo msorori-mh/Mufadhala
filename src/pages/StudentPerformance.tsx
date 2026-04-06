@@ -30,8 +30,13 @@ interface LessonRow {
 }
 
 interface QuestionRow {
-  id: string; lesson_id: string; correct_option: string;
+  id: string; lesson_id: string; correct_option: string; subject: string;
 }
+
+const SUBJECT_LABELS: Record<string, string> = {
+  biology: "أحياء", chemistry: "كيمياء", physics: "فيزياء",
+  math: "رياضيات", english: "إنجليزي", iq: "ذكاء", general: "عام",
+};
 
 const tooltipStyle = {
   backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))",
@@ -74,8 +79,8 @@ const StudentPerformance = () => {
         setLessons(les as LessonRow[]);
         const lessonIds = les.map((l) => l.id);
         if (lessonIds.length > 0) {
-          const { data: qs } = await supabase.from("questions").select("id, lesson_id, correct_option").in("lesson_id", lessonIds);
-          if (qs) setQuestions(qs);
+          const { data: qs } = await supabase.from("questions").select("id, lesson_id, correct_option, subject").in("lesson_id", lessonIds);
+          if (qs) setQuestions(qs as QuestionRow[]);
         }
       }
       if (prog) setCompletedLessonIds(new Set(prog.map((p) => p.lesson_id)));
@@ -149,8 +154,37 @@ const StudentPerformance = () => {
     { name: "متبقي", value: Math.max(0, lessons.length - completedLessonIds.size) },
   ];
 
-  // Radar chart data for lesson coverage
-  const radarData = lessons.slice(0, 8).map((l) => {
+  // Subject-based radar chart data (using question subjects from exam answers)
+  const subjectPerformance = (() => {
+    const subjectStats: Record<string, { correct: number; total: number }> = {};
+    // Analyze all exam attempts answers against questions
+    attempts.forEach((a) => {
+      if (!a.completed_at) return;
+      const answerData = (a as any).answers;
+      if (!Array.isArray(answerData)) return;
+      answerData.forEach((ans: any) => {
+        if (!ans.question_id || !ans.selected) return;
+        const q = questions.find((qq) => qq.id === ans.question_id);
+        if (!q) return;
+        const subj = q.subject || "general";
+        if (!subjectStats[subj]) subjectStats[subj] = { correct: 0, total: 0 };
+        subjectStats[subj].total++;
+        if (ans.selected === q.correct_option) subjectStats[subj].correct++;
+      });
+    });
+    return subjectStats;
+  })();
+
+  const radarData = Object.entries(subjectPerformance)
+    .filter(([, v]) => v.total >= 1)
+    .map(([key, v]) => ({
+      subject: SUBJECT_LABELS[key] || key,
+      coverage: Math.round((v.correct / v.total) * 100),
+      fullMark: 100,
+    }));
+
+  // If no subject data from answers, fallback to lesson-based radar
+  const fallbackRadarData = radarData.length < 3 ? lessons.slice(0, 8).map((l) => {
     const qCount = questions.filter((q) => q.lesson_id === l.id).length;
     const isCompleted = completedLessonIds.has(l.id);
     return {
@@ -158,7 +192,15 @@ const StudentPerformance = () => {
       coverage: isCompleted ? 100 : qCount > 0 ? 50 : 0,
       fullMark: 100,
     };
-  });
+  }) : radarData;
+
+  const finalRadarData = radarData.length >= 3 ? radarData : fallbackRadarData;
+
+  // Smart recommendations based on weakest subjects
+  const recommendations = Object.entries(subjectPerformance)
+    .filter(([, v]) => v.total >= 2)
+    .map(([key, v]) => ({ subject: key, label: SUBJECT_LABELS[key] || key, pct: Math.round((v.correct / v.total) * 100) }))
+    .sort((a, b) => a.pct - b.pct);
 
   // Performance level
   const getLevel = (avg: number) => {
@@ -282,7 +324,7 @@ const StudentPerformance = () => {
             <TabsList className="w-full grid grid-cols-3">
               <TabsTrigger value="trend" className="text-xs">تطور النتائج</TabsTrigger>
               <TabsTrigger value="distribution" className="text-xs">التوزيع</TabsTrigger>
-              <TabsTrigger value="coverage" className="text-xs">التغطية</TabsTrigger>
+              <TabsTrigger value="coverage" className="text-xs">المواد</TabsTrigger>
             </TabsList>
 
             {/* Score Trend */}
@@ -341,23 +383,44 @@ const StudentPerformance = () => {
               </Card>
             </TabsContent>
 
-            {/* Lesson Coverage Radar */}
+            {/* Subject Performance Radar */}
             <TabsContent value="coverage">
               <Card>
                 <CardContent className="pt-4">
-                  {radarData.length >= 3 ? (
+                  {finalRadarData.length >= 3 ? (
                     <div className="h-56">
                       <ResponsiveContainer width="100%" height="100%">
-                        <RadarChart data={radarData}>
+                        <RadarChart data={finalRadarData}>
                           <PolarGrid stroke="hsl(var(--border))" />
                           <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
                           <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} />
-                          <Radar name="تغطيتك" dataKey="coverage" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
+                          <Radar name="مستواك" dataKey="coverage" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
                         </RadarChart>
                       </ResponsiveContainer>
                     </div>
                   ) : (
-                    <p className="text-center text-sm text-muted-foreground py-8">تحتاج 3 دروس على الأقل لعرض الرسم</p>
+                    <p className="text-center text-sm text-muted-foreground py-8">تحتاج بيانات أكثر لعرض الرسم</p>
+                  )}
+
+                  {/* Smart recommendations */}
+                  {recommendations.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <p className="text-xs font-semibold text-muted-foreground">توصيات ذكية:</p>
+                      {recommendations.slice(0, 3).map((r) => (
+                        <div key={r.subject} className={`flex items-center justify-between text-sm p-2 rounded-lg ${r.pct < 50 ? "bg-destructive/5" : r.pct < 70 ? "bg-accent/5" : "bg-green-50 dark:bg-green-950/20"}`}>
+                          <span className="text-foreground">{r.label}</span>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={r.pct < 50 ? "destructive" : r.pct < 70 ? "secondary" : "default"} className="text-xs">{r.pct}%</Badge>
+                            {r.pct < 50 && <span className="text-xs text-destructive">⚠️ يحتاج مراجعة</span>}
+                          </div>
+                        </div>
+                      ))}
+                      {recommendations[0]?.pct < 60 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          📚 ننصحك بمراجعة مادة <strong>{recommendations[0].label}</strong> — مستواك فيها ({recommendations[0].pct}%) يحتاج تحسين
+                        </p>
+                      )}
+                    </div>
                   )}
                 </CardContent>
               </Card>

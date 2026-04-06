@@ -39,7 +39,20 @@ interface Question {
   correct_option: string;
   explanation: string;
   display_order: number;
+  subject: string;
 }
+
+const SUBJECT_OPTIONS = [
+  { value: "general", label: "عام" },
+  { value: "biology", label: "أحياء" },
+  { value: "chemistry", label: "كيمياء" },
+  { value: "physics", label: "فيزياء" },
+  { value: "math", label: "رياضيات" },
+  { value: "english", label: "إنجليزي" },
+  { value: "iq", label: "ذكاء (IQ)" },
+];
+
+const getSubjectLabel = (value: string) => SUBJECT_OPTIONS.find(s => s.value === value)?.label || value;
 
 const AdminContent = () => {
   const { user, loading: authLoading, isAdmin } = useAuth("moderator");
@@ -80,6 +93,7 @@ const AdminContent = () => {
   const [optionD, setOptionD] = useState("");
   const [correctOption, setCorrectOption] = useState("a");
   const [explanation, setExplanation] = useState("");
+  const [questionSubject, setQuestionSubject] = useState("general");
   const [questionOrder, setQuestionOrder] = useState(0);
 
   // Selected lesson for questions
@@ -213,6 +227,7 @@ const AdminContent = () => {
     setOptionD("");
     setCorrectOption("a");
     setExplanation("");
+    setQuestionSubject("general");
     setQuestionOrder(questions.filter((q) => q.lesson_id === lessonId).length);
     setQuestionDialogOpen(true);
   };
@@ -227,6 +242,7 @@ const AdminContent = () => {
     setOptionD(q.option_d);
     setCorrectOption(q.correct_option);
     setExplanation(q.explanation);
+    setQuestionSubject(q.subject || "general");
     setQuestionOrder(q.display_order);
     setQuestionDialogOpen(true);
   };
@@ -247,6 +263,7 @@ const AdminContent = () => {
       correct_option: correctOption,
       explanation,
       display_order: questionOrder,
+      subject: questionSubject,
     };
     if (editingQuestion) {
       const { error } = await supabase.from("questions").update(payload).eq("id", editingQuestion.id);
@@ -492,6 +509,9 @@ const AdminContent = () => {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{i + 1}. {q.question_text}</p>
+                      {q.subject && q.subject !== "general" && (
+                        <Badge variant="outline" className="text-[10px] mt-1">{getSubjectLabel(q.subject)}</Badge>
+                      )}
                       <div className="grid grid-cols-2 gap-1 mt-2 text-xs">
                         {["a", "b", "c", "d"].map((opt) => (
                           <span
@@ -566,6 +586,12 @@ const AdminContent = () => {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editingQuestion ? "تعديل سؤال" : "إضافة سؤال"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>المادة</Label>
+              <select value={questionSubject} onChange={(e) => setQuestionSubject(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                {SUBJECT_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+            </div>
             <div className="space-y-2">
               <Label>نص السؤال *</Label>
               <Textarea value={questionText} onChange={(e) => setQuestionText(e.target.value)} rows={3} />

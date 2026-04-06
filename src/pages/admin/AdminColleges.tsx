@@ -29,6 +29,11 @@ const AdminColleges = () => {
   const [universityId, setUniversityId] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [displayOrder, setDisplayOrder] = useState(0);
+  const [minGpa, setMinGpa] = useState<string>("");
+  const [acceptanceRate, setAcceptanceRate] = useState<string>("");
+  const [requiredDocs, setRequiredDocs] = useState("");
+  const [registrationDeadline, setRegistrationDeadline] = useState("");
+  const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
   const fetchData = async () => {
@@ -47,17 +52,30 @@ const AdminColleges = () => {
   const getUniName = (id: string) => universities.find((u) => u.id === id)?.name_ar || "";
 
   const openCreate = () => {
-    setEditing(null); setNameAr(""); setNameEn(""); setCode(""); setUniversityId(filterUni); setIsActive(true); setDisplayOrder(0); setDialogOpen(true);
+    setEditing(null); setNameAr(""); setNameEn(""); setCode(""); setUniversityId(filterUni); setIsActive(true); setDisplayOrder(0);
+    setMinGpa(""); setAcceptanceRate(""); setRequiredDocs(""); setRegistrationDeadline(""); setNotes("");
+    setDialogOpen(true);
   };
 
-  const openEdit = (c: Tables<"colleges">) => {
-    setEditing(c); setNameAr(c.name_ar); setNameEn(c.name_en || ""); setCode(c.code); setUniversityId(c.university_id); setIsActive(c.is_active); setDisplayOrder(c.display_order); setDialogOpen(true);
+  const openEdit = (c: any) => {
+    setEditing(c); setNameAr(c.name_ar); setNameEn(c.name_en || ""); setCode(c.code); setUniversityId(c.university_id); setIsActive(c.is_active); setDisplayOrder(c.display_order);
+    setMinGpa(c.min_gpa != null ? String(c.min_gpa) : ""); setAcceptanceRate(c.acceptance_rate != null ? String(c.acceptance_rate) : "");
+    setRequiredDocs(c.required_documents ? c.required_documents.join("\n") : ""); setRegistrationDeadline(c.registration_deadline || ""); setNotes(c.notes || "");
+    setDialogOpen(true);
   };
 
   const handleSave = async () => {
     if (!nameAr || !code || !universityId) { toast({ variant: "destructive", title: "يرجى ملء الحقول المطلوبة" }); return; }
     setSaving(true);
-    const payload = { name_ar: nameAr, name_en: nameEn || null, code, university_id: universityId, is_active: isActive, display_order: displayOrder };
+    const docsArray = requiredDocs.trim() ? requiredDocs.split("\n").map(d => d.trim()).filter(Boolean) : null;
+    const payload = {
+      name_ar: nameAr, name_en: nameEn || null, code, university_id: universityId, is_active: isActive, display_order: displayOrder,
+      min_gpa: minGpa ? Number(minGpa) : null,
+      acceptance_rate: acceptanceRate ? Number(acceptanceRate) : null,
+      required_documents: docsArray,
+      registration_deadline: registrationDeadline || null,
+      notes: notes || null,
+    };
     if (editing) {
       const { error } = await supabase.from("colleges").update(payload).eq("id", editing.id);
       if (error) toast({ variant: "destructive", title: error.message }); else toast({ title: "تم التحديث" });
@@ -103,6 +121,16 @@ const AdminColleges = () => {
                   <div className="space-y-2"><Label>الرمز *</Label><Input value={code} onChange={(e) => setCode(e.target.value)} dir="ltr" /></div>
                   <div className="space-y-2"><Label>ترتيب العرض</Label><Input type="number" value={displayOrder} onChange={(e) => setDisplayOrder(Number(e.target.value))} /></div>
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2"><Label>الحد الأدنى للمعدل (%)</Label><Input type="number" value={minGpa} onChange={(e) => setMinGpa(e.target.value)} placeholder="مثال: 85" /></div>
+                  <div className="space-y-2"><Label>نسبة القبول (%)</Label><Input type="number" value={acceptanceRate} onChange={(e) => setAcceptanceRate(e.target.value)} placeholder="مثال: 30" /></div>
+                </div>
+                <div className="space-y-2"><Label>موعد التنسيق</Label><Input value={registrationDeadline} onChange={(e) => setRegistrationDeadline(e.target.value)} placeholder="مثال: سبتمبر 2025" /></div>
+                <div className="space-y-2">
+                  <Label>الوثائق المطلوبة (سطر لكل وثيقة)</Label>
+                  <textarea value={requiredDocs} onChange={(e) => setRequiredDocs(e.target.value)} rows={3} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="شهادة الثانوية&#10;صورة الهوية&#10;صور شخصية" />
+                </div>
+                <div className="space-y-2"><Label>ملاحظات</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
                 <div className="flex items-center gap-2"><Switch checked={isActive} onCheckedChange={setIsActive} /><Label>مفعّلة</Label></div>
                 <Button onClick={handleSave} disabled={saving} className="w-full">{saving ? "جاري الحفظ..." : "حفظ"}</Button>
               </div>
