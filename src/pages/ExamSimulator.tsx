@@ -119,14 +119,16 @@ const ExamSimulator = () => {
     setResultScore(score);
     setResultTotal(questions.length);
 
-    // Save attempt
-    if (attemptId) {
-      await supabase.from("exam_attempts").update({
+    // Insert completed attempt (no UPDATE needed — prevents score tampering)
+    if (student) {
+      await supabase.from("exam_attempts").insert({
+        student_id: student.id,
+        major_id: student.major_id!,
         score,
         total: questions.length,
         answers: finalAnswers,
         completed_at: new Date().toISOString(),
-      }).eq("id", attemptId);
+      });
     }
 
     setPhase("result");
