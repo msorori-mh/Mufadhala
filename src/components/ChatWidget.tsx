@@ -221,24 +221,35 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
 
           {/* Input */}
           <div className="border-t border-border p-3">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                send();
-              }}
-              className="flex gap-2"
-            >
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="اكتب سؤالك هنا..."
-                disabled={loading}
-                className="flex-1 bg-muted rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground disabled:opacity-50"
-              />
-              <Button type="submit" size="icon" className="h-9 w-9 rounded-xl" disabled={loading || !input.trim()}>
-                <Send className="h-4 w-4" />
-              </Button>
-            </form>
+            {remaining <= 0 ? (
+              <p className="text-xs text-center text-destructive py-2">
+                لقد وصلت للحد اليومي (20 رسالة). حاول مرة أخرى غداً!
+              </p>
+            ) : (
+              <>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    send();
+                  }}
+                  className="flex gap-2"
+                >
+                  <input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="اكتب سؤالك هنا..."
+                    disabled={loading}
+                    className="flex-1 bg-muted rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground disabled:opacity-50"
+                  />
+                  <Button type="submit" size="icon" className="h-9 w-9 rounded-xl" disabled={loading || !input.trim()}>
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
+                <p className="text-[10px] text-muted-foreground text-center mt-1.5">
+                  {remaining} رسالة متبقية اليوم
+                </p>
+              </>
+            )}
           </div>
         </div>
       )}
