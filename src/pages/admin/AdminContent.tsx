@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useModeratorScope } from "@/hooks/useModeratorScope";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles } from "lucide-react";
 import * as XLSX from "xlsx";
 
 interface Lesson {
@@ -23,6 +23,7 @@ interface Lesson {
   summary: string;
   display_order: number;
   is_published: boolean;
+  is_free: boolean;
   created_at: string;
 }
 
@@ -64,6 +65,7 @@ const AdminContent = () => {
   const [lessonMajorId, setLessonMajorId] = useState("");
   const [lessonOrder, setLessonOrder] = useState(0);
   const [lessonPublished, setLessonPublished] = useState(false);
+  const [lessonFree, setLessonFree] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Question dialog
@@ -147,6 +149,7 @@ const AdminContent = () => {
     setLessonMajorId(filterMajor);
     setLessonOrder(filteredLessons.length);
     setLessonPublished(false);
+    setLessonFree(false);
     setLessonDialogOpen(true);
   };
 
@@ -158,6 +161,7 @@ const AdminContent = () => {
     setLessonMajorId(l.major_id);
     setLessonOrder(l.display_order);
     setLessonPublished(l.is_published);
+    setLessonFree(l.is_free);
     setLessonDialogOpen(true);
   };
 
@@ -174,6 +178,7 @@ const AdminContent = () => {
       major_id: lessonMajorId,
       display_order: lessonOrder,
       is_published: lessonPublished,
+      is_free: lessonFree,
     };
     if (editingLesson) {
       const { error } = await supabase.from("lessons").update(payload).eq("id", editingLesson.id);
@@ -430,18 +435,23 @@ const AdminContent = () => {
               >
                 <CardContent className="py-3 px-4">
                   <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-semibold text-sm">{l.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{getMajorName(l.major_id)}</p>
-                      <div className="flex gap-1 mt-1">
-                        <Badge variant={l.is_published ? "default" : "secondary"} className="text-[10px]">
-                          {l.is_published ? "منشور" : "مسودة"}
-                        </Badge>
-                        <Badge variant="outline" className="text-[10px]">
-                          {questions.filter((q) => q.lesson_id === l.id).length} سؤال
-                        </Badge>
+                      <div>
+                        <p className="font-semibold text-sm">{l.title}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{getMajorName(l.major_id)}</p>
+                        <div className="flex gap-1 mt-1 flex-wrap">
+                          <Badge variant={l.is_published ? "default" : "secondary"} className="text-[10px]">
+                            {l.is_published ? "منشور" : "مسودة"}
+                          </Badge>
+                          {l.is_free && (
+                            <Badge variant="outline" className="text-[10px] border-green-500 text-green-600 gap-0.5">
+                              <Sparkles className="w-2.5 h-2.5" /> مجاني
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="text-[10px]">
+                            {questions.filter((q) => q.lesson_id === l.id).length} سؤال
+                          </Badge>
+                        </div>
                       </div>
-                    </div>
                     <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                       <Button variant="ghost" size="icon" onClick={() => openEditLesson(l)}><Pencil className="w-4 h-4" /></Button>
                       {isAdmin && <Button variant="ghost" size="icon" onClick={() => handleDeleteLesson(l.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
@@ -535,6 +545,13 @@ const AdminContent = () => {
               <div className="flex items-center gap-2 pt-6">
                 <Switch checked={lessonPublished} onCheckedChange={setLessonPublished} />
                 <Label>منشور</Label>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-3 rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900">
+              <Switch checked={lessonFree} onCheckedChange={setLessonFree} />
+              <div>
+                <Label className="text-sm">درس مجاني</Label>
+                <p className="text-xs text-muted-foreground">يمكن للطلاب الوصول للمحتوى الكامل بدون اشتراك</p>
               </div>
             </div>
             <Button onClick={handleSaveLesson} disabled={saving} className="w-full">{saving ? "جاري الحفظ..." : "حفظ"}</Button>
