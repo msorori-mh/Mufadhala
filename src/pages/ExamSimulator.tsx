@@ -241,7 +241,7 @@ const ExamSimulator = () => {
 
   // Per-question timer
   useEffect(() => {
-    if (phase !== "exam") return;
+    if (phase !== "exam" || timerPaused) return;
     questionTimerRef.current = setInterval(() => {
       setQuestionTimeLeft((prev) => {
         if (prev <= 1) {
@@ -252,7 +252,7 @@ const ExamSimulator = () => {
       });
     }, 1000);
     return () => { if (questionTimerRef.current) clearInterval(questionTimerRef.current); };
-  }, [phase, currentIndex, answers, examQuestions, moveToNext]);
+  }, [phase, currentIndex, answers, examQuestions, moveToNext, timerPaused]);
 
   const downloadForOffline = async () => {
     if (!student?.major_id || allQuestions.length === 0) return;
