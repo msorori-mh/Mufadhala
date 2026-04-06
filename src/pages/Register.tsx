@@ -97,13 +97,32 @@ const Register = () => {
     fetchMajors();
   }, [collegeId]);
 
+  const passwordChecks = useMemo(() => {
+    const hasMinLength = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const passed = [hasMinLength, hasUppercase, hasLowercase, hasNumber, hasSpecial].filter(Boolean).length;
+    const strength = passed <= 2 ? "weak" : passed <= 3 ? "medium" : "strong";
+    const strengthPct = (passed / 5) * 100;
+    return { hasMinLength, hasUppercase, hasLowercase, hasNumber, hasSpecial, passed, strength, strengthPct };
+  }, [password]);
+
+  const strengthLabel = { weak: "ضعيفة", medium: "متوسطة", strong: "قوية" } as const;
+  const strengthColor = { weak: "bg-destructive", medium: "bg-yellow-500", strong: "bg-green-500" } as const;
+
   const validateStep1 = () => {
     if (!email || !password || !confirmPassword) {
       toast({ variant: "destructive", title: "يرجى ملء جميع الحقول" });
       return false;
     }
-    if (password.length < 6) {
-      toast({ variant: "destructive", title: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" });
+    if (password.length < 8) {
+      toast({ variant: "destructive", title: "كلمة المرور يجب أن تكون 8 أحرف على الأقل" });
+      return false;
+    }
+    if (passwordChecks.strength === "weak") {
+      toast({ variant: "destructive", title: "كلمة المرور ضعيفة جداً، حاول إضافة أحرف كبيرة وأرقام ورموز" });
       return false;
     }
     if (password !== confirmPassword) {
