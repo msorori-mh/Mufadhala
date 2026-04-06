@@ -263,25 +263,75 @@ const Register = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>كلمة المرور</Label>
-                    <Input
-                      type="password"
-                      placeholder="6 أحرف على الأقل"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      dir="ltr"
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="8 أحرف على الأقل"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        dir="ltr"
+                        className="pl-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {/* Password strength indicator */}
+                    {password && (
+                      <div className="space-y-2 mt-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">قوة كلمة المرور:</span>
+                          <span className={`text-xs font-bold ${passwordChecks.strength === "weak" ? "text-destructive" : passwordChecks.strength === "medium" ? "text-yellow-600" : "text-green-600"}`}>
+                            {strengthLabel[passwordChecks.strength]}
+                          </span>
+                        </div>
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${strengthColor[passwordChecks.strength]}`}
+                            style={{ width: `${passwordChecks.strengthPct}%` }}
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 gap-1 text-xs">
+                          {[
+                            { check: passwordChecks.hasMinLength, label: "8 أحرف على الأقل" },
+                            { check: passwordChecks.hasUppercase, label: "حرف كبير (A-Z)" },
+                            { check: passwordChecks.hasLowercase, label: "حرف صغير (a-z)" },
+                            { check: passwordChecks.hasNumber, label: "رقم (0-9)" },
+                            { check: passwordChecks.hasSpecial, label: "رمز خاص (!@#$...)" },
+                          ].map(({ check, label }) => (
+                            <div key={label} className="flex items-center gap-1.5">
+                              {check ? (
+                                <Check className="w-3.5 h-3.5 text-green-600" />
+                              ) : (
+                                <X className="w-3.5 h-3.5 text-muted-foreground" />
+                              )}
+                              <span className={check ? "text-green-600" : "text-muted-foreground"}>{label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>تأكيد كلمة المرور</Label>
                     <Input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       placeholder="أعد إدخال كلمة المرور"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       dir="ltr"
                       required
                     />
+                    {confirmPassword && password !== confirmPassword && (
+                      <p className="text-xs text-destructive flex items-center gap-1">
+                        <X className="w-3.5 h-3.5" /> كلمة المرور غير متطابقة
+                      </p>
+                    )}
                   </div>
                 </>
               )}
