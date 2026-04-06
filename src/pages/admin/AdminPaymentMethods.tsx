@@ -220,6 +220,7 @@ const AdminPaymentMethods = () => {
           </div>
         </DialogContent>
       </Dialog>
+      </PermissionGate>
     </AdminLayout>
   );
 };
