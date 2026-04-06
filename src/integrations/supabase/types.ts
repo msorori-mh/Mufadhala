@@ -205,6 +205,7 @@ export type Database = {
           created_at: string
           display_order: number
           id: string
+          is_free: boolean
           is_published: boolean
           major_id: string
           summary: string
@@ -216,6 +217,7 @@ export type Database = {
           created_at?: string
           display_order?: number
           id?: string
+          is_free?: boolean
           is_published?: boolean
           major_id: string
           summary?: string
@@ -227,6 +229,7 @@ export type Database = {
           created_at?: string
           display_order?: number
           id?: string
+          is_free?: boolean
           is_published?: boolean
           major_id?: string
           summary?: string

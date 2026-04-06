@@ -7,7 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { GraduationCap, BookOpen, ArrowRight, ChevronLeft, Loader2, CheckCircle2, Search, X } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { GraduationCap, BookOpen, ArrowRight, ChevronLeft, Loader2, CheckCircle2, Search, X, Lock, Sparkles } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
 interface Lesson {
@@ -16,10 +17,12 @@ interface Lesson {
   title: string;
   summary: string;
   display_order: number;
+  is_free: boolean;
 }
 
 const LessonsList = () => {
   const { user, loading: authLoading } = useAuth();
+  const { isActive: hasSubscription, loading: subLoading } = useSubscription(user?.id);
   const navigate = useNavigate();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [student, setStudent] = useState<any>(null);
@@ -38,7 +41,7 @@ const LessonsList = () => {
 
       const [{ data: major }, { data: ls }] = await Promise.all([
         supabase.from("majors").select("name_ar").eq("id", s.major_id).maybeSingle(),
-        supabase.from("lessons").select("id, major_id, title, summary, display_order")
+        supabase.from("lessons").select("id, major_id, title, summary, display_order, is_free")
           .eq("major_id", s.major_id).eq("is_published", true).order("display_order"),
       ]);
       if (major) setMajorName(major.name_ar);
@@ -74,7 +77,7 @@ const LessonsList = () => {
 
   const progressPct = lessons.length > 0 ? Math.round((completedLessons.size / lessons.length) * 100) : 0;
 
-  if (authLoading || loading) {
+  if (authLoading || loading || subLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -173,17 +176,23 @@ const LessonsList = () => {
               {filteredLessons.map((lesson, i) => {
                 const done = completedLessons.has(lesson.id);
                 const originalIndex = lessons.findIndex(l => l.id === lesson.id);
+                const isLocked = !hasSubscription && !lesson.is_free;
                 return (
                   <Link key={lesson.id} to={`/lessons/${lesson.id}`} className="block">
-                    <Card className={`hover:shadow-md transition-shadow cursor-pointer border-r-4 ${done ? "border-r-green-500" : "border-r-primary"}`}>
+                    <Card className={`hover:shadow-md transition-shadow cursor-pointer border-r-4 ${done ? "border-r-green-500" : isLocked ? "border-r-muted-foreground/30" : "border-r-primary"}`}>
                       <CardContent className="py-4 px-4">
                         <div className="flex items-center justify-between">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className={`w-7 h-7 rounded-full text-sm font-bold flex items-center justify-center shrink-0 ${done ? "bg-green-100 text-green-600 dark:bg-green-950/30" : "bg-primary/10 text-primary"}`}>
-                                {done ? <CheckCircle2 className="w-4 h-4" /> : originalIndex + 1}
+                              <span className={`w-7 h-7 rounded-full text-sm font-bold flex items-center justify-center shrink-0 ${done ? "bg-green-100 text-green-600 dark:bg-green-950/30" : isLocked ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"}`}>
+                                {done ? <CheckCircle2 className="w-4 h-4" /> : isLocked ? <Lock className="w-3.5 h-3.5" /> : originalIndex + 1}
                               </span>
                               <p className="font-semibold text-foreground">{lesson.title}</p>
+                              {lesson.is_free && !hasSubscription && (
+                                <Badge variant="outline" className="text-xs border-green-500 text-green-600 gap-0.5">
+                                  <Sparkles className="w-3 h-3" /> مجاني
+                                </Badge>
+                              )}
                             </div>
                             {lesson.summary && <p className="text-sm text-muted-foreground mt-1 mr-9 line-clamp-2">{lesson.summary}</p>}
                             <div className="mt-2 mr-9 flex gap-2">
@@ -195,9 +204,18 @@ const LessonsList = () => {
                                   مكتمل
                                 </Badge>
                               )}
+                              {isLocked && (
+                                <Badge variant="outline" className="text-xs text-muted-foreground">
+                                  يتطلب اشتراك
+                                </Badge>
+                              )}
                             </div>
                           </div>
-                          <ArrowRight className="w-5 h-5 text-muted-foreground shrink-0 mr-2" />
+                          {isLocked ? (
+                            <Lock className="w-5 h-5 text-muted-foreground shrink-0 mr-2" />
+                          ) : (
+                            <ArrowRight className="w-5 h-5 text-muted-foreground shrink-0 mr-2" />
+                          )}
                         </div>
                       </CardContent>
                     </Card>

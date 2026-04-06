@@ -18,6 +18,7 @@ interface Lesson {
   title: string;
   content: string;
   summary: string;
+  is_free: boolean;
 }
 
 interface Question {
@@ -52,7 +53,7 @@ const LessonDetail = () => {
     if (authLoading || !id || !user) return;
     const fetch = async () => {
       const [{ data: l }, { data: q }, { data: s }] = await Promise.all([
-        supabase.from("lessons").select("id, title, content, summary").eq("id", id).maybeSingle(),
+        supabase.from("lessons").select("id, title, content, summary, is_free").eq("id", id).maybeSingle(),
         supabase.from("questions").select("*").eq("lesson_id", id).order("display_order"),
         supabase.from("students").select("id").eq("user_id", user.id).maybeSingle(),
       ]);
@@ -110,8 +111,8 @@ const LessonDetail = () => {
     );
   }
 
-  // Content gating: staff can always access, students need active subscription
-  const canAccess = isStaff || hasActiveSubscription;
+  // Content gating: staff always, free lessons always, otherwise need subscription
+  const canAccess = isStaff || hasActiveSubscription || (lesson?.is_free === true);
 
   if (!lesson) {
     return (
@@ -140,18 +141,33 @@ const LessonDetail = () => {
 
       <main className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6">
         {!canAccess ? (
-          <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-900">
-            <CardContent className="py-8 text-center">
-              <Lock className="w-12 h-12 text-yellow-600 mx-auto mb-3" />
-              <h2 className="text-lg font-bold text-yellow-700 dark:text-yellow-400">محتوى مقفل</h2>
-              <p className="text-sm text-yellow-600 dark:text-yellow-500 mt-2">
-                يجب تفعيل اشتراكك للوصول إلى هذا المحتوى التعليمي
-              </p>
-              <Button className="mt-4" onClick={() => navigate("/subscription")}>
-                تفعيل الاشتراك
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            {/* Show summary for free */}
+            {lesson.summary && (
+              <Card>
+                <CardContent className="py-6 px-5">
+                  <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
+                    <BookOpen className="w-4 h-4" /> ملخص الدرس
+                  </h3>
+                  <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
+                    {lesson.summary}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-900">
+              <CardContent className="py-8 text-center">
+                <Lock className="w-12 h-12 text-yellow-600 mx-auto mb-3" />
+                <h2 className="text-lg font-bold text-yellow-700 dark:text-yellow-400">المحتوى الكامل مقفل</h2>
+                <p className="text-sm text-yellow-600 dark:text-yellow-500 mt-2">
+                  يمكنك قراءة الملخص مجاناً. لفتح الشرح الكامل والأسئلة والتقييمات، فعّل اشتراكك
+                </p>
+                <Button className="mt-4" onClick={() => navigate("/subscription")}>
+                  تفعيل الاشتراك
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         ) : (
           <>
         {/* Completion button */}

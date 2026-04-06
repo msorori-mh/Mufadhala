@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, CreditCard, Upload, CheckCircle, Clock,
-  Building, ArrowLeftRight, ChevronRight, GraduationCap
+  Building, ArrowLeftRight, ChevronRight, GraduationCap, Smartphone
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -238,6 +238,21 @@ const Subscription = () => {
                     <CardContent className="py-3 px-4">
                       <p className="font-semibold text-sm">{m.name}</p>
                       {m.account_number && <p className="text-xs text-muted-foreground">رقم الهاتف: {m.account_number}</p>}
+                      {m.details && <p className="text-xs text-muted-foreground">{m.details}</p>}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {methods.filter((m) => m.type === "ewallet").length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1"><Smartphone className="w-4 h-4" /> محافظ إلكترونية</h3>
+                {methods.filter((m) => m.type === "ewallet").map((m) => (
+                  <Card key={m.id} className="cursor-pointer hover:border-primary transition-colors mb-2" onClick={() => handleSelectMethod(m)}>
+                    <CardContent className="py-3 px-4">
+                      <p className="font-semibold text-sm">{m.name}</p>
+                      {m.account_number && <p className="text-xs text-muted-foreground">رقم المحفظة: {m.account_number}</p>}
                       {m.details && <p className="text-xs text-muted-foreground">{m.details}</p>}
                     </CardContent>
                   </Card>
