@@ -307,7 +307,7 @@ const Dashboard = () => {
         )}
 
         {/* Navigation Cards */}
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
           {navCards.map((card) => (
             <Link key={card.path} to={card.path} className="block">
               <Card className={`cursor-pointer hover:shadow-md transition-shadow border-r-4 ${card.color} h-full`}>
