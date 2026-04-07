@@ -68,23 +68,13 @@ const Index = React.forwardRef<HTMLDivElement>((_, ref) => {
             قَبُول.. خطوتك الأولى نحو كليات القمة.
           </p>
           
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Button
-              size="lg"
-              onClick={() => navigate("/login")}
-              className="bg-secondary text-secondary-foreground hover:bg-secondary/90 text-base font-bold px-8 py-6 rounded-xl shadow-lg"
-            >
-              ابدأ الآن
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => navigate("/login")}
-              className="border-white/40 text-white bg-white/10 hover:bg-white/20 hover:text-white text-base font-medium px-8 py-6 rounded-xl backdrop-blur-sm"
-            >
-              تسجيل الدخول
-            </Button>
-          </div>
+          <Button
+            size="lg"
+            onClick={() => navigate("/login")}
+            className="bg-secondary text-secondary-foreground hover:bg-secondary/90 text-base font-bold px-8 py-6 rounded-xl shadow-lg"
+          >
+            ابدأ الآن
+          </Button>
         </div>
       </section>
 

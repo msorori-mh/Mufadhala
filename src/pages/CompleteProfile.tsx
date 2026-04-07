@@ -25,10 +25,12 @@ const CompleteProfile = () => {
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [studentId, setStudentId] = useState<string | null>(null);
+  const [showPhone, setShowPhone] = useState(false);
 
   // Step 1 fields
   const [firstName, setFirstName] = useState("");
   const [fourthName, setFourthName] = useState("");
+  const [phone, setPhone] = useState("");
   const [governorate, setGovernorate] = useState("");
 
   // Step 2 fields
