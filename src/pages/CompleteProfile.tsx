@@ -8,6 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { GraduationCap, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const YEMEN_PHONE_REGEX = /^7[0-9]{8}$/;
+const isValidYemeniPhone = (p: string) => !p || YEMEN_PHONE_REGEX.test(p);
+
 const GOVERNORATES = [
   "أمانة العاصمة", "عدن", "تعز", "الحديدة", "إب", "ذمار", "حجة",
   "صعدة", "عمران", "صنعاء", "المحويت", "ريمة", "البيضاء", "مأرب",
