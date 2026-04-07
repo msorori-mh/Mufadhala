@@ -123,6 +123,7 @@ const CompleteProfile = () => {
       setLoading(false);
       return;
     }
+    localStorage.removeItem("profile_skipped");
     toast({ title: "تم حفظ البيانات بنجاح" });
     navigate("/dashboard");
   };
