@@ -42,7 +42,7 @@ export const useAuth = (requiredRole?: AppRole) => {
               .select("major_id")
               .eq("user_id", session.user.id)
               .maybeSingle();
-            if (!student?.major_id) {
+            if (!student?.major_id && !localStorage.getItem("profile_skipped")) {
               navigate("/complete-profile");
               setLoading(false);
               return;
@@ -81,7 +81,7 @@ export const useAuth = (requiredRole?: AppRole) => {
             .select("major_id")
             .eq("user_id", session.user.id)
             .maybeSingle();
-          if (!student?.major_id) {
+          if (!student?.major_id && !localStorage.getItem("profile_skipped")) {
             navigate("/complete-profile");
             setLoading(false);
             return;

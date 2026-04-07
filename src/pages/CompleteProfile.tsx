@@ -123,6 +123,7 @@ const CompleteProfile = () => {
       setLoading(false);
       return;
     }
+    localStorage.removeItem("profile_skipped");
     toast({ title: "تم حفظ البيانات بنجاح" });
     navigate("/dashboard");
   };
@@ -194,6 +195,15 @@ const CompleteProfile = () => {
                   التالي
                   <ArrowLeft className="w-4 h-4" />
                 </Button>
+                <button
+                  onClick={() => {
+                    localStorage.setItem("profile_skipped", "true");
+                    navigate("/dashboard");
+                  }}
+                  className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+                >
+                  تخطي الآن وإكمال لاحقاً
+                </button>
               </>
             )}
 
