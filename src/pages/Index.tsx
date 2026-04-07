@@ -58,8 +58,8 @@ const Index = React.forwardRef<HTMLDivElement>((_, ref) => {
         </div>
         
         <div className="relative z-10 text-center max-w-2xl mx-auto">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm mb-6">
-            <GraduationCap className="w-10 h-10 text-white" />
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-white/20 backdrop-blur-sm mb-6 p-2">
+            <img src={logoImg} alt="شعار قَبُول" className="w-full h-full object-contain" />
           </div>
           
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
