@@ -48,10 +48,15 @@ const CompleteProfile = () => {
         navigate("/login");
         return;
       }
-      // Check if profile already complete
+
+      // Show phone field only for email/Google signups (not phone auth)
+      const provider = session.user.app_metadata?.provider;
+      const hasPhone = !!session.user.phone;
+      setShowPhone(!hasPhone && provider !== 'phone');
+
       const { data: student } = await supabase
         .from("students")
-        .select("id, first_name, fourth_name, governorate, major_id")
+        .select("id, first_name, fourth_name, governorate, major_id, phone")
         .eq("user_id", session.user.id)
         .maybeSingle();
 
@@ -65,6 +70,7 @@ const CompleteProfile = () => {
         if (student.first_name) setFirstName(student.first_name);
         if (student.fourth_name) setFourthName(student.fourth_name);
         if (student.governorate) setGovernorate(student.governorate);
+        if (student.phone) setPhone(student.phone);
       }
       setCheckingAuth(false);
     };
