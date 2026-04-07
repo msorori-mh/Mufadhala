@@ -40,6 +40,7 @@ import AdminPromoCodes from "./pages/admin/AdminPromoCodes";
 import NotFound from "./pages/NotFound";
 import MobileBottomNav from "./components/MobileBottomNav";
 import ChatWidget from "./components/ChatWidget";
+import InstallAppPrompt from "./components/InstallAppPrompt";
 import { useOfflineExamSync } from "./hooks/useOfflineExamSync";
 
 const queryClient = new QueryClient();
@@ -96,6 +97,7 @@ function App() {
             </Routes>
             <MobileBottomNav />
             <ChatWidget />
+            <InstallAppPrompt />
           </OfflineExamSyncProvider>
         </BrowserRouter>
       </TooltipProvider>
