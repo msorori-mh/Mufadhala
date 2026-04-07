@@ -191,11 +191,15 @@ const CompleteProfile = () => {
                     <label className="text-sm font-medium">رقم الجوال</label>
                     <Input
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
                       placeholder="مثال: 777123456"
                       type="tel"
                       dir="ltr"
+                      className={phone && !isValidYemeniPhone(phone) ? "border-destructive" : ""}
                     />
+                    {phone && !isValidYemeniPhone(phone) && (
+                      <p className="text-xs text-destructive">يجب أن يبدأ بـ 7 ويتكون من 9 أرقام</p>
+                    )}
                   </div>
                 )}
                 <div className="space-y-2">
