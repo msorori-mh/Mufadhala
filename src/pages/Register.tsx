@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GraduationCap, ChevronLeft, ChevronRight, Eye, EyeOff, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, EyeOff, X } from "lucide-react";
+import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
@@ -197,8 +198,8 @@ const Register = () => {
         {/* Logo */}
         <div className="text-center mb-6">
           <Link to="/" className="inline-flex items-center gap-2">
-            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              <GraduationCap className="w-7 h-7 text-white" />
+            <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center p-1.5">
+              <img src={logoImg} alt="شعار قَبُول" className="w-full h-full object-contain" />
             </div>
             <span className="text-2xl font-bold text-white">قَبُول</span>
           </Link>
