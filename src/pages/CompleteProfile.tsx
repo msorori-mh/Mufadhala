@@ -183,6 +183,18 @@ const CompleteProfile = () => {
                     placeholder="أدخل لقبك"
                   />
                 </div>
+                {showPhone && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">رقم الجوال</label>
+                    <Input
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="مثال: 777123456"
+                      type="tel"
+                      dir="ltr"
+                    />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">المحافظة</label>
                   <Select value={governorate} onValueChange={setGovernorate}>
