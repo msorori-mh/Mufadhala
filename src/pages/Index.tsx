@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, BookOpen, ClipboardCheck, TrendingUp, Loader2 } from "lucide-react";
+import { BookOpen, ClipboardCheck, TrendingUp, Loader2 } from "lucide-react";
+import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAuthDestination } from "@/lib/authRouting";
 
