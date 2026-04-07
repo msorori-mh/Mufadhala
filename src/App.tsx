@@ -97,6 +97,7 @@ function App() {
             </Routes>
             <MobileBottomNav />
             <ChatWidget />
+            <InstallAppPrompt />
           </OfflineExamSyncProvider>
         </BrowserRouter>
       </TooltipProvider>
