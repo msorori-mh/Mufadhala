@@ -51,7 +51,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, ref) => {
   return (
     <div ref={ref} className="min-h-screen flex flex-col">
       {/* Hero Section */}
-      <section className="gradient-hero relative overflow-hidden flex-1 flex items-center justify-center px-4 py-16 min-h-[70vh]">
+      <section className="gradient-hero relative overflow-hidden flex-1 flex items-center justify-center px-4 pt-[calc(env(safe-area-inset-top)+6rem)] pb-16 md:py-16 min-h-[70vh]">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 right-10 w-72 h-72 bg-white rounded-full blur-3xl" />
           <div className="absolute bottom-20 left-10 w-96 h-96 bg-white rounded-full blur-3xl" />
