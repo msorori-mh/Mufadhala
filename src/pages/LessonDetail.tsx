@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
-import { ChevronLeft, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check, Lock, Star, Download, Trash2, WifiOff } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check, Lock, Star, Download, Trash2, WifiOff } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import LessonReviews from "@/components/LessonReviews";
 import { toast } from "sonner";
@@ -52,6 +52,8 @@ const LessonDetail = () => {
   const [isSavedOffline, setIsSavedOffline] = useState(false);
   const [savingOffline, setSavingOffline] = useState(false);
   const [isFromCache, setIsFromCache] = useState(false);
+  const [prevLesson, setPrevLesson] = useState<{ id: string; title: string } | null>(null);
+  const [nextLesson, setNextLesson] = useState<{ id: string; title: string } | null>(null);
 
   // Reveal answer state
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
@@ -90,6 +92,20 @@ const LessonDetail = () => {
             .maybeSingle();
           if (plan && plan.allowed_major_ids && plan.allowed_major_ids.length > 0) {
             setPlanCoversLesson(plan.allowed_major_ids.includes(l.major_id));
+          }
+        }
+        // Fetch sibling lessons for prev/next navigation
+        if (l.major_id) {
+          const { data: siblings } = await supabase
+            .from("lessons")
+            .select("id, title, display_order")
+            .eq("major_id", l.major_id)
+            .eq("is_published", true)
+            .order("display_order");
+          if (siblings && siblings.length > 0) {
+            const currentIdx = siblings.findIndex((s) => s.id === id);
+            setPrevLesson(currentIdx > 0 ? { id: siblings[currentIdx - 1].id, title: siblings[currentIdx - 1].title } : null);
+            setNextLesson(currentIdx < siblings.length - 1 ? { id: siblings[currentIdx + 1].id, title: siblings[currentIdx + 1].title } : null);
           }
         }
       }
@@ -384,6 +400,34 @@ const LessonDetail = () => {
             </TabsContent>
           )}
         </Tabs>
+
+        {/* Prev/Next lesson navigation */}
+        {(prevLesson || nextLesson) && (
+          <div className="mt-6 flex items-stretch gap-3">
+            {prevLesson ? (
+              <Button variant="outline" className="flex-1 h-auto py-3 px-4 justify-start text-right gap-2" asChild>
+                <Link to={`/lessons/${prevLesson.id}`}>
+                  <ChevronRight className="w-5 h-5 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground">الدرس السابق</p>
+                    <p className="text-sm font-medium truncate">{prevLesson.title}</p>
+                  </div>
+                </Link>
+              </Button>
+            ) : <div className="flex-1" />}
+            {nextLesson ? (
+              <Button variant="outline" className="flex-1 h-auto py-3 px-4 justify-end text-left gap-2" asChild>
+                <Link to={`/lessons/${nextLesson.id}`}>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground">الدرس التالي</p>
+                    <p className="text-sm font-medium truncate">{nextLesson.title}</p>
+                  </div>
+                  <ChevronLeft className="w-5 h-5 shrink-0" />
+                </Link>
+              </Button>
+            ) : <div className="flex-1" />}
+          </div>
+        )}
         </>
         )}
       </main>
