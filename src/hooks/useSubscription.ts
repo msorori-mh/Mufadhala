@@ -10,6 +10,7 @@ interface SubscriptionStatus {
   expiresAt: string | null;
   planId: string | null;
   planSlug: string | null;
+  allowedMajorIds: string[] | null;
   loading: boolean;
 }
 
