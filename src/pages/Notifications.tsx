@@ -3,22 +3,23 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { GraduationCap, ArrowRight, Bell, Check, Loader2 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const Notifications = () => {
+  const { user, loading: authLoading } = useAuthContext();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+    if (authLoading || !user) return;
 
+    const init = async () => {
       const { data } = await supabase
         .from("notifications")
         .select("*")
-        .eq("user_id", session.user.id)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (data) setNotifications(data);
       setLoading(false);
@@ -26,7 +27,7 @@ const Notifications = () => {
       // Realtime
       const channel = supabase
         .channel("user-notifications")
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${session.user.id}` }, (payload) => {
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, (payload) => {
           setNotifications((prev) => [payload.new as any, ...prev]);
         })
         .subscribe();
@@ -34,7 +35,7 @@ const Notifications = () => {
       return () => { supabase.removeChannel(channel); };
     };
     init();
-  }, []);
+  }, [authLoading, user]);
 
   const markAsRead = async (id: string) => {
     await supabase.from("notifications").update({ is_read: true }).eq("id", id);
@@ -42,9 +43,8 @@ const Notifications = () => {
   };
 
   const markAllRead = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    await supabase.from("notifications").update({ is_read: true }).eq("user_id", session.user.id).eq("is_read", false);
+    if (!user) return;
+    await supabase.from("notifications").update({ is_read: true }).eq("user_id", user.id).eq("is_read", false);
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
   };
 
