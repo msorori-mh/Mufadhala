@@ -114,6 +114,7 @@ const Login = () => {
         toast({ title: "تم الإرسال", description: "تم إرسال رمز التحقق إلى جوالك" });
         setPhoneStep("otp");
         setResendCountdown(60);
+        sessionStorage.setItem("otp_cooldown", JSON.stringify({ phone: phoneNumber, expiry: Date.now() + 60000 }));
       }
     } catch {
       toast({ variant: "destructive", title: "خطأ", description: "حدث خطأ غير متوقع" });
