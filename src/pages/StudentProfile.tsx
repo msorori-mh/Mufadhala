@@ -135,7 +135,7 @@ const StudentProfile = () => {
         college_id: collegeId || null,
         major_id: majorId || null,
       })
-      .eq("user_id", userId);
+      .eq("user_id", user.id);
 
     if (error) {
       toast({ variant: "destructive", title: "خطأ في الحفظ", description: error.message });
