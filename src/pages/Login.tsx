@@ -178,7 +178,7 @@ const Login = () => {
                   className="w-full py-6 text-base font-semibold gap-3"
                 >
                   <Phone className="w-5 h-5" />
-                  الدخول برقم الجوال
+                  متابعة برقم الجوال
                 </Button>
 
                 <div className="relative">
