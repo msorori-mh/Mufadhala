@@ -13,7 +13,7 @@ import { useModeratorScope } from "@/hooks/useModeratorScope";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import * as XLSX from "xlsx";
 
 interface Lesson {
@@ -39,6 +39,18 @@ interface Question {
   correct_option: string;
   explanation: string;
   display_order: number;
+  subject: string;
+}
+
+interface PendingQuestion {
+  tempId: string;
+  question_text: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_option: string;
+  explanation: string;
   subject: string;
 }
 
@@ -82,7 +94,24 @@ const AdminContent = () => {
   const [lessonFree, setLessonFree] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Question dialog
+  // Pending questions for lesson dialog
+  const [pendingQuestions, setPendingQuestions] = useState<PendingQuestion[]>([]);
+  const [existingLessonQuestions, setExistingLessonQuestions] = useState<Question[]>([]);
+  const [showAddQuestionForm, setShowAddQuestionForm] = useState(false);
+  const [questionsExpanded, setQuestionsExpanded] = useState(true);
+  const lessonQuestionFileRef = useRef<HTMLInputElement>(null);
+
+  // Inline question form state (inside lesson dialog)
+  const [inlineQuestionText, setInlineQuestionText] = useState("");
+  const [inlineOptionA, setInlineOptionA] = useState("");
+  const [inlineOptionB, setInlineOptionB] = useState("");
+  const [inlineOptionC, setInlineOptionC] = useState("");
+  const [inlineOptionD, setInlineOptionD] = useState("");
+  const [inlineCorrectOption, setInlineCorrectOption] = useState("a");
+  const [inlineExplanation, setInlineExplanation] = useState("");
+  const [inlineSubject, setInlineSubject] = useState("general");
+
+  // Question dialog (for editing from the questions panel)
   const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [questionLessonId, setQuestionLessonId] = useState("");
@@ -96,7 +125,7 @@ const AdminContent = () => {
   const [questionSubject, setQuestionSubject] = useState("general");
   const [questionOrder, setQuestionOrder] = useState(0);
 
-  // Selected lesson for questions
+  // Selected lesson for questions panel
   const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
 
   // Import state
@@ -105,7 +134,7 @@ const AdminContent = () => {
   const [importMajorId, setImportMajorId] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Import questions for specific lesson
+  // Import questions for specific lesson (from questions panel)
   const [importQuestionsDialogOpen, setImportQuestionsDialogOpen] = useState(false);
   const [importingQuestions, setImportingQuestions] = useState(false);
   const questionFileInputRef = useRef<HTMLInputElement>(null);
@@ -170,6 +199,11 @@ const AdminContent = () => {
     setLessonOrder(filteredLessons.length);
     setLessonPublished(false);
     setLessonFree(false);
+    setPendingQuestions([]);
+    setExistingLessonQuestions([]);
+    setShowAddQuestionForm(false);
+    setQuestionsExpanded(true);
+    resetInlineQuestionForm();
     setLessonDialogOpen(true);
   };
 
@@ -182,7 +216,127 @@ const AdminContent = () => {
     setLessonOrder(l.display_order);
     setLessonPublished(l.is_published);
     setLessonFree(l.is_free);
+    setPendingQuestions([]);
+    setExistingLessonQuestions(questions.filter(q => q.lesson_id === l.id));
+    setShowAddQuestionForm(false);
+    setQuestionsExpanded(true);
+    resetInlineQuestionForm();
     setLessonDialogOpen(true);
+  };
+
+  const resetInlineQuestionForm = () => {
+    setInlineQuestionText("");
+    setInlineOptionA("");
+    setInlineOptionB("");
+    setInlineOptionC("");
+    setInlineOptionD("");
+    setInlineCorrectOption("a");
+    setInlineExplanation("");
+    setInlineSubject("general");
+  };
+
+  const addPendingQuestion = () => {
+    if (!inlineQuestionText || !inlineOptionA || !inlineOptionB || !inlineOptionC || !inlineOptionD) {
+      toast({ variant: "destructive", title: "يرجى ملء جميع حقول السؤال المطلوبة" });
+      return;
+    }
+    setPendingQuestions(prev => [...prev, {
+      tempId: crypto.randomUUID(),
+      question_text: inlineQuestionText,
+      option_a: inlineOptionA,
+      option_b: inlineOptionB,
+      option_c: inlineOptionC,
+      option_d: inlineOptionD,
+      correct_option: inlineCorrectOption,
+      explanation: inlineExplanation,
+      subject: inlineSubject,
+    }]);
+    resetInlineQuestionForm();
+    setShowAddQuestionForm(false);
+    toast({ title: "تمت إضافة السؤال إلى القائمة" });
+  };
+
+  const removePendingQuestion = (tempId: string) => {
+    setPendingQuestions(prev => prev.filter(q => q.tempId !== tempId));
+  };
+
+  const handleDeleteExistingQuestion = async (id: string) => {
+    if (!confirm("حذف هذا السؤال؟")) return;
+    const { error } = await supabase.from("questions").delete().eq("id", id);
+    if (error) toast({ variant: "destructive", title: error.message });
+    else {
+      toast({ title: "تم الحذف" });
+      setExistingLessonQuestions(prev => prev.filter(q => q.id !== id));
+      fetchData();
+    }
+  };
+
+  const handleImportQuestionsInDialog = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const data = evt.target?.result;
+        const wb = file.name.endsWith(".csv")
+          ? XLSX.read(new TextDecoder("utf-8").decode(data as ArrayBuffer), { type: "string" })
+          : XLSX.read(data, { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
+
+        if (editingLesson) {
+          // Editing: save directly to DB
+          let imported = 0;
+          const existingCount = existingLessonQuestions.length;
+          for (let i = 1; i < rows.length; i++) {
+            const row = rows[i] as any[];
+            if (!row[0]) continue;
+            const { error } = await supabase.from("questions").insert({
+              lesson_id: editingLesson.id,
+              question_text: String(row[0]),
+              option_a: String(row[1] || ""),
+              option_b: String(row[2] || ""),
+              option_c: String(row[3] || ""),
+              option_d: String(row[4] || ""),
+              correct_option: String(row[5] || "a").toLowerCase().trim(),
+              explanation: row[6] ? String(row[6]) : "",
+              display_order: existingCount + i,
+            });
+            if (!error) imported++;
+          }
+          toast({ title: `تم استيراد ${imported} سؤال بنجاح` });
+          // Refresh existing questions
+          const { data: updatedQ } = await supabase.from("questions").select("*").eq("lesson_id", editingLesson.id).order("display_order");
+          if (updatedQ) setExistingLessonQuestions(updatedQ as Question[]);
+          fetchData();
+        } else {
+          // Creating: add to pendingQuestions
+          const newPending: PendingQuestion[] = [];
+          for (let i = 1; i < rows.length; i++) {
+            const row = rows[i] as any[];
+            if (!row[0]) continue;
+            newPending.push({
+              tempId: crypto.randomUUID(),
+              question_text: String(row[0]),
+              option_a: String(row[1] || ""),
+              option_b: String(row[2] || ""),
+              option_c: String(row[3] || ""),
+              option_d: String(row[4] || ""),
+              correct_option: String(row[5] || "a").toLowerCase().trim(),
+              explanation: row[6] ? String(row[6]) : "",
+              subject: "general",
+            });
+          }
+          setPendingQuestions(prev => [...prev, ...newPending]);
+          toast({ title: `تمت إضافة ${newPending.length} سؤال إلى القائمة` });
+        }
+      } catch (err: any) {
+        toast({ variant: "destructive", title: `خطأ في قراءة الملف: ${err.message}` });
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    if (lessonQuestionFileRef.current) lessonQuestionFileRef.current.value = "";
   };
 
   const handleSaveLesson = async () => {
@@ -203,11 +357,52 @@ const AdminContent = () => {
     if (editingLesson) {
       const { error } = await supabase.from("lessons").update(payload).eq("id", editingLesson.id);
       if (error) toast({ variant: "destructive", title: error.message });
-      else toast({ title: "تم تحديث الدرس" });
+      else {
+        // Save any pending questions for editing mode too
+        if (pendingQuestions.length > 0) {
+          const baseOrder = existingLessonQuestions.length;
+          for (let i = 0; i < pendingQuestions.length; i++) {
+            const pq = pendingQuestions[i];
+            await supabase.from("questions").insert({
+              lesson_id: editingLesson.id,
+              question_text: pq.question_text,
+              option_a: pq.option_a,
+              option_b: pq.option_b,
+              option_c: pq.option_c,
+              option_d: pq.option_d,
+              correct_option: pq.correct_option,
+              explanation: pq.explanation,
+              subject: pq.subject,
+              display_order: baseOrder + i,
+            });
+          }
+        }
+        toast({ title: "تم تحديث الدرس" });
+      }
     } else {
-      const { error } = await supabase.from("lessons").insert(payload);
+      const { data: inserted, error } = await supabase.from("lessons").insert(payload).select("id").single();
       if (error) toast({ variant: "destructive", title: error.message });
-      else toast({ title: "تمت إضافة الدرس" });
+      else if (inserted) {
+        // Save pending questions
+        if (pendingQuestions.length > 0) {
+          for (let i = 0; i < pendingQuestions.length; i++) {
+            const pq = pendingQuestions[i];
+            await supabase.from("questions").insert({
+              lesson_id: inserted.id,
+              question_text: pq.question_text,
+              option_a: pq.option_a,
+              option_b: pq.option_b,
+              option_c: pq.option_c,
+              option_d: pq.option_d,
+              correct_option: pq.correct_option,
+              explanation: pq.explanation,
+              subject: pq.subject,
+              display_order: i,
+            });
+          }
+        }
+        toast({ title: `تمت إضافة الدرس${pendingQuestions.length > 0 ? ` مع ${pendingQuestions.length} سؤال` : ""}` });
+      }
     }
     setSaving(false);
     setLessonDialogOpen(false);
@@ -221,7 +416,7 @@ const AdminContent = () => {
     else { toast({ title: "تم الحذف" }); if (selectedLesson === id) setSelectedLesson(null); fetchData(); }
   };
 
-  // --- Question CRUD ---
+  // --- Question CRUD (from questions panel) ---
   const openCreateQuestion = (lessonId: string) => {
     setEditingQuestion(null);
     setQuestionLessonId(lessonId);
@@ -291,7 +486,7 @@ const AdminContent = () => {
     else { toast({ title: "تم الحذف" }); fetchData(); }
   };
 
-  // --- Import questions for specific lesson ---
+  // --- Import questions for specific lesson (from panel) ---
   const downloadQuestionsTemplate = () => {
     const wb = XLSX.utils.book_new();
     const data = [
@@ -348,7 +543,7 @@ const AdminContent = () => {
     if (questionFileInputRef.current) questionFileInputRef.current.value = "";
   };
 
-  // --- Import ---
+  // --- Bulk Import ---
   const downloadTemplate = () => {
     const wb = XLSX.utils.book_new();
     const lessonsData = [
@@ -379,7 +574,6 @@ const AdminContent = () => {
         const wb = XLSX.read(text, { type: "string" });
         const sheet = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
-        // Detect if CSV is lessons or questions by column count
         if (rows[0] && (rows[0] as any[]).length >= 7) {
           questionsSheet = rows;
         } else {
@@ -398,8 +592,7 @@ const AdminContent = () => {
         });
       }
 
-      // Import lessons (skip header row)
-      const lessonMap = new Map<string, string>(); // title -> id
+      const lessonMap = new Map<string, string>();
       if (lessonsSheet.length > 1) {
         for (let i = 1; i < lessonsSheet.length; i++) {
           const row = lessonsSheet[i] as any[];
@@ -421,9 +614,7 @@ const AdminContent = () => {
         }
       }
 
-      // Import questions (skip header row)
       if (questionsSheet.length > 1) {
-        // If no lessons were imported, map existing lessons
         if (lessonMap.size === 0) {
           lessons.filter(l => l.major_id === importMajorId).forEach(l => lessonMap.set(l.title, l.id));
         }
@@ -468,6 +659,8 @@ const AdminContent = () => {
 
   const lessonQuestions = selectedLesson ? questions.filter((q) => q.lesson_id === selectedLesson) : [];
   const selectedLessonData = selectedLesson ? lessons.find((l) => l.id === selectedLesson) : null;
+
+  const totalQuestionsInDialog = existingLessonQuestions.length + pendingQuestions.length;
 
   return (
     <AdminLayout>
@@ -602,9 +795,9 @@ const AdminContent = () => {
         </div>
       </div>
 
-      {/* Lesson Dialog */}
+      {/* Lesson Dialog - with integrated questions section */}
       <Dialog open={lessonDialogOpen} onOpenChange={setLessonDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader><DialogTitle>{editingLesson ? "تعديل درس" : "إضافة درس"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -643,12 +836,132 @@ const AdminContent = () => {
                 <p className="text-xs text-muted-foreground">يمكن للطلاب الوصول للمحتوى الكامل بدون اشتراك</p>
               </div>
             </div>
-            <Button onClick={handleSaveLesson} disabled={saving} className="w-full">{saving ? "جاري الحفظ..." : "حفظ"}</Button>
+
+            {/* Questions Section */}
+            <div className="border rounded-lg">
+              <button
+                type="button"
+                onClick={() => setQuestionsExpanded(!questionsExpanded)}
+                className="flex items-center justify-between w-full p-3 text-sm font-semibold hover:bg-muted/50 rounded-t-lg transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <HelpCircle className="w-4 h-4" />
+                  الأسئلة ({totalQuestionsInDialog})
+                </span>
+                {questionsExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+
+              {questionsExpanded && (
+                <div className="p-3 pt-0 space-y-3">
+                  {/* Action buttons */}
+                  <div className="flex gap-2 flex-wrap">
+                    <Button type="button" size="sm" variant="outline" onClick={() => setShowAddQuestionForm(!showAddQuestionForm)}>
+                      <Plus className="w-3 h-3 ml-1" />{showAddQuestionForm ? "إلغاء" : "إضافة سؤال"}
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => lessonQuestionFileRef.current?.click()}>
+                      <Upload className="w-3 h-3 ml-1" />استيراد أسئلة
+                    </Button>
+                    <input
+                      ref={lessonQuestionFileRef}
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      className="hidden"
+                      onChange={handleImportQuestionsInDialog}
+                    />
+                    <Button type="button" size="sm" variant="ghost" onClick={downloadQuestionsTemplate} className="text-xs">
+                      <Download className="w-3 h-3 ml-1" />تحميل قالب
+                    </Button>
+                  </div>
+
+                  {/* Inline add question form */}
+                  {showAddQuestionForm && (
+                    <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+                      <div className="space-y-2">
+                        <Label className="text-xs">المادة</Label>
+                        <select value={inlineSubject} onChange={(e) => setInlineSubject(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm">
+                          {SUBJECT_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">نص السؤال *</Label>
+                        <Textarea value={inlineQuestionText} onChange={(e) => setInlineQuestionText(e.target.value)} rows={2} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1"><Label className="text-xs">الخيار أ *</Label><Input value={inlineOptionA} onChange={(e) => setInlineOptionA(e.target.value)} className="h-8 text-sm" /></div>
+                        <div className="space-y-1"><Label className="text-xs">الخيار ب *</Label><Input value={inlineOptionB} onChange={(e) => setInlineOptionB(e.target.value)} className="h-8 text-sm" /></div>
+                        <div className="space-y-1"><Label className="text-xs">الخيار ج *</Label><Input value={inlineOptionC} onChange={(e) => setInlineOptionC(e.target.value)} className="h-8 text-sm" /></div>
+                        <div className="space-y-1"><Label className="text-xs">الخيار د *</Label><Input value={inlineOptionD} onChange={(e) => setInlineOptionD(e.target.value)} className="h-8 text-sm" /></div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">الإجابة الصحيحة *</Label>
+                          <select value={inlineCorrectOption} onChange={(e) => setInlineCorrectOption(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm">
+                            <option value="a">أ</option>
+                            <option value="b">ب</option>
+                            <option value="c">ج</option>
+                            <option value="d">د</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">الشرح</Label>
+                          <Input value={inlineExplanation} onChange={(e) => setInlineExplanation(e.target.value)} className="h-9 text-sm" />
+                        </div>
+                      </div>
+                      <Button type="button" size="sm" onClick={addPendingQuestion} className="w-full">إضافة السؤال</Button>
+                    </div>
+                  )}
+
+                  {/* Existing questions (edit mode) */}
+                  {existingLessonQuestions.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">الأسئلة المحفوظة ({existingLessonQuestions.length})</p>
+                      {existingLessonQuestions.map((q, i) => (
+                        <div key={q.id} className="flex items-center justify-between gap-2 p-2 rounded border bg-background text-xs">
+                          <span className="truncate flex-1">{i + 1}. {q.question_text}</span>
+                          <div className="flex gap-1 shrink-0">
+                            <Badge variant="outline" className="text-[10px]">{q.correct_option.toUpperCase()}</Badge>
+                            <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeleteExistingQuestion(q.id)}>
+                              <Trash2 className="w-3 h-3 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Pending questions */}
+                  {pendingQuestions.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">أسئلة جديدة ({pendingQuestions.length})</p>
+                      {pendingQuestions.map((q, i) => (
+                        <div key={q.tempId} className="flex items-center justify-between gap-2 p-2 rounded border border-dashed border-primary/30 bg-primary/5 text-xs">
+                          <span className="truncate flex-1">{existingLessonQuestions.length + i + 1}. {q.question_text}</span>
+                          <div className="flex gap-1 shrink-0">
+                            <Badge variant="outline" className="text-[10px]">{q.correct_option.toUpperCase()}</Badge>
+                            <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => removePendingQuestion(q.tempId)}>
+                              <Trash2 className="w-3 h-3 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {totalQuestionsInDialog === 0 && !showAddQuestionForm && (
+                    <p className="text-xs text-muted-foreground text-center py-2">لا توجد أسئلة بعد</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <Button onClick={handleSaveLesson} disabled={saving} className="w-full">
+              {saving ? "جاري الحفظ..." : `حفظ${pendingQuestions.length > 0 ? ` (مع ${pendingQuestions.length} سؤال جديد)` : ""}`}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Question Dialog */}
+      {/* Question Dialog (from panel) */}
       <Dialog open={questionDialogOpen} onOpenChange={setQuestionDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editingQuestion ? "تعديل سؤال" : "إضافة سؤال"}</DialogTitle></DialogHeader>
@@ -702,24 +1015,15 @@ const AdminContent = () => {
                 {scopedMajors.map((m: any) => <option key={m.id} value={m.id}>{m.name_ar}</option>)}
               </select>
             </div>
-
             <div className="space-y-2">
               <Label>اختر ملف (Excel أو CSV)</Label>
-              <Input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                onChange={handleImportFile}
-                disabled={!importMajorId || importing}
-              />
+              <Input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImportFile} disabled={!importMajorId || importing} />
             </div>
-
             {importing && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />جاري الاستيراد...
               </div>
             )}
-
             <div className="bg-muted rounded-lg p-3 space-y-2">
               <p className="text-xs font-semibold">تنسيق الملف المطلوب:</p>
               <p className="text-xs text-muted-foreground">
@@ -735,7 +1039,8 @@ const AdminContent = () => {
           </div>
         </DialogContent>
       </Dialog>
-      {/* Import Questions Dialog */}
+
+      {/* Import Questions Dialog (from panel) */}
       <Dialog open={importQuestionsDialogOpen} onOpenChange={setImportQuestionsDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -747,21 +1052,13 @@ const AdminContent = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>اختر ملف (Excel أو CSV)</Label>
-              <Input
-                ref={questionFileInputRef}
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                onChange={handleImportQuestions}
-                disabled={!selectedLesson || importingQuestions}
-              />
+              <Input ref={questionFileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImportQuestions} disabled={!selectedLesson || importingQuestions} />
             </div>
-
             {importingQuestions && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />جاري الاستيراد...
               </div>
             )}
-
             <div className="bg-muted rounded-lg p-3 space-y-2">
               <p className="text-xs font-semibold">تنسيق الملف المطلوب:</p>
               <p className="text-xs text-muted-foreground">
