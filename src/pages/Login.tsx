@@ -166,8 +166,8 @@ const Login = () => {
 
         <Card className="shadow-2xl border-0">
           <CardHeader className="text-center pb-2">
-            <CardTitle className="text-xl">تسجيل الدخول</CardTitle>
-            <CardDescription>اختر طريقة الدخول المناسبة لك</CardDescription>
+            <CardTitle className="text-xl">أهلاً بك في مُفَاضَلَة</CardTitle>
+            <CardDescription>سجّل دخولك أو أنشئ حساباً جديداً</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {phoneStep === "idle" && (
@@ -178,7 +178,7 @@ const Login = () => {
                   className="w-full py-6 text-base font-semibold gap-3"
                 >
                   <Phone className="w-5 h-5" />
-                  الدخول برقم الجوال
+                  متابعة برقم الجوال
                 </Button>
 
                 <div className="relative">
@@ -202,7 +202,7 @@ const Login = () => {
                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                   </svg>
-                  الدخول بحساب Google
+                   متابعة بحساب Google
                 </Button>
               </>
             )}
@@ -292,6 +292,10 @@ const Login = () => {
             )}
           </CardContent>
         </Card>
+
+        <p className="text-center text-sm text-white/70 mt-4">
+          إذا لم يكن لديك حساب، سيتم إنشاؤه تلقائياً
+        </p>
       </div>
     </div>
   );
