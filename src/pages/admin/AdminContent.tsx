@@ -105,6 +105,11 @@ const AdminContent = () => {
   const [importMajorId, setImportMajorId] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Import questions for specific lesson
+  const [importQuestionsDialogOpen, setImportQuestionsDialogOpen] = useState(false);
+  const [importingQuestions, setImportingQuestions] = useState(false);
+  const questionFileInputRef = useRef<HTMLInputElement>(null);
+
   const fetchData = async () => {
     const [{ data: u }, { data: c }, { data: m }, { data: l }, { data: q }] = await Promise.all([
       supabase.from("universities").select("*").order("display_order"),
