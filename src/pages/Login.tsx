@@ -275,6 +275,19 @@ const Login = () => {
                 >
                   {loading ? "جاري التحقق..." : "تحقق من الرمز"}
                 </Button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOtpCode("");
+                    handleSendOtp();
+                  }}
+                  disabled={loading || resendCountdown > 0}
+                  className="w-full text-sm text-center text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
+                >
+                  {resendCountdown > 0
+                    ? `إعادة الإرسال بعد ${resendCountdown} ثانية`
+                    : "إعادة إرسال الرمز"}
+                </button>
               </div>
             )}
           </CardContent>
