@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthContext";
 import ThemeToggle from "@/components/ThemeToggle";
 import MotivationalBanner from "@/components/MotivationalBanner";
 import AchievementsBadges from "@/components/AchievementsBadges";
@@ -31,10 +32,8 @@ interface ExamAttemptRow {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
+  const { user, loading: authLoading, isStaff, isAdmin } = useAuthContext();
   const [student, setStudent] = useState<Tables<"students"> | null>(null);
-  const [isStaff, setIsStaff] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [attempts, setAttempts] = useState<ExamAttemptRow[]>([]);
   const [lessonCount, setLessonCount] = useState(0);
@@ -43,23 +42,16 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) navigate("/login");
-      else setUser(session.user);
-    });
+    if (authLoading) return;
+    if (!user) { navigate("/login"); return; }
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) { navigate("/login"); return; }
-      setUser(session.user);
-
-      const [{ data: s }, { data: roles }, { data: notifs }] = await Promise.all([
-        supabase.from("students").select("*").eq("user_id", session.user.id).maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", session.user.id),
-        supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", session.user.id).eq("is_read", false),
+    const fetchData = async () => {
+      const [{ data: s }, { data: notifs }] = await Promise.all([
+        supabase.from("students").select("*").eq("user_id", user.id).maybeSingle(),
+        supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("is_read", false),
       ]);
       if (s) {
         setStudent(s);
-        // Fetch exam attempts and lesson count for this student
         const [{ data: exams }, { data: lessons }, { data: progress }] = await Promise.all([
           supabase.from("exam_attempts").select("id, score, total, completed_at, major_id")
             .eq("student_id", s.id).not("completed_at", "is", null)
@@ -74,22 +66,17 @@ const Dashboard = () => {
         if (exams) setAttempts(exams);
         setLessonCount(lessons?.length ?? 0);
         setCompletedLessons(progress?.length ?? 0);
-        // Fetch college name
         if (s.college_id) {
           const { data: college } = await supabase.from("colleges").select("name_ar").eq("id", s.college_id).maybeSingle();
           if (college) setCollegeName(college.name_ar);
         }
       }
-      if (roles) {
-        setIsStaff(roles.some((r) => r.role === "admin" || r.role === "moderator"));
-        setIsAdmin(roles.some((r) => r.role === "admin"));
-      }
       setUnreadCount((notifs as any)?.count ?? 0);
       setLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    fetchData();
+  }, [authLoading, user, navigate]);
 
   // Realtime: update unread count when new notification arrives
   useRealtimeNotifications(user?.id);
@@ -105,7 +92,6 @@ const Dashboard = () => {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user]);
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
