@@ -52,6 +52,8 @@ const LessonDetail = () => {
   const [isSavedOffline, setIsSavedOffline] = useState(false);
   const [savingOffline, setSavingOffline] = useState(false);
   const [isFromCache, setIsFromCache] = useState(false);
+  const [prevLesson, setPrevLesson] = useState<{ id: string; title: string } | null>(null);
+  const [nextLesson, setNextLesson] = useState<{ id: string; title: string } | null>(null);
 
   // Reveal answer state
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
