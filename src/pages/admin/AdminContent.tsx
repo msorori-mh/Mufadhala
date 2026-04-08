@@ -105,6 +105,11 @@ const AdminContent = () => {
   const [importMajorId, setImportMajorId] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Import questions for specific lesson
+  const [importQuestionsDialogOpen, setImportQuestionsDialogOpen] = useState(false);
+  const [importingQuestions, setImportingQuestions] = useState(false);
+  const questionFileInputRef = useRef<HTMLInputElement>(null);
+
   const fetchData = async () => {
     const [{ data: u }, { data: c }, { data: m }, { data: l }, { data: q }] = await Promise.all([
       supabase.from("universities").select("*").order("display_order"),
@@ -284,6 +289,63 @@ const AdminContent = () => {
     const { error } = await supabase.from("questions").delete().eq("id", id);
     if (error) toast({ variant: "destructive", title: error.message });
     else { toast({ title: "تم الحذف" }); fetchData(); }
+  };
+
+  // --- Import questions for specific lesson ---
+  const downloadQuestionsTemplate = () => {
+    const wb = XLSX.utils.book_new();
+    const data = [
+      ["نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح"],
+      ["ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب"],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), "الأسئلة");
+    XLSX.writeFile(wb, "قالب_استيراد_أسئلة.xlsx");
+  };
+
+  const handleImportQuestions = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedLesson) return;
+    setImportingQuestions(true);
+
+    try {
+      const data = await file.arrayBuffer();
+      const wb = file.name.endsWith(".csv")
+        ? XLSX.read(new TextDecoder("utf-8").decode(data), { type: "string" })
+        : XLSX.read(data, { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
+
+      let imported = 0;
+      const existingCount = questions.filter(q => q.lesson_id === selectedLesson).length;
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i] as any[];
+        if (!row[0]) continue;
+        const { error } = await supabase.from("questions").insert({
+          lesson_id: selectedLesson,
+          question_text: String(row[0]),
+          option_a: String(row[1] || ""),
+          option_b: String(row[2] || ""),
+          option_c: String(row[3] || ""),
+          option_d: String(row[4] || ""),
+          correct_option: String(row[5] || "a").toLowerCase().trim(),
+          explanation: row[6] ? String(row[6]) : "",
+          display_order: existingCount + i,
+        });
+        if (error) {
+          toast({ variant: "destructive", title: `خطأ في سؤال ${i}: ${error.message}` });
+        } else {
+          imported++;
+        }
+      }
+
+      toast({ title: `تم استيراد ${imported} سؤال بنجاح` });
+      fetchData();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: `خطأ في قراءة الملف: ${err.message}` });
+    }
+    setImportingQuestions(false);
+    setImportQuestionsDialogOpen(false);
+    if (questionFileInputRef.current) questionFileInputRef.current.value = "";
   };
 
   // --- Import ---
@@ -486,9 +548,14 @@ const AdminContent = () => {
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1"><HelpCircle className="w-4 h-4" />الأسئلة</h2>
               {selectedLesson && (
-                <Button size="sm" variant="outline" onClick={() => openCreateQuestion(selectedLesson)}>
-                  <Plus className="w-3 h-3 ml-1" />إضافة سؤال
-                </Button>
+                <div className="flex gap-1">
+                  <Button size="sm" variant="outline" onClick={() => setImportQuestionsDialogOpen(true)}>
+                    <Upload className="w-3 h-3 ml-1" />استيراد أسئلة
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => openCreateQuestion(selectedLesson)}>
+                    <Plus className="w-3 h-3 ml-1" />إضافة سؤال
+                  </Button>
+                </div>
               )}
             </div>
             {!selectedLesson && <p className="text-sm text-muted-foreground py-8 text-center">اختر درساً لعرض أسئلته</p>}
@@ -662,6 +729,45 @@ const AdminContent = () => {
                 <strong>ورقة "الأسئلة":</strong> عنوان الدرس | نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة (a/b/c/d) | الشرح
               </p>
               <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadTemplate}>
+                <Download className="w-3 h-3 ml-1" />تحميل قالب فارغ
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Import Questions Dialog */}
+      <Dialog open={importQuestionsDialogOpen} onOpenChange={setImportQuestionsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Upload className="w-5 h-5" />استيراد أسئلة للدرس</DialogTitle>
+            <DialogDescription>
+              {selectedLessonData ? `استيراد أسئلة لدرس: ${selectedLessonData.title}` : "اختر درساً أولاً"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>اختر ملف (Excel أو CSV)</Label>
+              <Input
+                ref={questionFileInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleImportQuestions}
+                disabled={!selectedLesson || importingQuestions}
+              />
+            </div>
+
+            {importingQuestions && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />جاري الاستيراد...
+              </div>
+            )}
+
+            <div className="bg-muted rounded-lg p-3 space-y-2">
+              <p className="text-xs font-semibold">تنسيق الملف المطلوب:</p>
+              <p className="text-xs text-muted-foreground">
+                نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة (a/b/c/d) | الشرح
+              </p>
+              <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadQuestionsTemplate}>
                 <Download className="w-3 h-3 ml-1" />تحميل قالب فارغ
               </Button>
             </div>

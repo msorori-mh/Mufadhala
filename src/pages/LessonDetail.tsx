@@ -53,9 +53,8 @@ const LessonDetail = () => {
   const [savingOffline, setSavingOffline] = useState(false);
   const [isFromCache, setIsFromCache] = useState(false);
 
-  // Quiz state
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [submitted, setSubmitted] = useState(false);
+  // Reveal answer state
+  const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (authLoading || !id || !user) return;
@@ -139,16 +138,13 @@ const LessonDetail = () => {
     toast.success("تم حذف النسخة المحفوظة");
   };
 
-  const handleAnswer = (questionId: string, option: string) => {
-    if (submitted) return;
-    setAnswers((prev) => ({ ...prev, [questionId]: option }));
-  };
-
-  const handleSubmit = () => setSubmitted(true);
-
-  const handleReset = () => {
-    setAnswers({});
-    setSubmitted(false);
+  const toggleRevealAnswer = (questionId: string) => {
+    setRevealedAnswers((prev) => {
+      const next = new Set(prev);
+      if (next.has(questionId)) next.delete(questionId);
+      else next.add(questionId);
+      return next;
+    });
   };
 
   const markComplete = async () => {
@@ -162,10 +158,6 @@ const LessonDetail = () => {
       toast.success("تم تحديد الدرس كمكتمل ✓");
     }
   };
-
-  const correctCount = submitted
-    ? questions.filter((q) => answers[q.id] === q.correct_option).length
-    : 0;
 
   if (authLoading || loading || subLoading) {
     return (
@@ -328,23 +320,8 @@ const LessonDetail = () => {
               </Card>
             ) : (
               <>
-                {submitted && (
-                  <Card className={correctCount === questions.length ? "border-green-500 bg-green-50 dark:bg-green-950/20" : "border-orange-500 bg-orange-50 dark:bg-orange-950/20"}>
-                    <CardContent className="py-4 text-center">
-                      <p className="text-lg font-bold">
-                        النتيجة: {correctCount} / {questions.length}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {correctCount === questions.length ? "ممتاز! أجبت على جميع الأسئلة بشكل صحيح 🎉" : "حاول مراجعة الأسئلة الخاطئة والتدريب مرة أخرى"}
-                      </p>
-                      <Button onClick={handleReset} variant="outline" size="sm" className="mt-3">إعادة المحاولة</Button>
-                    </CardContent>
-                  </Card>
-                )}
-
                 {questions.map((q, i) => {
-                  const userAnswer = answers[q.id];
-                  const isCorrect = userAnswer === q.correct_option;
+                  const isRevealed = revealedAnswers.has(q.id);
 
                   return (
                     <Card key={q.id}>
@@ -353,55 +330,50 @@ const LessonDetail = () => {
                         <div className="space-y-2">
                           {(["a", "b", "c", "d"] as const).map((opt) => {
                             const optionText = q[`option_${opt}` as keyof Question] as string;
-                            const isSelected = userAnswer === opt;
                             const isCorrectOption = q.correct_option === opt;
 
-                            let classes = "flex items-center gap-2 p-3 rounded-lg border text-sm cursor-pointer transition-colors ";
-                            if (submitted) {
-                              if (isCorrectOption) classes += "border-green-500 bg-green-50 dark:bg-green-950/30 ";
-                              else if (isSelected && !isCorrect) classes += "border-red-500 bg-red-50 dark:bg-red-950/30 ";
-                              else classes += "border-border ";
+                            let classes = "flex items-center gap-2 p-3 rounded-lg border text-sm transition-colors ";
+                            if (isRevealed && isCorrectOption) {
+                              classes += "border-green-500 bg-green-50 dark:bg-green-950/30 ";
                             } else {
-                              classes += isSelected ? "border-primary bg-primary/10 " : "border-border hover:bg-muted ";
+                              classes += "border-border ";
                             }
 
                             return (
-                              <button
-                                key={opt}
-                                className={classes + "w-full text-right"}
-                                onClick={() => handleAnswer(q.id, opt)}
-                                disabled={submitted}
-                              >
+                              <div key={opt} className={classes}>
                                 <span className="w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold shrink-0">
                                   {opt.toUpperCase()}
                                 </span>
                                 <span className="flex-1">{optionText}</span>
-                                {submitted && isCorrectOption && <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />}
-                                {submitted && isSelected && !isCorrect && <XCircle className="w-4 h-4 text-red-500 shrink-0" />}
-                              </button>
+                                {isRevealed && isCorrectOption && <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />}
+                              </div>
                             );
                           })}
                         </div>
-                        {submitted && q.explanation && (
+
+                        {isRevealed && q.explanation && (
                           <div className="mt-3 p-3 bg-muted rounded-lg">
                             <p className="text-xs font-semibold text-muted-foreground mb-1">الشرح:</p>
                             <p className="text-sm">{q.explanation}</p>
                           </div>
                         )}
+
+                        <Button
+                          variant={isRevealed ? "outline" : "default"}
+                          size="sm"
+                          className="mt-3 w-full gap-1"
+                          onClick={() => toggleRevealAnswer(q.id)}
+                        >
+                          {isRevealed ? (
+                            <><XCircle className="w-4 h-4" /> إخفاء الإجابة</>
+                          ) : (
+                            <><CheckCircle2 className="w-4 h-4" /> أظهر الإجابة</>
+                          )}
+                        </Button>
                       </CardContent>
                     </Card>
                   );
                 })}
-
-                {!submitted && (
-                  <Button
-                    onClick={handleSubmit}
-                    className="w-full"
-                    disabled={Object.keys(answers).length < questions.length}
-                  >
-                    تسليم الإجابات ({Object.keys(answers).length}/{questions.length})
-                  </Button>
-                )}
               </>
             )}
           </TabsContent>
