@@ -19,6 +19,14 @@ const Login = () => {
   const [phoneStep, setPhoneStep] = useState<"idle" | "phone" | "otp">("idle");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otpCode, setOtpCode] = useState("");
+  const [resendCountdown, setResendCountdown] = useState(0);
+
+  // Countdown timer for resend
+  useEffect(() => {
+    if (resendCountdown <= 0) return;
+    const timer = setTimeout(() => setResendCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCountdown]);
 
   // On mount: if session exists, redirect immediately
   useEffect(() => {
@@ -94,6 +102,7 @@ const Login = () => {
       } else {
         toast({ title: "تم الإرسال", description: "تم إرسال رمز التحقق إلى جوالك" });
         setPhoneStep("otp");
+        setResendCountdown(60);
       }
     } catch {
       toast({ variant: "destructive", title: "خطأ", description: "حدث خطأ غير متوقع" });
@@ -266,6 +275,19 @@ const Login = () => {
                 >
                   {loading ? "جاري التحقق..." : "تحقق من الرمز"}
                 </Button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOtpCode("");
+                    handleSendOtp();
+                  }}
+                  disabled={loading || resendCountdown > 0}
+                  className="w-full text-sm text-center text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
+                >
+                  {resendCountdown > 0
+                    ? `إعادة الإرسال بعد ${resendCountdown} ثانية`
+                    : "إعادة إرسال الرمز"}
+                </button>
               </div>
             )}
           </CardContent>
