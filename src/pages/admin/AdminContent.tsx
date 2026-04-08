@@ -548,9 +548,14 @@ const AdminContent = () => {
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1"><HelpCircle className="w-4 h-4" />الأسئلة</h2>
               {selectedLesson && (
-                <Button size="sm" variant="outline" onClick={() => openCreateQuestion(selectedLesson)}>
-                  <Plus className="w-3 h-3 ml-1" />إضافة سؤال
-                </Button>
+                <div className="flex gap-1">
+                  <Button size="sm" variant="outline" onClick={() => setImportQuestionsDialogOpen(true)}>
+                    <Upload className="w-3 h-3 ml-1" />استيراد أسئلة
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => openCreateQuestion(selectedLesson)}>
+                    <Plus className="w-3 h-3 ml-1" />إضافة سؤال
+                  </Button>
+                </div>
               )}
             </div>
             {!selectedLesson && <p className="text-sm text-muted-foreground py-8 text-center">اختر درساً لعرض أسئلته</p>}
