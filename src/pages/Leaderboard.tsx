@@ -41,6 +41,7 @@ const rankBg = (rank: number) => {
 };
 
 const Leaderboard = () => {
+  const { user } = useAuthContext();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
   const [selectedMajor, setSelectedMajor] = useState<string>("all");
@@ -55,7 +56,7 @@ const Leaderboard = () => {
       supabase.from("students").select("id").eq("user_id", user.id).maybeSingle()
         .then(({ data: s }) => { if (s) setCurrentStudentId(s.id); });
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     setLoading(true);
