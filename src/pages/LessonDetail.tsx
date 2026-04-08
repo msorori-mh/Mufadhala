@@ -53,9 +53,8 @@ const LessonDetail = () => {
   const [savingOffline, setSavingOffline] = useState(false);
   const [isFromCache, setIsFromCache] = useState(false);
 
-  // Quiz state
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [submitted, setSubmitted] = useState(false);
+  // Reveal answer state
+  const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (authLoading || !id || !user) return;
