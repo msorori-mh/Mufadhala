@@ -9,7 +9,7 @@ const studentNavItems = [
   { path: "/lessons", icon: BookOpen, label: "الدروس" },
   { path: "/exam", icon: ClipboardCheck, label: "الاختبار" },
   { path: "/notifications", icon: Bell, label: "الإشعارات" },
-  { path: "/profile", icon: User, label: "حسابي" },
+  { path: "/settings", icon: Settings, label: "الإعدادات" },
 ];
 
 const adminNavItems = [

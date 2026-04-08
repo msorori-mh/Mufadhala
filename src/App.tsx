@@ -77,6 +77,7 @@ function App() {
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/achievements" element={<Achievements />} />
               <Route path="/college-guide" element={<CollegeGuide />} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/universities" element={<AdminUniversities />} />
               <Route path="/admin/colleges" element={<AdminColleges />} />
