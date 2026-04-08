@@ -104,10 +104,32 @@ const Login = () => {
   const handleVerifyOtp = async () => {
     if (otpCode.length !== 6) return;
     setLoading(true);
-    toast({
-      title: "قريباً",
-      description: "التحقق من الرمز سيكون متاحاً قريباً",
-    });
+    try {
+      const res = await supabase.functions.invoke("verify-otp", {
+        body: { phone: phoneNumber, code: otpCode },
+      });
+      if (res.error || res.data?.error) {
+        toast({
+          variant: "destructive",
+          title: "خطأ",
+          description: res.data?.error || "فشل في التحقق من الرمز",
+        });
+        setLoading(false);
+        return;
+      }
+      // Set session from returned tokens
+      const { access_token, refresh_token } = res.data.session;
+      await supabase.auth.setSession({ access_token, refresh_token });
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const dest = await resolveAuthDestination(session.user.id);
+        toast({ title: "تم تسجيل الدخول بنجاح" });
+        navigate(dest.path, { replace: true });
+      }
+    } catch {
+      toast({ variant: "destructive", title: "خطأ", description: "حدث خطأ غير متوقع" });
+    }
     setLoading(false);
   };
 
