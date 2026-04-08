@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { Home, BookOpen, ClipboardCheck, Bell, User, Shield } from "lucide-react";
+import { Home, BookOpen, ClipboardCheck, Bell, Settings, Shield } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 
