@@ -26,12 +26,12 @@ const Index = React.forwardRef<HTMLDivElement>((_, ref) => {
     {
       icon: BookOpen,
       title: "محتوى تعليمي شامل",
-      description: "ملخصات ودروس مُعدّة بعناية لجميع مواد اختبار القبول",
+      description: "ملخصات ودروس مُعدّة بعناية لجميع مواد اختبار المفاضلة",
     },
     {
       icon: ClipboardCheck,
       title: "نماذج اختبارات سابقة",
-      description: "تدرّب على أسئلة حقيقية من اختبارات القبول السابقة",
+      description: "تدرّب على أسئلة حقيقية من اختبارات المفاضلة السابقة",
     },
     {
       icon: TrendingUp,
