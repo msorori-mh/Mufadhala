@@ -187,7 +187,7 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-2 px-4">
                 <Bot className="h-10 w-10 text-primary/40" />
-                <p className="text-sm">مرحباً! أنا مساعد قَبُول الذكي 👋</p>
+                <p className="text-sm">مرحباً! أنا مساعد مُفَاضَلَة الذكي 👋</p>
                 <p className="text-xs">اسألني عن الدروس، الاختبارات، أو أي شيء يخص المنصة</p>
               </div>
             )}
