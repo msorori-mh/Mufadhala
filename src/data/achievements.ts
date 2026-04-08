@@ -75,7 +75,7 @@ export const achievements: Achievement[] = [
   },
   {
     id: "score_90",
-    title: "نجم قَبُول",
+    title: "نجم مُفَاضَلَة",
     description: "حقق معدل 90% أو أعلى",
     icon: Trophy,
     color: "text-amber-500",

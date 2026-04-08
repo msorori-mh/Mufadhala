@@ -156,7 +156,7 @@ const CompleteProfile = () => {
             <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
               <GraduationCap className="w-7 h-7 text-white" />
             </div>
-            <span className="text-2xl font-bold text-white">قَبُول</span>
+            <span className="text-2xl font-bold text-white">مُفَاضَلَة</span>
           </div>
         </div>
 

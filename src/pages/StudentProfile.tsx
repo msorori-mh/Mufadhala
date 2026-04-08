@@ -159,7 +159,7 @@ const StudentProfile = () => {
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <GraduationCap className="w-6 h-6" />
-            <span className="text-lg font-bold">قَبُول</span>
+            <span className="text-lg font-bold">مُفَاضَلَة</span>
           </div>
           <div className="flex items-center gap-1">
             <ThemeToggle />

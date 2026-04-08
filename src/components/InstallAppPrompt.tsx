@@ -47,7 +47,7 @@ export default function InstallAppPrompt() {
         <div className="fixed bottom-16 inset-x-4 z-[60] bg-primary text-primary-foreground rounded-xl p-4 shadow-lg flex items-center gap-3 animate-in slide-in-from-bottom-4">
           <Download className="w-8 h-8 shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-sm">ثبّت تطبيق قَبُول</p>
+            <p className="font-bold text-sm">ثبّت تطبيق مُفَاضَلَة</p>
             <p className="text-xs opacity-90">للوصول السريع من شاشتك الرئيسية</p>
           </div>
           <Button size="sm" variant="secondary" onClick={handleInstall}>
@@ -65,7 +65,7 @@ export default function InstallAppPrompt() {
           <div className="flex items-start gap-3">
             <Share className="w-6 h-6 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="font-bold text-sm mb-1">أضف قَبُول لشاشتك الرئيسية</p>
+              <p className="font-bold text-sm mb-1">أضف مُفَاضَلَة لشاشتك الرئيسية</p>
               <p className="text-xs opacity-90 leading-relaxed">
                 اضغط على زر المشاركة
                 <Share className="w-3 h-3 inline mx-1" />

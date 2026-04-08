@@ -183,7 +183,7 @@ const Dashboard = () => {
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <GraduationCap className="w-6 h-6" />
-            <span className="text-lg font-bold hidden sm:inline">قَبُول</span>
+            <span className="text-lg font-bold hidden sm:inline">مُفَاضَلَة</span>
           </div>
           <div className="flex items-center gap-1">
             <ThemeToggle />

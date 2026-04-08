@@ -26,12 +26,12 @@ const Index = React.forwardRef<HTMLDivElement>((_, ref) => {
     {
       icon: BookOpen,
       title: "محتوى تعليمي شامل",
-      description: "ملخصات ودروس مُعدّة بعناية لجميع مواد اختبار القبول",
+      description: "ملخصات ودروس مُعدّة بعناية لجميع مواد اختبار المفاضلة",
     },
     {
       icon: ClipboardCheck,
       title: "نماذج اختبارات سابقة",
-      description: "تدرّب على أسئلة حقيقية من اختبارات القبول السابقة",
+      description: "تدرّب على أسئلة حقيقية من اختبارات المفاضلة السابقة",
     },
     {
       icon: TrendingUp,
@@ -59,14 +59,14 @@ const Index = React.forwardRef<HTMLDivElement>((_, ref) => {
         
         <div className="relative z-10 text-center max-w-2xl mx-auto">
           <div className="inline-flex items-center justify-center w-40 h-40 mb-6 animate-float rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
-            <img src={logoImg} alt="شعار قَبُول" className="w-full h-full object-cover drop-shadow-lg" />
+            <img src={logoImg} alt="شعار مُفَاضَلَة" className="w-full h-full object-cover drop-shadow-lg" />
           </div>
           
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
-            قَبُول
+            مُفَاضَلَة
           </h1>
           <p className="text-lg md:text-xl text-white/85 mb-8 leading-relaxed">
-            قَبُول.. خطوتك الأولى نحو كليات القمة.
+            مُفَاضَلَة... هندسة النجاح في اختبارات القبول.
           </p>
           
           <Button
@@ -107,7 +107,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, ref) => {
       {/* Footer */}
       <footer className="bg-card border-t py-6 px-4 text-center">
         <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} قَبُول | Qubool - جميع الحقوق محفوظة
+          © {new Date().getFullYear()} مُفَاضَلَة | Mufadhala - جميع الحقوق محفوظة
         </p>
       </footer>
     </div>

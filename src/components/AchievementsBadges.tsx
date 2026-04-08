@@ -9,7 +9,7 @@ interface AchievementsBadgesProps {
   stats: AchievementStats;
 }
 
-const STORAGE_KEY = "qubool-unlocked-achievements";
+const STORAGE_KEY = "mufadhala-unlocked-achievements";
 
 function getSavedUnlocked(): string[] {
   try {

@@ -91,7 +91,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
               <GraduationCap className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <span className="font-bold text-foreground text-sm">قَبُول</span>
+              <span className="font-bold text-foreground text-sm">مُفَاضَلَة</span>
               <p className="text-[10px] text-muted-foreground">لوحة الإدارة</p>
             </div>
           </Link>
