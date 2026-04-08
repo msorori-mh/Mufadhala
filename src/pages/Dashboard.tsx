@@ -179,6 +179,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
+      {user && <WelcomeDialog userId={user.id} />}
       {/* Header */}
       <header className="gradient-primary text-white px-4 py-3 md:py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
