@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { achievements, type AchievementStats } from "@/data/achievements";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -10,15 +11,18 @@ import ThemeToggle from "@/components/ThemeToggle";
 
 const Achievements = () => {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuthContext();
   const [stats, setStats] = useState<AchievementStats>({
     totalExams: 0, avgScore: 0, bestScore: 0, completedLessons: 0, totalLessons: 0,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) { navigate("/login"); return; }
-      const { data: s } = await supabase.from("students").select("id, major_id").eq("user_id", session.user.id).maybeSingle();
+    if (authLoading) return;
+    if (!user) { navigate("/login"); return; }
+
+    const fetchData = async () => {
+      const { data: s } = await supabase.from("students").select("id, major_id").eq("user_id", user.id).maybeSingle();
       if (!s) { setLoading(false); return; }
 
       const [{ data: exams }, { data: lessons }, { data: progress }] = await Promise.all([
