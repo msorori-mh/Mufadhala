@@ -81,10 +81,23 @@ const Login = () => {
       return;
     }
     setLoading(true);
-    toast({
-      title: "قريباً",
-      description: "تسجيل الدخول برقم الجوال سيكون متاحاً قريباً",
-    });
+    try {
+      const res = await supabase.functions.invoke("send-otp", {
+        body: { phone: phoneNumber },
+      });
+      if (res.error || res.data?.error) {
+        toast({
+          variant: "destructive",
+          title: "خطأ",
+          description: res.data?.error || "فشل في إرسال رمز التحقق",
+        });
+      } else {
+        toast({ title: "تم الإرسال", description: "تم إرسال رمز التحقق إلى جوالك" });
+        setPhoneStep("otp");
+      }
+    } catch {
+      toast({ variant: "destructive", title: "خطأ", description: "حدث خطأ غير متوقع" });
+    }
     setLoading(false);
   };
 
