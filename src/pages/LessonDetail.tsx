@@ -336,6 +336,24 @@ const LessonDetail = () => {
               </Card>
             ) : (
               <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1 mb-3"
+                  onClick={() => {
+                    if (revealedAnswers.size === questions.length) {
+                      setRevealedAnswers(new Set());
+                    } else {
+                      setRevealedAnswers(new Set(questions.map((q) => q.id)));
+                    }
+                  }}
+                >
+                  {revealedAnswers.size === questions.length ? (
+                    <><EyeOff className="w-4 h-4" /> إخفاء جميع الإجابات</>
+                  ) : (
+                    <><Eye className="w-4 h-4" /> إظهار جميع الإجابات</>
+                  )}
+                </Button>
                 {questions.map((q, i) => {
                   const isRevealed = revealedAnswers.has(q.id);
 
