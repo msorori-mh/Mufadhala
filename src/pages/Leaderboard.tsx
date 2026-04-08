@@ -50,12 +50,10 @@ const Leaderboard = () => {
     supabase.from("majors").select("id, name_ar").eq("is_active", true).order("name_ar")
       .then(({ data }) => { if (data) setMajors(data); });
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session) {
-        const { data: s } = await supabase.from("students").select("id").eq("user_id", session.user.id).maybeSingle();
-        if (s) setCurrentStudentId(s.id);
-      }
-    });
+    if (user) {
+      supabase.from("students").select("id").eq("user_id", user.id).maybeSingle()
+        .then(({ data: s }) => { if (s) setCurrentStudentId(s.id); });
+    }
   }, []);
 
   useEffect(() => {

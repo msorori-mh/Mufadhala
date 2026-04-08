@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -24,6 +25,7 @@ type Major = { id: string; name_ar: string };
 const CompleteProfile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuthContext();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -45,22 +47,19 @@ const CompleteProfile = () => {
   const [majorId, setMajorId] = useState("");
 
   useEffect(() => {
-    const check = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/login");
-        return;
-      }
+    if (authLoading) return;
+    if (!user) { navigate("/login"); return; }
 
+    const check = async () => {
       // Show phone field only for email/Google signups (not phone auth)
-      const provider = session.user.app_metadata?.provider;
-      const hasPhone = !!session.user.phone;
+      const provider = user.app_metadata?.provider;
+      const hasPhone = !!user.phone;
       setShowPhone(!hasPhone && provider !== 'phone');
 
       const { data: student } = await supabase
         .from("students")
         .select("id, first_name, fourth_name, governorate, major_id, phone")
-        .eq("user_id", session.user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
 
       if (student?.major_id) {
@@ -78,7 +77,7 @@ const CompleteProfile = () => {
       setCheckingAuth(false);
     };
     check();
-  }, [navigate]);
+  }, [authLoading, user, navigate]);
 
   // Load universities
   useEffect(() => {
