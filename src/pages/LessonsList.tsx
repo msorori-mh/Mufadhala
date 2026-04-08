@@ -225,7 +225,8 @@ const LessonsList = () => {
               {filteredLessons.map((lesson, i) => {
                 const done = completedLessons.has(lesson.id);
                 const originalIndex = lessons.findIndex(l => l.id === lesson.id);
-                const isLocked = !isOffline && !hasSubscription && !lesson.is_free;
+                const hasPaidAccess = hasSubscription && !!planId && (!allowedMajorIds || allowedMajorIds.length === 0 || allowedMajorIds.includes(lesson.major_id));
+                const isLocked = !isOffline && !lesson.is_free && !hasPaidAccess;
                 const isSavedOffline = savedOfflineIds.has(lesson.id);
                 return (
                   <Link key={lesson.id} to={`/lessons/${lesson.id}`} className="block">

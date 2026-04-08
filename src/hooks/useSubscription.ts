@@ -64,6 +64,7 @@ export const useSubscription = (userId: string | undefined): SubscriptionStatus 
         expiresAt: sub.expires_at,
         planId: sub.plan_id,
         planSlug,
+        allowedMajorIds,
         loading: false,
       });
     };
