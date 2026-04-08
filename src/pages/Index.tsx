@@ -62,7 +62,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, ref) => {
             <img src={logoImg} alt="شعار مُفَاضَلَة" className="w-full h-full object-cover drop-shadow-lg" />
           </div>
           
-          <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">
             مُفَاضَلَة
           </h1>
           <p className="text-lg md:text-xl text-white/85 mb-8 leading-relaxed">
