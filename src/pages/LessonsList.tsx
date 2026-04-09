@@ -210,7 +210,45 @@ const LessonsList = () => {
               </div>
             )}
 
-            {/* Progress bar - only when online */}
+            {/* Subject filter tabs */}
+            {!isOffline && subjects.length > 0 && !searchQuery && (
+              <div className="flex gap-1.5 flex-wrap mb-4">
+                <Badge
+                  variant={activeSubjectFilter === "all" ? "default" : "outline"}
+                  className="cursor-pointer text-xs"
+                  onClick={() => setActiveSubjectFilter("all")}
+                >
+                  جميع المواد ({lessons.length})
+                </Badge>
+                {subjects.map(s => {
+                  const count = lessons.filter(l => l.subject_id === s.id).length;
+                  if (count === 0) return null;
+                  return (
+                    <Badge
+                      key={s.id}
+                      variant={activeSubjectFilter === s.id ? "default" : "outline"}
+                      className="cursor-pointer text-xs"
+                      onClick={() => setActiveSubjectFilter(s.id)}
+                    >
+                      {s.name_ar} ({count})
+                    </Badge>
+                  );
+                })}
+                {(() => {
+                  const unclassified = lessons.filter(l => !l.subject_id).length;
+                  return unclassified > 0 ? (
+                    <Badge
+                      variant={activeSubjectFilter === "none" ? "default" : "outline"}
+                      className="cursor-pointer text-xs"
+                      onClick={() => setActiveSubjectFilter("none")}
+                    >
+                      غير مصنف ({unclassified})
+                    </Badge>
+                  ) : null;
+                })()}
+              </div>
+            )}
+
             {!isOffline && lessons.length > 0 && !searchQuery && (
               <Card className="mb-5">
                 <CardContent className="py-4 px-4 space-y-2">
