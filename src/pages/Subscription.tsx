@@ -102,6 +102,28 @@ const Subscription = () => {
   const isPending = subscription?.status === "pending";
   const isTrial = subscription?.status === "trial" && subscription?.trial_ends_at && new Date(subscription.trial_ends_at) > new Date();
 
+  const [showActivationSplash, setShowActivationSplash] = useState(false);
+
+  useEffect(() => {
+    if (isActive && !isTrial && !sessionStorage.getItem("subscription_splash_shown")) {
+      setShowActivationSplash(true);
+      const timer = setTimeout(() => {
+        setShowActivationSplash(false);
+        sessionStorage.setItem("subscription_splash_shown", "1");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isActive, isTrial]);
+
+  const dismissSplash = () => {
+    setShowActivationSplash(false);
+    sessionStorage.setItem("subscription_splash_shown", "1");
+  };
+
+  const activePlanName = subscription?.plan_id
+    ? plans.find((p) => p.id === subscription.plan_id)?.name ?? ""
+    : "";
+
   const applyPromo = async () => {
     if (!promoCode.trim()) return;
     setPromoLoading(true);
