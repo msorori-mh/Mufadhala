@@ -275,7 +275,7 @@ const Subscription = () => {
           <Card className="border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900">
             <CardContent className="py-6 text-center">
               <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
-              <h2 className="text-lg font-bold text-green-700 dark:text-green-400">اشتراكك فعال</h2>
+              <h2 className="text-lg font-bold text-green-700 dark:text-green-400">تم قبول الدفع وتفعيل اشتراكك بنجاح</h2>
               {subscription?.expires_at && (
                 <p className="text-sm text-green-600 dark:text-green-500 mt-1">
                   ينتهي في: {new Date(subscription.expires_at).toLocaleDateString("ar")}
