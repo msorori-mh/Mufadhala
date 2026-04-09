@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +33,7 @@ interface ExamAttemptRow {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading: authLoading, isStaff, isAdmin } = useAuthContext();
   const [student, setStudent] = useState<Tables<"students"> | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -198,16 +199,18 @@ const Dashboard = () => {
             {/* Nav list - desktop: compact vertical list */}
             <nav className="hidden md:block">
               <div className="space-y-0.5">
-                {navCards.map((card) => (
+                {navCards.map((card) => {
+                  const isActive = location.pathname === card.path;
+                  return (
                   <Link
                     key={card.path}
                     to={card.path}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-muted/60 transition-colors group"
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors group ${isActive ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/60"}`}
                   >
                     <div className={`w-7 h-7 rounded-md ${card.bgColor} flex items-center justify-center shrink-0`}>
                       <card.icon className={`w-3.5 h-3.5 ${card.iconColor}`} />
                     </div>
-                    <span className="text-sm text-foreground flex-1">{card.title}</span>
+                    <span className={`text-sm flex-1 ${isActive ? "font-semibold text-primary" : "text-foreground"}`}>{card.title}</span>
                     {card.badge ? (
                       <span className="w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
                         {card.badge}
@@ -216,7 +219,8 @@ const Dashboard = () => {
                       <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity" />
                     )}
                   </Link>
-                ))}
+                  );
+                })}
               </div>
             </nav>
 
