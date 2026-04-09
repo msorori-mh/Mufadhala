@@ -352,23 +352,36 @@ const Dashboard = () => {
         )}
 
         {/* Navigation Cards */}
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
+        <motion.div
+          className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3"
+          initial="hidden"
+          animate="visible"
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
+        >
           {navCards.map((card) => (
-            <Link key={card.path} to={card.path} className="block">
-              <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-card border border-border hover:shadow-md hover:border-primary/30 transition-all cursor-pointer text-center">
-                <div className={`relative w-11 h-11 rounded-full ${card.bgColor} flex items-center justify-center`}>
-                  <card.icon className={`w-5 h-5 ${card.iconColor}`} />
-                  {card.badge ? (
-                    <span className="absolute -top-0.5 -left-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
-                      {card.badge}
-                    </span>
-                  ) : null}
+            <motion.div
+              key={card.path}
+              variants={{ hidden: { opacity: 0, scale: 0.85 }, visible: { opacity: 1, scale: 1 } }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link to={card.path} className="block">
+                <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-card border border-border hover:shadow-md hover:border-primary/30 transition-shadow cursor-pointer text-center">
+                  <div className={`relative w-11 h-11 rounded-full ${card.bgColor} flex items-center justify-center`}>
+                    <card.icon className={`w-5 h-5 ${card.iconColor}`} />
+                    {card.badge ? (
+                      <span className="absolute -top-0.5 -left-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                        {card.badge}
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="text-xs font-medium text-foreground leading-tight line-clamp-2">{card.title}</span>
                 </div>
-                <span className="text-xs font-medium text-foreground leading-tight line-clamp-2">{card.title}</span>
-              </div>
-            </Link>
+              </Link>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </main>
     </div>
   );
