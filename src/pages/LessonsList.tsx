@@ -124,7 +124,9 @@ const LessonsList = () => {
 
   const filteredLessons = useMemo(() => {
     let result = lessons;
-    if (activeSubjectFilter !== "all") {
+    if (activeSubjectFilter === "none") {
+      result = result.filter(l => !l.subject_id);
+    } else if (activeSubjectFilter !== "all") {
       result = result.filter(l => l.subject_id === activeSubjectFilter);
     }
     if (searchQuery.trim()) {
