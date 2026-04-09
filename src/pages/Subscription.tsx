@@ -102,6 +102,29 @@ const Subscription = () => {
   const isPending = subscription?.status === "pending";
   const isTrial = subscription?.status === "trial" && subscription?.trial_ends_at && new Date(subscription.trial_ends_at) > new Date();
 
+  const [showActivationSplash, setShowActivationSplash] = useState(false);
+
+  const isTrialActive = Boolean(isTrial);
+  useEffect(() => {
+    if (isActive && !isTrialActive && !sessionStorage.getItem("subscription_splash_shown")) {
+      setShowActivationSplash(true);
+      const timer = setTimeout(() => {
+        setShowActivationSplash(false);
+        sessionStorage.setItem("subscription_splash_shown", "1");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isActive, isTrialActive]);
+
+  const dismissSplash = () => {
+    setShowActivationSplash(false);
+    sessionStorage.setItem("subscription_splash_shown", "1");
+  };
+
+  const activePlanName = subscription?.plan_id
+    ? plans.find((p) => p.id === subscription.plan_id)?.name ?? ""
+    : "";
+
   const applyPromo = async () => {
     if (!promoCode.trim()) return;
     setPromoLoading(true);
@@ -229,6 +252,28 @@ const Subscription = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (showActivationSplash) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-600 to-green-800 dark:from-green-800 dark:to-green-950 flex items-center justify-center p-6" dir="rtl">
+        <div className="text-center space-y-6 max-w-sm">
+          <CheckCircle className="w-20 h-20 text-white mx-auto animate-bounce" />
+          <h1 className="text-2xl font-bold text-white">تم قبول طلب الدفع وتفعيل اشتراكك!</h1>
+          <div className="bg-white/15 backdrop-blur rounded-xl p-4 space-y-2">
+            {activePlanName && (
+              <p className="text-white text-lg font-semibold">الخطة: {activePlanName}</p>
+            )}
+            {subscription?.expires_at && (
+              <p className="text-white/80 text-sm">ينتهي في: {new Date(subscription.expires_at).toLocaleDateString("ar")}</p>
+            )}
+          </div>
+          <Button onClick={dismissSplash} className="bg-white text-green-700 hover:bg-white/90 font-bold px-8">
+            متابعة
+          </Button>
+        </div>
       </div>
     );
   }
