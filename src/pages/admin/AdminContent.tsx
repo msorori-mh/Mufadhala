@@ -110,6 +110,7 @@ const AdminContent = () => {
   const [lessonOrder, setLessonOrder] = useState(0);
   const [lessonPublished, setLessonPublished] = useState(false);
   const [lessonFree, setLessonFree] = useState(false);
+  const [lessonSubjectId, setLessonSubjectId] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Pending questions for lesson dialog
