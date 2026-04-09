@@ -882,6 +882,16 @@ const AdminContent = () => {
               </select>
             </div>
             <div className="space-y-2">
+              <Label>المادة الدراسية</Label>
+              <select value={lessonSubjectId} onChange={(e) => setLessonSubjectId(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <option value="">بدون تصنيف</option>
+                {(lessonMajorId && majorSubjectsMap[lessonMajorId]
+                  ? subjects.filter(s => majorSubjectsMap[lessonMajorId].includes(s.id))
+                  : subjects
+                ).map((s) => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
               <Label>عنوان الدرس *</Label>
               <Input value={lessonTitle} onChange={(e) => setLessonTitle(e.target.value)} />
             </div>
