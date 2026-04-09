@@ -256,6 +256,28 @@ const Subscription = () => {
     );
   }
 
+  if (showActivationSplash) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-600 to-green-800 dark:from-green-800 dark:to-green-950 flex items-center justify-center p-6" dir="rtl">
+        <div className="text-center space-y-6 max-w-sm">
+          <CheckCircle className="w-20 h-20 text-white mx-auto animate-bounce" />
+          <h1 className="text-2xl font-bold text-white">تم قبول طلب الدفع وتفعيل اشتراكك!</h1>
+          <div className="bg-white/15 backdrop-blur rounded-xl p-4 space-y-2">
+            {activePlanName && (
+              <p className="text-white text-lg font-semibold">الخطة: {activePlanName}</p>
+            )}
+            {subscription?.expires_at && (
+              <p className="text-white/80 text-sm">ينتهي في: {new Date(subscription.expires_at).toLocaleDateString("ar")}</p>
+            )}
+          </div>
+          <Button onClick={dismissSplash} className="bg-white text-green-700 hover:bg-white/90 font-bold px-8">
+            متابعة
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const zoneName = studentGovernorate
     ? getZone(studentGovernorate) === "a" ? "المنطقة أ" : "المنطقة ب"
     : null;
