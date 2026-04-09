@@ -19,11 +19,22 @@ const Login = () => {
   const [phoneStep, setPhoneStep] = useState<"idle" | "phone" | "otp">("idle");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otpCode, setOtpCode] = useState("");
-  const [resendCountdown, setResendCountdown] = useState(0);
+  const [resendCountdown, setResendCountdown] = useState(() => {
+    const saved = sessionStorage.getItem("otp_cooldown");
+    if (saved) {
+      const { expiry } = JSON.parse(saved);
+      const remaining = Math.ceil((expiry - Date.now()) / 1000);
+      return remaining > 0 ? remaining : 0;
+    }
+    return 0;
+  });
 
-  // Countdown timer for resend
+  // Countdown timer for resend — persist to sessionStorage
   useEffect(() => {
-    if (resendCountdown <= 0) return;
+    if (resendCountdown <= 0) {
+      sessionStorage.removeItem("otp_cooldown");
+      return;
+    }
     const timer = setTimeout(() => setResendCountdown((c) => c - 1), 1000);
     return () => clearTimeout(timer);
   }, [resendCountdown]);
@@ -103,6 +114,7 @@ const Login = () => {
         toast({ title: "تم الإرسال", description: "تم إرسال رمز التحقق إلى جوالك" });
         setPhoneStep("otp");
         setResendCountdown(60);
+        sessionStorage.setItem("otp_cooldown", JSON.stringify({ phone: phoneNumber, expiry: Date.now() + 60000 }));
       }
     } catch {
       toast({ variant: "destructive", title: "خطأ", description: "حدث خطأ غير متوقع" });

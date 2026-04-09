@@ -22,21 +22,54 @@ Deno.serve(async (req) => {
 
     const fullPhone = phone.startsWith("+") ? phone : `+967${phone}`;
 
-    // Generate 6-digit OTP
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 min
-
-    // Store OTP in DB
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    // Rate limit: check if a code was sent in the last 60 seconds
+    const sixtySecondsAgo = new Date(Date.now() - 60 * 1000).toISOString();
+    const { data: recentCodes } = await supabaseAdmin
+      .from("otp_codes")
+      .select("created_at")
+      .eq("phone", fullPhone)
+      .gte("created_at", sixtySecondsAgo)
+      .limit(1);
+
+    if (recentCodes && recentCodes.length > 0) {
+      const createdAt = new Date(recentCodes[0].created_at).getTime();
+      const remaining = Math.ceil((createdAt + 60000 - Date.now()) / 1000);
+      return new Response(
+        JSON.stringify({ error: `يرجى الانتظار ${remaining} ثانية قبل إعادة الإرسال`, retryAfter: remaining }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Daily limit: max 5 codes per phone per day
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const { count: dailyCount } = await supabaseAdmin
+      .from("otp_codes")
+      .select("id", { count: "exact", head: true })
+      .eq("phone", fullPhone)
+      .gte("created_at", startOfDay.toISOString());
+
+    if (dailyCount !== null && dailyCount >= 5) {
+      return new Response(
+        JSON.stringify({ error: "تم تجاوز الحد اليومي لإرسال رموز التحقق. حاول غداً." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Delete old codes for this phone
     await supabaseAdmin
       .from("otp_codes")
       .delete()
       .eq("phone", fullPhone);
+
+    // Generate 6-digit OTP
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
     const { error: insertError } = await supabaseAdmin
       .from("otp_codes")
