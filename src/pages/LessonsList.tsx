@@ -13,6 +13,12 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { useOfflineStatus } from "@/hooks/useOfflineStatus";
 import { getSavedLessonIds, getAllSavedLessons } from "@/lib/offlineStorage";
 
+interface SubjectInfo {
+  id: string;
+  name_ar: string;
+  code: string;
+}
+
 interface Lesson {
   id: string;
   major_id: string;
@@ -20,6 +26,7 @@ interface Lesson {
   summary: string;
   display_order: number;
   is_free: boolean;
+  subject_id?: string | null;
 }
 
 const LessonsList = () => {
