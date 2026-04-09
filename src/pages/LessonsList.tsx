@@ -80,18 +80,33 @@ const LessonsList = () => {
       if (!s?.major_id) { setLoading(false); return; }
       setStudent(s);
 
-      const [{ data: major }, { data: ls }] = await Promise.all([
+      const [{ data: major }, { data: ls }, { data: lessonsFull }] = await Promise.all([
         supabase.from("majors").select("name_ar").eq("id", s.major_id).maybeSingle(),
         supabase.rpc("get_published_lessons_list", { _major_id: s.major_id }),
+        supabase.from("lessons").select("id, subject_id").eq("major_id", s.major_id).eq("is_published", true),
       ]);
       if (major) setMajorName(major.name_ar);
       if (ls) {
-        setLessons(ls as Lesson[]);
+        // Merge subject_id from full lessons query
+        const subjectMap = new Map<string, string | null>();
+        (lessonsFull || []).forEach((lf: any) => subjectMap.set(lf.id, lf.subject_id));
+        const enrichedLessons = (ls as Lesson[]).map(l => ({ ...l, subject_id: subjectMap.get(l.id) || null }));
+        setLessons(enrichedLessons);
+
+        // Fetch subjects for this major
+        const { data: ms } = await supabase.from("major_subjects").select("subject_id").eq("major_id", s.major_id);
+        if (ms && ms.length > 0) {
+          const subjectIds = ms.map((m: any) => m.subject_id);
+          const { data: subs } = await supabase.from("subjects").select("id, name_ar, code").in("id", subjectIds).order("display_order");
+          if (subs) setSubjects(subs as SubjectInfo[]);
+        }
+
+        const lessonIds = enrichedLessons.map((l: any) => l.id);
         const [{ data: qs }, { data: progress }] = await Promise.all([
-          supabase.from("questions").select("lesson_id").in("lesson_id", ls.map((l: any) => l.id)),
+          supabase.from("questions").select("lesson_id").in("lesson_id", lessonIds),
           supabase.from("lesson_progress").select("lesson_id")
             .eq("student_id", s.id).eq("is_completed", true)
-            .in("lesson_id", ls.map((l: any) => l.id)),
+            .in("lesson_id", lessonIds),
         ]);
         if (qs) {
           const counts: Record<string, number> = {};
@@ -108,12 +123,16 @@ const LessonsList = () => {
   }, [authLoading, user, isOffline]);
 
   const filteredLessons = useMemo(() => {
-    if (!searchQuery.trim()) return lessons;
-    const q = searchQuery.trim().toLowerCase();
-    return lessons.filter(l =>
-      l.title.toLowerCase().includes(q) || l.summary.toLowerCase().includes(q)
-    );
-  }, [lessons, searchQuery]);
+    let result = lessons;
+    if (activeSubjectFilter !== "all") {
+      result = result.filter(l => l.subject_id === activeSubjectFilter);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter(l => l.title.toLowerCase().includes(q) || l.summary.toLowerCase().includes(q));
+    }
+    return result;
+  }, [lessons, searchQuery, activeSubjectFilter]);
 
   const progressPct = lessons.length > 0 ? Math.round((completedLessons.size / lessons.length) * 100) : 0;
 
