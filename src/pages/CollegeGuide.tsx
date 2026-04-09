@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
   GraduationCap, ChevronLeft, Loader2, Search, MapPin, FileText,
-  Calendar, TrendingUp, Star,
+  Calendar, TrendingUp, Star, Download,
 } from "lucide-react";
 
 const CollegeGuide = () => {
