@@ -1,14 +1,22 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Bot, User, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Bot, User, Loader2, Camera, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
-type Message = { role: "user" | "assistant"; content: string };
+type ContentPart =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+
+type Message = {
+  role: "user" | "assistant";
+  content: string | ContentPart[];
+};
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const DAILY_LIMIT = 20;
 const STORAGE_KEY = "mufadhala_chat_usage";
+const MAX_IMAGE_SIZE = 1024; // max dimension for resizing
 
 function getDailyUsage(): { count: number; date: string } {
   try {
@@ -31,6 +39,52 @@ function incrementUsage() {
 
 function getRemainingMessages(): number {
   return Math.max(0, DAILY_LIMIT - getDailyUsage().count);
+}
+
+function resizeImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let { width, height } = img;
+        if (width > MAX_IMAGE_SIZE || height > MAX_IMAGE_SIZE) {
+          if (width > height) {
+            height = Math.round((height * MAX_IMAGE_SIZE) / width);
+            width = MAX_IMAGE_SIZE;
+          } else {
+            width = Math.round((width * MAX_IMAGE_SIZE) / height);
+            height = MAX_IMAGE_SIZE;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.8));
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function getTextContent(content: string | ContentPart[]): string {
+  if (typeof content === "string") return content;
+  return content
+    .filter((p): p is { type: "text"; text: string } => p.type === "text")
+    .map((p) => p.text)
+    .join("");
+}
+
+function getImages(content: string | ContentPart[]): string[] {
+  if (typeof content === "string") return [];
+  return content
+    .filter((p): p is { type: "image_url"; image_url: { url: string } } => p.type === "image_url")
+    .map((p) => p.image_url.url);
 }
 
 async function streamChat({
@@ -103,15 +157,46 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [remaining, setRemaining] = useState(getRemainingMessages());
+  const [pendingImages, setPendingImages] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    if (!file.type.startsWith("image/")) {
+      toast.error("يرجى اختيار صورة فقط");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("حجم الصورة كبير جداً (الحد الأقصى 10 ميجابايت)");
+      return;
+    }
+
+    try {
+      const dataUrl = await resizeImage(file);
+      setPendingImages((prev) => [...prev, dataUrl]);
+    } catch {
+      toast.error("حدث خطأ في معالجة الصورة");
+    }
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removePendingImage = (index: number) => {
+    setPendingImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const send = async () => {
     const text = input.trim();
-    if (!text || loading) return;
+    const images = [...pendingImages];
+    if ((!text && images.length === 0) || loading) return;
 
     if (getRemainingMessages() <= 0) {
       toast.error("لقد وصلت للحد اليومي من الرسائل (20 رسالة). حاول مرة أخرى غداً!");
@@ -121,8 +206,26 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
     incrementUsage();
     setRemaining(getRemainingMessages());
 
-    const userMsg: Message = { role: "user", content: text };
+    // Build multimodal content if images exist
+    let userContent: string | ContentPart[];
+    if (images.length > 0) {
+      const parts: ContentPart[] = [];
+      images.forEach((img) => {
+        parts.push({ type: "image_url", image_url: { url: img } });
+      });
+      if (text) {
+        parts.push({ type: "text", text });
+      } else {
+        parts.push({ type: "text", text: "ما هو حل هذا السؤال؟" });
+      }
+      userContent = parts;
+    } else {
+      userContent = text;
+    }
+
+    const userMsg: Message = { role: "user", content: userContent };
     setInput("");
+    setPendingImages([]);
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
 
@@ -157,7 +260,6 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
 
   return (
     <div ref={ref} className="fixed bottom-24 right-4 z-50 sm:bottom-8 sm:right-8">
-      {/* Chat bubble button */}
       {!open && (
         <Button
           onClick={() => setOpen(true)}
@@ -168,7 +270,6 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
         </Button>
       )}
 
-      {/* Chat window */}
       {open && (
         <div className="flex flex-col bg-card border border-border rounded-2xl shadow-2xl w-[calc(100vw-2rem)] max-w-[380px] h-[70vh] max-h-[520px] sm:w-[380px]">
           {/* Header */}
@@ -188,25 +289,36 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-2 px-4">
                 <Bot className="h-10 w-10 text-primary/40" />
                 <p className="text-sm">مرحباً! أنا مساعد مُفَاضَلَة الذكي 👋</p>
-                <p className="text-xs">اسألني عن الدروس، الاختبارات، أو أي شيء يخص المنصة</p>
+                <p className="text-xs">اسألني عن الدروس، الاختبارات، أو صوّر سؤالك وأرسله لي 📸</p>
               </div>
             )}
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-                <div className={`flex-shrink-0 h-7 w-7 rounded-full flex items-center justify-center ${msg.role === "user" ? "bg-primary/10" : "bg-accent"}`}>
-                  {msg.role === "user" ? <User className="h-3.5 w-3.5 text-primary" /> : <Bot className="h-3.5 w-3.5 text-primary" />}
+            {messages.map((msg, i) => {
+              const text = getTextContent(msg.content);
+              const images = getImages(msg.content);
+              return (
+                <div key={i} className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+                  <div className={`flex-shrink-0 h-7 w-7 rounded-full flex items-center justify-center ${msg.role === "user" ? "bg-primary/10" : "bg-accent"}`}>
+                    {msg.role === "user" ? <User className="h-3.5 w-3.5 text-primary" /> : <Bot className="h-3.5 w-3.5 text-primary" />}
+                  </div>
+                  <div className={`max-w-[80%] rounded-xl px-3 py-2 text-sm leading-relaxed ${msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
+                    {images.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-1.5">
+                        {images.map((src, j) => (
+                          <img key={j} src={src} alt="صورة مرفقة" className="rounded-lg max-h-32 max-w-full object-cover" />
+                        ))}
+                      </div>
+                    )}
+                    {msg.role === "assistant" ? (
+                      <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:m-0 [&>ul]:my-1 [&>ol]:my-1">
+                        <ReactMarkdown>{text}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      text && <span>{text}</span>
+                    )}
+                  </div>
                 </div>
-                <div className={`max-w-[80%] rounded-xl px-3 py-2 text-sm leading-relaxed ${msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
-                  {msg.role === "assistant" ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:m-0 [&>ul]:my-1 [&>ol]:my-1">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    msg.content
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {loading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex gap-2">
                 <div className="h-7 w-7 rounded-full bg-accent flex items-center justify-center">
@@ -227,21 +339,55 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
               </p>
             ) : (
               <>
+                {/* Pending images preview */}
+                {pendingImages.length > 0 && (
+                  <div className="flex gap-2 mb-2 flex-wrap">
+                    {pendingImages.map((src, i) => (
+                      <div key={i} className="relative group">
+                        <img src={src} alt="صورة" className="h-14 w-14 rounded-lg object-cover border border-border" />
+                        <button
+                          onClick={() => removePendingImage(i)}
+                          className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
                     send();
                   }}
-                  className="flex gap-2"
+                  className="flex gap-2 items-end"
                 >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleImageSelect}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 shrink-0"
+                    disabled={loading}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Camera className="h-4 w-4" />
+                  </Button>
                   <input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="اكتب سؤالك هنا..."
+                    placeholder={pendingImages.length > 0 ? "أضف تعليق أو أرسل مباشرة..." : "اكتب سؤالك هنا..."}
                     disabled={loading}
                     className="flex-1 bg-muted rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground disabled:opacity-50"
                   />
-                  <Button type="submit" size="icon" className="h-9 w-9 rounded-xl" disabled={loading || !input.trim()}>
+                  <Button type="submit" size="icon" className="h-9 w-9 rounded-xl shrink-0" disabled={loading || (!input.trim() && pendingImages.length === 0)}>
                     <Send className="h-4 w-4" />
                   </Button>
                 </form>
