@@ -340,23 +340,20 @@ const Dashboard = () => {
         )}
 
         {/* Navigation Cards */}
-        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
           {navCards.map((card) => (
             <Link key={card.path} to={card.path} className="block">
-              <Card className={`cursor-pointer hover:shadow-md transition-shadow border-r-4 ${card.color} h-full`}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <div className={`w-10 h-10 rounded-lg ${card.bgColor} flex items-center justify-center`}>
-                      <card.icon className={`w-5 h-5 ${card.iconColor}`} />
-                    </div>
-                    {card.badge ? <Badge className="text-xs">{card.badge}</Badge> : null}
-                  </div>
-                  <CardTitle className="text-base">{card.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">{card.desc}</p>
-                </CardContent>
-              </Card>
+              <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-card border border-border hover:shadow-md hover:border-primary/30 transition-all cursor-pointer text-center">
+                <div className={`relative w-11 h-11 rounded-full ${card.bgColor} flex items-center justify-center`}>
+                  <card.icon className={`w-5 h-5 ${card.iconColor}`} />
+                  {card.badge ? (
+                    <span className="absolute -top-0.5 -left-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                      {card.badge}
+                    </span>
+                  ) : null}
+                </div>
+                <span className="text-xs font-medium text-foreground leading-tight line-clamp-2">{card.title}</span>
+              </div>
             </Link>
           ))}
         </div>
