@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -223,19 +224,30 @@ const Dashboard = () => {
 
         {/* Stats Cards */}
         {totalExams > 0 && (
-          <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
+          <motion.div
+            className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4"
+            initial="hidden"
+            animate="visible"
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
+          >
             {statCards.map((s) => (
-              <Card key={s.label} className="relative overflow-hidden">
-                <CardContent className="p-3 sm:p-4 flex flex-col items-center text-center gap-0.5 sm:gap-1">
-                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${s.bg} flex items-center justify-center mb-0.5 sm:mb-1`}>
-                    <s.icon className={`w-4 h-4 ${s.color}`} />
-                  </div>
-                  <span className="text-xl sm:text-2xl font-bold text-foreground">{s.value}</span>
-                  <span className="text-[10px] sm:text-xs text-muted-foreground">{s.label}</span>
-                </CardContent>
-              </Card>
+              <motion.div
+                key={s.label}
+                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+              >
+                <Card className="relative overflow-hidden">
+                  <CardContent className="p-3 sm:p-4 flex flex-col items-center text-center gap-0.5 sm:gap-1">
+                    <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${s.bg} flex items-center justify-center mb-0.5 sm:mb-1`}>
+                      <s.icon className={`w-4 h-4 ${s.color}`} />
+                    </div>
+                    <span className="text-xl sm:text-2xl font-bold text-foreground">{s.value}</span>
+                    <span className="text-[10px] sm:text-xs text-muted-foreground">{s.label}</span>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
 
         {/* Lesson Progress */}
@@ -340,23 +352,36 @@ const Dashboard = () => {
         )}
 
         {/* Navigation Cards */}
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
+        <motion.div
+          className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3"
+          initial="hidden"
+          animate="visible"
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
+        >
           {navCards.map((card) => (
-            <Link key={card.path} to={card.path} className="block">
-              <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-card border border-border hover:shadow-md hover:border-primary/30 transition-all cursor-pointer text-center">
-                <div className={`relative w-11 h-11 rounded-full ${card.bgColor} flex items-center justify-center`}>
-                  <card.icon className={`w-5 h-5 ${card.iconColor}`} />
-                  {card.badge ? (
-                    <span className="absolute -top-0.5 -left-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
-                      {card.badge}
-                    </span>
-                  ) : null}
+            <motion.div
+              key={card.path}
+              variants={{ hidden: { opacity: 0, scale: 0.85 }, visible: { opacity: 1, scale: 1 } }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link to={card.path} className="block">
+                <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-card border border-border hover:shadow-md hover:border-primary/30 transition-shadow cursor-pointer text-center">
+                  <div className={`relative w-11 h-11 rounded-full ${card.bgColor} flex items-center justify-center`}>
+                    <card.icon className={`w-5 h-5 ${card.iconColor}`} />
+                    {card.badge ? (
+                      <span className="absolute -top-0.5 -left-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                        {card.badge}
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="text-xs font-medium text-foreground leading-tight line-clamp-2">{card.title}</span>
                 </div>
-                <span className="text-xs font-medium text-foreground leading-tight line-clamp-2">{card.title}</span>
-              </div>
-            </Link>
+              </Link>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </main>
     </div>
   );
