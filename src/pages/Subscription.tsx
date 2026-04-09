@@ -145,7 +145,12 @@ const Subscription = () => {
       user_id: user.id, status: "active", plan_id: plan.id,
     });
     if (error) {
-      toast({ variant: "destructive", title: error.message });
+      const msg = error.message.includes("row-level security")
+        ? "ليس لديك صلاحية لتفعيل هذه الخطة. يرجى تسجيل الدخول مرة أخرى."
+        : error.message.includes("duplicate")
+        ? "لديك اشتراك مفعّل بالفعل في هذه الخطة."
+        : `فشل تفعيل الخطة: ${error.message}`;
+      toast({ variant: "destructive", title: "خطأ في الاشتراك", description: msg });
     } else {
       toast({ title: "تم تفعيل الخطة المجانية!" });
       setSubscription({ id: "", status: "active", plan_id: plan.id, starts_at: null, expires_at: null, trial_ends_at: null });
