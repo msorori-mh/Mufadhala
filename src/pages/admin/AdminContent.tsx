@@ -161,18 +161,29 @@ const AdminContent = () => {
   const questionFileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchData = async () => {
-    const [{ data: u }, { data: c }, { data: m }, { data: l }, { data: q }] = await Promise.all([
+    const [{ data: u }, { data: c }, { data: m }, { data: l }, { data: q }, { data: subs }, { data: ms }] = await Promise.all([
       supabase.from("universities").select("*").order("display_order"),
       supabase.from("colleges").select("*").order("display_order"),
       supabase.from("majors").select("*").order("display_order"),
       supabase.from("lessons").select("*").order("display_order"),
       supabase.from("questions").select("*").order("display_order"),
+      supabase.from("subjects").select("id, name_ar, code").eq("is_active", true).order("display_order"),
+      supabase.from("major_subjects").select("*"),
     ]);
     if (u) setUniversities(u);
     if (c) setColleges(c);
     if (m) setMajors(m);
     if (l) setLessons(l as Lesson[]);
     if (q) setQuestions(q as Question[]);
+    if (subs) setSubjects(subs as Subject[]);
+    if (ms) {
+      const map: Record<string, string[]> = {};
+      (ms as any[]).forEach((r: any) => {
+        if (!map[r.major_id]) map[r.major_id] = [];
+        map[r.major_id].push(r.subject_id);
+      });
+      setMajorSubjectsMap(map);
+    }
     setLoading(false);
   };
 
