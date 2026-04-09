@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,31 @@ import { lovable } from "@/integrations/lovable/index";
 import { useToast } from "@/hooks/use-toast";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { resolveAuthDestination } from "@/lib/authRouting";
+
+const useWebOTP = (
+  active: boolean,
+  onCodeReceived: (code: string) => void
+) => {
+  useEffect(() => {
+    if (!active) return;
+    if (!("OTPCredential" in window)) return;
+
+    const ac = new AbortController();
+
+    (navigator.credentials as any)
+      .get({ otp: { transport: ["sms"] }, signal: ac.signal })
+      .then((otpCredential: any) => {
+        if (otpCredential?.code) {
+          onCodeReceived(otpCredential.code);
+        }
+      })
+      .catch(() => {
+        // User dismissed or unsupported — ignore
+      });
+
+    return () => ac.abort();
+  }, [active, onCodeReceived]);
+};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -28,6 +53,13 @@ const Login = () => {
     }
     return 0;
   });
+
+  // Auto-fill OTP from SMS via WebOTP API
+  const handleWebOTPCode = useCallback((code: string) => {
+    setOtpCode(code);
+  }, []);
+
+  useWebOTP(phoneStep === "otp", handleWebOTPCode);
 
   // Countdown timer for resend — persist to sessionStorage
   useEffect(() => {
@@ -269,7 +301,7 @@ const Login = () => {
                   تم إرسال رمز مكون من 6 أرقام إلى +967{phoneNumber}
                 </p>
                 <div className="flex justify-center" dir="ltr">
-                  <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                  <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode} autoComplete="one-time-code">
                     <InputOTPGroup>
                       <InputOTPSlot index={0} />
                       <InputOTPSlot index={1} />
