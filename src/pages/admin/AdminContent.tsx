@@ -754,7 +754,13 @@ const AdminContent = () => {
                   <div className="flex items-start justify-between">
                       <div>
                         <p className="font-semibold text-sm">{l.title}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{getMajorName(l.major_id)}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {getMajorName(l.major_id)}
+                          {l.subject_id && (() => {
+                            const subj = subjects.find(s => s.id === l.subject_id);
+                            return subj ? ` • ${subj.name_ar}` : "";
+                          })()}
+                        </p>
                         <div className="flex gap-1 mt-1 flex-wrap">
                           <Badge variant={l.is_published ? "default" : "secondary"} className="text-[10px]">
                             {l.is_published ? "منشور" : "مسودة"}
