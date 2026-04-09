@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import ThemeToggle from "@/components/ThemeToggle";
+import SubjectPerformanceDetail from "@/components/SubjectPerformanceDetail";
 import {
   ChevronRight, Loader2, Trophy, TrendingUp,
   Target, Users, BookOpen, BarChart3, CheckCircle, XCircle,
@@ -15,8 +16,7 @@ import {
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, RadarChart, Radar, PolarGrid,
-  PolarAngleAxis, PolarRadiusAxis,
+  ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area,
 } from "recharts";
 
@@ -175,32 +175,6 @@ const StudentPerformance = () => {
     return subjectStats;
   })();
 
-  const radarData = Object.entries(subjectPerformance)
-    .filter(([, v]) => v.total >= 1)
-    .map(([key, v]) => ({
-      subject: SUBJECT_LABELS[key] || key,
-      coverage: Math.round((v.correct / v.total) * 100),
-      fullMark: 100,
-    }));
-
-  // If no subject data from answers, fallback to lesson-based radar
-  const fallbackRadarData = radarData.length < 3 ? lessons.slice(0, 8).map((l) => {
-    const qCount = questions.filter((q) => q.lesson_id === l.id).length;
-    const isCompleted = completedLessonIds.has(l.id);
-    return {
-      subject: l.title.length > 10 ? l.title.slice(0, 8) + "…" : l.title,
-      coverage: isCompleted ? 100 : qCount > 0 ? 50 : 0,
-      fullMark: 100,
-    };
-  }) : radarData;
-
-  const finalRadarData = radarData.length >= 3 ? radarData : fallbackRadarData;
-
-  // Smart recommendations based on weakest subjects
-  const recommendations = Object.entries(subjectPerformance)
-    .filter(([, v]) => v.total >= 2)
-    .map(([key, v]) => ({ subject: key, label: SUBJECT_LABELS[key] || key, pct: Math.round((v.correct / v.total) * 100) }))
-    .sort((a, b) => a.pct - b.pct);
 
   // Performance level
   const getLevel = (avg: number) => {
@@ -320,12 +294,20 @@ const StudentPerformance = () => {
 
         {/* Tabs for Charts */}
         {myExams.length > 0 && (
-          <Tabs defaultValue="trend" className="w-full">
+          <Tabs defaultValue="subjects" className="w-full">
             <TabsList className="w-full grid grid-cols-3">
+              <TabsTrigger value="subjects" className="text-xs">تحليل المواد</TabsTrigger>
               <TabsTrigger value="trend" className="text-xs">تطور النتائج</TabsTrigger>
               <TabsTrigger value="distribution" className="text-xs">التوزيع</TabsTrigger>
-              <TabsTrigger value="coverage" className="text-xs">المواد</TabsTrigger>
             </TabsList>
+
+            {/* Subject Performance Detail */}
+            <TabsContent value="subjects">
+              <SubjectPerformanceDetail
+                subjectPerformance={subjectPerformance}
+                subjectLabels={SUBJECT_LABELS}
+              />
+            </TabsContent>
 
             {/* Score Trend */}
             <TabsContent value="trend">
@@ -379,49 +361,6 @@ const StudentPerformance = () => {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Subject Performance Radar */}
-            <TabsContent value="coverage">
-              <Card>
-                <CardContent className="pt-4">
-                  {finalRadarData.length >= 3 ? (
-                    <div className="h-56">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <RadarChart data={finalRadarData}>
-                          <PolarGrid stroke="hsl(var(--border))" />
-                          <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
-                          <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} />
-                          <Radar name="مستواك" dataKey="coverage" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
-                        </RadarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : (
-                    <p className="text-center text-sm text-muted-foreground py-8">تحتاج بيانات أكثر لعرض الرسم</p>
-                  )}
-
-                  {/* Smart recommendations */}
-                  {recommendations.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      <p className="text-xs font-semibold text-muted-foreground">توصيات ذكية:</p>
-                      {recommendations.slice(0, 3).map((r) => (
-                        <div key={r.subject} className={`flex items-center justify-between text-sm p-2 rounded-lg ${r.pct < 50 ? "bg-destructive/5" : r.pct < 70 ? "bg-accent/5" : "bg-green-50 dark:bg-green-950/20"}`}>
-                          <span className="text-foreground">{r.label}</span>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={r.pct < 50 ? "destructive" : r.pct < 70 ? "secondary" : "default"} className="text-xs">{r.pct}%</Badge>
-                            {r.pct < 50 && <span className="text-xs text-destructive">⚠️ يحتاج مراجعة</span>}
-                          </div>
-                        </div>
-                      ))}
-                      {recommendations[0]?.pct < 60 && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          📚 ننصحك بمراجعة مادة <strong>{recommendations[0].label}</strong> — مستواك فيها ({recommendations[0].pct}%) يحتاج تحسين
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             </TabsContent>
