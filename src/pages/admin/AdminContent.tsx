@@ -89,6 +89,8 @@ const AdminContent = () => {
   const [majors, setMajors] = useState<any[]>([]);
   const [colleges, setColleges] = useState<any[]>([]);
   const [universities, setUniversities] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [majorSubjectsMap, setMajorSubjectsMap] = useState<Record<string, string[]>>({});
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
