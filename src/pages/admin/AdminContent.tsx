@@ -133,6 +133,7 @@ const AdminContent = () => {
   const [explanation, setExplanation] = useState("");
   const [questionSubject, setQuestionSubject] = useState("general");
   const [questionOrder, setQuestionOrder] = useState(0);
+  const [questionSubjectFilter, setQuestionSubjectFilter] = useState("all");
 
   // Selected lesson for questions panel
   const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
@@ -669,8 +670,10 @@ const AdminContent = () => {
 
   if (authLoading || loading || scopeLoading) return <AdminLayout><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></AdminLayout>;
 
-  const lessonQuestions = selectedLesson ? questions.filter((q) => q.lesson_id === selectedLesson) : [];
+  const allLessonQuestions = selectedLesson ? questions.filter((q) => q.lesson_id === selectedLesson) : [];
+  const lessonQuestions = questionSubjectFilter === "all" ? allLessonQuestions : allLessonQuestions.filter((q) => q.subject === questionSubjectFilter);
   const selectedLessonData = selectedLesson ? lessons.find((l) => l.id === selectedLesson) : null;
+  const lessonSubjects = [...new Set(allLessonQuestions.map(q => q.subject || "general"))];
 
   const totalQuestionsInDialog = existingLessonQuestions.length + pendingQuestions.length;
 
@@ -717,7 +720,7 @@ const AdminContent = () => {
               <Card
                 key={l.id}
                 className={`cursor-pointer transition-shadow ${selectedLesson === l.id ? "ring-2 ring-primary" : ""} ${!l.is_published ? "opacity-60" : ""}`}
-                onClick={() => setSelectedLesson(selectedLesson === l.id ? null : l.id)}
+                onClick={() => { setSelectedLesson(selectedLesson === l.id ? null : l.id); setQuestionSubjectFilter("all"); }}
               >
                 <CardContent className="py-3 px-4">
                   <div className="flex items-start justify-between">
@@ -763,6 +766,27 @@ const AdminContent = () => {
                 </div>
               )}
             </div>
+            {selectedLesson && lessonSubjects.length > 1 && (
+              <div className="flex gap-1 flex-wrap">
+                <Badge
+                  variant={questionSubjectFilter === "all" ? "default" : "outline"}
+                  className="cursor-pointer text-[10px]"
+                  onClick={() => setQuestionSubjectFilter("all")}
+                >
+                  الكل ({allLessonQuestions.length})
+                </Badge>
+                {lessonSubjects.map((s) => (
+                  <Badge
+                    key={s}
+                    variant={questionSubjectFilter === s ? "default" : "outline"}
+                    className="cursor-pointer text-[10px]"
+                    onClick={() => setQuestionSubjectFilter(s)}
+                  >
+                    {getSubjectLabel(s)} ({allLessonQuestions.filter(q => q.subject === s).length})
+                  </Badge>
+                ))}
+              </div>
+            )}
             {!selectedLesson && <p className="text-sm text-muted-foreground py-8 text-center">اختر درساً لعرض أسئلته</p>}
             {selectedLesson && selectedLessonData && (
               <Card className="bg-muted/50">
