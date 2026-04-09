@@ -65,6 +65,15 @@ const SUBJECT_OPTIONS = [
 ];
 
 const getSubjectLabel = (value: string) => SUBJECT_OPTIONS.find(s => s.value === value)?.label || value;
+const getSubjectValue = (label: string) => {
+  const trimmed = label?.trim();
+  if (!trimmed) return "general";
+  const byValue = SUBJECT_OPTIONS.find(s => s.value === trimmed.toLowerCase());
+  if (byValue) return byValue.value;
+  const byLabel = SUBJECT_OPTIONS.find(s => s.label === trimmed);
+  return byLabel ? byLabel.value : "general";
+};
+const SUBJECT_LABELS_HINT = SUBJECT_OPTIONS.map(s => s.label).join(" / ");
 
 const AdminContent = () => {
   const { user, loading: authLoading, isAdmin } = useAuth("moderator");
@@ -490,8 +499,8 @@ const AdminContent = () => {
   const downloadQuestionsTemplate = () => {
     const wb = XLSX.utils.book_new();
     const data = [
-      ["نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح"],
-      ["ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب"],
+      ["نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`],
+      ["ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب", "عام"],
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), "الأسئلة");
     XLSX.writeFile(wb, "قالب_استيراد_أسئلة.xlsx");
@@ -524,6 +533,7 @@ const AdminContent = () => {
           option_d: String(row[4] || ""),
           correct_option: String(row[5] || "a").toLowerCase().trim(),
           explanation: row[6] ? String(row[6]) : "",
+          subject: row[7] ? getSubjectValue(String(row[7])) : "general",
           display_order: existingCount + i,
         });
         if (error) {
@@ -551,8 +561,8 @@ const AdminContent = () => {
       ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم"],
     ];
     const questionsData = [
-      ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح"],
-      ["مقدمة في البرمجة", "ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب"],
+      ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`],
+      ["مقدمة في البرمجة", "ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب", "عام"],
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lessonsData), "الدروس");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(questionsData), "الأسئلة");
@@ -637,6 +647,7 @@ const AdminContent = () => {
             option_d: String(row[5] || ""),
             correct_option: String(row[6] || "a").toLowerCase().trim(),
             explanation: row[7] ? String(row[7]) : "",
+            subject: row[8] ? getSubjectValue(String(row[8])) : "general",
             display_order: i,
           });
           if (error) {
