@@ -104,8 +104,9 @@ const Subscription = () => {
 
   const [showActivationSplash, setShowActivationSplash] = useState(false);
 
+  const isTrialActive = Boolean(isTrial);
   useEffect(() => {
-    if (isActive && !isTrial && !sessionStorage.getItem("subscription_splash_shown")) {
+    if (isActive && !isTrialActive && !sessionStorage.getItem("subscription_splash_shown")) {
       setShowActivationSplash(true);
       const timer = setTimeout(() => {
         setShowActivationSplash(false);
@@ -113,7 +114,7 @@ const Subscription = () => {
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [isActive, isTrial]);
+  }, [isActive, isTrialActive]);
 
   const dismissSplash = () => {
     setShowActivationSplash(false);
