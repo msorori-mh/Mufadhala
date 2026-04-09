@@ -8,7 +8,7 @@ type Message = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const DAILY_LIMIT = 20;
-const STORAGE_KEY = "qubool_chat_usage";
+const STORAGE_KEY = "mufadhala_chat_usage";
 
 function getDailyUsage(): { count: number; date: string } {
   try {
