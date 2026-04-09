@@ -223,6 +223,7 @@ export type Database = {
           is_free: boolean
           is_published: boolean
           major_id: string
+          subject_id: string | null
           summary: string
           title: string
           updated_at: string
@@ -235,6 +236,7 @@ export type Database = {
           is_free?: boolean
           is_published?: boolean
           major_id: string
+          subject_id?: string | null
           summary?: string
           title: string
           updated_at?: string
@@ -247,6 +249,7 @@ export type Database = {
           is_free?: boolean
           is_published?: boolean
           major_id?: string
+          subject_id?: string | null
           summary?: string
           title?: string
           updated_at?: string
@@ -257,6 +260,49 @@ export type Database = {
             columns: ["major_id"]
             isOneToOne: false
             referencedRelation: "majors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lessons_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      major_subjects: {
+        Row: {
+          created_at: string
+          id: string
+          major_id: string
+          subject_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          major_id: string
+          subject_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          major_id?: string
+          subject_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "major_subjects_major_id_fkey"
+            columns: ["major_id"]
+            isOneToOne: false
+            referencedRelation: "majors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "major_subjects_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
             referencedColumns: ["id"]
           },
         ]
@@ -689,6 +735,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subjects: {
+        Row: {
+          code: string
+          created_at: string
+          display_order: number
+          icon: string | null
+          id: string
+          is_active: boolean
+          name_ar: string
+          name_en: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar: string
+          name_en?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string
+          name_en?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       subscription_plans: {
         Row: {

@@ -38,6 +38,7 @@ import AdminSubscriptionPlans from "./pages/admin/AdminSubscriptionPlans";
 import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminPromoCodes from "./pages/admin/AdminPromoCodes";
+import AdminSubjects from "./pages/admin/AdminSubjects";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import MobileBottomNav from "./components/MobileBottomNav";
@@ -97,6 +98,7 @@ function App() {
                 <Route path="/admin/payment-methods" element={<AdminPaymentMethods />} />
                 <Route path="/admin/promo-codes" element={<AdminPromoCodes />} />
                 <Route path="/admin/payments" element={<AdminPayments />} />
+                <Route path="/admin/subjects" element={<AdminSubjects />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <MobileBottomNav />

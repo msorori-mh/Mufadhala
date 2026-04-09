@@ -16,9 +16,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles, ChevronDown, ChevronUp, Search } from "lucide-react";
 import * as XLSX from "xlsx";
 
+interface Subject {
+  id: string;
+  name_ar: string;
+  code: string;
+}
+
 interface Lesson {
   id: string;
   major_id: string;
+  subject_id: string | null;
   title: string;
   content: string;
   summary: string;
@@ -82,6 +89,8 @@ const AdminContent = () => {
   const [majors, setMajors] = useState<any[]>([]);
   const [colleges, setColleges] = useState<any[]>([]);
   const [universities, setUniversities] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [majorSubjectsMap, setMajorSubjectsMap] = useState<Record<string, string[]>>({});
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,6 +110,7 @@ const AdminContent = () => {
   const [lessonOrder, setLessonOrder] = useState(0);
   const [lessonPublished, setLessonPublished] = useState(false);
   const [lessonFree, setLessonFree] = useState(false);
+  const [lessonSubjectId, setLessonSubjectId] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Pending questions for lesson dialog
@@ -151,18 +161,29 @@ const AdminContent = () => {
   const questionFileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchData = async () => {
-    const [{ data: u }, { data: c }, { data: m }, { data: l }, { data: q }] = await Promise.all([
+    const [{ data: u }, { data: c }, { data: m }, { data: l }, { data: q }, { data: subs }, { data: ms }] = await Promise.all([
       supabase.from("universities").select("*").order("display_order"),
       supabase.from("colleges").select("*").order("display_order"),
       supabase.from("majors").select("*").order("display_order"),
       supabase.from("lessons").select("*").order("display_order"),
       supabase.from("questions").select("*").order("display_order"),
+      supabase.from("subjects").select("id, name_ar, code").eq("is_active", true).order("display_order"),
+      supabase.from("major_subjects").select("*"),
     ]);
     if (u) setUniversities(u);
     if (c) setColleges(c);
     if (m) setMajors(m);
     if (l) setLessons(l as Lesson[]);
     if (q) setQuestions(q as Question[]);
+    if (subs) setSubjects(subs as Subject[]);
+    if (ms) {
+      const map: Record<string, string[]> = {};
+      (ms as any[]).forEach((r: any) => {
+        if (!map[r.major_id]) map[r.major_id] = [];
+        map[r.major_id].push(r.subject_id);
+      });
+      setMajorSubjectsMap(map);
+    }
     setLoading(false);
   };
 
@@ -210,6 +231,7 @@ const AdminContent = () => {
     setLessonOrder(filteredLessons.length);
     setLessonPublished(false);
     setLessonFree(false);
+    setLessonSubjectId("");
     setPendingQuestions([]);
     setExistingLessonQuestions([]);
     setShowAddQuestionForm(false);
@@ -227,6 +249,7 @@ const AdminContent = () => {
     setLessonOrder(l.display_order);
     setLessonPublished(l.is_published);
     setLessonFree(l.is_free);
+    setLessonSubjectId(l.subject_id || "");
     setPendingQuestions([]);
     setExistingLessonQuestions(questions.filter(q => q.lesson_id === l.id));
     setShowAddQuestionForm(false);
@@ -362,6 +385,7 @@ const AdminContent = () => {
       content: lessonContent,
       summary: lessonSummary,
       major_id: lessonMajorId,
+      subject_id: lessonSubjectId || null,
       display_order: lessonOrder,
       is_published: lessonPublished,
       is_free: lessonFree,
@@ -730,7 +754,13 @@ const AdminContent = () => {
                   <div className="flex items-start justify-between">
                       <div>
                         <p className="font-semibold text-sm">{l.title}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{getMajorName(l.major_id)}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {getMajorName(l.major_id)}
+                          {l.subject_id && (() => {
+                            const subj = subjects.find(s => s.id === l.subject_id);
+                            return subj ? ` • ${subj.name_ar}` : "";
+                          })()}
+                        </p>
                         <div className="flex gap-1 mt-1 flex-wrap">
                           <Badge variant={l.is_published ? "default" : "secondary"} className="text-[10px]">
                             {l.is_published ? "منشور" : "مسودة"}
@@ -855,6 +885,16 @@ const AdminContent = () => {
               <select value={lessonMajorId} onChange={(e) => setLessonMajorId(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                 <option value="">اختر التخصص</option>
                 {scopedMajors.map((m: any) => <option key={m.id} value={m.id}>{m.name_ar}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>المادة الدراسية</Label>
+              <select value={lessonSubjectId} onChange={(e) => setLessonSubjectId(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <option value="">بدون تصنيف</option>
+                {(lessonMajorId && majorSubjectsMap[lessonMajorId]
+                  ? subjects.filter(s => majorSubjectsMap[lessonMajorId].includes(s.id))
+                  : subjects
+                ).map((s) => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
               </select>
             </div>
             <div className="space-y-2">

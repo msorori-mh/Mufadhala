@@ -13,6 +13,12 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { useOfflineStatus } from "@/hooks/useOfflineStatus";
 import { getSavedLessonIds, getAllSavedLessons } from "@/lib/offlineStorage";
 
+interface SubjectInfo {
+  id: string;
+  name_ar: string;
+  code: string;
+}
+
 interface Lesson {
   id: string;
   major_id: string;
@@ -20,6 +26,7 @@ interface Lesson {
   summary: string;
   display_order: number;
   is_free: boolean;
+  subject_id?: string | null;
 }
 
 const LessonsList = () => {
@@ -35,6 +42,8 @@ const LessonsList = () => {
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
   const [savedOfflineIds, setSavedOfflineIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
+  const [subjects, setSubjects] = useState<SubjectInfo[]>([]);
+  const [activeSubjectFilter, setActiveSubjectFilter] = useState<string>("all");
 
   useEffect(() => {
     if (!authLoading && (isAdmin || isModerator)) {
@@ -71,18 +80,33 @@ const LessonsList = () => {
       if (!s?.major_id) { setLoading(false); return; }
       setStudent(s);
 
-      const [{ data: major }, { data: ls }] = await Promise.all([
+      const [{ data: major }, { data: ls }, { data: lessonsFull }] = await Promise.all([
         supabase.from("majors").select("name_ar").eq("id", s.major_id).maybeSingle(),
         supabase.rpc("get_published_lessons_list", { _major_id: s.major_id }),
+        supabase.from("lessons").select("id, subject_id").eq("major_id", s.major_id).eq("is_published", true),
       ]);
       if (major) setMajorName(major.name_ar);
       if (ls) {
-        setLessons(ls as Lesson[]);
+        // Merge subject_id from full lessons query
+        const subjectMap = new Map<string, string | null>();
+        (lessonsFull || []).forEach((lf: any) => subjectMap.set(lf.id, lf.subject_id));
+        const enrichedLessons = (ls as Lesson[]).map(l => ({ ...l, subject_id: subjectMap.get(l.id) || null }));
+        setLessons(enrichedLessons);
+
+        // Fetch subjects for this major
+        const { data: ms } = await supabase.from("major_subjects").select("subject_id").eq("major_id", s.major_id);
+        if (ms && ms.length > 0) {
+          const subjectIds = ms.map((m: any) => m.subject_id);
+          const { data: subs } = await supabase.from("subjects").select("id, name_ar, code").in("id", subjectIds).order("display_order");
+          if (subs) setSubjects(subs as SubjectInfo[]);
+        }
+
+        const lessonIds = enrichedLessons.map((l: any) => l.id);
         const [{ data: qs }, { data: progress }] = await Promise.all([
-          supabase.from("questions").select("lesson_id").in("lesson_id", ls.map((l: any) => l.id)),
+          supabase.from("questions").select("lesson_id").in("lesson_id", lessonIds),
           supabase.from("lesson_progress").select("lesson_id")
             .eq("student_id", s.id).eq("is_completed", true)
-            .in("lesson_id", ls.map((l: any) => l.id)),
+            .in("lesson_id", lessonIds),
         ]);
         if (qs) {
           const counts: Record<string, number> = {};
@@ -99,12 +123,18 @@ const LessonsList = () => {
   }, [authLoading, user, isOffline]);
 
   const filteredLessons = useMemo(() => {
-    if (!searchQuery.trim()) return lessons;
-    const q = searchQuery.trim().toLowerCase();
-    return lessons.filter(l =>
-      l.title.toLowerCase().includes(q) || l.summary.toLowerCase().includes(q)
-    );
-  }, [lessons, searchQuery]);
+    let result = lessons;
+    if (activeSubjectFilter === "none") {
+      result = result.filter(l => !l.subject_id);
+    } else if (activeSubjectFilter !== "all") {
+      result = result.filter(l => l.subject_id === activeSubjectFilter);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter(l => l.title.toLowerCase().includes(q) || l.summary.toLowerCase().includes(q));
+    }
+    return result;
+  }, [lessons, searchQuery, activeSubjectFilter]);
 
   const progressPct = lessons.length > 0 ? Math.round((completedLessons.size / lessons.length) * 100) : 0;
 
@@ -182,7 +212,45 @@ const LessonsList = () => {
               </div>
             )}
 
-            {/* Progress bar - only when online */}
+            {/* Subject filter tabs */}
+            {!isOffline && subjects.length > 0 && !searchQuery && (
+              <div className="flex gap-1.5 flex-wrap mb-4">
+                <Badge
+                  variant={activeSubjectFilter === "all" ? "default" : "outline"}
+                  className="cursor-pointer text-xs"
+                  onClick={() => setActiveSubjectFilter("all")}
+                >
+                  جميع المواد ({lessons.length})
+                </Badge>
+                {subjects.map(s => {
+                  const count = lessons.filter(l => l.subject_id === s.id).length;
+                  if (count === 0) return null;
+                  return (
+                    <Badge
+                      key={s.id}
+                      variant={activeSubjectFilter === s.id ? "default" : "outline"}
+                      className="cursor-pointer text-xs"
+                      onClick={() => setActiveSubjectFilter(s.id)}
+                    >
+                      {s.name_ar} ({count})
+                    </Badge>
+                  );
+                })}
+                {(() => {
+                  const unclassified = lessons.filter(l => !l.subject_id).length;
+                  return unclassified > 0 ? (
+                    <Badge
+                      variant={activeSubjectFilter === "none" ? "default" : "outline"}
+                      className="cursor-pointer text-xs"
+                      onClick={() => setActiveSubjectFilter("none")}
+                    >
+                      غير مصنف ({unclassified})
+                    </Badge>
+                  ) : null;
+                })()}
+              </div>
+            )}
+
             {!isOffline && lessons.length > 0 && !searchQuery && (
               <Card className="mb-5">
                 <CardContent className="py-4 px-4 space-y-2">

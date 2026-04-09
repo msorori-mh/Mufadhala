@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import {
   GraduationCap, LayoutDashboard, Building2, BookOpen, Users, UserCog,
   LogOut, ChevronDown, ChevronUp, BarChart3, FileText,
-  CreditCard, Wallet, ListChecks, DollarSign, ClipboardCheck, ArrowRight, ArrowLeft, Tag,
+  CreditCard, Wallet, ListChecks, DollarSign, ClipboardCheck, ArrowRight, ArrowLeft, Tag, FlaskConical,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,6 +26,7 @@ const mainNavItems: NavItem[] = [
   { path: "/admin/majors", label: "التخصصات", icon: BookOpen, permission: "universities" },
   { path: "/admin/students", label: "الطلاب", icon: Users, permission: "students" },
   { path: "/admin/content", label: "المحتوى", icon: FileText, permission: "content" },
+  { path: "/admin/subjects", label: "المواد الدراسية", icon: FlaskConical, permission: "content" },
   { path: "/admin/users", label: "المستخدمون", icon: UserCog, permission: "admin_only" },
   { path: "/admin/subscription-plans", label: "خطط الاشتراك", icon: ListChecks, permission: "subscriptions" },
   { path: "/admin/promo-codes", label: "أكواد الخصم", icon: Tag, permission: "subscriptions" },
