@@ -171,7 +171,14 @@ const Subscription = () => {
     const filePath = `${user.id}/${Date.now()}.${ext}`;
     const { error: uploadErr } = await supabase.storage.from("receipts").upload(filePath, receiptFile);
     if (uploadErr) {
-      toast({ variant: "destructive", title: "فشل رفع السند: " + uploadErr.message });
+      const uploadMsg = uploadErr.message.includes("Payload too large")
+        ? "حجم الملف كبير جداً. الحد الأقصى 5 ميجابايت."
+        : uploadErr.message.includes("mime")
+        ? "نوع الملف غير مدعوم. يرجى رفع صورة (JPG, PNG) أو PDF."
+        : uploadErr.message.includes("row-level security") || uploadErr.message.includes("security")
+        ? "ليس لديك صلاحية رفع الملف. يرجى تسجيل الدخول مرة أخرى."
+        : `فشل رفع السند: ${uploadErr.message}`;
+      toast({ variant: "destructive", title: "خطأ في رفع السند", description: uploadMsg });
       setSubmitting(false);
       return;
     }
