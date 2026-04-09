@@ -133,6 +133,7 @@ const AdminContent = () => {
   const [explanation, setExplanation] = useState("");
   const [questionSubject, setQuestionSubject] = useState("general");
   const [questionOrder, setQuestionOrder] = useState(0);
+  const [questionSubjectFilter, setQuestionSubjectFilter] = useState("all");
 
   // Selected lesson for questions panel
   const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
