@@ -16,9 +16,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles, ChevronDown, ChevronUp, Search } from "lucide-react";
 import * as XLSX from "xlsx";
 
+interface Subject {
+  id: string;
+  name_ar: string;
+  code: string;
+}
+
 interface Lesson {
   id: string;
   major_id: string;
+  subject_id: string | null;
   title: string;
   content: string;
   summary: string;
