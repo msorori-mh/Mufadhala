@@ -672,7 +672,10 @@ const AdminContent = () => {
   if (authLoading || loading || scopeLoading) return <AdminLayout><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></AdminLayout>;
 
   const allLessonQuestions = selectedLesson ? questions.filter((q) => q.lesson_id === selectedLesson) : [];
-  const lessonQuestions = questionSubjectFilter === "all" ? allLessonQuestions : allLessonQuestions.filter((q) => q.subject === questionSubjectFilter);
+  const filteredBySubject = questionSubjectFilter === "all" ? allLessonQuestions : allLessonQuestions.filter((q) => q.subject === questionSubjectFilter);
+  const lessonQuestions = questionSearchQuery
+    ? filteredBySubject.filter((q) => q.question_text.includes(questionSearchQuery) || q.option_a.includes(questionSearchQuery) || q.option_b.includes(questionSearchQuery) || q.option_c.includes(questionSearchQuery) || q.option_d.includes(questionSearchQuery))
+    : filteredBySubject;
   const selectedLessonData = selectedLesson ? lessons.find((l) => l.id === selectedLesson) : null;
   const lessonSubjects = [...new Set(allLessonQuestions.map(q => q.subject || "general"))];
 
@@ -721,7 +724,7 @@ const AdminContent = () => {
               <Card
                 key={l.id}
                 className={`cursor-pointer transition-shadow ${selectedLesson === l.id ? "ring-2 ring-primary" : ""} ${!l.is_published ? "opacity-60" : ""}`}
-                onClick={() => { setSelectedLesson(selectedLesson === l.id ? null : l.id); setQuestionSubjectFilter("all"); }}
+                onClick={() => { setSelectedLesson(selectedLesson === l.id ? null : l.id); setQuestionSubjectFilter("all"); setQuestionSearchQuery(""); }}
               >
                 <CardContent className="py-3 px-4">
                   <div className="flex items-start justify-between">
@@ -786,6 +789,17 @@ const AdminContent = () => {
                     {getSubjectLabel(s)} ({allLessonQuestions.filter(q => q.subject === s).length})
                   </Badge>
                 ))}
+              </div>
+            )}
+            {selectedLesson && allLessonQuestions.length > 0 && (
+              <div className="relative">
+                <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <input
+                  value={questionSearchQuery}
+                  onChange={(e) => setQuestionSearchQuery(e.target.value)}
+                  placeholder="ابحث في الأسئلة..."
+                  className="w-full bg-muted rounded-lg pr-8 pl-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
+                />
               </div>
             )}
             {!selectedLesson && <p className="text-sm text-muted-foreground py-8 text-center">اختر درساً لعرض أسئلته</p>}
