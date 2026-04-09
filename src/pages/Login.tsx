@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -301,7 +301,7 @@ const Login = () => {
                   تم إرسال رمز مكون من 6 أرقام إلى +967{phoneNumber}
                 </p>
                 <div className="flex justify-center" dir="ltr">
-                  <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                  <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode} autoComplete="one-time-code">
                     <InputOTPGroup>
                       <InputOTPSlot index={0} />
                       <InputOTPSlot index={1} />
