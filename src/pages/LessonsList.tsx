@@ -42,6 +42,8 @@ const LessonsList = () => {
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
   const [savedOfflineIds, setSavedOfflineIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
+  const [subjects, setSubjects] = useState<SubjectInfo[]>([]);
+  const [activeSubjectFilter, setActiveSubjectFilter] = useState<string>("all");
 
   useEffect(() => {
     if (!authLoading && (isAdmin || isModerator)) {
