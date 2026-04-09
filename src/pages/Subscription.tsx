@@ -191,7 +191,10 @@ const Subscription = () => {
     }).select().single();
 
     if (subErr) {
-      toast({ variant: "destructive", title: subErr.message });
+      const subMsg = subErr.message.includes("row-level security")
+        ? "ليس لديك صلاحية إنشاء اشتراك. يرجى تسجيل الدخول مرة أخرى."
+        : `فشل إنشاء الاشتراك: ${subErr.message}`;
+      toast({ variant: "destructive", title: "خطأ في الاشتراك", description: subMsg });
       setSubmitting(false);
       return;
     }
