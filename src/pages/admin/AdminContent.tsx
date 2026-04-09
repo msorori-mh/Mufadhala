@@ -758,7 +758,7 @@ const AdminContent = () => {
           {/* Questions panel */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1"><HelpCircle className="w-4 h-4" />الأسئلة</h2>
+              <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1 min-w-0"><HelpCircle className="w-4 h-4 shrink-0" />الأسئلة{selectedLessonData && <span className="text-xs font-normal text-muted-foreground/70 truncate"> — {selectedLessonData.title}</span>}</h2>
               {selectedLesson && (
                 <div className="flex gap-1">
                   <Button size="sm" variant="outline" onClick={() => setImportQuestionsDialogOpen(true)}>
@@ -803,14 +803,6 @@ const AdminContent = () => {
               </div>
             )}
             {!selectedLesson && <p className="text-sm text-muted-foreground py-8 text-center">اختر درساً لعرض أسئلته</p>}
-            {selectedLesson && selectedLessonData && (
-              <Card className="bg-muted/50">
-                <CardContent className="py-2 px-3">
-                  <p className="text-xs font-medium">{selectedLessonData.title}</p>
-                  {selectedLessonData.summary && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{selectedLessonData.summary}</p>}
-                </CardContent>
-              </Card>
-            )}
             {selectedLesson && (questionSearchQuery || questionSubjectFilter !== "all") && (
               <p className="text-[11px] text-muted-foreground text-center">
                 عرض {lessonQuestions.length} من {allLessonQuestions.length} سؤال
