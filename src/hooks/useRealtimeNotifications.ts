@@ -1,20 +1,26 @@
 import { useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 /**
- * Global hook that listens for new notifications via Realtime
- * and shows a toast. Call once in a top-level authenticated layout.
+ * Single shared realtime channel for notifications.
+ * Handles both:
+ *  1. Toast popup on new notification
+ *  2. Incrementing cached unread count
+ *
+ * Call once in a top-level authenticated layout (e.g. Dashboard).
  */
 export const useRealtimeNotifications = (userId: string | undefined) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     if (!userId) return;
 
     const channel = supabase
-      .channel(`global-notifs-${userId}`)
+      .channel(`notifs-${userId}`)
       .on(
         "postgres_changes",
         {
@@ -24,13 +30,12 @@ export const useRealtimeNotifications = (userId: string | undefined) => {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          const n = payload.new as { title: string; message: string; type: string; link?: string };
+          const n = payload.new as { title: string; message: string; type: string };
           const variant = n.type === "warning" || n.type === "error" ? "destructive" as const : "default" as const;
-          toast({
-            title: n.title,
-            description: n.message,
-            variant,
-          });
+          toast({ title: n.title, description: n.message, variant });
+
+          // Increment cached unread count
+          queryClient.setQueryData<number>(["unread-count", userId], (old) => (old ?? 0) + 1);
         }
       )
       .subscribe();
@@ -40,5 +45,5 @@ export const useRealtimeNotifications = (userId: string | undefined) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, toast]);
+  }, [userId, toast, queryClient]);
 };

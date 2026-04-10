@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_cache: {
+        Row: {
+          created_at: string
+          expires_at: string
+          key: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          key: string
+          value?: Json
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          key?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       colleges: {
         Row: {
           acceptance_rate: number | null
@@ -119,6 +140,13 @@ export type Database = {
             foreignKeyName: "exam_attempts_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
+            referencedRelation: "mv_leaderboard"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "exam_attempts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
@@ -164,6 +192,13 @@ export type Database = {
             foreignKeyName: "lesson_progress_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
+            referencedRelation: "mv_leaderboard"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "lesson_progress_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
@@ -204,6 +239,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "lessons"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_reviews_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "mv_leaderboard"
+            referencedColumns: ["student_id"]
           },
           {
             foreignKeyName: "lesson_reviews_student_id_fkey"
@@ -981,9 +1023,32 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      mv_leaderboard: {
+        Row: {
+          avg_score: number | null
+          best_score: number | null
+          college_name: string | null
+          first_name: string | null
+          fourth_name: string | null
+          major_id: string | null
+          major_name: string | null
+          rank: number | null
+          student_id: string | null
+          total_exams: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_major_id_fkey"
+            columns: ["major_id"]
+            isOneToOne: false
+            referencedRelation: "majors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      get_cache: { Args: { _key: string }; Returns: Json }
       get_leaderboard: {
         Args: { _limit?: number; _major_id?: string }
         Returns: {
@@ -1020,6 +1085,11 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      refresh_leaderboard: { Args: never; Returns: undefined }
+      set_cache: {
+        Args: { _key: string; _ttl_seconds?: number; _value: Json }
+        Returns: undefined
       }
     }
     Enums: {

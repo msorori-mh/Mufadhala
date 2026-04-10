@@ -1,15 +1,13 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Shared hook for unread notification count — cached + realtime incremented.
- * Replaces duplicate notification counting logic in Dashboard.
+ * Shared hook for unread notification count — cached globally.
+ * Realtime increment is handled by useRealtimeNotifications (single channel).
+ * No dedicated realtime channel here — reduces WebSocket overhead.
  */
 export const useUnreadCount = (userId: string | undefined) => {
-  const queryClient = useQueryClient();
-
-  const query = useQuery({
+  return useQuery({
     queryKey: ["unread-count", userId],
     queryFn: async () => {
       if (!userId) return 0;
@@ -21,31 +19,6 @@ export const useUnreadCount = (userId: string | undefined) => {
       return count ?? 0;
     },
     enabled: !!userId,
-    staleTime: 60 * 1000, // 1 min
+    staleTime: 60 * 1000,
   });
-
-  // Realtime increment on new notification
-  useEffect(() => {
-    if (!userId) return;
-    const channel = supabase
-      .channel(`unread-count-${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          queryClient.setQueryData<number>(["unread-count", userId], (old) => (old ?? 0) + 1);
-        }
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId, queryClient]);
-
-  return query;
 };

@@ -68,7 +68,7 @@ const Leaderboard = () => {
       const { data, error } = await supabase.rpc("get_leaderboard", { _limit: 50, _major_id: majorId });
       return (data && !error ? data : []) as LeaderboardEntry[];
     },
-    staleTime: 2 * 60 * 1000, // 2 min
+    staleTime: 5 * 60 * 1000, // 5 min — reads from materialized view
   });
 
   return (

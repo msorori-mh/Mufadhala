@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -9,46 +9,42 @@ import ThemeToggle from "@/components/ThemeToggle";
 
 const Notifications = () => {
   const { user, loading: authLoading } = useAuthContext();
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (authLoading || !user) return;
-
-    const init = async () => {
+  // Polling every 30s instead of dedicated realtime channel
+  const { data: notifications = [], isLoading: loading } = useQuery({
+    queryKey: ["notifications-list", user?.id],
+    queryFn: async () => {
       const { data } = await supabase
         .from("notifications")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
-      if (data) setNotifications(data);
-      setLoading(false);
-
-      // Realtime
-      const channel = supabase
-        .channel("user-notifications")
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, (payload) => {
-          setNotifications((prev) => [payload.new as any, ...prev]);
-        })
-        .subscribe();
-
-      return () => { supabase.removeChannel(channel); };
-    };
-    init();
-  }, [authLoading, user]);
+      return data ?? [];
+    },
+    enabled: !!user && !authLoading,
+    staleTime: 15 * 1000,
+    refetchInterval: 30 * 1000, // poll every 30s
+  });
 
   const markAsRead = async (id: string) => {
     await supabase.from("notifications").update({ is_read: true }).eq("id", id);
-    setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, is_read: true } : n));
+    queryClient.setQueryData<any[]>(["notifications-list", user?.id], (old) =>
+      (old ?? []).map((n: any) => n.id === id ? { ...n, is_read: true } : n)
+    );
+    queryClient.setQueryData<number>(["unread-count", user?.id], (old) => Math.max((old ?? 1) - 1, 0));
   };
 
   const markAllRead = async () => {
     if (!user) return;
     await supabase.from("notifications").update({ is_read: true }).eq("user_id", user.id).eq("is_read", false);
-    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    queryClient.setQueryData<any[]>(["notifications-list", user?.id], (old) =>
+      (old ?? []).map((n: any) => ({ ...n, is_read: true }))
+    );
+    queryClient.setQueryData<number>(["unread-count", user?.id], () => 0);
   };
 
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
+  const unreadCount = notifications.filter((n: any) => !n.is_read).length;
 
   const typeColors: Record<string, string> = {
     info: "border-r-primary",
@@ -91,7 +87,7 @@ const Notifications = () => {
 
         {notifications.length > 0 ? (
           <div className="space-y-2">
-            {notifications.map((n) => (
+            {notifications.map((n: any) => (
               <Card key={n.id} className={`border-r-4 ${typeColors[n.type] || typeColors.info} ${!n.is_read ? "bg-primary/5" : ""}`}>
                 <CardContent className="py-3 px-4">
                   <div className="flex items-start justify-between">
