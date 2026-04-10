@@ -1111,10 +1111,24 @@ const AdminContent = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
+              <Label>الجامعة *</Label>
+              <select value={importUniId} onChange={(e) => { setImportUniId(e.target.value); setImportCollegeId(""); setImportMajorId(""); }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <option value="">اختر الجامعة</option>
+                {scopedUniversities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>الكلية *</Label>
+              <select value={importCollegeId} onChange={(e) => { setImportCollegeId(e.target.value); setImportMajorId(""); }} disabled={!importUniId} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50">
+                <option value="">اختر الكلية</option>
+                {scopedColleges.filter((c: any) => c.university_id === importUniId).map((c: any) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
               <Label>التخصص *</Label>
-              <select value={importMajorId} onChange={(e) => setImportMajorId(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+              <select value={importMajorId} onChange={(e) => setImportMajorId(e.target.value)} disabled={!importCollegeId} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50">
                 <option value="">اختر التخصص</option>
-                {scopedMajors.map((m: any) => <option key={m.id} value={m.id}>{m.name_ar}</option>)}
+                {scopedMajors.filter((m: any) => m.college_id === importCollegeId).map((m: any) => <option key={m.id} value={m.id}>{m.name_ar}</option>)}
               </select>
             </div>
             <div className="space-y-2">
@@ -1132,11 +1146,19 @@ const AdminContent = () => {
                 <strong>ورقة "الدروس":</strong> عنوان الدرس | المحتوى | الملخص | ترتيب العرض | منشور
               </p>
               <p className="text-xs text-muted-foreground">
-                <strong>ورقة "الأسئلة":</strong> عنوان الدرس | نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة (a/b/c/d) | الشرح
+                <strong>ورقة "الأسئلة":</strong> عنوان الدرس | نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة (a/b/c/d) | الشرح | المادة
               </p>
-              <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadTemplate}>
-                <Download className="w-3 h-3 ml-1" />تحميل قالب فارغ
-              </Button>
+              <div className="flex gap-3 flex-wrap">
+                <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadFullTemplate}>
+                  <Download className="w-3 h-3 ml-1" />قالب دروس + أسئلة
+                </Button>
+                <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadTemplate}>
+                  <Download className="w-3 h-3 ml-1" />قالب دروس فقط
+                </Button>
+                <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadQuestionsTemplate}>
+                  <Download className="w-3 h-3 ml-1" />قالب أسئلة فقط
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>
