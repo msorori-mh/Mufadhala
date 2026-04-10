@@ -398,6 +398,27 @@ const AdminContent = () => {
       return;
     }
     setSaving(true);
+
+    // Upload presentation file if selected
+    let presentationUrl = lessonPresentationUrl;
+    if (lessonPresentationFile) {
+      setUploadingPresentation(true);
+      const fileExt = lessonPresentationFile.name.split('.').pop();
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('lesson-presentations')
+        .upload(fileName, lessonPresentationFile);
+      if (uploadError) {
+        toast({ variant: "destructive", title: `خطأ في رفع العرض: ${uploadError.message}` });
+        setSaving(false);
+        setUploadingPresentation(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('lesson-presentations').getPublicUrl(fileName);
+      presentationUrl = urlData.publicUrl;
+      setUploadingPresentation(false);
+    }
+
     const payload: any = {
       title: lessonTitle,
       content: lessonContent,
@@ -408,6 +429,7 @@ const AdminContent = () => {
       display_order: lessonOrder,
       is_published: lessonPublished,
       is_free: lessonFree,
+      presentation_url: presentationUrl || null,
     };
     if (editingLesson) {
       const { error } = await supabase.from("lessons").update(payload).eq("id", editingLesson.id);
