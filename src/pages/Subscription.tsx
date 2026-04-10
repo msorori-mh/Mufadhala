@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -84,6 +84,7 @@ const Subscription = () => {
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoId, setPromoId] = useState<string | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
+  const [barcodeZoom, setBarcodeZoom] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading || !user) return;
