@@ -395,6 +395,8 @@ const Register = () => {
             <p className="mt-4 text-center text-xs text-muted-foreground">
               بتسجيلك فإنك توافق على{" "}
               <Link to="/privacy-policy" className="text-primary hover:underline">سياسة الخصوصية</Link>
+              {" "}و{" "}
+              <Link to="/terms-of-service" className="text-primary hover:underline">شروط الاستخدام</Link>
             </p>
           </CardContent>
         </Card>
