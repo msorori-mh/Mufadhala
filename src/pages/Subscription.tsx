@@ -84,6 +84,7 @@ const Subscription = () => {
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoId, setPromoId] = useState<string | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
+  const [barcodeZoom, setBarcodeZoom] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -536,8 +537,13 @@ const Subscription = () => {
                   {promoDiscount > 0 && <div className="text-green-600">خصم {promoDiscount}% مُطبّق</div>}
                   {selectedMethod.barcode_url && (
                     <div className="mt-3 text-center">
-                      <p className="text-sm font-medium text-muted-foreground mb-2">امسح الباركود للتحويل مباشرة</p>
-                      <img src={selectedMethod.barcode_url} alt="باركود الدفع" className="mx-auto max-w-[200px] rounded-lg border" />
+                      <p className="text-sm font-medium text-muted-foreground mb-2">امسح الباركود للتحويل مباشرة (اضغط للتكبير)</p>
+                      <img
+                        src={selectedMethod.barcode_url}
+                        alt="باركود الدفع"
+                        className="mx-auto max-w-[200px] rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => setBarcodeZoom(selectedMethod.barcode_url)}
+                      />
                     </div>
                   )}
                 </div>
@@ -588,6 +594,21 @@ const Subscription = () => {
           </div>
         )}
       </div>
+
+      {/* Barcode Zoom Overlay */}
+      {barcodeZoom && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setBarcodeZoom(null)}
+        >
+          <img
+            src={barcodeZoom}
+            alt="باركود الدفع"
+            className="max-w-full max-h-[85vh] rounded-xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 };
