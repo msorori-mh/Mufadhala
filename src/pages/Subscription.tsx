@@ -17,7 +17,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 
 const ZONE_A_GOVERNORATES = [
   "صنعاء", "أمانة العاصمة", "عمران", "ذمار", "إب", "الحديدة",
-  "صعدة", "حجة", "المحويت", "ريمة", "تعز",
+  "صعدة", "حجة", "المحويت", "ريمة",
 ];
 
 interface Plan {
