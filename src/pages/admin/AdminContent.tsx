@@ -199,6 +199,10 @@ const AdminContent = () => {
 
   // Apply scope filtering
   const allowedMajorIds = getAllowedMajorIds();
+  const scopedMajors = allowedMajorIds ? majors.filter((m: any) => allowedMajorIds.has(m.id)) : majors;
+  const scopedLessons = allowedMajorIds
+    ? lessons.filter((l) => (l.major_id && allowedMajorIds.has(l.major_id)) || !l.major_id)
+    : lessons;
   const scopedCollegeIds = new Set(scopedMajors.map((m: any) => m.college_id));
   const scopedColleges = allowedMajorIds ? colleges.filter((c: any) => scopedCollegeIds.has(c.id)) : colleges;
   const scopedUniIds = new Set(scopedColleges.map((c: any) => c.university_id));
