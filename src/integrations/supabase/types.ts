@@ -481,6 +481,7 @@ export type Database = {
           details: string | null
           id: string
           is_active: boolean
+          logo_url: string | null
           name: string
           sort_order: number
           type: string
@@ -494,6 +495,7 @@ export type Database = {
           details?: string | null
           id?: string
           is_active?: boolean
+          logo_url?: string | null
           name: string
           sort_order?: number
           type: string
@@ -507,6 +509,7 @@ export type Database = {
           details?: string | null
           id?: string
           is_active?: boolean
+          logo_url?: string | null
           name?: string
           sort_order?: number
           type?: string

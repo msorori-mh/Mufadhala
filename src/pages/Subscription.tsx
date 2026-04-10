@@ -37,6 +37,7 @@ interface PaymentMethod {
   id: string; type: string; name: string;
   account_name: string | null; account_number: string | null;
   details: string | null; barcode_url: string | null;
+  logo_url: string | null;
 }
 
 interface SubRecord {
@@ -498,7 +499,10 @@ const Subscription = () => {
                   {filtered.map((m) => (
                     <Card key={m.id} className="cursor-pointer hover:border-primary transition-colors mb-2" onClick={() => handleSelectMethod(m)}>
                       <CardContent className="py-3 px-4">
-                        <p className="font-semibold text-sm">{m.name}</p>
+                        <div className="flex items-center gap-2">
+                          {m.logo_url && <img src={m.logo_url} alt={m.name} className="w-6 h-6 rounded object-contain" />}
+                          <p className="font-semibold text-sm">{m.name}</p>
+                        </div>
                         {m.account_name && <p className="text-xs text-muted-foreground">باسم: {m.account_name}</p>}
                         {m.account_number && <p className="text-xs text-muted-foreground">رقم: {m.account_number}</p>}
                         {m.details && <p className="text-xs text-muted-foreground">{m.details}</p>}

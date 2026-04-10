@@ -24,6 +24,7 @@ interface PaymentMethod {
   is_active: boolean;
   sort_order: number;
   barcode_url: string | null;
+  logo_url: string | null;
 }
 
 const AdminPaymentMethods = () => {
@@ -45,6 +46,9 @@ const AdminPaymentMethods = () => {
   const [barcodeFile, setBarcodeFile] = useState<File | null>(null);
   const [barcodePreview, setBarcodePreview] = useState<string | null>(null);
   const [removingBarcode, setRemovingBarcode] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [removingLogo, setRemovingLogo] = useState(false);
 
   const fetchMethods = async () => {
     const { data } = await supabase.from("payment_methods").select("*").order("sort_order");
@@ -60,6 +64,7 @@ const AdminPaymentMethods = () => {
     setType("bank"); setName(""); setAccountName(""); setAccountNumber("");
     setDetails(""); setIsActive(true); setSortOrder("0"); setEditing(null);
     setBarcodeFile(null); setBarcodePreview(null); setRemovingBarcode(false);
+    setLogoFile(null); setLogoPreview(null); setRemovingLogo(false);
   };
 
   const openCreate = () => { resetForm(); setDialogOpen(true); };
@@ -71,6 +76,7 @@ const AdminPaymentMethods = () => {
     setDetails(m.details || ""); setIsActive(m.is_active);
     setSortOrder(m.sort_order.toString());
     setBarcodeFile(null); setBarcodePreview(m.barcode_url || null); setRemovingBarcode(false);
+    setLogoFile(null); setLogoPreview(m.logo_url || null); setRemovingLogo(false);
     setDialogOpen(true);
   };
 
@@ -79,6 +85,7 @@ const AdminPaymentMethods = () => {
     setSaving(true);
 
     let barcode_url: string | null = editing?.barcode_url ?? null;
+    let logo_url: string | null = editing?.logo_url ?? null;
 
     // Upload new barcode
     if (barcodeFile) {
@@ -90,15 +97,30 @@ const AdminPaymentMethods = () => {
       barcode_url = urlData.publicUrl;
     }
 
+    // Upload new logo
+    if (logoFile) {
+      const ext = logoFile.name.split(".").pop();
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("payment-logos").upload(path, logoFile);
+      if (upErr) { toast({ variant: "destructive", title: "فشل رفع الشعار" }); setSaving(false); return; }
+      const { data: urlData } = supabase.storage.from("payment-logos").getPublicUrl(path);
+      logo_url = urlData.publicUrl;
+    }
+
     // Remove barcode
     if (removingBarcode && !barcodeFile) {
       barcode_url = null;
     }
 
+    // Remove logo
+    if (removingLogo && !logoFile) {
+      logo_url = null;
+    }
+
     const payload = {
       type, name, account_name: accountName || null,
       account_number: accountNumber || null, details: details || null,
-      is_active: isActive, sort_order: Number(sortOrder), barcode_url,
+      is_active: isActive, sort_order: Number(sortOrder), barcode_url, logo_url,
     };
 
     const { error } = editing
@@ -146,12 +168,13 @@ const AdminPaymentMethods = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold text-sm">{m.name}</p>
-                          <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
-                          {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
-                        </div>
-                        {m.account_name && <p className="text-xs text-muted-foreground mt-1">الحساب: {m.account_name}</p>}
-                        {m.account_number && <p className="text-xs text-muted-foreground">رقم الحساب: {m.account_number}</p>}
+                           {m.logo_url && <img src={m.logo_url} alt={m.name} className="w-6 h-6 rounded object-contain" />}
+                           <p className="font-semibold text-sm">{m.name}</p>
+                           <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
+                           {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
+                         </div>
+                         {m.account_name && <p className="text-xs text-muted-foreground mt-1">الحساب: {m.account_name}</p>}
+                         {m.account_number && <p className="text-xs text-muted-foreground">رقم الحساب: {m.account_number}</p>}
                       </div>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" onClick={() => openEdit(m)}><Pencil className="w-4 h-4" /></Button>
@@ -174,12 +197,13 @@ const AdminPaymentMethods = () => {
                   <CardContent className="py-3 px-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-sm">{m.name}</p>
-                          <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
-                          {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
-                        </div>
-                        {m.account_number && <p className="text-xs text-muted-foreground mt-1">رقم الهاتف: {m.account_number}</p>}
+                         <div className="flex items-center gap-2">
+                           {m.logo_url && <img src={m.logo_url} alt={m.name} className="w-6 h-6 rounded object-contain" />}
+                           <p className="font-semibold text-sm">{m.name}</p>
+                           <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
+                           {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
+                         </div>
+                         {m.account_number && <p className="text-xs text-muted-foreground mt-1">رقم الهاتف: {m.account_number}</p>}
                       </div>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" onClick={() => openEdit(m)}><Pencil className="w-4 h-4" /></Button>
@@ -202,12 +226,13 @@ const AdminPaymentMethods = () => {
                   <CardContent className="py-3 px-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-sm">{m.name}</p>
-                          <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
-                          {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
-                        </div>
-                        {m.account_number && <p className="text-xs text-muted-foreground mt-1">رقم المحفظة: {m.account_number}</p>}
+                         <div className="flex items-center gap-2">
+                           {m.logo_url && <img src={m.logo_url} alt={m.name} className="w-6 h-6 rounded object-contain" />}
+                           <p className="font-semibold text-sm">{m.name}</p>
+                           <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
+                           {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
+                         </div>
+                         {m.account_number && <p className="text-xs text-muted-foreground mt-1">رقم المحفظة: {m.account_number}</p>}
                       </div>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" onClick={() => openEdit(m)}><Pencil className="w-4 h-4" /></Button>
@@ -230,13 +255,14 @@ const AdminPaymentMethods = () => {
                   <CardContent className="py-3 px-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-sm">{m.name}</p>
-                          <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
-                          {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
-                        </div>
-                        {m.account_name && <p className="text-xs text-muted-foreground mt-1">الحساب: {m.account_name}</p>}
-                        {m.account_number && <p className="text-xs text-muted-foreground">رقم الحساب: {m.account_number}</p>}
+                         <div className="flex items-center gap-2">
+                           {m.logo_url && <img src={m.logo_url} alt={m.name} className="w-6 h-6 rounded object-contain" />}
+                           <p className="font-semibold text-sm">{m.name}</p>
+                           <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
+                           {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
+                         </div>
+                         {m.account_name && <p className="text-xs text-muted-foreground mt-1">الحساب: {m.account_name}</p>}
+                         {m.account_number && <p className="text-xs text-muted-foreground">رقم الحساب: {m.account_number}</p>}
                       </div>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" onClick={() => openEdit(m)}><Pencil className="w-4 h-4" /></Button>
@@ -267,6 +293,23 @@ const AdminPaymentMethods = () => {
               </select>
             </div>
             <div className="space-y-2"><Label>{type === "bank" ? "اسم البنك" : type === "exchange" ? "اسم شركة الصرافة" : type === "network_transfer" ? "اسم الخدمة" : "اسم المحفظة"} *</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+            <div className="space-y-2">
+              <Label>شعار طريقة الدفع</Label>
+              {logoPreview && !removingLogo ? (
+                <div className="relative inline-block">
+                  <img src={logoPreview} alt="شعار" className="w-12 h-12 rounded-lg border object-contain" />
+                  <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 w-6 h-6" onClick={() => { setRemovingLogo(true); setLogoFile(null); }}>
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              ) : (
+                <Input type="file" accept="image/*" onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) { setLogoFile(f); setLogoPreview(URL.createObjectURL(f)); setRemovingLogo(false); }
+                }} />
+              )}
+              {logoFile && <img src={URL.createObjectURL(logoFile)} alt="معاينة" className="w-12 h-12 rounded-lg border object-contain mt-1" />}
+            </div>
             <div className="space-y-2"><Label>{type === "network_transfer" ? "تحويل بأسم (اسم المستلم)" : "اسم صاحب الحساب"}</Label><Input value={accountName} onChange={(e) => setAccountName(e.target.value)} /></div>
             <div className="space-y-2"><Label>{type === "bank" ? "رقم الحساب" : type === "exchange" || type === "network_transfer" ? "رقم الهاتف" : "رقم المحفظة"}</Label><Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} /></div>
             <div className="space-y-2"><Label>تفاصيل إضافية</Label><Textarea value={details} onChange={(e) => setDetails(e.target.value)} placeholder="الفرع، ملاحظات..." /></div>
