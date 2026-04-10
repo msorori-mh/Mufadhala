@@ -7,35 +7,40 @@ import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAuthDestination } from "@/lib/authRouting";
 
-function useCountUp(end: number, duration = 2000, start = false) {
+function useCountUp(end: number, duration = 2000) {
   const [value, setValue] = useState(0);
-  useEffect(() => {
-    if (!start) return;
-    let startTime: number;
-    let raf: number;
-    const step = (ts: number) => {
-      if (!startTime) startTime = ts;
-      const progress = Math.min((ts - startTime) / duration, 1);
-      setValue(Math.floor(progress * end));
-      if (progress < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [end, duration, start]);
-  return value;
-}
-
-function useInView() {
   const ref = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect(); } }, { threshold: 0.05, rootMargin: "100px" });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-  return { ref, inView };
+    let started = false;
+    const start = () => {
+      if (started) return;
+      started = true;
+      let startTime: number;
+      let raf: number;
+      const step = (ts: number) => {
+        if (!startTime) startTime = ts;
+        const progress = Math.min((ts - startTime) / duration, 1);
+        setValue(Math.floor(progress * end));
+        if (progress < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    };
+    // Try IntersectionObserver, fallback to immediate start
+    if ('IntersectionObserver' in window) {
+      const obs = new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) { start(); obs.disconnect(); }
+      }, { threshold: 0, rootMargin: "200px" });
+      obs.observe(el);
+      // Fallback: start after 1s regardless
+      const timer = setTimeout(start, 1000);
+      return () => { obs.disconnect(); clearTimeout(timer); };
+    } else {
+      start();
+    }
+  }, [end, duration]);
+  return { value, ref };
 }
 
 const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
