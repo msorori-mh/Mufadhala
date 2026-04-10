@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { BookOpen, ClipboardCheck, TrendingUp, Loader2, Brain, FileCheck, Shield, Focus, WifiOff, Users, CheckCircle } from "lucide-react";
+import { BookOpen, ClipboardCheck, TrendingUp, Loader2, Brain, FileCheck, Shield, Focus, WifiOff, Users, CheckCircle, Bot, Clock, Headphones } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAuthDestination } from "@/lib/authRouting";
@@ -55,6 +55,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
   const statsRef = useInView();
   const featuresRef = useInView();
   const badgesRef = useInView();
+  const aiRef = useInView();
 
   const q = useCountUp(3000, 2000, statsRef.inView);
   const s = useCountUp(150, 2000, statsRef.inView);
@@ -71,13 +72,13 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
   return (
     <div ref={fwdRef} className="min-h-screen flex flex-col">
       {/* Hero */}
-      <section className="gradient-hero relative overflow-hidden flex-1 flex items-center justify-center px-4 pt-[calc(env(safe-area-inset-top)+6rem)] pb-16 md:py-16 min-h-[70vh]">
+      <section className="gradient-hero relative overflow-hidden flex items-center justify-center px-4 pt-[calc(env(safe-area-inset-top)+6rem)] pb-16 md:py-20 min-h-[70vh]">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 right-10 w-72 h-72 bg-white rounded-full blur-3xl" />
           <div className="absolute bottom-20 left-10 w-96 h-96 bg-white rounded-full blur-3xl" />
         </div>
         <div className="relative z-10 text-center max-w-2xl mx-auto">
-          <div className="inline-flex items-center justify-center w-40 h-40 mb-10 me-4 animate-float rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
+          <div className="inline-flex items-center justify-center w-36 h-36 mb-8 animate-float rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
             <img src={logoImg} alt="شعار مُفَاضَلَة" className="w-full h-full object-cover drop-shadow-lg" />
           </div>
           <h1 className="text-3xl md:text-5xl font-bold text-primary-foreground mb-6 leading-tight">مُفَاضَلَة</h1>
@@ -88,7 +89,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
         </div>
       </section>
 
-      {/* Main Hook */}
+      {/* Hero Hook */}
       <section className="bg-primary py-14 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-2xl md:text-4xl font-extrabold text-primary-foreground leading-snug">
@@ -99,19 +100,40 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
         </div>
       </section>
 
-      {/* Core Features */}
+      {/* AI Assistant "Qabool" */}
       <section className="bg-background py-14 px-4">
+        <div ref={aiRef.ref} className={`max-w-3xl mx-auto transition-all duration-700 ${aiRef.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+          <div className="relative rounded-2xl border-2 border-accent/30 bg-gradient-to-br from-accent/5 via-background to-primary/5 p-8 md:p-10 text-center shadow-lg overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-accent/10 rounded-full blur-3xl" />
+            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
+            <div className="relative z-10">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/15 mb-5">
+                <Bot className="w-9 h-9 text-accent" />
+              </div>
+              <h3 className="text-xl md:text-2xl font-extrabold text-foreground mb-4">
+                🤖 المساعد الذكي "قبول": مستشارك الأكاديمي الشخصي
+              </h3>
+              <p className="text-muted-foreground leading-relaxed text-base md:text-lg max-w-2xl mx-auto">
+                تعرف على "قبول"، رفيقك الذكي الذي يحلل أداءك، يجيب على تساؤلاتك المنهجية، ويرشدك لأفضل الطرق لاجتياز المفاضلة بنجاح في جميع الجامعات اليمنية.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Academic Core Pillars */}
+      <section className="bg-muted py-14 px-4">
         <div ref={featuresRef.ref} className="max-w-5xl mx-auto grid gap-6 md:grid-cols-3">
           {[
-            { icon: Brain, title: "ذكاء اصطناعي يحلل فجواتك المعرفية", desc: "تطبيقنا لا يختبرك فقط، بل يكتشف نقاط ضعفك ويحدد الدروس التي تحتاج لتقويتها، ليوفر لك 50% من وقت المذاكرة." },
-            { icon: BookOpen, title: "بنك الأسئلة الأضخم", desc: "آلاف الأسئلة المستمدة من أرشيف اختبارات القبول في الجامعات اليمنية مع شرح وتفنيد علمي لكل إجابة." },
-            { icon: FileCheck, title: "نماذج المحاكاة الرسمية", desc: "اختبارات تحاكي النمط الحقيقي للجامعات من حيث توزيع الدرجات وإدارة الوقت، لكسر حاجز الرهبة وتدريبك على أجواء الامتحان الحقيقية." },
+            { icon: BookOpen, emoji: "📚", title: "شمولية المنهج الوزاري", desc: "تغطية دقيقة لكافة مفردات المقررات الدراسية (أول - ثاني - ثالث ثانوي) المطلوبة في اختبارات المفاضلة الوطنية." },
+            { icon: Brain, emoji: "🧠", title: "تعزيز الفهم بالتعليل العلمي", desc: "نوفر لكل سؤال شرحاً علمياً مبسطاً يوضح 'لماذا' هذه الإجابة هي الأصح، لترسيخ المعلومة بعيداً عن الحفظ." },
+            { icon: FileCheck, emoji: "⏱️", title: "محاكاة واقعية لبيئة الاختبار", desc: "اختبارات تحاكي النمط الحقيقي للجامعات من حيث توزيع الدرجات وإدارة الوقت لكسر حاجز الرهبة." },
           ].map((f, i) => (
             <div key={i} className={`bg-card rounded-2xl border p-8 text-center transition-all duration-700 ${featuresRef.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`} style={{ transitionDelay: `${i * 150}ms` }}>
               <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-accent/10 mb-5">
                 <f.icon className="w-7 h-7 text-accent" />
               </div>
-              <h3 className="font-bold text-foreground text-lg mb-3">{f.title}</h3>
+              <h3 className="font-bold text-foreground text-lg mb-3">{f.emoji} {f.title}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
             </div>
           ))}
@@ -119,12 +141,12 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       </section>
 
       {/* Value Badges */}
-      <section className="bg-muted py-12 px-4">
+      <section className="bg-background py-12 px-4">
         <div ref={badgesRef.ref} className="max-w-5xl mx-auto grid gap-4 md:grid-cols-3">
           {[
-            { icon: Shield, label: "ثقة مطلقة", desc: "ستدخل قاعة الامتحان وأنت خبير بنمط الأسئلة." },
+            { icon: Shield, label: "ثقة مطلقة", desc: "خبير بنمط الأسئلة قبل دخول القاعة." },
             { icon: Focus, label: "تركيز عالٍ", desc: "ملخصات ذكية تغنيك عن تشتت الملازم." },
-            { icon: WifiOff, label: "مذاكرة بلا حدود", desc: "وضع الـ Offline يضمن لك الاستمرار في أي وقت." },
+            { icon: WifiOff, label: "أوفلاين دائماً", desc: "ذاكر في أي وقت دون الحاجة لإنترنت مستمر." },
           ].map((b, i) => (
             <div key={i} className={`flex items-start gap-4 bg-card rounded-xl border p-5 transition-all duration-700 ${badgesRef.inView ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"}`} style={{ transitionDelay: `${i * 120}ms` }}>
               <div className="shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -141,14 +163,21 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
 
       {/* Stats Bar */}
       <section className="bg-primary py-12 px-4">
-        <div ref={statsRef.ref} className="max-w-4xl mx-auto grid grid-cols-3 gap-4 text-center">
+        <div ref={statsRef.ref} className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {[
-            { value: q, suffix: "+", label: "سؤال تدريبي" },
-            { value: s, suffix: "+", label: "ملخص ذكي" },
-            { value: m, suffix: "%", label: "مطابقة للمعايير الوزارية" },
+            { value: q, suffix: "+", label: "سؤال تدريبي مراجع" },
+            { value: s, suffix: "+", label: "ملخص ذكي للدروس" },
+            { value: m, suffix: "%", label: "مطابقة للمعايير الجامعية" },
+            { value: null, suffix: "", label: "دعم ذكي فوري 24/7", icon: Headphones },
           ].map((st, i) => (
-            <div key={i}>
-              <p className="text-3xl md:text-5xl font-extrabold text-secondary">{st.value}{st.suffix}</p>
+            <div key={i} className="py-2">
+              {st.value !== null ? (
+                <p className="text-3xl md:text-5xl font-extrabold text-secondary">{st.value}{st.suffix}</p>
+              ) : (
+                <div className="flex justify-center mb-1">
+                  <Headphones className="w-10 h-10 md:w-12 md:h-12 text-secondary" />
+                </div>
+              )}
               <p className="text-sm md:text-base text-primary-foreground/80 mt-1">{st.label}</p>
             </div>
           ))}
@@ -160,7 +189,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
         <div className="max-w-3xl mx-auto text-center">
           <CheckCircle className="w-10 h-10 text-accent mx-auto mb-4" />
           <p className="text-muted-foreground leading-relaxed text-base md:text-lg">
-            محتوى مراجع ومعتمد من قبل خبراء وأكاديميين لضمان دقة المعلومات وتوافقها التام مع معايير المفاضلة الجامعية.
+            محتوى مراجع ومعتمد من قبل خبراء وأكاديميين لضمان التوافق التام مع معايير المفاضلة.
           </p>
         </div>
       </section>
@@ -170,7 +199,9 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
         <div className="max-w-2xl mx-auto text-center">
           <Users className="w-10 h-10 text-primary mx-auto mb-4" />
           <p className="text-lg md:text-xl font-bold text-foreground mb-6">
-            انضم إلى أكثر من <span className="text-accent">1000</span> طالب بدأوا رحلتهم الآن نحو كليات القمة.
+            انضم إلى أكثر من <span className="text-accent">1000</span> طالب بدأوا رحلتهم الآن نحو كليات القمة
+            <br />
+            <span className="text-muted-foreground text-base font-normal">(الطب، الهندسة، الحاسوب)</span>
           </p>
           <Button size="lg" onClick={() => navigate("/register")} className="bg-accent text-accent-foreground hover:bg-accent/90 font-bold px-8 py-6 rounded-xl shadow-lg">
             سجّل مجاناً الآن
