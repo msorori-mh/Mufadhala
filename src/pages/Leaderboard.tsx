@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Trophy, Medal, Award, ArrowRight, Crown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useStudentData } from "@/hooks/useStudentData";
 
 interface LeaderboardEntry {
   rank: number;
@@ -42,34 +44,32 @@ const rankBg = (rank: number) => {
 
 const Leaderboard = () => {
   const { user } = useAuthContext();
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [majors, setMajors] = useState<Major[]>([]);
   const [selectedMajor, setSelectedMajor] = useState<string>("all");
-  const [loading, setLoading] = useState(true);
-  const [currentStudentId, setCurrentStudentId] = useState<string | null>(null);
 
-  useEffect(() => {
-    supabase.from("majors").select("id, name_ar").eq("is_active", true).order("name_ar")
-      .then(({ data }) => { if (data) setMajors(data); });
+  // Cached student data — shared with other pages
+  const { data: studentData } = useStudentData(user?.id);
+  const currentStudentId = studentData?.id ?? null;
 
-    if (user) {
-      supabase.from("students").select("id").eq("user_id", user.id).maybeSingle()
-        .then(({ data: s }) => { if (s) setCurrentStudentId(s.id); });
-    }
-  }, [user]);
+  // Cached majors list
+  const { data: majors = [] } = useQuery({
+    queryKey: ["majors-active"],
+    queryFn: async () => {
+      const { data } = await supabase.from("majors").select("id, name_ar").eq("is_active", true).order("name_ar");
+      return (data ?? []) as Major[];
+    },
+    staleTime: 10 * 60 * 1000, // 10 min — rarely changes
+  });
 
-  useEffect(() => {
-    setLoading(true);
-    const majorId = selectedMajor === "all" ? null : selectedMajor;
-
-    supabase.rpc("get_leaderboard", {
-      _limit: 50,
-      _major_id: majorId,
-    }).then(({ data, error }) => {
-      if (data && !error) setEntries(data as LeaderboardEntry[]);
-      setLoading(false);
-    });
-  }, [selectedMajor]);
+  // Cached leaderboard — per selected major
+  const { data: entries = [], isLoading: loading } = useQuery({
+    queryKey: ["leaderboard", selectedMajor],
+    queryFn: async () => {
+      const majorId = selectedMajor === "all" ? null : selectedMajor;
+      const { data, error } = await supabase.rpc("get_leaderboard", { _limit: 50, _major_id: majorId });
+      return (data && !error ? data : []) as LeaderboardEntry[];
+    },
+    staleTime: 2 * 60 * 1000, // 2 min
+  });
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
