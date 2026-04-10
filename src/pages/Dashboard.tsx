@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useStudentData } from "@/hooks/useStudentData";
+import { useUnreadCount } from "@/hooks/useUnreadCount";
 import ThemeToggle from "@/components/ThemeToggle";
 import MotivationalBanner from "@/components/MotivationalBanner";
 import AchievementsBadges from "@/components/AchievementsBadges";
@@ -71,64 +74,56 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading: authLoading, isStaff, isAdmin } = useAuthContext();
-  const [student, setStudent] = useState<Tables<"students"> | null>(null);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [attempts, setAttempts] = useState<ExamAttemptRow[]>([]);
-  const [lessonCount, setLessonCount] = useState(0);
-  const [completedLessons, setCompletedLessons] = useState(0);
-  const [collegeName, setCollegeName] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  // Cached shared hooks — no duplicate fetches across pages
+  const { data: student, isLoading: studentLoading } = useStudentData(user?.id);
+  const { data: unreadCount = 0 } = useUnreadCount(user?.id);
+
+  // Fetch all dashboard-specific data in ONE parallel batch
+  const { data: dashData, isLoading: dashLoading } = useQuery({
+    queryKey: ["dashboard-data", student?.id, student?.major_id, student?.college_id],
+    queryFn: async () => {
+      if (!student) return { attempts: [], lessonCount: 0, completedLessons: 0, collegeName: null };
+
+      // ALL queries in parallel — no waterfall
+      const [attemptsRes, lessonsRes, progressRes, collegeRes] = await Promise.all([
+        supabase.from("exam_attempts")
+          .select("id, score, total, completed_at, major_id")
+          .eq("student_id", student.id)
+          .not("completed_at", "is", null)
+          .order("completed_at", { ascending: true }),
+        student.major_id
+          ? supabase.from("lessons").select("id").eq("major_id", student.major_id).eq("is_published", true)
+          : Promise.resolve({ data: [] }),
+        supabase.from("lesson_progress").select("id").eq("student_id", student.id).eq("is_completed", true),
+        student.college_id
+          ? supabase.from("colleges").select("name_ar").eq("id", student.college_id).maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+
+      return {
+        attempts: (attemptsRes.data || []) as ExamAttemptRow[],
+        lessonCount: lessonsRes.data?.length ?? 0,
+        completedLessons: progressRes.data?.length ?? 0,
+        collegeName: (collegeRes.data as any)?.name_ar ?? null,
+      };
+    },
+    enabled: !!student,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const attempts = dashData?.attempts ?? [];
+  const lessonCount = dashData?.lessonCount ?? 0;
+  const completedLessons = dashData?.completedLessons ?? 0;
+  const collegeName = dashData?.collegeName ?? null;
+  const loading = studentLoading || dashLoading;
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { navigate("/login"); return; }
-
-    const fetchData = async () => {
-      const [{ data: s }, { data: notifs }] = await Promise.all([
-        supabase.from("students").select("*").eq("user_id", user.id).maybeSingle(),
-        supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("is_read", false),
-      ]);
-      if (s) {
-        setStudent(s);
-        const [{ data: exams }, { data: lessons }, { data: progress }] = await Promise.all([
-          supabase.from("exam_attempts").select("id, score, total, completed_at, major_id")
-            .eq("student_id", s.id).not("completed_at", "is", null)
-            .order("completed_at", { ascending: true }),
-          s.major_id
-            ? supabase.from("lessons").select("id")
-                .eq("major_id", s.major_id).eq("is_published", true)
-            : Promise.resolve({ data: [] }),
-          supabase.from("lesson_progress").select("id")
-            .eq("student_id", s.id).eq("is_completed", true),
-        ]);
-        if (exams) setAttempts(exams);
-        setLessonCount(lessons?.length ?? 0);
-        setCompletedLessons(progress?.length ?? 0);
-        if (s.college_id) {
-          const { data: college } = await supabase.from("colleges").select("name_ar").eq("id", s.college_id).maybeSingle();
-          if (college) setCollegeName(college.name_ar);
-        }
-      }
-      setUnreadCount((notifs as any)?.count ?? 0);
-      setLoading(false);
-    };
-
-    fetchData();
+    if (!user) navigate("/login");
   }, [authLoading, user, navigate]);
 
   useRealtimeNotifications(user?.id);
-
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel(`dashboard-notif-count-${user.id}`)
-      .on("postgres_changes", {
-        event: "INSERT", schema: "public", table: "notifications",
-        filter: `user_id=eq.${user.id}`,
-      }, () => setUnreadCount((c) => c + 1))
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

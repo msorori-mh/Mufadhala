@@ -101,10 +101,7 @@ const ExamSimulator = () => {
   useEffect(() => {
     if (authLoading || !user) return;
     const fetchData = async () => {
-      // Try to get student from server or use cached info
       if (isOffline) {
-        // In offline mode, we can't fetch student data - but we might have cached questions
-        // We need at least a majorId stored somewhere. For now, try to load any cached questions.
         setLoading(false);
         return;
       }
@@ -113,23 +110,22 @@ const ExamSimulator = () => {
       if (!s?.major_id) { setLoading(false); return; }
       setStudent(s);
 
-      const [{ data: major }, { data: qs }, { data: attempts }] = await Promise.all([
+      // ALL queries in parallel — including lessons (was sequential before)
+      const [{ data: major }, { data: qs }, { data: attempts }, { data: lessons }] = await Promise.all([
         supabase.from("majors").select("name_ar").eq("id", s.major_id).maybeSingle(),
         supabase.from("questions").select("id, question_text, option_a, option_b, option_c, option_d, correct_option, explanation, lesson_id, subject")
           .order("display_order"),
         supabase.from("exam_attempts").select("*").eq("student_id", s.id).order("created_at", { ascending: false }),
+        supabase.from("lessons").select("id, subject_id").eq("major_id", s.major_id).eq("is_published", true),
       ]);
 
       if (major) setMajorName(major.name_ar);
       if (attempts) setPastAttempts(attempts as ExamAttempt[]);
 
-      if (qs) {
-        const { data: lessons } = await supabase.from("lessons")
-          .select("id, subject_id").eq("major_id", s.major_id).eq("is_published", true);
-        const lessonIds = new Set((lessons || []).map((l: any) => l.id));
-        // Map lesson_id to subject_id for enriching questions
+      if (qs && lessons) {
+        const lessonIds = new Set(lessons.map((l: any) => l.id));
         const lessonSubjectMap = new Map<string, string>();
-        (lessons || []).forEach((l: any) => { if (l.subject_id) lessonSubjectMap.set(l.id, l.subject_id); });
+        lessons.forEach((l: any) => { if (l.subject_id) lessonSubjectMap.set(l.id, l.subject_id); });
         const filtered = (qs as any[]).filter((q) => lessonIds.has(q.lesson_id)).map(q => ({
           ...q,
           subject: q.subject || lessonSubjectMap.get(q.lesson_id) || undefined,
@@ -137,7 +133,7 @@ const ExamSimulator = () => {
         setAllQuestions(filtered as Question[]);
       }
 
-      // Check if we have offline questions for this major
+      // Check offline questions
       try {
         const cached = await getExamQuestions(s.major_id);
         if (cached && cached.length > 0) {
