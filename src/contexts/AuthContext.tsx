@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { saveNativeSession, getNativeSession, clearNativeSession } from "@/lib/nativeSessionStorage";
+import { isNativePlatform } from "@/lib/capacitor";
 import type { User } from "@supabase/supabase-js";
 
 type AppRole = "admin" | "moderator" | "student";
@@ -43,29 +45,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setRoles(userRoles);
     };
 
-    // 1. Restore session from storage
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    const initSession = async () => {
+      // 1. Try standard session restore
+      const { data: { session } } = await supabase.auth.getSession();
+
       if (session) {
         setUser(session.user);
         await fetchRoles(session.user.id);
+        // Persist to native storage for next cold start
+        await saveNativeSession(session.access_token, session.refresh_token);
+        setLoading(false);
+        return;
       }
-      setLoading(false);
-    });
 
-    // 2. Listen for subsequent changes (ignore INITIAL_SESSION)
+      // 2. On native: try restoring from Capacitor Preferences
+      if (isNativePlatform()) {
+        const stored = await getNativeSession();
+        if (stored) {
+          const { data: { session: restoredSession }, error } = await supabase.auth.setSession({
+            access_token: stored.accessToken,
+            refresh_token: stored.refreshToken,
+          });
+
+          if (restoredSession && !error) {
+            setUser(restoredSession.user);
+            await fetchRoles(restoredSession.user.id);
+            // Update stored tokens (they may have been refreshed)
+            await saveNativeSession(restoredSession.access_token, restoredSession.refresh_token);
+            setLoading(false);
+            return;
+          } else {
+            // Stored tokens are invalid — clear them
+            await clearNativeSession();
+          }
+        }
+      }
+
+      setLoading(false);
+    };
+
+    initSession();
+
+    // Listen for subsequent auth changes (ignore INITIAL_SESSION)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "INITIAL_SESSION") return;
 
       if (session) {
         setUser(session.user);
-        if (event === "SIGNED_IN") {
+        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
           fetchRoles(session.user.id);
+          // Persist updated tokens to native storage
+          saveNativeSession(session.access_token, session.refresh_token);
         }
       } else {
         setUser(null);
         setRoles([]);
+        clearNativeSession();
       }
     });
 
