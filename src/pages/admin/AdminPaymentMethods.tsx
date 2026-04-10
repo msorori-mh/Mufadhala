@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Pencil, Trash2, Building, ArrowLeftRight, Smartphone } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Building, ArrowLeftRight, Smartphone, Globe } from "lucide-react";
 
 interface PaymentMethod {
   id: string;
@@ -98,6 +98,7 @@ const AdminPaymentMethods = () => {
   const banks = methods.filter((m) => m.type === "bank");
   const exchanges = methods.filter((m) => m.type === "exchange");
   const ewallets = methods.filter((m) => m.type === "ewallet");
+  const networkTransfers = methods.filter((m) => m.type === "network_transfer");
 
   return (
     <AdminLayout>
@@ -193,6 +194,34 @@ const AdminPaymentMethods = () => {
           </div>
         )}
 
+        {networkTransfers.length > 0 && (
+          <div>
+            <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1"><Globe className="w-4 h-4" /> تحويل عبر الشبكة الموحدة</h2>
+            <div className="space-y-2">
+              {networkTransfers.map((m) => (
+                <Card key={m.id}>
+                  <CardContent className="py-3 px-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-sm">{m.name}</p>
+                          <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
+                        </div>
+                        {m.account_name && <p className="text-xs text-muted-foreground mt-1">الحساب: {m.account_name}</p>}
+                        {m.account_number && <p className="text-xs text-muted-foreground">رقم الحساب: {m.account_number}</p>}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(m)}><Pencil className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(m.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
         {methods.length === 0 && <p className="text-center text-muted-foreground py-8">لا توجد طرق دفع بعد</p>}
       </div>
 
@@ -206,11 +235,12 @@ const AdminPaymentMethods = () => {
                 <option value="bank">بنك</option>
                 <option value="exchange">شركة صرافة</option>
                 <option value="ewallet">محفظة إلكترونية</option>
+                <option value="network_transfer">تحويل عبر الشبكة الموحدة</option>
               </select>
             </div>
-            <div className="space-y-2"><Label>{type === "bank" ? "اسم البنك" : type === "exchange" ? "اسم شركة الصرافة" : "اسم المحفظة"} *</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+            <div className="space-y-2"><Label>{type === "bank" ? "اسم البنك" : type === "exchange" ? "اسم شركة الصرافة" : type === "network_transfer" ? "اسم الخدمة" : "اسم المحفظة"} *</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
             <div className="space-y-2"><Label>اسم صاحب الحساب</Label><Input value={accountName} onChange={(e) => setAccountName(e.target.value)} /></div>
-            <div className="space-y-2"><Label>{type === "bank" ? "رقم الحساب" : type === "exchange" ? "رقم الهاتف" : "رقم المحفظة"}</Label><Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} /></div>
+            <div className="space-y-2"><Label>{type === "bank" ? "رقم الحساب" : type === "exchange" ? "رقم الهاتف" : type === "network_transfer" ? "رقم الحساب" : "رقم المحفظة"}</Label><Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} /></div>
             <div className="space-y-2"><Label>تفاصيل إضافية</Label><Textarea value={details} onChange={(e) => setDetails(e.target.value)} placeholder="الفرع، ملاحظات..." /></div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2"><Label>الترتيب</Label><Input type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} /></div>
