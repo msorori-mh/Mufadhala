@@ -23,6 +23,7 @@ interface PaymentMethod {
   details: string | null;
   is_active: boolean;
   sort_order: number;
+  barcode_url: string | null;
 }
 
 const AdminPaymentMethods = () => {
