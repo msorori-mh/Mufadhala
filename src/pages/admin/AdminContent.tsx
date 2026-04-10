@@ -603,9 +603,10 @@ const AdminContent = () => {
   // --- Bulk Import ---
   const downloadTemplate = () => {
     const wb = XLSX.utils.book_new();
+    const subjectNames = subjects.map(s => s.name_ar).join(" / ");
     const lessonsData = [
-      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)"],
-      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم"],
+      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`],
+      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || ""],
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lessonsData), "الدروس");
     XLSX.writeFile(wb, "قالب_استيراد_الدروس.xlsx");
@@ -613,9 +614,10 @@ const AdminContent = () => {
 
   const downloadFullTemplate = () => {
     const wb = XLSX.utils.book_new();
+    const subjectNames = subjects.map(s => s.name_ar).join(" / ");
     const lessonsData = [
-      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)"],
-      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم"],
+      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`],
+      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || ""],
     ];
     const questionsData = [
       ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`],
@@ -668,6 +670,8 @@ const AdminContent = () => {
           const row = lessonsSheet[i] as any[];
           if (!row[0]) continue;
           const title = String(row[0]).trim();
+          const subjectName = row[5] ? String(row[5]).trim() : "";
+          const matchedSubject = subjectName ? subjects.find(s => s.name_ar === subjectName || s.code === subjectName) : null;
           const { data: inserted, error } = await supabase.from("lessons").insert({
             college_id: importCollegeId,
             title,
@@ -675,6 +679,7 @@ const AdminContent = () => {
             summary: row[2] ? String(row[2]) : "",
             display_order: row[3] ? Number(row[3]) : i,
             is_published: row[4] ? String(row[4]).includes("نعم") || String(row[4]).toLowerCase() === "true" : false,
+            subject_id: matchedSubject?.id || null,
           }).select("id").single();
           if (error) {
             toast({ variant: "destructive", title: `خطأ في درس "${title}": ${error.message}` });
