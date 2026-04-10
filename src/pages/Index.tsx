@@ -9,38 +9,20 @@ import { resolveAuthDestination } from "@/lib/authRouting";
 
 function useCountUp(end: number, duration = 2000) {
   const [value, setValue] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    let started = false;
-    const start = () => {
-      if (started) return;
-      started = true;
+    const timer = setTimeout(() => {
       let startTime: number;
-      let raf: number;
       const step = (ts: number) => {
         if (!startTime) startTime = ts;
         const progress = Math.min((ts - startTime) / duration, 1);
         setValue(Math.floor(progress * end));
-        if (progress < 1) raf = requestAnimationFrame(step);
+        if (progress < 1) requestAnimationFrame(step);
       };
-      raf = requestAnimationFrame(step);
-    };
-    // Try IntersectionObserver, fallback to immediate start
-    if ('IntersectionObserver' in window) {
-      const obs = new IntersectionObserver(([e]) => {
-        if (e.isIntersecting) { start(); obs.disconnect(); }
-      }, { threshold: 0, rootMargin: "200px" });
-      obs.observe(el);
-      // Fallback: start after 1s regardless
-      const timer = setTimeout(start, 1000);
-      return () => { obs.disconnect(); clearTimeout(timer); };
-    } else {
-      start();
-    }
+      requestAnimationFrame(step);
+    }, 500);
+    return () => clearTimeout(timer);
   }, [end, duration]);
-  return { value, ref };
+  return value;
 }
 
 const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
