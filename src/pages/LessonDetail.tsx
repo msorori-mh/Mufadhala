@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
-import { ChevronLeft, ChevronRight, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check, Lock, Star, Download, Trash2, WifiOff, Eye, EyeOff } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check, Lock, Star, Download, Trash2, WifiOff, Eye, EyeOff, Presentation } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import LessonReviews from "@/components/LessonReviews";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ interface Lesson {
   summary: string;
   is_free: boolean;
   major_id: string;
+  presentation_url: string | null;
 }
 
 interface Question {
@@ -68,7 +69,7 @@ const LessonDetail = () => {
       if (isOffline) {
         // Load from cache
         if (cached) {
-          setLesson({ id: cached.id, title: cached.title, content: cached.content, summary: cached.summary, is_free: cached.is_free, major_id: "" });
+          setLesson({ id: cached.id, title: cached.title, content: cached.content, summary: cached.summary, is_free: cached.is_free, major_id: "", presentation_url: null });
           setQuestions(cached.questions as Question[]);
           setIsFromCache(true);
         }
@@ -77,7 +78,7 @@ const LessonDetail = () => {
       }
 
       const [{ data: l }, { data: q }, { data: s }] = await Promise.all([
-        supabase.from("lessons").select("id, title, content, summary, is_free, major_id").eq("id", id).maybeSingle(),
+        supabase.from("lessons").select("id, title, content, summary, is_free, major_id, presentation_url").eq("id", id).maybeSingle(),
         supabase.from("questions").select("*").eq("lesson_id", id).order("display_order"),
         supabase.from("students").select("id").eq("user_id", user.id).maybeSingle(),
       ]);
@@ -289,9 +290,12 @@ const LessonDetail = () => {
         </div>
 
         <Tabs defaultValue="content" dir="rtl">
-          <TabsList className={`w-full grid h-auto ${isFromCache ? "grid-cols-3" : "grid-cols-4"}`}>
+          <TabsList className={`w-full grid h-auto ${isFromCache ? (lesson.presentation_url ? "grid-cols-4" : "grid-cols-3") : (lesson.presentation_url ? "grid-cols-5" : "grid-cols-4")}`}>
             <TabsTrigger value="content" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الشرح</TabsTrigger>
             <TabsTrigger value="summary" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><BookOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الملخص</TabsTrigger>
+            {lesson.presentation_url && (
+              <TabsTrigger value="presentation" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><Presentation className="w-3 h-3 sm:w-3.5 sm:h-3.5" />العرض</TabsTrigger>
+            )}
             <TabsTrigger value="quiz" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><HelpCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الأسئلة</TabsTrigger>
             {!isFromCache && (
               <TabsTrigger value="reviews" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><Star className="w-3 h-3 sm:w-3.5 sm:h-3.5" />التقييمات</TabsTrigger>
@@ -325,6 +329,32 @@ const LessonDetail = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {lesson.presentation_url && (
+            <TabsContent value="presentation" className="mt-4 space-y-4">
+              <Card>
+                <CardContent className="py-4 px-4">
+                  <div className="aspect-[16/9] w-full rounded-lg overflow-hidden border bg-muted">
+                    <iframe
+                      src={`https://docs.google.com/gview?url=${encodeURIComponent(lesson.presentation_url)}&embedded=true`}
+                      className="w-full h-full"
+                      frameBorder="0"
+                      allowFullScreen
+                      title="العرض التقديمي"
+                    />
+                  </div>
+                  <div className="mt-3 flex justify-center">
+                    <Button variant="outline" size="sm" className="gap-2" asChild>
+                      <a href={lesson.presentation_url} download target="_blank" rel="noopener noreferrer">
+                        <Download className="w-4 h-4" />
+                        تحميل العرض التقديمي
+                      </a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           <TabsContent value="quiz" className="mt-4 space-y-4">
             {questions.length === 0 ? (

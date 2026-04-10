@@ -13,7 +13,7 @@ import { useModeratorScope } from "@/hooks/useModeratorScope";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles, ChevronDown, ChevronUp, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles, ChevronDown, ChevronUp, Search, Presentation } from "lucide-react";
 import * as XLSX from "xlsx";
 
 interface Subject {
@@ -34,6 +34,7 @@ interface Lesson {
   is_published: boolean;
   is_free: boolean;
   created_at: string;
+  presentation_url: string | null;
 }
 
 interface Question {
@@ -113,6 +114,10 @@ const AdminContent = () => {
   const [lessonPublished, setLessonPublished] = useState(false);
   const [lessonFree, setLessonFree] = useState(false);
   const [lessonSubjectId, setLessonSubjectId] = useState("");
+  const [lessonPresentationFile, setLessonPresentationFile] = useState<File | null>(null);
+  const [lessonPresentationUrl, setLessonPresentationUrl] = useState("");
+  const [uploadingPresentation, setUploadingPresentation] = useState(false);
+  const presentationFileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
 
   // Pending questions for lesson dialog
@@ -237,6 +242,8 @@ const AdminContent = () => {
     setLessonPublished(false);
     setLessonFree(false);
     setLessonSubjectId("");
+    setLessonPresentationFile(null);
+    setLessonPresentationUrl("");
     setPendingQuestions([]);
     setExistingLessonQuestions([]);
     setShowAddQuestionForm(false);
@@ -259,6 +266,8 @@ const AdminContent = () => {
     setLessonPublished(l.is_published);
     setLessonFree(l.is_free);
     setLessonSubjectId(l.subject_id || "");
+    setLessonPresentationFile(null);
+    setLessonPresentationUrl(l.presentation_url || "");
     setPendingQuestions([]);
     setExistingLessonQuestions(questions.filter(q => q.lesson_id === l.id));
     setShowAddQuestionForm(false);
@@ -389,6 +398,27 @@ const AdminContent = () => {
       return;
     }
     setSaving(true);
+
+    // Upload presentation file if selected
+    let presentationUrl = lessonPresentationUrl;
+    if (lessonPresentationFile) {
+      setUploadingPresentation(true);
+      const fileExt = lessonPresentationFile.name.split('.').pop();
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('lesson-presentations')
+        .upload(fileName, lessonPresentationFile);
+      if (uploadError) {
+        toast({ variant: "destructive", title: `خطأ في رفع العرض: ${uploadError.message}` });
+        setSaving(false);
+        setUploadingPresentation(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('lesson-presentations').getPublicUrl(fileName);
+      presentationUrl = urlData.publicUrl;
+      setUploadingPresentation(false);
+    }
+
     const payload: any = {
       title: lessonTitle,
       content: lessonContent,
@@ -399,6 +429,7 @@ const AdminContent = () => {
       display_order: lessonOrder,
       is_published: lessonPublished,
       is_free: lessonFree,
+      presentation_url: presentationUrl || null,
     };
     if (editingLesson) {
       const { error } = await supabase.from("lessons").update(payload).eq("id", editingLesson.id);
@@ -608,7 +639,7 @@ const AdminContent = () => {
       return;
     }
     const wb = XLSX.utils.book_new();
-    const header = ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", "المادة"];
+    const header = ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", "المادة", "رابط العرض التقديمي"];
     const rows = collegeLessons.map(l => [
       l.title,
       l.content,
@@ -616,6 +647,7 @@ const AdminContent = () => {
       l.display_order,
       l.is_published ? "نعم" : "لا",
       l.subject_id ? (subjects.find(s => s.id === l.subject_id)?.name_ar || "") : "",
+      l.presentation_url || "",
     ]);
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows]), "الدروس");
 
@@ -651,8 +683,8 @@ const AdminContent = () => {
     const wb = XLSX.utils.book_new();
     const subjectNames = subjects.map(s => s.name_ar).join(" / ");
     const lessonsData = [
-      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`],
-      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || ""],
+      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`, "رابط العرض التقديمي"],
+      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || "", ""],
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lessonsData), "الدروس");
     XLSX.writeFile(wb, "قالب_استيراد_الدروس.xlsx");
@@ -662,8 +694,8 @@ const AdminContent = () => {
     const wb = XLSX.utils.book_new();
     const subjectNames = subjects.map(s => s.name_ar).join(" / ");
     const lessonsData = [
-      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`],
-      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || ""],
+      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`, "رابط العرض التقديمي"],
+      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || "", ""],
     ];
     const questionsData = [
       ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`],
@@ -718,6 +750,7 @@ const AdminContent = () => {
           const title = String(row[0]).trim();
           const subjectName = row[5] ? String(row[5]).trim() : "";
           const matchedSubject = subjectName ? subjects.find(s => s.name_ar === subjectName || s.code === subjectName) : null;
+          const presentationUrl = row[6] ? String(row[6]).trim() : "";
           const { data: inserted, error } = await supabase.from("lessons").insert({
             college_id: importCollegeId,
             title,
@@ -726,6 +759,7 @@ const AdminContent = () => {
             display_order: row[3] ? Number(row[3]) : i,
             is_published: row[4] ? String(row[4]).includes("نعم") || String(row[4]).toLowerCase() === "true" : false,
             subject_id: matchedSubject?.id || null,
+            presentation_url: presentationUrl || null,
           }).select("id").single();
           if (error) {
             toast({ variant: "destructive", title: `خطأ في درس "${title}": ${error.message}` });
@@ -856,6 +890,11 @@ const AdminContent = () => {
                           <Badge variant="outline" className="text-[10px]">
                             {questions.filter((q) => q.lesson_id === l.id).length} سؤال
                           </Badge>
+                          {l.presentation_url && (
+                            <Badge variant="outline" className="text-[10px] border-blue-500 text-blue-600 gap-0.5">
+                              <Presentation className="w-2.5 h-2.5" /> عرض
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
@@ -1015,6 +1054,27 @@ const AdminContent = () => {
                 <Label className="text-sm">درس مجاني</Label>
                 <p className="text-xs text-muted-foreground">يمكن للطلاب الوصول للمحتوى الكامل بدون اشتراك</p>
               </div>
+            </div>
+
+            {/* Presentation Upload */}
+            <div className="space-y-2 border rounded-lg p-3">
+              <Label className="flex items-center gap-2"><Presentation className="w-4 h-4" />العرض التقديمي (PPTX)</Label>
+              {lessonPresentationUrl && !lessonPresentationFile && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted rounded p-2">
+                  <Presentation className="w-3 h-3 shrink-0" />
+                  <span className="truncate flex-1">ملف عرض مرفق</span>
+                  <Button type="button" variant="ghost" size="sm" className="h-6 text-xs text-destructive" onClick={() => setLessonPresentationUrl("")}>
+                    <Trash2 className="w-3 h-3 ml-1" />إزالة
+                  </Button>
+                </div>
+              )}
+              <Input
+                ref={presentationFileRef}
+                type="file"
+                accept=".pptx,.ppt"
+                onChange={(e) => setLessonPresentationFile(e.target.files?.[0] || null)}
+              />
+              <p className="text-[11px] text-muted-foreground">سيتم عرض الملف داخل صفحة الدرس مع إمكانية تحميله</p>
             </div>
 
             {/* Questions Section */}
