@@ -100,8 +100,8 @@ const AdminSubscriptionPlans = () => {
                     <TableHead>الاسم</TableHead>
                     <TableHead>المعرف</TableHead>
                     <TableHead>السعر الافتراضي</TableHead>
-                    <TableHead>منطقة أ</TableHead>
                     <TableHead>منطقة ب</TableHead>
+                    <TableHead>منطقة أ</TableHead>
                     <TableHead>الحالة</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -148,8 +148,8 @@ const AdminSubscriptionPlans = () => {
                 {!planForm.is_free && (
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1"><Label>السعر الافتراضي</Label><Input type="number" value={planForm.price_default} onChange={(e) => setPlanForm({ ...planForm, price_default: Number(e.target.value) })} /></div>
-                    <div className="space-y-1"><Label>منطقة أ</Label><Input type="number" value={planForm.price_zone_a} onChange={(e) => setPlanForm({ ...planForm, price_zone_a: Number(e.target.value) })} /></div>
-                    <div className="space-y-1"><Label>منطقة ب</Label><Input type="number" value={planForm.price_zone_b} onChange={(e) => setPlanForm({ ...planForm, price_zone_b: Number(e.target.value) })} /></div>
+                    <div className="space-y-1"><Label>منطقة ب</Label><Input type="number" value={planForm.price_zone_a} onChange={(e) => setPlanForm({ ...planForm, price_zone_a: Number(e.target.value) })} /></div>
+                    <div className="space-y-1"><Label>منطقة أ</Label><Input type="number" value={planForm.price_zone_b} onChange={(e) => setPlanForm({ ...planForm, price_zone_b: Number(e.target.value) })} /></div>
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-3">

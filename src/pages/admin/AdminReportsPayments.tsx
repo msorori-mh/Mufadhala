@@ -84,7 +84,7 @@ const AdminReportsPayments = () => {
     else zoneB += p.amount;
   });
   const revenueByZone = [
-    { name: "المنطقة أ", value: zoneA }, { name: "المنطقة ب", value: zoneB },
+    { name: "المنطقة ب", value: zoneA }, { name: "المنطقة أ", value: zoneB },
     ...(zoneUnknown > 0 ? [{ name: "غير محدد", value: zoneUnknown }] : []),
   ].filter((d) => d.value > 0);
 
