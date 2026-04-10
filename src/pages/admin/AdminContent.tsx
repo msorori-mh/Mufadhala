@@ -13,7 +13,7 @@ import { useModeratorScope } from "@/hooks/useModeratorScope";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles, ChevronDown, ChevronUp, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles, ChevronDown, ChevronUp, Search, Presentation } from "lucide-react";
 import * as XLSX from "xlsx";
 
 interface Subject {
@@ -34,6 +34,7 @@ interface Lesson {
   is_published: boolean;
   is_free: boolean;
   created_at: string;
+  presentation_url: string | null;
 }
 
 interface Question {
@@ -113,6 +114,10 @@ const AdminContent = () => {
   const [lessonPublished, setLessonPublished] = useState(false);
   const [lessonFree, setLessonFree] = useState(false);
   const [lessonSubjectId, setLessonSubjectId] = useState("");
+  const [lessonPresentationFile, setLessonPresentationFile] = useState<File | null>(null);
+  const [lessonPresentationUrl, setLessonPresentationUrl] = useState("");
+  const [uploadingPresentation, setUploadingPresentation] = useState(false);
+  const presentationFileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
 
   // Pending questions for lesson dialog
@@ -237,6 +242,8 @@ const AdminContent = () => {
     setLessonPublished(false);
     setLessonFree(false);
     setLessonSubjectId("");
+    setLessonPresentationFile(null);
+    setLessonPresentationUrl("");
     setPendingQuestions([]);
     setExistingLessonQuestions([]);
     setShowAddQuestionForm(false);
@@ -259,6 +266,8 @@ const AdminContent = () => {
     setLessonPublished(l.is_published);
     setLessonFree(l.is_free);
     setLessonSubjectId(l.subject_id || "");
+    setLessonPresentationFile(null);
+    setLessonPresentationUrl(l.presentation_url || "");
     setPendingQuestions([]);
     setExistingLessonQuestions(questions.filter(q => q.lesson_id === l.id));
     setShowAddQuestionForm(false);
