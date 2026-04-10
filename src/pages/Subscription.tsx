@@ -594,6 +594,21 @@ const Subscription = () => {
           </div>
         )}
       </div>
+
+      {/* Barcode Zoom Overlay */}
+      {barcodeZoom && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setBarcodeZoom(null)}
+        >
+          <img
+            src={barcodeZoom}
+            alt="باركود الدفع"
+            className="max-w-full max-h-[85vh] rounded-xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 };
