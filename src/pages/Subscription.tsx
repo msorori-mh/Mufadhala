@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, CreditCard, Upload, CheckCircle, Clock,
   Building, ArrowLeftRight, ChevronRight, GraduationCap, Smartphone, Globe,
-  Star, Sparkles, Tag, Timer, Info, ChevronDown
+  Star, Sparkles, Tag, Timer, Info, ChevronDown, ZoomIn, Download
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
