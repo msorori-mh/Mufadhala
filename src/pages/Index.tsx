@@ -179,8 +179,9 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-card border-t py-6 px-4 text-center">
+      <footer className="bg-card border-t py-6 px-4 text-center space-y-2">
         <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} مُفَاضَلَة | Mufadhala - جميع الحقوق محفوظة</p>
+        <a href="/privacy-policy" className="text-sm text-primary hover:underline">سياسة الخصوصية</a>
       </footer>
     </div>
   );
