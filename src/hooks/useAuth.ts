@@ -39,11 +39,11 @@ export const useAuth = (requiredRole?: AppRole) => {
       if (currentPath !== "/complete-profile") {
         supabase
           .from("students")
-          .select("major_id")
+          .select("college_id")
           .eq("user_id", user.id)
           .maybeSingle()
           .then(({ data: student }) => {
-            if (!student?.major_id && !localStorage.getItem("profile_skipped")) {
+            if (!student?.college_id && !localStorage.getItem("profile_skipped")) {
               navigate("/complete-profile");
             }
             setProfileChecked(true);

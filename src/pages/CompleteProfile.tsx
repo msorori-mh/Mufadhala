@@ -41,10 +41,8 @@ const CompleteProfile = () => {
   // Step 2 fields
   const [universities, setUniversities] = useState<University[]>([]);
   const [colleges, setColleges] = useState<College[]>([]);
-  const [majors, setMajors] = useState<Major[]>([]);
   const [universityId, setUniversityId] = useState("");
   const [collegeId, setCollegeId] = useState("");
-  const [majorId, setMajorId] = useState("");
 
   useEffect(() => {
     if (authLoading) return;
@@ -62,7 +60,7 @@ const CompleteProfile = () => {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (student?.major_id) {
+      if (student?.college_id) {
         navigate("/dashboard");
         return;
       }
@@ -91,27 +89,15 @@ const CompleteProfile = () => {
 
   // Load colleges when university changes
   useEffect(() => {
-    if (!universityId) { setColleges([]); setCollegeId(""); setMajorId(""); return; }
+    if (!universityId) { setColleges([]); setCollegeId(""); return; }
     supabase
       .from("colleges")
       .select("id, name_ar")
       .eq("university_id", universityId)
       .eq("is_active", true)
       .order("display_order")
-      .then(({ data }) => { setColleges(data || []); setCollegeId(""); setMajorId(""); });
+      .then(({ data }) => { setColleges(data || []); setCollegeId(""); });
   }, [universityId]);
-
-  // Load majors when college changes
-  useEffect(() => {
-    if (!collegeId) { setMajors([]); setMajorId(""); return; }
-    supabase
-      .from("majors")
-      .select("id, name_ar")
-      .eq("college_id", collegeId)
-      .eq("is_active", true)
-      .order("display_order")
-      .then(({ data }) => { setMajors(data || []); setMajorId(""); });
-  }, [collegeId]);
 
   const handleSubmit = async () => {
     if (!studentId) return;
@@ -125,7 +111,6 @@ const CompleteProfile = () => {
         governorate,
         university_id: universityId,
         college_id: collegeId,
-        major_id: majorId,
       })
       .eq("id", studentId);
 
@@ -264,20 +249,6 @@ const CompleteProfile = () => {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">التخصص</label>
-                  <Select value={majorId} onValueChange={setMajorId} disabled={!collegeId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر التخصص" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {majors.map((m) => (
-                        <SelectItem key={m.id} value={m.id}>{m.name_ar}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -288,7 +259,7 @@ const CompleteProfile = () => {
                   </Button>
                   <Button
                     onClick={handleSubmit}
-                    disabled={loading || !majorId}
+                    disabled={loading || !collegeId}
                     className="flex-1 py-5 text-base font-bold"
                   >
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "حفظ والمتابعة"}

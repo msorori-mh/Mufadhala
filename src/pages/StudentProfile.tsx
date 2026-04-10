@@ -278,7 +278,7 @@ const StudentProfile = () => {
               </div>
               <div>
                 <CardTitle className="text-lg">البيانات الأكاديمية</CardTitle>
-                <CardDescription className="text-xs">الجامعة والكلية والتخصص</CardDescription>
+                <CardDescription className="text-xs">الجامعة والكلية</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -307,17 +307,6 @@ const StudentProfile = () => {
               </Select>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs">التخصص</Label>
-              <Select value={majorId} onValueChange={setMajorId} disabled={!collegeId}>
-                <SelectTrigger><SelectValue placeholder={!collegeId ? "اختر الكلية أولاً" : "اختر التخصص"} /></SelectTrigger>
-                <SelectContent>
-                  {majors.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>{m.name_ar}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </CardContent>
         </Card>
 

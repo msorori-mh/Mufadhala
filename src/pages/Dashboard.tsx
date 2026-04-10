@@ -58,9 +58,9 @@ const Dashboard = () => {
           supabase.from("exam_attempts").select("id, score, total, completed_at, major_id")
             .eq("student_id", s.id).not("completed_at", "is", null)
             .order("completed_at", { ascending: true }),
-          s.major_id
+          s.college_id
             ? supabase.from("lessons").select("id")
-                .eq("major_id", s.major_id).eq("is_published", true)
+                .eq("college_id", s.college_id).eq("is_published", true)
             : Promise.resolve({ data: [] }),
           supabase.from("lesson_progress").select("id")
             .eq("student_id", s.id).eq("is_completed", true),
@@ -272,7 +272,7 @@ const Dashboard = () => {
             </div>
 
             {/* Profile completion reminder */}
-            {!isAdmin && student && !student.major_id && (
+            {!isAdmin && student && !student.college_id && (
               <Card className="border-warning/50 bg-warning/5">
                 <CardContent className="flex items-center justify-between gap-3 py-3">
                   <div className="flex items-center gap-2.5">
@@ -281,7 +281,7 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <p className="font-semibold text-foreground text-xs">أكمل بياناتك الأكاديمية</p>
-                      <p className="text-[10px] text-muted-foreground">اختر جامعتك وكليتك وتخصصك</p>
+                      <p className="text-[10px] text-muted-foreground">اختر جامعتك وكليتك</p>
                     </div>
                   </div>
                   <Button size="sm" onClick={() => navigate("/complete-profile")} className="shrink-0 text-xs h-7 px-3">

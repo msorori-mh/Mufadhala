@@ -30,11 +30,11 @@ export async function resolveAuthDestination(userId: string): Promise<AuthDestin
   // Student: check profile completeness
   const { data: student } = await supabase
     .from("students")
-    .select("major_id")
+    .select("college_id")
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (!student?.major_id && !localStorage.getItem("profile_skipped")) {
+  if (!student?.college_id && !localStorage.getItem("profile_skipped")) {
     return { path: "/complete-profile", roles };
   }
 
