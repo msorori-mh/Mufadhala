@@ -294,6 +294,57 @@ const Dashboard = () => {
             {/* Motivational Banner */}
             {!isAdmin && <MotivationalBanner collegeName={collegeName} avgScore={avgScore} />}
 
+            {/* Quick Start Guide - shown when no exams yet */}
+            {!isAdmin && totalExams === 0 && !loading && (
+              <div className="space-y-3">
+                <h2 className="text-sm font-bold text-foreground">🚀 ابدأ رحلتك نحو القبول</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    { icon: BookOpen, title: "استعرض الدروس", desc: "ابدأ بمراجعة الملخصات الذكية لتخصصك", path: "/lessons", color: "text-secondary", bg: "bg-secondary/10" },
+                    { icon: ClipboardCheck, title: "خُض اختبار محاكاة", desc: "جرّب نفسك بـ 45 سؤال في 90 دقيقة", path: "/exam", color: "text-primary", bg: "bg-primary/10" },
+                    { icon: Building2, title: "تصفّح دليل الكليات", desc: "تعرّف على متطلبات القبول ونسب القبول", path: "/college-guide", color: "text-accent", bg: "bg-accent/10" },
+                    { icon: Search, title: "ابحث في المحتوى", desc: "ابحث بالمادة أو الكلية أو التخصص", path: "/search", color: "text-primary", bg: "bg-primary/10" },
+                  ].map((item) => (
+                    <Card key={item.path} className="cursor-pointer hover:shadow-md transition-shadow border" onClick={() => navigate(item.path)}>
+                      <CardContent className="flex items-center gap-3 p-3">
+                        <div className={`w-10 h-10 rounded-lg ${item.bg} flex items-center justify-center shrink-0`}>
+                          <item.icon className={`w-5 h-5 ${item.color}`} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground text-sm">{item.title}</p>
+                          <p className="text-xs text-muted-foreground truncate">{item.desc}</p>
+                        </div>
+                        <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Platform highlights */}
+                <Card className="bg-primary/5 border-primary/20">
+                  <CardContent className="p-4">
+                    <h3 className="text-sm font-bold text-foreground mb-3">✨ ما الذي يميّز مُفَاضَلَة؟</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { emoji: "📚", label: "3000+ سؤال تدريبي", sub: "مراجع ومعتمد" },
+                        { emoji: "🧠", label: "شرح علمي مفصّل", sub: "لكل إجابة" },
+                        { emoji: "⏱️", label: "محاكاة واقعية", sub: "لبيئة الاختبار" },
+                        { emoji: "📶", label: "يعمل أوفلاين", sub: "بدون إنترنت" },
+                      ].map((f, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <span className="text-lg">{f.emoji}</span>
+                          <div>
+                            <p className="text-xs font-semibold text-foreground">{f.label}</p>
+                            <p className="text-[10px] text-muted-foreground">{f.sub}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
             {/* Stats Cards */}
             {totalExams > 0 && (
               <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
