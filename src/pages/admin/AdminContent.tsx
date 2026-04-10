@@ -639,7 +639,7 @@ const AdminContent = () => {
       return;
     }
     const wb = XLSX.utils.book_new();
-    const header = ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", "المادة"];
+    const header = ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", "المادة", "رابط العرض التقديمي"];
     const rows = collegeLessons.map(l => [
       l.title,
       l.content,
@@ -647,6 +647,7 @@ const AdminContent = () => {
       l.display_order,
       l.is_published ? "نعم" : "لا",
       l.subject_id ? (subjects.find(s => s.id === l.subject_id)?.name_ar || "") : "",
+      l.presentation_url || "",
     ]);
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows]), "الدروس");
 
@@ -682,8 +683,8 @@ const AdminContent = () => {
     const wb = XLSX.utils.book_new();
     const subjectNames = subjects.map(s => s.name_ar).join(" / ");
     const lessonsData = [
-      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`],
-      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || ""],
+      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`, "رابط العرض التقديمي"],
+      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || "", ""],
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lessonsData), "الدروس");
     XLSX.writeFile(wb, "قالب_استيراد_الدروس.xlsx");
@@ -693,8 +694,8 @@ const AdminContent = () => {
     const wb = XLSX.utils.book_new();
     const subjectNames = subjects.map(s => s.name_ar).join(" / ");
     const lessonsData = [
-      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`],
-      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || ""],
+      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`, "رابط العرض التقديمي"],
+      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || "", ""],
     ];
     const questionsData = [
       ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`],
