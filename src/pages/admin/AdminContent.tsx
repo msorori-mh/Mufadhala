@@ -543,6 +543,16 @@ const AdminContent = () => {
     XLSX.writeFile(wb, "قالب_استيراد_أسئلة.xlsx");
   };
 
+  const downloadQuestionsOnlyTemplate = () => {
+    const wb = XLSX.utils.book_new();
+    const data = [
+      ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`],
+      ["مقدمة في البرمجة", "ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب", "عام"],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), "الأسئلة");
+    XLSX.writeFile(wb, "قالب_استيراد_أسئلة_فقط.xlsx");
+  };
+
   const handleImportQuestions = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selectedLesson) return;
