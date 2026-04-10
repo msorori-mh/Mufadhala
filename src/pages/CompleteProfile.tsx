@@ -20,7 +20,7 @@ const GOVERNORATES = [
 
 type University = { id: string; name_ar: string };
 type College = { id: string; name_ar: string };
-type Major = { id: string; name_ar: string };
+
 
 const CompleteProfile = () => {
   const navigate = useNavigate();
@@ -56,7 +56,7 @@ const CompleteProfile = () => {
 
       const { data: student } = await supabase
         .from("students")
-        .select("id, first_name, fourth_name, governorate, major_id, phone")
+        .select("id, first_name, fourth_name, governorate, college_id, phone")
         .eq("user_id", user.id)
         .maybeSingle();
 
