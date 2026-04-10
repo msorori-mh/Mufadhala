@@ -42,6 +42,7 @@ import AdminPayments from "./pages/admin/AdminPayments";
 import AdminPromoCodes from "./pages/admin/AdminPromoCodes";
 import AdminSubjects from "./pages/admin/AdminSubjects";
 import Settings from "./pages/Settings";
+import DeleteAccount from "./pages/DeleteAccount";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
@@ -93,6 +94,7 @@ function App() {
                 <Route path="/achievements" element={<Achievements />} />
                 <Route path="/college-guide" element={<CollegeGuide />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/delete-account" element={<DeleteAccount />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/admin" element={<AdminDashboard />} />
