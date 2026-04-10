@@ -24,7 +24,8 @@ interface Subject {
 
 interface Lesson {
   id: string;
-  major_id: string;
+  major_id: string | null;
+  college_id: string | null;
   subject_id: string | null;
   title: string;
   content: string;
@@ -98,7 +99,6 @@ const AdminContent = () => {
   // Filters
   const [filterUni, setFilterUni] = useState("");
   const [filterCollege, setFilterCollege] = useState("");
-  const [filterMajor, setFilterMajor] = useState("");
 
   // Lesson dialog
   const [lessonDialogOpen, setLessonDialogOpen] = useState(false);
@@ -107,6 +107,8 @@ const AdminContent = () => {
   const [lessonContent, setLessonContent] = useState("");
   const [lessonSummary, setLessonSummary] = useState("");
   const [lessonMajorId, setLessonMajorId] = useState("");
+  const [lessonUniId, setLessonUniId] = useState("");
+  const [lessonCollegeId, setLessonCollegeId] = useState("");
   const [lessonOrder, setLessonOrder] = useState(0);
   const [lessonPublished, setLessonPublished] = useState(false);
   const [lessonFree, setLessonFree] = useState(false);
@@ -154,7 +156,7 @@ const AdminContent = () => {
   const [importing, setImporting] = useState(false);
   const [importUniId, setImportUniId] = useState("");
   const [importCollegeId, setImportCollegeId] = useState("");
-  const [importMajorId, setImportMajorId] = useState("");
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Import questions for specific lesson (from questions panel)
@@ -197,31 +199,29 @@ const AdminContent = () => {
 
   // Apply scope filtering
   const allowedMajorIds = getAllowedMajorIds();
-  const scopedLessons = allowedMajorIds ? lessons.filter((l) => allowedMajorIds.has(l.major_id)) : lessons;
   const scopedMajors = allowedMajorIds ? majors.filter((m: any) => allowedMajorIds.has(m.id)) : majors;
+  const scopedLessons = allowedMajorIds
+    ? lessons.filter((l) => (l.major_id && allowedMajorIds.has(l.major_id)) || !l.major_id)
+    : lessons;
   const scopedCollegeIds = new Set(scopedMajors.map((m: any) => m.college_id));
   const scopedColleges = allowedMajorIds ? colleges.filter((c: any) => scopedCollegeIds.has(c.id)) : colleges;
   const scopedUniIds = new Set(scopedColleges.map((c: any) => c.university_id));
   const scopedUniversities = allowedMajorIds ? universities.filter((u: any) => scopedUniIds.has(u.id)) : universities;
 
   const filteredColleges = filterUni ? scopedColleges.filter((c: any) => c.university_id === filterUni) : scopedColleges;
-  const filteredMajors = filterCollege ? scopedMajors.filter((m: any) => m.college_id === filterCollege) : (filterUni ? scopedMajors.filter((m: any) => filteredColleges.some((c: any) => c.id === m.college_id)) : scopedMajors);
   
   const filteredLessons = (() => {
-    if (filterMajor) return scopedLessons.filter((l) => l.major_id === filterMajor);
     if (filterCollege) {
-      const collegeMajorIds = scopedMajors.filter((m: any) => m.college_id === filterCollege).map((m: any) => m.id);
-      return scopedLessons.filter((l) => collegeMajorIds.includes(l.major_id));
+      return scopedLessons.filter((l) => l.college_id === filterCollege);
     }
     if (filterUni) {
       const uniCollegeIds = scopedColleges.filter((c: any) => c.university_id === filterUni).map((c: any) => c.id);
-      const uniMajorIds = scopedMajors.filter((m: any) => uniCollegeIds.includes(m.college_id)).map((m: any) => m.id);
-      return scopedLessons.filter((l) => uniMajorIds.includes(l.major_id));
+      return scopedLessons.filter((l) => l.college_id && uniCollegeIds.includes(l.college_id));
     }
     return scopedLessons;
   })();
 
-  const getMajorName = (id: string) => majors.find((m: any) => m.id === id)?.name_ar || "";
+  const getCollegeName = (id: string | null) => colleges.find((c: any) => c.id === id)?.name_ar || "";
 
   // --- Lesson CRUD ---
   const openCreateLesson = () => {
@@ -229,7 +229,9 @@ const AdminContent = () => {
     setLessonTitle("");
     setLessonContent("");
     setLessonSummary("");
-    setLessonMajorId(filterMajor);
+    setLessonMajorId("");
+    setLessonUniId(filterUni);
+    setLessonCollegeId(filterCollege);
     setLessonOrder(filteredLessons.length);
     setLessonPublished(false);
     setLessonFree(false);
@@ -247,7 +249,11 @@ const AdminContent = () => {
     setLessonTitle(l.title);
     setLessonContent(l.content);
     setLessonSummary(l.summary);
-    setLessonMajorId(l.major_id);
+    setLessonMajorId(l.major_id || "");
+    // Derive uni/college from the lesson
+    const lessonCollege = l.college_id ? colleges.find((c: any) => c.id === l.college_id) : null;
+    setLessonCollegeId(l.college_id || "");
+    setLessonUniId(lessonCollege?.university_id || "");
     setLessonOrder(l.display_order);
     setLessonPublished(l.is_published);
     setLessonFree(l.is_free);
@@ -377,16 +383,17 @@ const AdminContent = () => {
   };
 
   const handleSaveLesson = async () => {
-    if (!lessonTitle || !lessonMajorId) {
-      toast({ variant: "destructive", title: "يرجى ملء العنوان واختيار التخصص" });
+    if (!lessonTitle || !lessonCollegeId) {
+      toast({ variant: "destructive", title: "يرجى ملء العنوان واختيار الكلية" });
       return;
     }
     setSaving(true);
-    const payload = {
+    const payload: any = {
       title: lessonTitle,
       content: lessonContent,
       summary: lessonSummary,
-      major_id: lessonMajorId,
+      college_id: lessonCollegeId,
+      major_id: lessonMajorId || null,
       subject_id: lessonSubjectId || null,
       display_order: lessonOrder,
       is_published: lessonPublished,
@@ -610,7 +617,7 @@ const AdminContent = () => {
 
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !importMajorId) return;
+    if (!file || !importCollegeId) return;
     setImporting(true);
 
     try {
@@ -648,7 +655,7 @@ const AdminContent = () => {
           if (!row[0]) continue;
           const title = String(row[0]).trim();
           const { data: inserted, error } = await supabase.from("lessons").insert({
-            major_id: importMajorId,
+            college_id: importCollegeId,
             title,
             content: row[1] ? String(row[1]) : "",
             summary: row[2] ? String(row[2]) : "",
@@ -665,7 +672,7 @@ const AdminContent = () => {
 
       if (questionsSheet.length > 1) {
         if (lessonMap.size === 0) {
-          lessons.filter(l => l.major_id === importMajorId).forEach(l => lessonMap.set(l.title, l.id));
+          lessons.filter(l => l.college_id === importCollegeId).forEach(l => lessonMap.set(l.title, l.id));
         }
 
         for (let i = 1; i < questionsSheet.length; i++) {
@@ -727,7 +734,7 @@ const AdminContent = () => {
             <p className="text-sm text-muted-foreground">{filteredLessons.length} درس</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => { setImportUniId(filterUni); setImportCollegeId(filterCollege); setImportMajorId(filterMajor); setImportDialogOpen(true); }} size="sm" variant="outline">
+            <Button onClick={() => { setImportUniId(filterUni); setImportCollegeId(filterCollege); setImportDialogOpen(true); }} size="sm" variant="outline">
               <Upload className="w-4 h-4 ml-1" />استيراد
             </Button>
             <Button onClick={openCreateLesson} size="sm"><Plus className="w-4 h-4 ml-1" />إضافة درس</Button>
@@ -736,17 +743,13 @@ const AdminContent = () => {
 
         {/* Filters */}
         <div className="flex gap-2 flex-wrap">
-          <select value={filterUni} onChange={(e) => { setFilterUni(e.target.value); setFilterCollege(""); setFilterMajor(""); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
+          <select value={filterUni} onChange={(e) => { setFilterUni(e.target.value); setFilterCollege(""); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
             <option value="">جميع الجامعات</option>
             {scopedUniversities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
           </select>
-          <select value={filterCollege} onChange={(e) => { setFilterCollege(e.target.value); setFilterMajor(""); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
+          <select value={filterCollege} onChange={(e) => { setFilterCollege(e.target.value); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
             <option value="">جميع الكليات</option>
             {filteredColleges.map((c: any) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
-          </select>
-          <select value={filterMajor} onChange={(e) => setFilterMajor(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
-            <option value="">جميع التخصصات</option>
-            {filteredMajors.map((m: any) => <option key={m.id} value={m.id}>{m.name_ar}</option>)}
           </select>
         </div>
 
@@ -767,7 +770,7 @@ const AdminContent = () => {
                       <div>
                         <p className="font-semibold text-sm">{l.title}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {getMajorName(l.major_id)}
+                          {getCollegeName(l.college_id)}
                           {l.subject_id && (() => {
                             const subj = subjects.find(s => s.id === l.subject_id);
                             return subj ? ` • ${subj.name_ar}` : "";
@@ -893,10 +896,17 @@ const AdminContent = () => {
           <DialogHeader><DialogTitle>{editingLesson ? "تعديل درس" : "إضافة درس"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>التخصص *</Label>
-              <select value={lessonMajorId} onChange={(e) => setLessonMajorId(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="">اختر التخصص</option>
-                {scopedMajors.map((m: any) => <option key={m.id} value={m.id}>{m.name_ar}</option>)}
+              <Label>الجامعة *</Label>
+              <select value={lessonUniId} onChange={(e) => { setLessonUniId(e.target.value); setLessonCollegeId(""); }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <option value="">اختر الجامعة</option>
+                {scopedUniversities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>الكلية *</Label>
+              <select value={lessonCollegeId} onChange={(e) => setLessonCollegeId(e.target.value)} disabled={!lessonUniId} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50">
+                <option value="">اختر الكلية</option>
+                {scopedColleges.filter((c: any) => c.university_id === lessonUniId).map((c: any) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
               </select>
             </div>
             <div className="space-y-2">
@@ -1112,28 +1122,21 @@ const AdminContent = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>الجامعة *</Label>
-              <select value={importUniId} onChange={(e) => { setImportUniId(e.target.value); setImportCollegeId(""); setImportMajorId(""); }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+              <select value={importUniId} onChange={(e) => { setImportUniId(e.target.value); setImportCollegeId(""); }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                 <option value="">اختر الجامعة</option>
                 {scopedUniversities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
               </select>
             </div>
             <div className="space-y-2">
               <Label>الكلية *</Label>
-              <select value={importCollegeId} onChange={(e) => { setImportCollegeId(e.target.value); setImportMajorId(""); }} disabled={!importUniId} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50">
+              <select value={importCollegeId} onChange={(e) => { setImportCollegeId(e.target.value); }} disabled={!importUniId} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50">
                 <option value="">اختر الكلية</option>
                 {scopedColleges.filter((c: any) => c.university_id === importUniId).map((c: any) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
               </select>
             </div>
             <div className="space-y-2">
-              <Label>التخصص *</Label>
-              <select value={importMajorId} onChange={(e) => setImportMajorId(e.target.value)} disabled={!importCollegeId} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50">
-                <option value="">اختر التخصص</option>
-                {scopedMajors.filter((m: any) => m.college_id === importCollegeId).map((m: any) => <option key={m.id} value={m.id}>{m.name_ar}</option>)}
-              </select>
-            </div>
-            <div className="space-y-2">
               <Label>اختر ملف (Excel أو CSV)</Label>
-              <Input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImportFile} disabled={!importMajorId || importing} />
+              <Input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImportFile} disabled={!importCollegeId || importing} />
             </div>
             {importing && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
