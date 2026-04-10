@@ -144,11 +144,11 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
 
       {/* Stats Bar */}
       <section className="bg-primary py-6 px-4">
-        <div ref={q.ref} className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           {[
-            { value: q.value, suffix: "+", label: "سؤال تدريبي" },
-            { value: s.value, suffix: "+", label: "ملخص ذكي" },
-            { value: m.value, suffix: "%", label: "مطابقة جامعية" },
+            { value: q, suffix: "+", label: "سؤال تدريبي" },
+            { value: s, suffix: "+", label: "ملخص ذكي" },
+            { value: m, suffix: "%", label: "مطابقة جامعية" },
             { value: null, suffix: "", label: "دعم 24/7", icon: Headphones },
           ].map((st, i) => (
             <div key={i} className="py-1">
