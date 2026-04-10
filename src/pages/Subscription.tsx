@@ -540,6 +540,20 @@ const Subscription = () => {
                   <div><span className="text-muted-foreground">الخطة:</span> <span className="font-semibold">{selectedPlan.name}</span></div>
                   <div><span className="text-muted-foreground">المبلغ:</span> <span className="font-semibold">{final_.toLocaleString()} {selectedPlan.currency}</span></div>
                   <div><span className="text-muted-foreground">طريقة الدفع:</span> <span className="font-semibold">{selectedMethod.name}</span></div>
+                  {selectedMethod.account_name && (
+                    <div
+                      className="flex items-center gap-1 cursor-pointer group"
+                      onClick={() => copyToClipboard(selectedMethod.account_name!, "اسم الحساب")}
+                    >
+                      <span className="text-muted-foreground">باسم:</span>
+                      <span className="font-semibold">{selectedMethod.account_name}</span>
+                      {copiedField === "اسم الحساب" ? (
+                        <Check className="w-3.5 h-3.5 text-green-500" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  )}
                   {selectedMethod.account_number && (
                     <div
                       className="flex items-center gap-1 cursor-pointer group"
