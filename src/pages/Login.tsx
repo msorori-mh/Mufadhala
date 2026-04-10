@@ -340,6 +340,11 @@ const Login = () => {
         <p className="text-center text-sm text-white/70 mt-4">
           إذا لم يكن لديك حساب، سيتم إنشاؤه تلقائياً
         </p>
+        <p className="text-center text-xs text-white/50 mt-2">
+          <Link to="/privacy-policy" className="hover:underline hover:text-white/80">سياسة الخصوصية</Link>
+          {" | "}
+          <Link to="/terms-of-service" className="hover:underline hover:text-white/80">شروط الاستخدام</Link>
+        </p>
       </div>
     </div>
   );
