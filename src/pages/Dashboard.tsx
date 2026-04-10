@@ -11,10 +11,11 @@ import ThemeToggle from "@/components/ThemeToggle";
 import MotivationalBanner from "@/components/MotivationalBanner";
 import AchievementsBadges from "@/components/AchievementsBadges";
 import WelcomeDialog from "@/components/WelcomeDialog";
+import { getDailyTip } from "@/data/dailyTips";
 import {
   GraduationCap, LogOut, UserCircle, Bell, Shield, BookOpen,
   ClipboardCheck, Trophy, TrendingUp, Target, BarChart3, CreditCard, Search,
-  Building2, ChevronLeft,
+  Building2, ChevronLeft, Lightbulb, RefreshCw,
 } from "lucide-react";
 import {
   ChartContainer, ChartTooltip, ChartTooltipContent
