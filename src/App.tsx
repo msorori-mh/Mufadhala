@@ -68,6 +68,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/complete-profile" element={<CompleteProfile />} />
                 <Route path="/admin-login" element={<AdminLogin />} />
+                <Route path="/admin-reset-password" element={<AdminResetPassword />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/profile" element={<StudentProfile />} />
                 <Route path="/notifications" element={<Notifications />} />
