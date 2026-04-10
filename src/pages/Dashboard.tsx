@@ -32,6 +32,42 @@ interface ExamAttemptRow {
   major_id: string;
 }
 
+const DailyTipCard = () => {
+  const [tip, setTip] = useState(getDailyTip());
+  const [spinning, setSpinning] = useState(false);
+
+  const refreshTip = () => {
+    setSpinning(true);
+    const { dailyTips } = require("@/data/dailyTips");
+    const randomIndex = Math.floor(Math.random() * dailyTips.length);
+    setTip(dailyTips[randomIndex]);
+    setTimeout(() => setSpinning(false), 500);
+  };
+
+  return (
+    <Card className="border-accent/20 bg-accent/5">
+      <CardContent className="p-3 flex items-start gap-3">
+        <div className="w-9 h-9 rounded-lg bg-accent/15 flex items-center justify-center shrink-0 mt-0.5">
+          <Lightbulb className="w-4.5 h-4.5 text-accent" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{tip.category}</Badge>
+            <span className="text-[10px] text-muted-foreground">💡 نصيحة اليوم</span>
+          </div>
+          <p className="text-sm text-foreground leading-relaxed">
+            <span className="ml-1">{tip.emoji}</span>
+            {tip.tip}
+          </p>
+        </div>
+        <button onClick={refreshTip} className="shrink-0 p-1.5 rounded-md hover:bg-accent/10 transition-colors" title="نصيحة أخرى">
+          <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${spinning ? "animate-spin" : ""}`} />
+        </button>
+      </CardContent>
+    </Card>
+  );
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
