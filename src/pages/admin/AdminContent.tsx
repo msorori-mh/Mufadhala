@@ -774,6 +774,9 @@ const AdminContent = () => {
             <p className="text-sm text-muted-foreground">{filteredLessons.length} درس</p>
           </div>
           <div className="flex gap-2">
+            <Button onClick={exportLessons} size="sm" variant="outline">
+              <Download className="w-4 h-4 ml-1" />تصدير
+            </Button>
             <Button onClick={() => { setImportUniId(filterUni); setImportCollegeId(filterCollege); setImportMode("full"); setImportDialogOpen(true); }} size="sm" variant="outline">
               <Upload className="w-4 h-4 ml-1" />استيراد
             </Button>
