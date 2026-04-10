@@ -41,6 +41,7 @@ import AdminPayments from "./pages/admin/AdminPayments";
 import AdminPromoCodes from "./pages/admin/AdminPromoCodes";
 import AdminSubjects from "./pages/admin/AdminSubjects";
 import Settings from "./pages/Settings";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 import MobileBottomNav from "./components/MobileBottomNav";
 import ChatWidget from "./components/ChatWidget";
@@ -89,6 +90,7 @@ function App() {
                 <Route path="/achievements" element={<Achievements />} />
                 <Route path="/college-guide" element={<CollegeGuide />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/universities" element={<AdminUniversities />} />
                 <Route path="/admin/colleges" element={<AdminColleges />} />
