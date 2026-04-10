@@ -280,9 +280,9 @@ const AdminPaymentMethods = () => {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] flex flex-col">
           <DialogHeader><DialogTitle>{editing ? "تعديل طريقة الدفع" : "إضافة طريقة دفع"}</DialogTitle></DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 px-1">
             <div className="space-y-2">
               <Label>النوع *</Label>
               <select value={type} onChange={(e) => setType(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
@@ -303,12 +303,14 @@ const AdminPaymentMethods = () => {
                   </Button>
                 </div>
               ) : (
-                <Input type="file" accept="image/*" onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) { setLogoFile(f); setLogoPreview(URL.createObjectURL(f)); setRemovingLogo(false); }
-                }} />
+                <>
+                  <Input type="file" accept="image/*" onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) { setLogoFile(f); setLogoPreview(URL.createObjectURL(f)); setRemovingLogo(false); }
+                  }} />
+                  {logoFile && <img src={URL.createObjectURL(logoFile)} alt="معاينة" className="w-12 h-12 rounded-lg border object-contain mt-1" />}
+                </>
               )}
-              {logoFile && <img src={URL.createObjectURL(logoFile)} alt="معاينة" className="w-12 h-12 rounded-lg border object-contain mt-1" />}
             </div>
             <div className="space-y-2"><Label>{type === "network_transfer" ? "تحويل بأسم (اسم المستلم)" : type === "bank" ? "ايداع الى حساب" : "اسم صاحب الحساب"}</Label><Input value={accountName} onChange={(e) => setAccountName(e.target.value)} /></div>
             <div className="space-y-2"><Label>{type === "bank" ? "رقم الحساب" : type === "exchange" || type === "network_transfer" ? "رقم الهاتف" : "رقم المحفظة"}</Label><Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} /></div>
@@ -323,12 +325,14 @@ const AdminPaymentMethods = () => {
                   </Button>
                 </div>
               ) : (
-                <Input type="file" accept="image/*" onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) { setBarcodeFile(f); setBarcodePreview(URL.createObjectURL(f)); setRemovingBarcode(false); }
-                }} />
+                <>
+                  <Input type="file" accept="image/*" onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) { setBarcodeFile(f); setBarcodePreview(URL.createObjectURL(f)); setRemovingBarcode(false); }
+                  }} />
+                  {barcodeFile && <img src={URL.createObjectURL(barcodeFile)} alt="معاينة" className="max-w-[150px] rounded-lg border mt-1" />}
+                </>
               )}
-              {barcodeFile && <img src={URL.createObjectURL(barcodeFile)} alt="معاينة" className="max-w-[150px] rounded-lg border mt-1" />}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2"><Label>الترتيب</Label><Input type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} /></div>
