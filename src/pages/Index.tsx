@@ -30,7 +30,7 @@ function useInView() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect(); } }, { threshold: 0.2 });
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect(); } }, { threshold: 0.05, rootMargin: "100px" });
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
@@ -72,27 +72,27 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
   return (
     <div ref={fwdRef} className="min-h-screen flex flex-col">
       {/* Hero */}
-      <section className="gradient-hero relative overflow-hidden flex items-center justify-center px-4 pt-[calc(env(safe-area-inset-top)+6rem)] pb-16 md:py-20 min-h-[70vh]">
+      <section className="gradient-hero relative overflow-hidden flex items-center justify-center px-4 pt-[calc(env(safe-area-inset-top)+4rem)] pb-10 md:py-14 min-h-[45vh]">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 right-10 w-72 h-72 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-20 left-10 w-96 h-96 bg-white rounded-full blur-3xl" />
+          <div className="absolute top-10 right-10 w-48 h-48 bg-white rounded-full blur-3xl" />
+          <div className="absolute bottom-10 left-10 w-64 h-64 bg-white rounded-full blur-3xl" />
         </div>
         <div className="relative z-10 text-center max-w-2xl mx-auto">
-          <div className="inline-flex items-center justify-center w-36 h-36 mb-8 animate-float rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
+          <div className="inline-flex items-center justify-center w-24 h-24 mb-5 animate-float rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
             <img src={logoImg} alt="شعار مُفَاضَلَة" className="w-full h-full object-cover drop-shadow-lg" />
           </div>
-          <h1 className="text-3xl md:text-5xl font-bold text-primary-foreground mb-6 leading-tight">مُفَاضَلَة</h1>
-          <p className="text-lg md:text-xl text-primary-foreground/85 mb-8 leading-relaxed">مُفَاضَلَة... هندسة النجاح في اختبارات القبول.</p>
-          <Button size="lg" onClick={() => navigate("/login")} className="bg-secondary text-secondary-foreground hover:bg-secondary/90 text-base font-bold px-8 py-6 rounded-xl shadow-lg">
+          <h1 className="text-2xl md:text-4xl font-bold text-primary-foreground mb-3 leading-tight">مُفَاضَلَة</h1>
+          <p className="text-base md:text-lg text-primary-foreground/85 mb-5 leading-relaxed">مُفَاضَلَة... هندسة النجاح في اختبارات القبول.</p>
+          <Button size="lg" onClick={() => navigate("/login")} className="bg-secondary text-secondary-foreground hover:bg-secondary/90 text-base font-bold px-8 py-5 rounded-xl shadow-lg">
             ابدأ الآن
           </Button>
         </div>
       </section>
 
       {/* Hero Hook */}
-      <section className="bg-primary py-14 px-4">
+      <section className="bg-primary py-8 px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-2xl md:text-4xl font-extrabold text-primary-foreground leading-snug">
+          <h2 className="text-xl md:text-3xl font-extrabold text-primary-foreground leading-snug">
             لا تترك حلمك للصدفة..
             <br />
             <span className="text-secondary">هندس طريقك</span> للقبول في الجامعات اليمنية
@@ -101,20 +101,18 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       </section>
 
       {/* AI Assistant "Qabool" */}
-      <section className="bg-background py-14 px-4">
+      <section className="bg-background py-6 px-4">
         <div ref={aiRef.ref} className={`max-w-3xl mx-auto transition-all duration-700 ${aiRef.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
-          <div className="relative rounded-2xl border-2 border-accent/30 bg-gradient-to-br from-accent/5 via-background to-primary/5 p-8 md:p-10 text-center shadow-lg overflow-hidden">
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-accent/10 rounded-full blur-3xl" />
-            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
-            <div className="relative z-10">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/15 mb-5">
-                <Bot className="w-9 h-9 text-accent" />
+          <div className="relative rounded-xl border border-accent/30 bg-gradient-to-br from-accent/5 via-background to-primary/5 p-5 md:p-6 text-center shadow overflow-hidden">
+            <div className="relative z-10 flex flex-col items-center gap-3">
+              <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-accent/15">
+                <Bot className="w-6 h-6 text-accent" />
               </div>
-              <h3 className="text-xl md:text-2xl font-extrabold text-foreground mb-4">
-                🤖 المساعد الذكي "قبول": مستشارك الأكاديمي الشخصي
+              <h3 className="text-base md:text-lg font-extrabold text-foreground">
+                🤖 المساعد الذكي "قبول"
               </h3>
-              <p className="text-muted-foreground leading-relaxed text-base md:text-lg max-w-2xl mx-auto">
-                تعرف على "قبول"، رفيقك الذكي الذي يحلل أداءك، يجيب على تساؤلاتك المنهجية، ويرشدك لأفضل الطرق لاجتياز المفاضلة بنجاح في جميع الجامعات اليمنية.
+              <p className="text-muted-foreground leading-relaxed text-sm max-w-xl mx-auto">
+                رفيقك الذكي الذي يحلل أداءك ويرشدك لأفضل الطرق لاجتياز المفاضلة بنجاح.
               </p>
             </div>
           </div>
@@ -122,39 +120,39 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       </section>
 
       {/* Academic Core Pillars */}
-      <section className="bg-muted py-14 px-4">
-        <div ref={featuresRef.ref} className="max-w-5xl mx-auto grid gap-6 md:grid-cols-3">
+      <section className="bg-muted py-8 px-4">
+        <div ref={featuresRef.ref} className="max-w-5xl mx-auto grid gap-4 md:grid-cols-3">
           {[
-            { icon: BookOpen, emoji: "📚", title: "شمولية المنهج الوزاري", desc: "تغطية دقيقة لكافة مفردات المقررات الدراسية (أول - ثاني - ثالث ثانوي) المطلوبة في اختبارات المفاضلة الوطنية." },
-            { icon: Brain, emoji: "🧠", title: "تعزيز الفهم بالتعليل العلمي", desc: "نوفر لكل سؤال شرحاً علمياً مبسطاً يوضح 'لماذا' هذه الإجابة هي الأصح، لترسيخ المعلومة بعيداً عن الحفظ." },
-            { icon: FileCheck, emoji: "⏱️", title: "محاكاة واقعية لبيئة الاختبار", desc: "اختبارات تحاكي النمط الحقيقي للجامعات من حيث توزيع الدرجات وإدارة الوقت لكسر حاجز الرهبة." },
+            { icon: BookOpen, emoji: "📚", title: "شمولية المنهج الوزاري", desc: "تغطية دقيقة لكافة المقررات الدراسية المطلوبة في اختبارات المفاضلة." },
+            { icon: Brain, emoji: "🧠", title: "تعزيز الفهم بالتعليل", desc: "شرح علمي مبسط لكل سؤال يوضح لماذا هذه الإجابة هي الأصح." },
+            { icon: FileCheck, emoji: "⏱️", title: "محاكاة بيئة الاختبار", desc: "اختبارات تحاكي النمط الحقيقي من حيث الدرجات وإدارة الوقت." },
           ].map((f, i) => (
-            <div key={i} className={`bg-card rounded-2xl border p-8 text-center transition-all duration-700 ${featuresRef.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`} style={{ transitionDelay: `${i * 150}ms` }}>
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-accent/10 mb-5">
-                <f.icon className="w-7 h-7 text-accent" />
+            <div key={i} className={`bg-card rounded-xl border p-4 text-center transition-all duration-700 ${featuresRef.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`} style={{ transitionDelay: `${i * 150}ms` }}>
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-accent/10 mb-3">
+                <f.icon className="w-5 h-5 text-accent" />
               </div>
-              <h3 className="font-bold text-foreground text-lg mb-3">{f.emoji} {f.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+              <h3 className="font-bold text-foreground text-sm mb-2">{f.emoji} {f.title}</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Value Badges */}
-      <section className="bg-background py-12 px-4">
-        <div ref={badgesRef.ref} className="max-w-5xl mx-auto grid gap-4 md:grid-cols-3">
+      <section className="bg-background py-6 px-4">
+        <div ref={badgesRef.ref} className="max-w-5xl mx-auto grid gap-3 md:grid-cols-3">
           {[
             { icon: Shield, label: "ثقة مطلقة", desc: "خبير بنمط الأسئلة قبل دخول القاعة." },
             { icon: Focus, label: "تركيز عالٍ", desc: "ملخصات ذكية تغنيك عن تشتت الملازم." },
-            { icon: WifiOff, label: "أوفلاين دائماً", desc: "ذاكر في أي وقت دون الحاجة لإنترنت مستمر." },
+            { icon: WifiOff, label: "أوفلاين دائماً", desc: "ذاكر بدون إنترنت مستمر." },
           ].map((b, i) => (
-            <div key={i} className={`flex items-start gap-4 bg-card rounded-xl border p-5 transition-all duration-700 ${badgesRef.inView ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"}`} style={{ transitionDelay: `${i * 120}ms` }}>
-              <div className="shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <b.icon className="w-5 h-5 text-primary" />
+            <div key={i} className={`flex items-center gap-3 bg-card rounded-lg border p-3 transition-all duration-700 ${badgesRef.inView ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"}`} style={{ transitionDelay: `${i * 120}ms` }}>
+              <div className="shrink-0 w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
+                <b.icon className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <p className="font-bold text-foreground mb-1">{b.label}</p>
-                <p className="text-sm text-muted-foreground">{b.desc}</p>
+                <p className="font-semibold text-foreground text-sm">{b.label}</p>
+                <p className="text-xs text-muted-foreground">{b.desc}</p>
               </div>
             </div>
           ))}
@@ -162,48 +160,47 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       </section>
 
       {/* Stats Bar */}
-      <section className="bg-primary py-12 px-4">
-        <div ref={statsRef.ref} className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+      <section className="bg-primary py-6 px-4">
+        <div ref={statsRef.ref} className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           {[
-            { value: q, suffix: "+", label: "سؤال تدريبي مراجع" },
-            { value: s, suffix: "+", label: "ملخص ذكي للدروس" },
-            { value: m, suffix: "%", label: "مطابقة للمعايير الجامعية" },
-            { value: null, suffix: "", label: "دعم ذكي فوري 24/7", icon: Headphones },
+            { value: q, suffix: "+", label: "سؤال تدريبي" },
+            { value: s, suffix: "+", label: "ملخص ذكي" },
+            { value: m, suffix: "%", label: "مطابقة جامعية" },
+            { value: null, suffix: "", label: "دعم 24/7", icon: Headphones },
           ].map((st, i) => (
-            <div key={i} className="py-2">
+            <div key={i} className="py-1">
               {st.value !== null ? (
-                <p className="text-3xl md:text-5xl font-extrabold text-secondary">{st.value}{st.suffix}</p>
+                <p className="text-2xl md:text-3xl font-extrabold text-secondary">{st.value}{st.suffix}</p>
               ) : (
-                <div className="flex justify-center mb-1">
-                  <Headphones className="w-10 h-10 md:w-12 md:h-12 text-secondary" />
+                <div className="flex justify-center">
+                  <Headphones className="w-7 h-7 md:w-8 md:h-8 text-secondary" />
                 </div>
               )}
-              <p className="text-sm md:text-base text-primary-foreground/80 mt-1">{st.label}</p>
+              <p className="text-xs md:text-sm text-primary-foreground/80 mt-1">{st.label}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Trust Note */}
-      <section className="bg-background py-12 px-4">
+      <section className="bg-background py-6 px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <CheckCircle className="w-10 h-10 text-accent mx-auto mb-4" />
-          <p className="text-muted-foreground leading-relaxed text-base md:text-lg">
-            محتوى مراجع ومعتمد من قبل خبراء وأكاديميين لضمان التوافق التام مع معايير المفاضلة.
+          <CheckCircle className="w-7 h-7 text-accent mx-auto mb-2" />
+          <p className="text-muted-foreground leading-relaxed text-sm">
+            محتوى مراجع ومعتمد من خبراء وأكاديميين لضمان التوافق مع معايير المفاضلة.
           </p>
         </div>
       </section>
 
       {/* Social Proof */}
-      <section className="bg-muted py-14 px-4">
+      <section className="bg-muted py-8 px-4">
         <div className="max-w-2xl mx-auto text-center">
-          <Users className="w-10 h-10 text-primary mx-auto mb-4" />
-          <p className="text-lg md:text-xl font-bold text-foreground mb-6">
-            انضم إلى أكثر من <span className="text-accent">1000</span> طالب بدأوا رحلتهم الآن نحو كليات القمة
-            <br />
-            <span className="text-muted-foreground text-base font-normal">(الطب، الهندسة، الحاسوب)</span>
+          <Users className="w-7 h-7 text-primary mx-auto mb-3" />
+          <p className="text-base md:text-lg font-bold text-foreground mb-4">
+            انضم إلى أكثر من <span className="text-accent">1000</span> طالب نحو كليات القمة
+            <span className="text-muted-foreground text-sm font-normal"> (الطب، الهندسة، الحاسوب)</span>
           </p>
-          <Button size="lg" onClick={() => navigate("/register")} className="bg-accent text-accent-foreground hover:bg-accent/90 font-bold px-8 py-6 rounded-xl shadow-lg">
+          <Button size="lg" onClick={() => navigate("/register")} className="bg-accent text-accent-foreground hover:bg-accent/90 font-bold px-8 py-5 rounded-xl shadow-lg">
             سجّل مجاناً الآن
           </Button>
         </div>
