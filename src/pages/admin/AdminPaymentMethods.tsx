@@ -239,8 +239,8 @@ const AdminPaymentMethods = () => {
               </select>
             </div>
             <div className="space-y-2"><Label>{type === "bank" ? "اسم البنك" : type === "exchange" ? "اسم شركة الصرافة" : type === "network_transfer" ? "اسم الخدمة" : "اسم المحفظة"} *</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-            <div className="space-y-2"><Label>اسم صاحب الحساب</Label><Input value={accountName} onChange={(e) => setAccountName(e.target.value)} /></div>
-            <div className="space-y-2"><Label>{type === "bank" ? "رقم الحساب" : type === "exchange" ? "رقم الهاتف" : type === "network_transfer" ? "رقم الحساب" : "رقم المحفظة"}</Label><Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} /></div>
+            <div className="space-y-2"><Label>{type === "network_transfer" ? "تحويل بأسم (اسم المستلم)" : "اسم صاحب الحساب"}</Label><Input value={accountName} onChange={(e) => setAccountName(e.target.value)} /></div>
+            <div className="space-y-2"><Label>{type === "bank" ? "رقم الحساب" : type === "exchange" || type === "network_transfer" ? "رقم الهاتف" : "رقم المحفظة"}</Label><Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} /></div>
             <div className="space-y-2"><Label>تفاصيل إضافية</Label><Textarea value={details} onChange={(e) => setDetails(e.target.value)} placeholder="الفرع، ملاحظات..." /></div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2"><Label>الترتيب</Label><Input type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} /></div>
