@@ -216,45 +216,55 @@ export type Database = {
       }
       lessons: {
         Row: {
+          college_id: string | null
           content: string
           created_at: string
           display_order: number
           id: string
           is_free: boolean
           is_published: boolean
-          major_id: string
+          major_id: string | null
           subject_id: string | null
           summary: string
           title: string
           updated_at: string
         }
         Insert: {
+          college_id?: string | null
           content?: string
           created_at?: string
           display_order?: number
           id?: string
           is_free?: boolean
           is_published?: boolean
-          major_id: string
+          major_id?: string | null
           subject_id?: string | null
           summary?: string
           title: string
           updated_at?: string
         }
         Update: {
+          college_id?: string | null
           content?: string
           created_at?: string
           display_order?: number
           id?: string
           is_free?: boolean
           is_published?: boolean
-          major_id?: string
+          major_id?: string | null
           subject_id?: string | null
           summary?: string
           title?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "lessons_college_id_fkey"
+            columns: ["college_id"]
+            isOneToOne: false
+            referencedRelation: "colleges"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lessons_major_id_fkey"
             columns: ["major_id"]
