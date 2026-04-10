@@ -148,6 +148,7 @@ const AdminPaymentMethods = () => {
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-sm">{m.name}</p>
                           <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
+                          {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
                         </div>
                         {m.account_name && <p className="text-xs text-muted-foreground mt-1">الحساب: {m.account_name}</p>}
                         {m.account_number && <p className="text-xs text-muted-foreground">رقم الحساب: {m.account_number}</p>}
@@ -176,6 +177,7 @@ const AdminPaymentMethods = () => {
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-sm">{m.name}</p>
                           <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
+                          {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
                         </div>
                         {m.account_number && <p className="text-xs text-muted-foreground mt-1">رقم الهاتف: {m.account_number}</p>}
                       </div>
@@ -203,6 +205,7 @@ const AdminPaymentMethods = () => {
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-sm">{m.name}</p>
                           <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
+                          {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
                         </div>
                         {m.account_number && <p className="text-xs text-muted-foreground mt-1">رقم المحفظة: {m.account_number}</p>}
                       </div>
@@ -230,6 +233,7 @@ const AdminPaymentMethods = () => {
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-sm">{m.name}</p>
                           <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
+                          {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
                         </div>
                         {m.account_name && <p className="text-xs text-muted-foreground mt-1">الحساب: {m.account_name}</p>}
                         {m.account_number && <p className="text-xs text-muted-foreground">رقم الحساب: {m.account_number}</p>}
