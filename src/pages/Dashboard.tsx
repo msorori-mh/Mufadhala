@@ -338,7 +338,7 @@ const Dashboard = () => {
                   {[
                     { icon: BookOpen, title: "استعرض الدروس", desc: "ابدأ بمراجعة الملخصات الذكية لتخصصك", path: "/lessons", color: "text-secondary", bg: "bg-secondary/10" },
                     { icon: ClipboardCheck, title: "خُض اختبار محاكاة", desc: "جرّب نفسك بـ 45 سؤال في 90 دقيقة", path: "/exam", color: "text-primary", bg: "bg-primary/10" },
-                    { icon: Building2, title: "تصفّح دليل الكليات", desc: "تعرّف على متطلبات القبول ونسب القبول", path: "/college-guide", color: "text-accent", bg: "bg-accent/10" },
+                    { icon: CreditCard, title: "الاشتراك والتفعيل", desc: "فعّل اشتراكك للوصول لكامل المحتوى", path: "/subscription", color: "text-accent", bg: "bg-accent/10" },
                     { icon: Search, title: "ابحث في المحتوى", desc: "ابحث بالمادة أو الكلية أو التخصص", path: "/search", color: "text-primary", bg: "bg-primary/10" },
                   ].map((item) => (
                     <Card key={item.path} className="cursor-pointer hover:shadow-md transition-shadow border" onClick={() => navigate(item.path)}>
