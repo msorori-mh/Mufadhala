@@ -156,6 +156,7 @@ const AdminContent = () => {
   const [importing, setImporting] = useState(false);
   const [importUniId, setImportUniId] = useState("");
   const [importCollegeId, setImportCollegeId] = useState("");
+  const [importMode, setImportMode] = useState<"full" | "questions_only">("full");
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -542,6 +543,16 @@ const AdminContent = () => {
     XLSX.writeFile(wb, "قالب_استيراد_أسئلة.xlsx");
   };
 
+  const downloadQuestionsOnlyTemplate = () => {
+    const wb = XLSX.utils.book_new();
+    const data = [
+      ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`],
+      ["مقدمة في البرمجة", "ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب", "عام"],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), "الأسئلة");
+    XLSX.writeFile(wb, "قالب_استيراد_أسئلة_فقط.xlsx");
+  };
+
   const handleImportQuestions = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selectedLesson) return;
@@ -649,7 +660,10 @@ const AdminContent = () => {
       }
 
       const lessonMap = new Map<string, string>();
-      if (lessonsSheet.length > 1) {
+      if (importMode === "questions_only") {
+        // Skip lessons sheet, load existing lessons for this college
+        lessons.filter(l => l.college_id === importCollegeId).forEach(l => lessonMap.set(l.title, l.id));
+      } else if (lessonsSheet.length > 1) {
         for (let i = 1; i < lessonsSheet.length; i++) {
           const row = lessonsSheet[i] as any[];
           if (!row[0]) continue;
@@ -734,7 +748,7 @@ const AdminContent = () => {
             <p className="text-sm text-muted-foreground">{filteredLessons.length} درس</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => { setImportUniId(filterUni); setImportCollegeId(filterCollege); setImportDialogOpen(true); }} size="sm" variant="outline">
+            <Button onClick={() => { setImportUniId(filterUni); setImportCollegeId(filterCollege); setImportMode("full"); setImportDialogOpen(true); }} size="sm" variant="outline">
               <Upload className="w-4 h-4 ml-1" />استيراد
             </Button>
             <Button onClick={openCreateLesson} size="sm"><Plus className="w-4 h-4 ml-1" />إضافة درس</Button>
@@ -1116,10 +1130,35 @@ const AdminContent = () => {
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Upload className="w-5 h-5" />استيراد دروس وأسئلة</DialogTitle>
-            <DialogDescription>استورد الدروس والأسئلة من ملف Excel أو CSV</DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="w-5 h-5" />
+              {importMode === "questions_only" ? "استيراد أسئلة فقط" : "استيراد دروس وأسئلة"}
+            </DialogTitle>
+            <DialogDescription>
+              {importMode === "questions_only"
+                ? "استورد أسئلة وربطها بالدروس الموجودة في الكلية المختارة"
+                : "استورد الدروس والأسئلة من ملف Excel أو CSV"}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Import Mode Toggle */}
+            <div className="flex gap-2 p-1 bg-muted rounded-lg">
+              <button
+                type="button"
+                onClick={() => setImportMode("full")}
+                className={`flex-1 text-sm py-1.5 px-3 rounded-md transition-colors ${importMode === "full" ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                دروس وأسئلة
+              </button>
+              <button
+                type="button"
+                onClick={() => setImportMode("questions_only")}
+                className={`flex-1 text-sm py-1.5 px-3 rounded-md transition-colors ${importMode === "questions_only" ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                أسئلة فقط
+              </button>
+            </div>
+
             <div className="space-y-2">
               <Label>الجامعة *</Label>
               <select value={importUniId} onChange={(e) => { setImportUniId(e.target.value); setImportCollegeId(""); }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
@@ -1134,6 +1173,13 @@ const AdminContent = () => {
                 {scopedColleges.filter((c: any) => c.university_id === importUniId).map((c: any) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
               </select>
             </div>
+
+            {importMode === "questions_only" && importCollegeId && (
+              <div className="text-xs text-muted-foreground bg-accent/50 rounded-md p-2">
+                سيتم ربط الأسئلة بالدروس الموجودة ({lessons.filter(l => l.college_id === importCollegeId).length} درس) عبر تطابق عنوان الدرس
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>اختر ملف (Excel أو CSV)</Label>
               <Input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImportFile} disabled={!importCollegeId || importing} />
@@ -1145,22 +1191,35 @@ const AdminContent = () => {
             )}
             <div className="bg-muted rounded-lg p-3 space-y-2">
               <p className="text-xs font-semibold">تنسيق الملف المطلوب:</p>
-              <p className="text-xs text-muted-foreground">
-                <strong>ورقة "الدروس":</strong> عنوان الدرس | المحتوى | الملخص | ترتيب العرض | منشور
-              </p>
-              <p className="text-xs text-muted-foreground">
-                <strong>ورقة "الأسئلة":</strong> عنوان الدرس | نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة (a/b/c/d) | الشرح | المادة
-              </p>
+              {importMode === "questions_only" ? (
+                <p className="text-xs text-muted-foreground">
+                  <strong>ورقة "الأسئلة":</strong> عنوان الدرس | نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة (a/b/c/d) | الشرح | المادة
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    <strong>ورقة "الدروس":</strong> عنوان الدرس | المحتوى | الملخص | ترتيب العرض | منشور
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <strong>ورقة "الأسئلة":</strong> عنوان الدرس | نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة (a/b/c/d) | الشرح | المادة
+                  </p>
+                </>
+              )}
               <div className="flex gap-3 flex-wrap">
-                <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadFullTemplate}>
-                  <Download className="w-3 h-3 ml-1" />قالب دروس + أسئلة
-                </Button>
-                <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadTemplate}>
-                  <Download className="w-3 h-3 ml-1" />قالب دروس فقط
-                </Button>
-                <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadQuestionsTemplate}>
-                  <Download className="w-3 h-3 ml-1" />قالب أسئلة فقط
-                </Button>
+                {importMode === "questions_only" ? (
+                  <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadQuestionsOnlyTemplate}>
+                    <Download className="w-3 h-3 ml-1" />تحميل قالب الأسئلة
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadFullTemplate}>
+                      <Download className="w-3 h-3 ml-1" />قالب دروس + أسئلة
+                    </Button>
+                    <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadTemplate}>
+                      <Download className="w-3 h-3 ml-1" />قالب دروس فقط
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
