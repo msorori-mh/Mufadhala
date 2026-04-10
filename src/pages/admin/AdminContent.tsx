@@ -1048,6 +1048,27 @@ const AdminContent = () => {
               </div>
             </div>
 
+            {/* Presentation Upload */}
+            <div className="space-y-2 border rounded-lg p-3">
+              <Label className="flex items-center gap-2"><Presentation className="w-4 h-4" />العرض التقديمي (PPTX)</Label>
+              {lessonPresentationUrl && !lessonPresentationFile && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted rounded p-2">
+                  <Presentation className="w-3 h-3 shrink-0" />
+                  <span className="truncate flex-1">ملف عرض مرفق</span>
+                  <Button type="button" variant="ghost" size="sm" className="h-6 text-xs text-destructive" onClick={() => setLessonPresentationUrl("")}>
+                    <Trash2 className="w-3 h-3 ml-1" />إزالة
+                  </Button>
+                </div>
+              )}
+              <Input
+                ref={presentationFileRef}
+                type="file"
+                accept=".pptx,.ppt"
+                onChange={(e) => setLessonPresentationFile(e.target.files?.[0] || null)}
+              />
+              <p className="text-[11px] text-muted-foreground">سيتم عرض الملف داخل صفحة الدرس مع إمكانية تحميله</p>
+            </div>
+
             {/* Questions Section */}
             <div className="border rounded-lg">
               <button
