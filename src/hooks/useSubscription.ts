@@ -32,7 +32,11 @@ export const useSubscription = (userId: string | undefined): SubscriptionStatus 
         .limit(1);
 
       if (!data || data.length === 0) {
-        return { ...defaultStatus, loading: false };
+        return {
+          hasSubscription: false, isActive: false, isPending: false,
+          isTrial: false, trialEndsAt: null, expiresAt: null,
+          planId: null, planSlug: null, allowedMajorIds: null,
+        };
       }
 
       const sub = data[0];
