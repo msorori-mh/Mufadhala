@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { BookOpen, ClipboardCheck, TrendingUp, Loader2, Brain, FileCheck, Shield, Focus, WifiOff, Users, CheckCircle, Bot, Clock, Headphones } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { BookOpen, ClipboardCheck, TrendingUp, Loader2, Brain, FileCheck, Shield, Focus, WifiOff, Users, CheckCircle, Bot, Clock, Headphones, HelpCircle } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAuthDestination } from "@/lib/authRouting";
@@ -206,7 +207,31 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* FAQ */}
+      <section className="bg-background py-8 px-4">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center justify-center gap-2 mb-5">
+            <HelpCircle className="w-6 h-6 text-primary" />
+            <h2 className="text-lg md:text-xl font-extrabold text-foreground">الأسئلة الشائعة</h2>
+          </div>
+          <Accordion type="single" collapsible className="space-y-2">
+            {[
+              { q: "ما هي مُفَاضَلَة؟", a: "منصة تعليمية متخصصة تساعد طلاب الثانوية العامة في اليمن على التحضير لاختبارات القبول (المفاضلة) في الجامعات اليمنية من خلال بنك أسئلة شامل واختبارات محاكاة." },
+              { q: "هل التطبيق مجاني؟", a: "يمكنك التسجيل مجاناً والوصول إلى محتوى تجريبي. للاستفادة الكاملة من جميع الأسئلة والملخصات والاختبارات، يمكنك الاشتراك بخطة مناسبة." },
+              { q: "هل يعمل التطبيق بدون إنترنت؟", a: "نعم، يمكنك تحميل الدروس والاختبارات ومراجعتها في أي وقت بدون اتصال بالإنترنت." },
+              { q: "ما الجامعات التي يغطيها التطبيق؟", a: "نغطي اختبارات المفاضلة لمعظم الجامعات اليمنية الحكومية والأهلية، بما فيها تخصصات الطب والهندسة والحاسوب." },
+              { q: "كيف أحذف حسابي؟", a: "يمكنك حذف حسابك نهائياً من صفحة الإعدادات > حذف الحساب. سيتم حذف جميع بياناتك بشكل فوري ودائم." },
+            ].map((item, i) => (
+              <AccordionItem key={i} value={`faq-${i}`} className="bg-card border rounded-lg px-4">
+                <AccordionTrigger className="text-sm font-semibold text-foreground hover:no-underline py-3">{item.q}</AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground pb-3">{item.a}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </section>
+
+
       <footer className="bg-card border-t py-6 px-4 text-center space-y-2">
         <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} مُفَاضَلَة | Mufadhala - جميع الحقوق محفوظة</p>
         <div className="flex items-center justify-center gap-4">
