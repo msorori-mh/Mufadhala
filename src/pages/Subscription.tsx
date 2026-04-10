@@ -36,7 +36,7 @@ interface Plan {
 interface PaymentMethod {
   id: string; type: string; name: string;
   account_name: string | null; account_number: string | null;
-  details: string | null;
+  details: string | null; barcode_url: string | null;
 }
 
 interface SubRecord {
@@ -530,6 +530,12 @@ const Subscription = () => {
                     <div><span className="text-muted-foreground">الحساب:</span> <span className="font-semibold">{selectedMethod.account_number}</span></div>
                   )}
                   {promoDiscount > 0 && <div className="text-green-600">خصم {promoDiscount}% مُطبّق</div>}
+                  {selectedMethod.barcode_url && (
+                    <div className="mt-3 text-center">
+                      <p className="text-sm font-medium text-muted-foreground mb-2">امسح الباركود للتحويل مباشرة</p>
+                      <img src={selectedMethod.barcode_url} alt="باركود الدفع" className="mx-auto max-w-[200px] rounded-lg border" />
+                    </div>
+                  )}
                 </div>
               );
             })()}

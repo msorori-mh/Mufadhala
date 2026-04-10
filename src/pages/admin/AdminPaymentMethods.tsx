@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Pencil, Trash2, Building, ArrowLeftRight, Smartphone, Globe } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Building, ArrowLeftRight, Smartphone, Globe, QrCode, X } from "lucide-react";
 
 interface PaymentMethod {
   id: string;
@@ -23,6 +23,7 @@ interface PaymentMethod {
   details: string | null;
   is_active: boolean;
   sort_order: number;
+  barcode_url: string | null;
 }
 
 const AdminPaymentMethods = () => {
@@ -41,6 +42,9 @@ const AdminPaymentMethods = () => {
   const [details, setDetails] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [sortOrder, setSortOrder] = useState("0");
+  const [barcodeFile, setBarcodeFile] = useState<File | null>(null);
+  const [barcodePreview, setBarcodePreview] = useState<string | null>(null);
+  const [removingBarcode, setRemovingBarcode] = useState(false);
 
   const fetchMethods = async () => {
     const { data } = await supabase.from("payment_methods").select("*").order("sort_order");
@@ -55,6 +59,7 @@ const AdminPaymentMethods = () => {
   const resetForm = () => {
     setType("bank"); setName(""); setAccountName(""); setAccountNumber("");
     setDetails(""); setIsActive(true); setSortOrder("0"); setEditing(null);
+    setBarcodeFile(null); setBarcodePreview(null); setRemovingBarcode(false);
   };
 
   const openCreate = () => { resetForm(); setDialogOpen(true); };
@@ -65,16 +70,35 @@ const AdminPaymentMethods = () => {
     setAccountName(m.account_name || ""); setAccountNumber(m.account_number || "");
     setDetails(m.details || ""); setIsActive(m.is_active);
     setSortOrder(m.sort_order.toString());
+    setBarcodeFile(null); setBarcodePreview(m.barcode_url || null); setRemovingBarcode(false);
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
     if (!name) { toast({ variant: "destructive", title: "يرجى إدخال الاسم" }); return; }
     setSaving(true);
+
+    let barcode_url: string | null = editing?.barcode_url ?? null;
+
+    // Upload new barcode
+    if (barcodeFile) {
+      const ext = barcodeFile.name.split(".").pop();
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("payment-barcodes").upload(path, barcodeFile);
+      if (upErr) { toast({ variant: "destructive", title: "فشل رفع الباركود" }); setSaving(false); return; }
+      const { data: urlData } = supabase.storage.from("payment-barcodes").getPublicUrl(path);
+      barcode_url = urlData.publicUrl;
+    }
+
+    // Remove barcode
+    if (removingBarcode && !barcodeFile) {
+      barcode_url = null;
+    }
+
     const payload = {
       type, name, account_name: accountName || null,
       account_number: accountNumber || null, details: details || null,
-      is_active: isActive, sort_order: Number(sortOrder),
+      is_active: isActive, sort_order: Number(sortOrder), barcode_url,
     };
 
     const { error } = editing
@@ -124,6 +148,7 @@ const AdminPaymentMethods = () => {
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-sm">{m.name}</p>
                           <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
+                          {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
                         </div>
                         {m.account_name && <p className="text-xs text-muted-foreground mt-1">الحساب: {m.account_name}</p>}
                         {m.account_number && <p className="text-xs text-muted-foreground">رقم الحساب: {m.account_number}</p>}
@@ -152,6 +177,7 @@ const AdminPaymentMethods = () => {
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-sm">{m.name}</p>
                           <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
+                          {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
                         </div>
                         {m.account_number && <p className="text-xs text-muted-foreground mt-1">رقم الهاتف: {m.account_number}</p>}
                       </div>
@@ -179,6 +205,7 @@ const AdminPaymentMethods = () => {
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-sm">{m.name}</p>
                           <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
+                          {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
                         </div>
                         {m.account_number && <p className="text-xs text-muted-foreground mt-1">رقم المحفظة: {m.account_number}</p>}
                       </div>
@@ -206,6 +233,7 @@ const AdminPaymentMethods = () => {
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-sm">{m.name}</p>
                           <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
+                          {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
                         </div>
                         {m.account_name && <p className="text-xs text-muted-foreground mt-1">الحساب: {m.account_name}</p>}
                         {m.account_number && <p className="text-xs text-muted-foreground">رقم الحساب: {m.account_number}</p>}
@@ -242,6 +270,23 @@ const AdminPaymentMethods = () => {
             <div className="space-y-2"><Label>{type === "network_transfer" ? "تحويل بأسم (اسم المستلم)" : "اسم صاحب الحساب"}</Label><Input value={accountName} onChange={(e) => setAccountName(e.target.value)} /></div>
             <div className="space-y-2"><Label>{type === "bank" ? "رقم الحساب" : type === "exchange" || type === "network_transfer" ? "رقم الهاتف" : "رقم المحفظة"}</Label><Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} /></div>
             <div className="space-y-2"><Label>تفاصيل إضافية</Label><Textarea value={details} onChange={(e) => setDetails(e.target.value)} placeholder="الفرع، ملاحظات..." /></div>
+            <div className="space-y-2">
+              <Label>صورة الباركود / QR Code</Label>
+              {barcodePreview && !removingBarcode ? (
+                <div className="relative inline-block">
+                  <img src={barcodePreview} alt="باركود" className="max-w-[150px] rounded-lg border" />
+                  <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 w-6 h-6" onClick={() => { setRemovingBarcode(true); setBarcodeFile(null); }}>
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              ) : (
+                <Input type="file" accept="image/*" onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) { setBarcodeFile(f); setBarcodePreview(URL.createObjectURL(f)); setRemovingBarcode(false); }
+                }} />
+              )}
+              {barcodeFile && <img src={URL.createObjectURL(barcodeFile)} alt="معاينة" className="max-w-[150px] rounded-lg border mt-1" />}
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2"><Label>الترتيب</Label><Input type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} /></div>
               <div className="flex items-center gap-2 pt-6"><Switch checked={isActive} onCheckedChange={setIsActive} /><Label>مفعل</Label></div>

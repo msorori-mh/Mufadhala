@@ -476,6 +476,7 @@ export type Database = {
         Row: {
           account_name: string | null
           account_number: string | null
+          barcode_url: string | null
           created_at: string
           details: string | null
           id: string
@@ -488,6 +489,7 @@ export type Database = {
         Insert: {
           account_name?: string | null
           account_number?: string | null
+          barcode_url?: string | null
           created_at?: string
           details?: string | null
           id?: string
@@ -500,6 +502,7 @@ export type Database = {
         Update: {
           account_name?: string | null
           account_number?: string | null
+          barcode_url?: string | null
           created_at?: string
           details?: string | null
           id?: string
