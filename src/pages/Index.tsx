@@ -58,14 +58,9 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
     });
   }, [navigate]);
 
-  const statsRef = useInView();
-  const featuresRef = useInView();
-  const badgesRef = useInView();
-  const aiRef = useInView();
-
-  const q = useCountUp(3000, 2000, statsRef.inView);
-  const s = useCountUp(150, 2000, statsRef.inView);
-  const m = useCountUp(100, 2000, statsRef.inView);
+  const q = useCountUp(3000);
+  const s = useCountUp(150);
+  const m = useCountUp(100);
 
   if (checking) {
     return (
@@ -108,7 +103,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
 
       {/* AI Assistant "Qabool" */}
       <section className="bg-background py-6 px-4">
-        <div ref={aiRef.ref} className={`max-w-3xl mx-auto transition-all duration-700 ${aiRef.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+        <div className="max-w-3xl mx-auto animate-fade-in">
           <div className="relative rounded-xl border border-accent/30 bg-gradient-to-br from-accent/5 via-background to-primary/5 p-5 md:p-6 text-center shadow overflow-hidden">
             <div className="relative z-10 flex flex-col items-center gap-3">
               <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-accent/15">
@@ -127,13 +122,13 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
 
       {/* Academic Core Pillars */}
       <section className="bg-muted py-8 px-4">
-        <div ref={featuresRef.ref} className="max-w-5xl mx-auto grid gap-4 md:grid-cols-3">
+        <div className="max-w-5xl mx-auto grid gap-4 md:grid-cols-3">
           {[
             { icon: BookOpen, emoji: "📚", title: "شمولية المنهج الوزاري", desc: "تغطية دقيقة لكافة المقررات الدراسية المطلوبة في اختبارات المفاضلة." },
             { icon: Brain, emoji: "🧠", title: "تعزيز الفهم بالتعليل", desc: "شرح علمي مبسط لكل سؤال يوضح لماذا هذه الإجابة هي الأصح." },
             { icon: FileCheck, emoji: "⏱️", title: "محاكاة بيئة الاختبار", desc: "اختبارات تحاكي النمط الحقيقي من حيث الدرجات وإدارة الوقت." },
           ].map((f, i) => (
-            <div key={i} className={`bg-card rounded-xl border p-4 text-center transition-all duration-700 ${featuresRef.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`} style={{ transitionDelay: `${i * 150}ms` }}>
+            <div key={i} className="bg-card rounded-xl border p-4 text-center animate-fade-in" style={{ animationDelay: `${i * 150}ms` }}>
               <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-accent/10 mb-3">
                 <f.icon className="w-5 h-5 text-accent" />
               </div>
@@ -146,13 +141,13 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
 
       {/* Value Badges */}
       <section className="bg-background py-6 px-4">
-        <div ref={badgesRef.ref} className="max-w-5xl mx-auto grid gap-3 md:grid-cols-3">
+        <div className="max-w-5xl mx-auto grid gap-3 md:grid-cols-3">
           {[
             { icon: Shield, label: "ثقة مطلقة", desc: "خبير بنمط الأسئلة قبل دخول القاعة." },
             { icon: Focus, label: "تركيز عالٍ", desc: "ملخصات ذكية تغنيك عن تشتت الملازم." },
             { icon: WifiOff, label: "أوفلاين دائماً", desc: "ذاكر بدون إنترنت مستمر." },
           ].map((b, i) => (
-            <div key={i} className={`flex items-center gap-3 bg-card rounded-lg border p-3 transition-all duration-700 ${badgesRef.inView ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"}`} style={{ transitionDelay: `${i * 120}ms` }}>
+            <div key={i} className="flex items-center gap-3 bg-card rounded-lg border p-3 animate-fade-in" style={{ animationDelay: `${i * 120}ms` }}>
               <div className="shrink-0 w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
                 <b.icon className="w-4 h-4 text-primary" />
               </div>
@@ -167,11 +162,11 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
 
       {/* Stats Bar */}
       <section className="bg-primary py-6 px-4">
-        <div ref={statsRef.ref} className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div ref={q.ref} className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           {[
-            { value: q, suffix: "+", label: "سؤال تدريبي" },
-            { value: s, suffix: "+", label: "ملخص ذكي" },
-            { value: m, suffix: "%", label: "مطابقة جامعية" },
+            { value: q.value, suffix: "+", label: "سؤال تدريبي" },
+            { value: s.value, suffix: "+", label: "ملخص ذكي" },
+            { value: m.value, suffix: "%", label: "مطابقة جامعية" },
             { value: null, suffix: "", label: "دعم 24/7", icon: Headphones },
           ].map((st, i) => (
             <div key={i} className="py-1">
