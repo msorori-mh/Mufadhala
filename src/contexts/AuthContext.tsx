@@ -51,10 +51,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (session) {
         setUser(session.user);
-        await fetchRoles(session.user.id);
-        // Persist to native storage for next cold start
-        await saveNativeSession(session.access_token, session.refresh_token);
-        setLoading(false);
+        setLoading(false); // Unblock UI immediately
+        // Fetch roles in background — doesn't block first paint
+        fetchRoles(session.user.id);
+        saveNativeSession(session.access_token, session.refresh_token);
         return;
       }
 
@@ -69,13 +69,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (restoredSession && !error) {
             setUser(restoredSession.user);
-            await fetchRoles(restoredSession.user.id);
-            // Update stored tokens (they may have been refreshed)
-            await saveNativeSession(restoredSession.access_token, restoredSession.refresh_token);
-            setLoading(false);
+            setLoading(false); // Unblock UI immediately
+            fetchRoles(restoredSession.user.id);
+            saveNativeSession(restoredSession.access_token, restoredSession.refresh_token);
             return;
           } else {
-            // Stored tokens are invalid — clear them
             await clearNativeSession();
           }
         }
@@ -96,7 +94,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session.user);
         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
           fetchRoles(session.user.id);
-          // Persist updated tokens to native storage
           saveNativeSession(session.access_token, session.refresh_token);
         }
       } else {
