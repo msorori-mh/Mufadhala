@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Home, BookOpen, ClipboardCheck, Bell, Settings, Shield } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { isNativePlatform } from "@/lib/capacitor";
 import { supabase } from "@/integrations/supabase/client";
 
 const studentNavItems = [
@@ -22,6 +23,7 @@ const adminNavItems = [
 const MobileBottomNav = React.forwardRef<HTMLElement>((_, ref) => {
   const location = useLocation();
   const isMobile = useIsMobile();
+  const isNative = isNativePlatform();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -37,7 +39,8 @@ const MobileBottomNav = React.forwardRef<HTMLElement>((_, ref) => {
     });
   }, []);
 
-  if (!isMobile) return null;
+  // Show nav bar on mobile screens OR when running inside Capacitor native app
+  if (!isMobile && !isNative) return null;
 
   const publicPaths = ["/", "/login", "/register"];
   if (publicPaths.includes(location.pathname)) return null;
