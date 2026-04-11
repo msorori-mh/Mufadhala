@@ -174,6 +174,13 @@ const AdminContent = () => {
   const [importingQuestions, setImportingQuestions] = useState(false);
   const questionFileInputRef = useRef<HTMLInputElement>(null);
 
+  // Copy lesson state
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [copyingLesson, setCopyingLesson] = useState<Lesson | null>(null);
+  const [copyUniId, setCopyUniId] = useState("");
+  const [copyCollegeIds, setCopyCollegeIds] = useState<string[]>([]);
+  const [copying, setCopying] = useState(false);
+
   const fetchData = async () => {
     const [{ data: u }, { data: c }, { data: m }, { data: l }, { data: q }, { data: subs }, { data: ms }] = await Promise.all([
       supabase.from("universities").select("*").order("display_order"),
