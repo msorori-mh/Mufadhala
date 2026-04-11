@@ -162,6 +162,7 @@ const AdminContent = () => {
   const [importing, setImporting] = useState(false);
   const [importUniId, setImportUniId] = useState("");
   const [importCollegeId, setImportCollegeId] = useState("");
+  const [importSubjectId, setImportSubjectId] = useState("");
   const [importMode, setImportMode] = useState<"full" | "questions_only">("full");
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -217,15 +218,31 @@ const AdminContent = () => {
 
   const filteredColleges = filterUni ? scopedColleges.filter((c: any) => c.university_id === filterUni) : scopedColleges;
   
+  // Compute available subjects based on selected college filter
+  const getSubjectsForCollege = (collegeId: string): Subject[] => {
+    if (!collegeId) return subjects;
+    const collegeMajorIds = scopedMajors.filter((m: any) => m.college_id === collegeId).map((m: any) => m.id);
+    const subjectIds = new Set<string>();
+    collegeMajorIds.forEach((mId: string) => {
+      (majorSubjectsMap[mId] || []).forEach((sId: string) => subjectIds.add(sId));
+    });
+    return subjectIds.size > 0 ? subjects.filter(s => subjectIds.has(s.id)) : subjects;
+  };
+
+  const availableFilterSubjects = getSubjectsForCollege(filterCollege);
+
   const filteredLessons = (() => {
+    let result = scopedLessons;
     if (filterCollege) {
-      return scopedLessons.filter((l) => l.college_id === filterCollege);
-    }
-    if (filterUni) {
+      result = result.filter((l) => l.college_id === filterCollege);
+    } else if (filterUni) {
       const uniCollegeIds = scopedColleges.filter((c: any) => c.university_id === filterUni).map((c: any) => c.id);
-      return scopedLessons.filter((l) => l.college_id && uniCollegeIds.includes(l.college_id));
+      result = result.filter((l) => l.college_id && uniCollegeIds.includes(l.college_id));
     }
-    return scopedLessons;
+    if (filterSubject) {
+      result = result.filter((l) => l.subject_id === filterSubject);
+    }
+    return result;
   })();
 
   const getCollegeName = (id: string | null) => colleges.find((c: any) => c.id === id)?.name_ar || "";
