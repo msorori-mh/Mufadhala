@@ -1657,6 +1657,89 @@ const AdminContent = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Copy Lesson Dialog */}
+      <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="w-5 h-5" />
+              نسخ درس إلى كليات أخرى
+            </DialogTitle>
+            <DialogDescription>
+              {copyingLesson ? `نسخ "${copyingLesson.title}" مع ${questions.filter(q => q.lesson_id === copyingLesson.id).length} سؤال` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>الجامعة *</Label>
+              <select value={copyUniId} onChange={(e) => { setCopyUniId(e.target.value); setCopyCollegeIds([]); }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <option value="">اختر الجامعة</option>
+                <option value="all">📌 جميع الجامعات</option>
+                {scopedUniversities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>الكليات المستهدفة * ({copyCollegeIds.length} محددة)</Label>
+              {(() => {
+                const availableCopyColleges = (copyUniId === "all"
+                  ? scopedColleges
+                  : copyUniId
+                    ? scopedColleges.filter((c: any) => c.university_id === copyUniId)
+                    : []
+                ).filter((c: any) => c.id !== copyingLesson?.college_id);
+                const allSelected = availableCopyColleges.length > 0 && availableCopyColleges.every((c: any) => copyCollegeIds.includes(c.id));
+                return (
+                  <div className="border rounded-md max-h-48 overflow-y-auto">
+                    {availableCopyColleges.length === 0 ? (
+                      <p className="text-xs text-muted-foreground p-3 text-center">اختر جامعة أولاً</p>
+                    ) : (
+                      <>
+                        <label className="flex items-center gap-2 p-2 border-b bg-muted/30 cursor-pointer hover:bg-muted/50">
+                          <Checkbox
+                            checked={allSelected}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setCopyCollegeIds(availableCopyColleges.map((c: any) => c.id));
+                              } else {
+                                setCopyCollegeIds([]);
+                              }
+                            }}
+                          />
+                          <span className="text-sm font-medium">تحديد الكل ({availableCopyColleges.length})</span>
+                        </label>
+                        {availableCopyColleges.map((c: any) => {
+                          const uniName = copyUniId === "all" ? universities.find((u: any) => u.id === c.university_id)?.name_ar : "";
+                          return (
+                            <label key={c.id} className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted/30">
+                              <Checkbox
+                                checked={copyCollegeIds.includes(c.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setCopyCollegeIds(prev => [...prev, c.id]);
+                                  } else {
+                                    setCopyCollegeIds(prev => prev.filter(id => id !== c.id));
+                                  }
+                                }}
+                              />
+                              <span className="text-sm">{c.name_ar}{uniName ? ` — ${uniName}` : ""}</span>
+                            </label>
+                          );
+                        })}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+            <Button onClick={handleCopyLesson} disabled={copying || copyCollegeIds.length === 0} className="w-full">
+              {copying ? <><Loader2 className="w-4 h-4 animate-spin ml-2" />جاري النسخ...</> : `نسخ إلى ${copyCollegeIds.length} كلية`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       </PermissionGate>
     </AdminLayout>
   );
