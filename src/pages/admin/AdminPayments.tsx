@@ -101,9 +101,13 @@ const AdminPayments = () => {
         setAnalysis({ sender_name: null, recipient_name: null, amount: null, transaction_id: null, is_match: false, error: data.error });
       } else {
         setAnalysis(data as ReceiptAnalysis);
-        // Auto-fill rejection reason if not matching
-        if (data && !data.is_match && data.recipient_name) {
-          setAdminNotes("بيانات المستلم في السند غير مطابقة لبيانات طريقة الدفع المسجلة.");
+        // Auto-fill rejection reason with detailed mismatch info
+        if (data && !data.is_match) {
+          const extractedName = data.recipient_name || "غير واضح";
+          const expectedName = getMethodAccountName(selectedRequest?.payment_method_id ?? null) || "غير محدد";
+          setAdminNotes(
+            `تم رفض طلب الدفع: بيانات المستلم غير مطابقة.\nاسم المستلم في السند: ${extractedName}\nاسم المستلم المتوقع: ${expectedName}\nيرجى التأكد من التحويل إلى الحساب الصحيح وإعادة المحاولة.`
+          );
         }
       }
     } catch (e: any) {
