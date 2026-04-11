@@ -1028,7 +1028,11 @@ const AdminContent = () => {
 
           <select value={filterSubject} onChange={(e) => setFilterSubject(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
             <option value="">جميع المواد</option>
-            {availableFilterSubjects.map((s) => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
+            {availableFilterSubjects.map((s) => {
+              const subjectLessons = scopedLessons.filter((l) => l.subject_id === s.id && (filterCollegeIds.length > 0 ? l.college_id && filterCollegeIds.includes(l.college_id) : filterUni ? scopedColleges.filter((c: any) => c.university_id === filterUni).map((c: any) => c.id).includes(l.college_id || "") : true));
+              const questionCount = questions.filter((q) => subjectLessons.some((l) => l.id === q.lesson_id)).length;
+              return <option key={s.id} value={s.id}>{s.name_ar} ({subjectLessons.length} درس، {questionCount} سؤال)</option>;
+            })}
           </select>
         </div>
 
