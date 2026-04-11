@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { saveNativeSession, getNativeSession, clearNativeSession } from "@/lib/nativeSessionStorage";
+import { toast } from "sonner";
 import { isNativePlatform } from "@/lib/capacitor";
 import type { User } from "@supabase/supabase-js";
 
