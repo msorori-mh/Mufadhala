@@ -1,43 +1,54 @@
 
 
-# خطة: إضافة "جميع الجامعات" وتحديد كليات متعددة في الاستيراد
+# خطة تحسين أداء التطبيق على Android APK
 
 ## ملخص
-تعديل نموذج الاستيراد في صفحة المحتوى ليدعم:
-1. خيار "جميع الجامعات" في قائمة الجامعات
-2. تحديد كليات متعددة (multi-select) بدلاً من كلية واحدة
+6 تحسينات لتسريع التطبيق داخل WebView على Android: تقليل حجم الـ bundle الأولي، إزالة التبعية على الإنترنت للخطوط، تسريع ظهور الشاشة الأولى، وتخفيف الحمل على GPU.
 
-## التغييرات في `src/pages/admin/AdminContent.tsx`
+---
 
-### 1. تغيير نوع حالة الكلية في الاستيراد
-- تحويل `importCollegeId` من `string` إلى `string[]` (مصفوفة لدعم التحديد المتعدد)
-- إضافة قيمة خاصة `"all"` لخيار "جميع الجامعات" في `importUniId`
+## المهام
 
-### 2. واجهة الاستيراد
-- **الجامعة**: إضافة خيار "جميع الجامعات" كأول عنصر. عند اختياره تظهر جميع الكليات
-- **الكلية**: تحويل من `<select>` إلى واجهة multi-select بـ checkboxes، مع زر "تحديد الكل" لتسهيل الاختيار
+### 1. Lazy Loading للصفحات (App.tsx)
+- تحويل 35+ صفحة من `import` مباشر إلى `React.lazy()`
+- الإبقاء على `Index` و `Login` فقط كـ eager imports
+- إضافة `<Suspense>` مع skeleton loader بسيط حول `<Routes>`
+- **التأثير**: تقليل حجم الـ initial bundle بنسبة 60-70%
 
-### 3. منطق الاستيراد (`handleImportFile`)
-- عند الاستيراد، يتم تكرار إدخال كل درس لكل كلية محددة (loop على المصفوفة)
-- كل كلية تحصل على نسخة من الدروس والأسئلة المستوردة
-- إذا كان "جميع الجامعات" مختاراً، يتم فلترة الكليات بناءً على ذلك
+### 2. Self-host خط Cairo (index.css + public/fonts/)
+- تحميل ملفات Cairo WOFF2 (أوزان 400, 500, 600, 700) إلى `public/fonts/`
+- استبدال سطر `@import url('https://fonts.googleapis.com/...')` بـ `@font-face` محلي مع `font-display: swap`
+- **التأثير**: إلغاء طلب شبكة خارجي، ظهور النص فوراً
 
-### 4. فلتر المادة
-- عند تحديد كليات متعددة، يتم عرض المواد المشتركة بين الكليات المحددة (أو جميع المواد إذا لم تُحدد كلية)
+### 3. تحسين AuthContext (src/contexts/AuthContext.tsx)
+- بعد `getSession()` ناجح: عمل `setUser(session.user)` فوراً ثم `fetchRoles` بشكل غير متزامن بدون انتظار
+- تعيين `setLoading(false)` فور تعيين الـ user بدلاً من انتظار الـ roles
+- **التأثير**: تقليل وقت ظهور الشاشة الأولى بـ 500-800ms
+
+### 4. إخفاء ChatWidget على Native (App.tsx)
+- لف `<ChatWidget />` بشرط `!isNativePlatform()` لعدم تحميله أو عرضه في APK
+- **التأثير**: توفير ذاكرة وتقليل DOM nodes على الموبايل
+
+### 5. إزالة framer-motion من Dashboard (src/pages/Dashboard.tsx)
+- استبدال `<motion.div>` بـ `<div>` عادي مع CSS transitions بسيطة (opacity + transform عبر Tailwind `animate-`)
+- إزالة `import { motion } from "framer-motion"` — إذا لم يُستخدم في مكان آخر، يمكن إزالة المكتبة من package.json
+- **التأثير**: توفير ~100KB gzipped من الـ bundle
+
+### 6. تعليمات AndroidManifest (للمستخدم)
+- لا يوجد `AndroidManifest.xml` في المستودع — يُولَّد محلياً
+- سأوفر التعليمات لإضافة `android:hardwareAccelerated="true"` و `android:largeHeap="true"` يدوياً بعد `npx cap add android`
+
+---
 
 ## التفاصيل التقنية
 
-**الملفات المتأثرة:** `src/pages/admin/AdminContent.tsx` فقط
+**الملفات المتأثرة:**
+- `src/App.tsx` — lazy imports + Suspense + إخفاء ChatWidget
+- `src/index.css` — @font-face بدلاً من Google Fonts import
+- `public/fonts/` — ملفات Cairo WOFF2 (يتم تحميلها)
+- `src/contexts/AuthContext.tsx` — parallel auth flow
+- `src/pages/Dashboard.tsx` — إزالة framer-motion
+- `package.json` — إزالة framer-motion إذا لم يُستخدم في مكان آخر
 
-**المنطق:**
-```text
-importUniId = "all" → عرض جميع الكليات
-importCollegeIds = ["id1", "id2", ...] → إدخال المحتوى لكل كلية
-
-لكل كلية في importCollegeIds:
-  ← إنشاء الدروس بنفس البيانات مع college_id = الكلية الحالية
-  ← ربط الأسئلة بالدروس المنشأة
-```
-
-**لا توجد تغييرات على قاعدة البيانات.**
+**framer-motion**: يُستخدم فقط في `Dashboard.tsx` — سيتم إزالته من `package.json` بالكامل.
 
