@@ -1001,6 +1001,7 @@ const AdminContent = () => {
                     </label>
                     {availableFilterColleges.map((c: any) => {
                       const uniName = !filterUni ? universities.find((u: any) => u.id === c.university_id)?.name_ar : "";
+                      const lessonCount = scopedLessons.filter((l) => l.college_id === c.id).length;
                       return (
                         <label key={c.id} className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted/30">
                           <Checkbox
@@ -1014,7 +1015,8 @@ const AdminContent = () => {
                               setFilterSubject("");
                             }}
                           />
-                          <span className="text-xs">{c.name_ar}{uniName ? ` — ${uniName}` : ""}</span>
+                          <span className="text-xs flex-1">{c.name_ar}{uniName ? ` — ${uniName}` : ""}</span>
+                          <span className="text-[10px] text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 min-w-[20px] text-center">{lessonCount}</span>
                         </label>
                       );
                     })}
