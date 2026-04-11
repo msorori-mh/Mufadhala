@@ -259,18 +259,11 @@ const Dashboard = () => {
             </nav>
 
             {/* Nav grid - mobile only */}
-            <motion.div
-              className="grid grid-cols-3 sm:grid-cols-4 gap-2 md:hidden"
-              initial="hidden"
-              animate="visible"
-              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.04 } } }}
-            >
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 md:hidden">
               {navCards.map((card) => (
-                <motion.div
+                <div
                   key={card.path}
-                  variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1 } }}
-                  transition={{ duration: 0.25 }}
-                  whileTap={{ scale: 0.95 }}
+                  className="transition-all duration-200 active:scale-95"
                 >
                   <Link to={card.path} className="block">
                     <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card border border-border hover:shadow-sm transition-shadow text-center">
@@ -285,9 +278,9 @@ const Dashboard = () => {
                       <span className="text-[10px] font-medium text-foreground leading-tight line-clamp-2">{card.title}</span>
                     </div>
                   </Link>
-                </motion.div>
+                </div>
               ))}
-            </motion.div>
+            </div>
           </aside>
 
           {/* ===== Main Content ===== */}
