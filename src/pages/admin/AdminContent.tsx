@@ -162,7 +162,7 @@ const AdminContent = () => {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importUniId, setImportUniId] = useState("");
-  const [importCollegeId, setImportCollegeId] = useState("");
+  const [importCollegeIds, setImportCollegeIds] = useState<string[]>([]);
   const [importSubjectId, setImportSubjectId] = useState("");
   const [importMode, setImportMode] = useState<"full" | "questions_only">("full");
   
