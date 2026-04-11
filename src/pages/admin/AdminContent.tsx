@@ -103,6 +103,8 @@ const AdminContent = () => {
   const [filterUni, setFilterUni] = useState("");
   const [filterCollegeIds, setFilterCollegeIds] = useState<string[]>([]);
   const [filterSubject, setFilterSubject] = useState("");
+  const [bulkSelectMode, setBulkSelectMode] = useState(false);
+  const [selectedLessonIds, setSelectedLessonIds] = useState<string[]>([]);
 
   // Lesson dialog
   const [lessonDialogOpen, setLessonDialogOpen] = useState(false);
@@ -541,6 +543,24 @@ const AdminContent = () => {
     const { error } = await supabase.from("lessons").delete().eq("id", id);
     if (error) toast({ variant: "destructive", title: error.message });
     else { toast({ title: "تم الحذف" }); if (selectedLesson === id) setSelectedLesson(null); fetchData(); }
+  };
+
+  const handleBulkDeleteLessons = async () => {
+    if (selectedLessonIds.length === 0) return;
+    if (!confirm(`حذف ${selectedLessonIds.length} درس وجميع أسئلتهم؟`)) return;
+    const { error } = await supabase.from("lessons").delete().in("id", selectedLessonIds);
+    if (error) toast({ variant: "destructive", title: error.message });
+    else {
+      toast({ title: `تم حذف ${selectedLessonIds.length} درس` });
+      if (selectedLesson && selectedLessonIds.includes(selectedLesson)) setSelectedLesson(null);
+      setSelectedLessonIds([]);
+      setBulkSelectMode(false);
+      fetchData();
+    }
+  };
+
+  const toggleLessonSelection = (id: string) => {
+    setSelectedLessonIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
   // --- Copy Lesson to other colleges ---
