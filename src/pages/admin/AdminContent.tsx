@@ -863,13 +863,17 @@ const AdminContent = () => {
 
         {/* Filters */}
         <div className="flex gap-2 flex-wrap">
-          <select value={filterUni} onChange={(e) => { setFilterUni(e.target.value); setFilterCollege(""); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
+          <select value={filterUni} onChange={(e) => { setFilterUni(e.target.value); setFilterCollege(""); setFilterSubject(""); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
             <option value="">جميع الجامعات</option>
             {scopedUniversities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
           </select>
-          <select value={filterCollege} onChange={(e) => { setFilterCollege(e.target.value); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
+          <select value={filterCollege} onChange={(e) => { setFilterCollege(e.target.value); setFilterSubject(""); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
             <option value="">جميع الكليات</option>
             {filteredColleges.map((c: any) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
+          </select>
+          <select value={filterSubject} onChange={(e) => setFilterSubject(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
+            <option value="">جميع المواد</option>
+            {availableFilterSubjects.map((s) => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
           </select>
         </div>
 
@@ -1038,10 +1042,7 @@ const AdminContent = () => {
               <Label>المادة الدراسية</Label>
               <select value={lessonSubjectId} onChange={(e) => setLessonSubjectId(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                 <option value="">بدون تصنيف</option>
-                {(lessonMajorId && majorSubjectsMap[lessonMajorId]
-                  ? subjects.filter(s => majorSubjectsMap[lessonMajorId].includes(s.id))
-                  : subjects
-                ).map((s) => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
+                {getSubjectsForCollege(lessonCollegeId).map((s) => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
               </select>
             </div>
             <div className="space-y-2">
