@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Home, BookOpen, ClipboardCheck, Bell, Settings, Shield } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { isNativePlatform } from "@/lib/capacitor";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 const studentNavItems = [
   { path: "/dashboard", icon: Home, label: "الرئيسية" },
@@ -24,20 +24,7 @@ const MobileBottomNav = React.forwardRef<HTMLElement>((_, ref) => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const isNative = isNativePlatform();
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) return;
-      supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .then(({ data }) => {
-          if (data?.some((r) => r.role === "admin")) setIsAdmin(true);
-        });
-    });
-  }, []);
+  const { isAdmin } = useAuthContext();
 
   // Show nav bar on mobile screens OR when running inside Capacitor native app
   if (!isMobile && !isNative) return null;

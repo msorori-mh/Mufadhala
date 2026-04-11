@@ -11,21 +11,24 @@ import { useOfflineExamSync } from "./hooks/useOfflineExamSync";
 import { useEffect } from "react";
 import { initializeCapacitor } from "./lib/capacitor";
 
-// Eager imports — critical path
+// Eager imports — critical student pages (no spinner on navigation)
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import LessonsList from "./pages/LessonsList";
+import LessonDetail from "./pages/LessonDetail";
+import ExamSimulator from "./pages/ExamSimulator";
+import Notifications from "./pages/Notifications";
 
-// Lazy imports — all other pages
+// Eager — always needed
+import MobileBottomNav from "./components/MobileBottomNav";
+
+// Lazy imports — secondary pages
 const Register = lazy(() => import("./pages/Register"));
 const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminResetPassword = lazy(() => import("./pages/AdminResetPassword"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
 const StudentProfile = lazy(() => import("./pages/StudentProfile"));
-const Notifications = lazy(() => import("./pages/Notifications"));
-const LessonsList = lazy(() => import("./pages/LessonsList"));
-const LessonDetail = lazy(() => import("./pages/LessonDetail"));
-const ExamSimulator = lazy(() => import("./pages/ExamSimulator"));
 const ExamHistory = lazy(() => import("./pages/ExamHistory"));
 const StudentPerformance = lazy(() => import("./pages/StudentPerformance"));
 const Subscription = lazy(() => import("./pages/Subscription"));
@@ -58,7 +61,6 @@ const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Lazy load non-critical components
-const MobileBottomNav = lazy(() => import("./components/MobileBottomNav"));
 const ChatWidget = lazy(() => import("./components/ChatWidget"));
 const InstallAppPrompt = lazy(() => import("./components/InstallAppPrompt"));
 
@@ -75,13 +77,12 @@ const queryClient = new QueryClient({
 
 function PageLoader() {
   return (
-    <div className="min-h-screen bg-background p-4 space-y-4">
-      <Skeleton className="h-12 w-3/4" />
-      <Skeleton className="h-8 w-1/2" />
-      <div className="space-y-3 mt-6">
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
+    <div className="min-h-screen bg-background p-4 space-y-3">
+      <Skeleton className="h-10 w-2/3" />
+      <Skeleton className="h-6 w-1/3" />
+      <div className="space-y-2 mt-4">
+        <Skeleton className="h-16 w-full rounded-lg" />
+        <Skeleton className="h-16 w-full rounded-lg" />
       </div>
     </div>
   );
@@ -153,8 +154,8 @@ function App() {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
+              <MobileBottomNav />
               <Suspense fallback={null}>
-                <MobileBottomNav />
                 {!isNative && <ChatWidget />}
                 <InstallAppPrompt />
               </Suspense>

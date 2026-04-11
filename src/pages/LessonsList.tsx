@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useStudentData } from "@/hooks/useStudentData";
 import { GraduationCap, BookOpen, ArrowRight, ChevronLeft, Loader2, CheckCircle2, Search, X, Lock, Sparkles, Download, WifiOff } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useOfflineStatus } from "@/hooks/useOfflineStatus";
@@ -32,17 +34,11 @@ interface Lesson {
 const LessonsList = () => {
   const { user, loading: authLoading, isAdmin, isModerator } = useAuth();
   const { isActive: hasSubscription, loading: subLoading, planId, allowedMajorIds } = useSubscription(user?.id);
+  const { data: student, isLoading: studentLoading } = useStudentData(user?.id);
   const navigate = useNavigate();
   const isOffline = useOfflineStatus();
-  const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [student, setStudent] = useState<any>(null);
-  const [majorName, setMajorName] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [questionCounts, setQuestionCounts] = useState<Record<string, number>>({});
-  const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
   const [savedOfflineIds, setSavedOfflineIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
-  const [subjects, setSubjects] = useState<SubjectInfo[]>([]);
   const [activeSubjectFilter, setActiveSubjectFilter] = useState<string>("all");
 
   useEffect(() => {
@@ -56,71 +52,79 @@ const LessonsList = () => {
     getSavedLessonIds().then(setSavedOfflineIds).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (authLoading || !user) return;
+  // Offline lessons
+  const { data: offlineLessons } = useQuery({
+    queryKey: ["offline-lessons"],
+    queryFn: async () => {
+      const saved = await getAllSavedLessons();
+      return saved.map(l => ({
+        id: l.id, major_id: "", title: l.title, summary: l.summary,
+        display_order: 0, is_free: l.is_free,
+      })) as Lesson[];
+    },
+    enabled: isOffline,
+    staleTime: Infinity,
+  });
 
-    const fetchData = async () => {
-      // If offline, load from IndexedDB
-      if (isOffline) {
-        const saved = await getAllSavedLessons();
-        const offlineLessons: Lesson[] = saved.map(l => ({
-          id: l.id,
-          major_id: "",
-          title: l.title,
-          summary: l.summary,
-          display_order: 0,
-          is_free: l.is_free,
-        }));
-        setLessons(offlineLessons);
-        setLoading(false);
-        return;
-      }
+  // Online lessons data — all in one parallel query
+  const majorId = student?.major_id;
+  const studentId = student?.id;
 
-      const { data: s } = await supabase.from("students").select("*").eq("user_id", user.id).maybeSingle();
-      if (!s?.major_id) { setLoading(false); return; }
-      setStudent(s);
-
+  const { data: lessonsData, isLoading: lessonsLoading } = useQuery({
+    queryKey: ["lessons-list", majorId],
+    queryFn: async () => {
       const [{ data: major }, { data: ls }, { data: lessonsFull }] = await Promise.all([
-        supabase.from("majors").select("name_ar").eq("id", s.major_id).maybeSingle(),
-        supabase.rpc("get_published_lessons_list", { _major_id: s.major_id }),
-        supabase.from("lessons").select("id, subject_id").eq("major_id", s.major_id).eq("is_published", true),
+        supabase.from("majors").select("name_ar").eq("id", majorId!).maybeSingle(),
+        supabase.rpc("get_published_lessons_list", { _major_id: majorId! }),
+        supabase.from("lessons").select("id, subject_id").eq("major_id", majorId!).eq("is_published", true),
       ]);
-      if (major) setMajorName(major.name_ar);
-      if (ls) {
-        // Merge subject_id from full lessons query
-        const subjectMap = new Map<string, string | null>();
-        (lessonsFull || []).forEach((lf: any) => subjectMap.set(lf.id, lf.subject_id));
-        const enrichedLessons = (ls as Lesson[]).map(l => ({ ...l, subject_id: subjectMap.get(l.id) || null }));
-        setLessons(enrichedLessons);
 
-        // Fetch subjects for this major
-        const { data: ms } = await supabase.from("major_subjects").select("subject_id").eq("major_id", s.major_id);
-        if (ms && ms.length > 0) {
-          const subjectIds = ms.map((m: any) => m.subject_id);
-          const { data: subs } = await supabase.from("subjects").select("id, name_ar, code").in("id", subjectIds).order("display_order");
-          if (subs) setSubjects(subs as SubjectInfo[]);
-        }
+      const subjectMap = new Map<string, string | null>();
+      (lessonsFull || []).forEach((lf: any) => subjectMap.set(lf.id, lf.subject_id));
+      const enrichedLessons = ((ls || []) as Lesson[]).map(l => ({ ...l, subject_id: subjectMap.get(l.id) || null }));
 
-        const lessonIds = enrichedLessons.map((l: any) => l.id);
-        const [{ data: qs }, { data: progress }] = await Promise.all([
-          supabase.from("questions").select("lesson_id").in("lesson_id", lessonIds),
-          supabase.from("lesson_progress").select("lesson_id")
-            .eq("student_id", s.id).eq("is_completed", true)
-            .in("lesson_id", lessonIds),
-        ]);
-        if (qs) {
-          const counts: Record<string, number> = {};
-          qs.forEach((q: any) => { counts[q.lesson_id] = (counts[q.lesson_id] || 0) + 1; });
-          setQuestionCounts(counts);
-        }
-        if (progress) {
-          setCompletedLessons(new Set(progress.map((p: any) => p.lesson_id)));
-        }
+      // Fetch subjects for this major
+      const { data: ms } = await supabase.from("major_subjects").select("subject_id").eq("major_id", majorId!);
+      let subjects: SubjectInfo[] = [];
+      if (ms && ms.length > 0) {
+        const subjectIds = ms.map((m: any) => m.subject_id);
+        const { data: subs } = await supabase.from("subjects").select("id, name_ar, code").in("id", subjectIds).order("display_order");
+        if (subs) subjects = subs as SubjectInfo[];
       }
-      setLoading(false);
-    };
-    fetchData();
-  }, [authLoading, user, isOffline]);
+
+      // Fetch question counts and progress in parallel
+      const lessonIds = enrichedLessons.map(l => l.id);
+      const [{ data: qs }, { data: progress }] = await Promise.all([
+        supabase.from("questions").select("lesson_id").in("lesson_id", lessonIds),
+        supabase.from("lesson_progress").select("lesson_id")
+          .eq("student_id", studentId!).eq("is_completed", true)
+          .in("lesson_id", lessonIds),
+      ]);
+
+      const questionCounts: Record<string, number> = {};
+      (qs || []).forEach((q: any) => { questionCounts[q.lesson_id] = (questionCounts[q.lesson_id] || 0) + 1; });
+
+      const completedSet = new Set((progress || []).map((p: any) => p.lesson_id));
+
+      return {
+        lessons: enrichedLessons,
+        majorName: major?.name_ar || "",
+        subjects,
+        questionCounts,
+        completedLessons: completedSet,
+      };
+    },
+    enabled: !!majorId && !!studentId && !isOffline,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const lessons = isOffline ? (offlineLessons || []) : (lessonsData?.lessons || []);
+  const majorName = lessonsData?.majorName || "";
+  const subjects = lessonsData?.subjects || [];
+  const questionCounts = lessonsData?.questionCounts || {};
+  const completedLessons = lessonsData?.completedLessons || new Set<string>();
+
+  const loading = authLoading || studentLoading || (!isOffline && lessonsLoading) || subLoading;
 
   const filteredLessons = useMemo(() => {
     let result = lessons;
@@ -138,7 +142,7 @@ const LessonsList = () => {
 
   const progressPct = lessons.length > 0 ? Math.round((completedLessons.size / lessons.length) * 100) : 0;
 
-  if (authLoading || loading || subLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -290,7 +294,7 @@ const LessonsList = () => {
             )}
 
             <div className="space-y-3">
-              {filteredLessons.map((lesson, i) => {
+              {filteredLessons.map((lesson) => {
                 const done = completedLessons.has(lesson.id);
                 const originalIndex = lessons.findIndex(l => l.id === lesson.id);
                 const hasPaidAccess = hasSubscription && !!planId && (!allowedMajorIds || allowedMajorIds.length === 0 || allowedMajorIds.includes(lesson.major_id));
