@@ -857,7 +857,7 @@ const AdminContent = () => {
             <Button onClick={exportLessons} size="sm" variant="outline">
               <Download className="w-4 h-4 ml-1" />تصدير
             </Button>
-            <Button onClick={() => { setImportUniId(filterUni); setImportCollegeId(filterCollege); setImportSubjectId(filterSubject); setImportMode("full"); setImportDialogOpen(true); }} size="sm" variant="outline">
+            <Button onClick={() => { setImportUniId(filterUni); setImportCollegeIds(filterCollege ? [filterCollege] : []); setImportSubjectId(filterSubject); setImportMode("full"); setImportDialogOpen(true); }} size="sm" variant="outline">
               <Upload className="w-4 h-4 ml-1" />استيراد
             </Button>
             <Button onClick={openCreateLesson} size="sm"><Plus className="w-4 h-4 ml-1" />إضافة درس</Button>
