@@ -768,6 +768,7 @@ const AdminContent = () => {
           const title = String(row[0]).trim();
           const subjectName = row[5] ? String(row[5]).trim() : "";
           const matchedSubject = subjectName ? subjects.find(s => s.name_ar === subjectName || s.code === subjectName) : null;
+          const resolvedSubjectId = importSubjectId || matchedSubject?.id || null;
           const presentationUrl = row[6] ? String(row[6]).trim() : "";
           const { data: inserted, error } = await supabase.from("lessons").insert({
             college_id: importCollegeId,
@@ -776,7 +777,7 @@ const AdminContent = () => {
             summary: row[2] ? String(row[2]) : "",
             display_order: row[3] ? Number(row[3]) : i,
             is_published: row[4] ? String(row[4]).includes("نعم") || String(row[4]).toLowerCase() === "true" : false,
-            subject_id: matchedSubject?.id || null,
+            subject_id: resolvedSubjectId,
             presentation_url: presentationUrl || null,
           }).select("id").single();
           if (error) {
