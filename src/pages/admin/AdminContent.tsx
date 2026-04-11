@@ -1314,6 +1314,8 @@ const AdminContent = () => {
               </select>
               <p className="text-[11px] text-muted-foreground">إذا تم تحديد مادة هنا، ستُطبق على جميع الدروس المستوردة. وإلا سيتم قراءتها من الملف.</p>
             </div>
+
+            {importMode === "questions_only" && importCollegeId && (
               <div className="text-xs text-muted-foreground bg-accent/50 rounded-md p-2">
                 سيتم ربط الأسئلة بالدروس الموجودة ({lessons.filter(l => l.college_id === importCollegeId).length} درس) عبر تطابق عنوان الدرس
               </div>
