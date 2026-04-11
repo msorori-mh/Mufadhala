@@ -890,14 +890,79 @@ const AdminContent = () => {
 
         {/* Filters */}
         <div className="flex gap-2 flex-wrap">
-          <select value={filterUni} onChange={(e) => { setFilterUni(e.target.value); setFilterCollege(""); setFilterSubject(""); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
+          <select value={filterUni} onChange={(e) => { setFilterUni(e.target.value); setFilterCollegeIds([]); setFilterSubject(""); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
             <option value="">جميع الجامعات</option>
             {scopedUniversities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
           </select>
-          <select value={filterCollege} onChange={(e) => { setFilterCollege(e.target.value); setFilterSubject(""); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
-            <option value="">جميع الكليات</option>
-            {filteredColleges.map((c: any) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
-          </select>
+
+          {/* Multi-select college filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="flex h-9 items-center justify-between rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
+                <span className="truncate">
+                  {filterCollegeIds.length === 0
+                    ? "جميع الكليات"
+                    : filterCollegeIds.length === 1
+                      ? (colleges.find((c: any) => c.id === filterCollegeIds[0])?.name_ar || "1 كلية")
+                      : `${filterCollegeIds.length} كلية محددة`}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-50 shrink-0 mr-1" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-0 max-h-64 overflow-y-auto" align="start">
+              {/* Clear filter */}
+              <button
+                type="button"
+                onClick={() => { setFilterCollegeIds([]); setFilterSubject(""); }}
+                className="w-full text-sm p-2 text-right border-b hover:bg-muted/50 font-medium text-primary"
+              >
+                جميع الكليات (مسح الفلتر)
+              </button>
+              {/* Select All */}
+              {(() => {
+                const availableFilterColleges = filterUni ? scopedColleges.filter((c: any) => c.university_id === filterUni) : scopedColleges;
+                const allSelected = availableFilterColleges.length > 0 && availableFilterColleges.every((c: any) => filterCollegeIds.includes(c.id));
+                return (
+                  <>
+                    <label className="flex items-center gap-2 p-2 border-b bg-muted/30 cursor-pointer hover:bg-muted/50">
+                      <Checkbox
+                        checked={allSelected}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFilterCollegeIds(availableFilterColleges.map((c: any) => c.id));
+                          } else {
+                            setFilterCollegeIds([]);
+                          }
+                          setFilterSubject("");
+                        }}
+                      />
+                      <span className="text-sm font-medium">تحديد الكل ({availableFilterColleges.length})</span>
+                    </label>
+                    {availableFilterColleges.map((c: any) => {
+                      const uniName = !filterUni ? universities.find((u: any) => u.id === c.university_id)?.name_ar : "";
+                      return (
+                        <label key={c.id} className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted/30">
+                          <Checkbox
+                            checked={filterCollegeIds.includes(c.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFilterCollegeIds(prev => [...prev, c.id]);
+                              } else {
+                                setFilterCollegeIds(prev => prev.filter(id => id !== c.id));
+                              }
+                              setFilterSubject("");
+                            }}
+                          />
+                          <span className="text-xs">{c.name_ar}{uniName ? ` — ${uniName}` : ""}</span>
+                        </label>
+                      );
+                    })}
+                  </>
+                );
+              })()}
+            </PopoverContent>
+          </Popover>
+
           <select value={filterSubject} onChange={(e) => setFilterSubject(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
             <option value="">جميع المواد</option>
             {availableFilterSubjects.map((s) => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
