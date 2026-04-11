@@ -1073,6 +1073,7 @@ const AdminContent = () => {
                         </div>
                       </div>
                     <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" size="icon" onClick={() => openCopyLesson(l)} title="نسخ إلى كليات أخرى"><Copy className="w-4 h-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => openEditLesson(l)}><Pencil className="w-4 h-4" /></Button>
                       {isAdmin && <Button variant="ghost" size="icon" onClick={() => handleDeleteLesson(l.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                     </div>
