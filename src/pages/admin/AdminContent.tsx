@@ -256,7 +256,7 @@ const AdminContent = () => {
     setLessonSummary("");
     setLessonMajorId("");
     setLessonUniId(filterUni);
-    setLessonCollegeId(filterCollege);
+    setLessonCollegeIds(filterCollege ? [filterCollege] : []);
     setLessonOrder(filteredLessons.length);
     setLessonPublished(false);
     setLessonFree(false);
@@ -279,7 +279,7 @@ const AdminContent = () => {
     setLessonMajorId(l.major_id || "");
     // Derive uni/college from the lesson
     const lessonCollege = l.college_id ? colleges.find((c: any) => c.id === l.college_id) : null;
-    setLessonCollegeId(l.college_id || "");
+    setLessonCollegeIds(l.college_id ? [l.college_id] : []);
     setLessonUniId(lessonCollege?.university_id || "");
     setLessonOrder(l.display_order);
     setLessonPublished(l.is_published);
@@ -412,8 +412,8 @@ const AdminContent = () => {
   };
 
   const handleSaveLesson = async () => {
-    if (!lessonTitle || !lessonCollegeId) {
-      toast({ variant: "destructive", title: "يرجى ملء العنوان واختيار الكلية" });
+    if (!lessonTitle || lessonCollegeIds.length === 0) {
+      toast({ variant: "destructive", title: "يرجى ملء العنوان واختيار كلية واحدة على الأقل" });
       return;
     }
     setSaving(true);
@@ -438,23 +438,23 @@ const AdminContent = () => {
       setUploadingPresentation(false);
     }
 
-    const payload: any = {
-      title: lessonTitle,
-      content: lessonContent,
-      summary: lessonSummary,
-      college_id: lessonCollegeId,
-      major_id: lessonMajorId || null,
-      subject_id: lessonSubjectId || null,
-      display_order: lessonOrder,
-      is_published: lessonPublished,
-      is_free: lessonFree,
-      presentation_url: presentationUrl || null,
-    };
     if (editingLesson) {
+      // Edit mode: update single lesson
+      const payload: any = {
+        title: lessonTitle,
+        content: lessonContent,
+        summary: lessonSummary,
+        college_id: lessonCollegeIds[0],
+        major_id: lessonMajorId || null,
+        subject_id: lessonSubjectId || null,
+        display_order: lessonOrder,
+        is_published: lessonPublished,
+        is_free: lessonFree,
+        presentation_url: presentationUrl || null,
+      };
       const { error } = await supabase.from("lessons").update(payload).eq("id", editingLesson.id);
       if (error) toast({ variant: "destructive", title: error.message });
       else {
-        // Save any pending questions for editing mode too
         if (pendingQuestions.length > 0) {
           const baseOrder = existingLessonQuestions.length;
           for (let i = 0; i < pendingQuestions.length; i++) {
@@ -476,29 +476,47 @@ const AdminContent = () => {
         toast({ title: "تم تحديث الدرس" });
       }
     } else {
-      const { data: inserted, error } = await supabase.from("lessons").insert(payload).select("id").single();
-      if (error) toast({ variant: "destructive", title: error.message });
-      else if (inserted) {
-        // Save pending questions
-        if (pendingQuestions.length > 0) {
-          for (let i = 0; i < pendingQuestions.length; i++) {
-            const pq = pendingQuestions[i];
-            await supabase.from("questions").insert({
-              lesson_id: inserted.id,
-              question_text: pq.question_text,
-              option_a: pq.option_a,
-              option_b: pq.option_b,
-              option_c: pq.option_c,
-              option_d: pq.option_d,
-              correct_option: pq.correct_option,
-              explanation: pq.explanation,
-              subject: pq.subject,
-              display_order: i,
-            });
+      // Create mode: duplicate for each selected college
+      let totalCreated = 0;
+      for (const collegeId of lessonCollegeIds) {
+        const payload: any = {
+          title: lessonTitle,
+          content: lessonContent,
+          summary: lessonSummary,
+          college_id: collegeId,
+          major_id: lessonMajorId || null,
+          subject_id: lessonSubjectId || null,
+          display_order: lessonOrder,
+          is_published: lessonPublished,
+          is_free: lessonFree,
+          presentation_url: presentationUrl || null,
+        };
+        const { data: inserted, error } = await supabase.from("lessons").insert(payload).select("id").single();
+        if (error) {
+          toast({ variant: "destructive", title: error.message });
+        } else if (inserted) {
+          totalCreated++;
+          if (pendingQuestions.length > 0) {
+            for (let i = 0; i < pendingQuestions.length; i++) {
+              const pq = pendingQuestions[i];
+              await supabase.from("questions").insert({
+                lesson_id: inserted.id,
+                question_text: pq.question_text,
+                option_a: pq.option_a,
+                option_b: pq.option_b,
+                option_c: pq.option_c,
+                option_d: pq.option_d,
+                correct_option: pq.correct_option,
+                explanation: pq.explanation,
+                subject: pq.subject,
+                display_order: i,
+              });
+            }
           }
         }
-        toast({ title: `تمت إضافة الدرس${pendingQuestions.length > 0 ? ` مع ${pendingQuestions.length} سؤال` : ""}` });
       }
+      const qMsg = pendingQuestions.length > 0 ? ` مع ${pendingQuestions.length} سؤال` : "";
+      toast({ title: `تمت إضافة الدرس في ${totalCreated} كلية${qMsg}` });
     }
     setSaving(false);
     setLessonDialogOpen(false);
