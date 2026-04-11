@@ -15,7 +15,7 @@ import { useModeratorScope } from "@/hooks/useModeratorScope";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles, ChevronDown, ChevronUp, Search, Presentation } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles, ChevronDown, ChevronUp, Search, Presentation, Copy } from "lucide-react";
 import * as XLSX from "xlsx";
 
 interface Subject {
@@ -173,6 +173,13 @@ const AdminContent = () => {
   const [importQuestionsDialogOpen, setImportQuestionsDialogOpen] = useState(false);
   const [importingQuestions, setImportingQuestions] = useState(false);
   const questionFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Copy lesson state
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [copyingLesson, setCopyingLesson] = useState<Lesson | null>(null);
+  const [copyUniId, setCopyUniId] = useState("");
+  const [copyCollegeIds, setCopyCollegeIds] = useState<string[]>([]);
+  const [copying, setCopying] = useState(false);
 
   const fetchData = async () => {
     const [{ data: u }, { data: c }, { data: m }, { data: l }, { data: q }, { data: subs }, { data: ms }] = await Promise.all([
@@ -534,6 +541,60 @@ const AdminContent = () => {
     const { error } = await supabase.from("lessons").delete().eq("id", id);
     if (error) toast({ variant: "destructive", title: error.message });
     else { toast({ title: "تم الحذف" }); if (selectedLesson === id) setSelectedLesson(null); fetchData(); }
+  };
+
+  // --- Copy Lesson to other colleges ---
+  const openCopyLesson = (l: Lesson) => {
+    setCopyingLesson(l);
+    setCopyUniId("");
+    setCopyCollegeIds([]);
+    setCopyDialogOpen(true);
+  };
+
+  const handleCopyLesson = async () => {
+    if (!copyingLesson || copyCollegeIds.length === 0) return;
+    setCopying(true);
+    const lessonQuestions = questions.filter(q => q.lesson_id === copyingLesson.id);
+    let totalCreated = 0;
+    for (const collegeId of copyCollegeIds) {
+      const { data: inserted, error } = await supabase.from("lessons").insert({
+        title: copyingLesson.title,
+        content: copyingLesson.content,
+        summary: copyingLesson.summary,
+        college_id: collegeId,
+        major_id: copyingLesson.major_id,
+        subject_id: copyingLesson.subject_id,
+        display_order: copyingLesson.display_order,
+        is_published: copyingLesson.is_published,
+        is_free: copyingLesson.is_free,
+        presentation_url: copyingLesson.presentation_url,
+      }).select("id").single();
+      if (error) {
+        toast({ variant: "destructive", title: error.message });
+      } else if (inserted) {
+        totalCreated++;
+        for (let i = 0; i < lessonQuestions.length; i++) {
+          const q = lessonQuestions[i];
+          await supabase.from("questions").insert({
+            lesson_id: inserted.id,
+            question_text: q.question_text,
+            option_a: q.option_a,
+            option_b: q.option_b,
+            option_c: q.option_c,
+            option_d: q.option_d,
+            correct_option: q.correct_option,
+            explanation: q.explanation,
+            subject: q.subject,
+            display_order: q.display_order,
+          });
+        }
+      }
+    }
+    const qMsg = lessonQuestions.length > 0 ? ` مع ${lessonQuestions.length} سؤال` : "";
+    toast({ title: `تم نسخ الدرس إلى ${totalCreated} كلية${qMsg}` });
+    setCopying(false);
+    setCopyDialogOpen(false);
+    fetchData();
   };
 
   // --- Question CRUD (from questions panel) ---
@@ -1012,6 +1073,7 @@ const AdminContent = () => {
                         </div>
                       </div>
                     <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" size="icon" onClick={() => openCopyLesson(l)} title="نسخ إلى كليات أخرى"><Copy className="w-4 h-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => openEditLesson(l)}><Pencil className="w-4 h-4" /></Button>
                       {isAdmin && <Button variant="ghost" size="icon" onClick={() => handleDeleteLesson(l.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                     </div>
@@ -1592,6 +1654,89 @@ const AdminContent = () => {
                 <Download className="w-3 h-3 ml-1" />تحميل قالب فارغ
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Copy Lesson Dialog */}
+      <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="w-5 h-5" />
+              نسخ درس إلى كليات أخرى
+            </DialogTitle>
+            <DialogDescription>
+              {copyingLesson ? `نسخ "${copyingLesson.title}" مع ${questions.filter(q => q.lesson_id === copyingLesson.id).length} سؤال` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>الجامعة *</Label>
+              <select value={copyUniId} onChange={(e) => { setCopyUniId(e.target.value); setCopyCollegeIds([]); }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <option value="">اختر الجامعة</option>
+                <option value="all">📌 جميع الجامعات</option>
+                {scopedUniversities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>الكليات المستهدفة * ({copyCollegeIds.length} محددة)</Label>
+              {(() => {
+                const availableCopyColleges = (copyUniId === "all"
+                  ? scopedColleges
+                  : copyUniId
+                    ? scopedColleges.filter((c: any) => c.university_id === copyUniId)
+                    : []
+                ).filter((c: any) => c.id !== copyingLesson?.college_id);
+                const allSelected = availableCopyColleges.length > 0 && availableCopyColleges.every((c: any) => copyCollegeIds.includes(c.id));
+                return (
+                  <div className="border rounded-md max-h-48 overflow-y-auto">
+                    {availableCopyColleges.length === 0 ? (
+                      <p className="text-xs text-muted-foreground p-3 text-center">اختر جامعة أولاً</p>
+                    ) : (
+                      <>
+                        <label className="flex items-center gap-2 p-2 border-b bg-muted/30 cursor-pointer hover:bg-muted/50">
+                          <Checkbox
+                            checked={allSelected}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setCopyCollegeIds(availableCopyColleges.map((c: any) => c.id));
+                              } else {
+                                setCopyCollegeIds([]);
+                              }
+                            }}
+                          />
+                          <span className="text-sm font-medium">تحديد الكل ({availableCopyColleges.length})</span>
+                        </label>
+                        {availableCopyColleges.map((c: any) => {
+                          const uniName = copyUniId === "all" ? universities.find((u: any) => u.id === c.university_id)?.name_ar : "";
+                          return (
+                            <label key={c.id} className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted/30">
+                              <Checkbox
+                                checked={copyCollegeIds.includes(c.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setCopyCollegeIds(prev => [...prev, c.id]);
+                                  } else {
+                                    setCopyCollegeIds(prev => prev.filter(id => id !== c.id));
+                                  }
+                                }}
+                              />
+                              <span className="text-sm">{c.name_ar}{uniName ? ` — ${uniName}` : ""}</span>
+                            </label>
+                          );
+                        })}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+            <Button onClick={handleCopyLesson} disabled={copying || copyCollegeIds.length === 0} className="w-full">
+              {copying ? <><Loader2 className="w-4 h-4 animate-spin ml-2" />جاري النسخ...</> : `نسخ إلى ${copyCollegeIds.length} كلية`}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
