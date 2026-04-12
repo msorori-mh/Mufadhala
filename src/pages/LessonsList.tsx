@@ -444,7 +444,18 @@ const LessonsList = () => {
                 const isLocked = !isOffline && !isFree && !hasPaidAccess;
                 const isSavedOffline = savedOfflineIds.has(lesson.id);
                 return (
-                  <Link key={lesson.id} to={`/lessons/${lesson.id}`} className="block">
+                  <div
+                    key={lesson.id}
+                    className="block"
+                    onClick={(e) => {
+                      if (isLocked) {
+                        e.preventDefault();
+                        setLockedLesson(lesson);
+                      } else {
+                        navigate(`/lessons/${lesson.id}`);
+                      }
+                    }}
+                  >
                     <Card className={`hover:shadow-md transition-shadow cursor-pointer border-r-4 ${done ? "border-r-green-500" : isLocked ? "border-r-muted-foreground/30" : "border-r-primary"}`}>
                       <CardContent className="py-4 px-4">
                         <div className="flex items-center justify-between">
@@ -490,7 +501,7 @@ const LessonsList = () => {
                         </div>
                       </CardContent>
                     </Card>
-                  </Link>
+                  </div>
                 );
               };
 
