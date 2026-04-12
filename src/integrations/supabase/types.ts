@@ -937,6 +937,8 @@ export type Database = {
           allowed_major_ids: string[] | null
           created_at: string
           currency: string
+          default_price_zone_a: number
+          default_price_zone_b: number
           description: string | null
           discount_zone_a: number
           discount_zone_b: number
@@ -956,6 +958,8 @@ export type Database = {
           allowed_major_ids?: string[] | null
           created_at?: string
           currency?: string
+          default_price_zone_a?: number
+          default_price_zone_b?: number
           description?: string | null
           discount_zone_a?: number
           discount_zone_b?: number
@@ -975,6 +979,8 @@ export type Database = {
           allowed_major_ids?: string[] | null
           created_at?: string
           currency?: string
+          default_price_zone_a?: number
+          default_price_zone_b?: number
           description?: string | null
           discount_zone_a?: number
           discount_zone_b?: number
