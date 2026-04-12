@@ -390,6 +390,75 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Free Content Settings — admin only */}
+        {isAdmin && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Unlock className="w-5 h-5 text-primary" />
+                إعدادات المحتوى المجاني
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {/* Free lessons count */}
+              <div className="flex items-end gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="free-lessons" className="text-sm flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5" />
+                    عدد الدروس المجانية لكل مادة
+                  </Label>
+                  <Input
+                    id="free-lessons"
+                    type="number"
+                    min={0}
+                    max={50}
+                    value={currentFreeLessons}
+                    onChange={(e) => setFreeLessonsInput(e.target.value)}
+                    className="max-w-[120px]"
+                  />
+                  <p className="text-[10px] text-muted-foreground">الحالي: {chatSettings?.freeLessonsCount ?? 3} دروس — أول {chatSettings?.freeLessonsCount ?? 3} دروس من كل مادة متاحة مجاناً</p>
+                </div>
+                <Button
+                  size="sm"
+                  disabled={saveCacheMutation.isPending || !freeLessonsInput || Number(freeLessonsInput) === chatSettings?.freeLessonsCount}
+                  onClick={saveFreeLessons}
+                >
+                  {saveCacheMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 ml-1" />}
+                  حفظ
+                </Button>
+              </div>
+
+              {/* Free exam minutes */}
+              <div className="flex items-end gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="free-exam" className="text-sm flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    مدة التجربة المجانية لمحاكي الاختبار (بالدقائق)
+                  </Label>
+                  <Input
+                    id="free-exam"
+                    type="number"
+                    min={0}
+                    max={90}
+                    value={currentFreeExam}
+                    onChange={(e) => setFreeExamInput(e.target.value)}
+                    className="max-w-[120px]"
+                  />
+                  <p className="text-[10px] text-muted-foreground">الحالي: {chatSettings?.freeExamMinutes ?? 5} دقائق — المدة المتاحة لغير المشتركين في محاكي الاختبار</p>
+                </div>
+                <Button
+                  size="sm"
+                  disabled={saveCacheMutation.isPending || !freeExamInput || Number(freeExamInput) === chatSettings?.freeExamMinutes}
+                  onClick={saveFreeExam}
+                >
+                  {saveCacheMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 ml-1" />}
+                  حفظ
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </AdminLayout>
   );
