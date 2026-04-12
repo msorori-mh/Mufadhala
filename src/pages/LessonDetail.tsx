@@ -79,7 +79,7 @@ const LessonDetail = () => {
       if (isOffline) {
         // Load from cache
         if (cached) {
-          setLesson({ id: cached.id, title: cached.title, content: cached.content, summary: cached.summary, is_free: cached.is_free, major_id: "", presentation_url: null, grade_level: null });
+          setLesson({ id: cached.id, title: cached.title, content: cached.content, summary: cached.summary, is_free: cached.is_free, major_id: "", presentation_url: null, grade_level: null, subject_id: null });
           setQuestions(cached.questions as Question[]);
           setIsFromCache(true);
         }
