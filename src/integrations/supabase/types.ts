@@ -938,6 +938,8 @@ export type Database = {
           created_at: string
           currency: string
           description: string | null
+          discount_zone_a: number
+          discount_zone_b: number
           display_order: number
           features: string[] | null
           id: string
@@ -955,6 +957,8 @@ export type Database = {
           created_at?: string
           currency?: string
           description?: string | null
+          discount_zone_a?: number
+          discount_zone_b?: number
           display_order?: number
           features?: string[] | null
           id?: string
@@ -972,6 +976,8 @@ export type Database = {
           created_at?: string
           currency?: string
           description?: string | null
+          discount_zone_a?: number
+          discount_zone_b?: number
           display_order?: number
           features?: string[] | null
           id?: string

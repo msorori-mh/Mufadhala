@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Settings, Plus, Pencil } from "lucide-react";
+import { Loader2, Save, Settings, Plus, Pencil, Percent } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -22,6 +22,7 @@ interface Plan {
   features: string[]; price_zone_a: number; price_zone_b: number;
   price_default: number; currency: string; is_active: boolean;
   display_order: number; is_free: boolean; allowed_major_ids: string[] | null;
+  discount_zone_a: number; discount_zone_b: number;
 }
 
 const emptyPlan: Omit<Plan, "id"> = {
@@ -29,7 +30,11 @@ const emptyPlan: Omit<Plan, "id"> = {
   price_zone_a: 0, price_zone_b: 0, price_default: 0,
   currency: "YER", is_active: true, display_order: 0,
   is_free: false, allowed_major_ids: null,
+  discount_zone_a: 0, discount_zone_b: 0,
 };
+
+const calcZonePrice = (defaultPrice: number, discount: number) =>
+  Math.round(defaultPrice * (1 - discount / 100));
 
 const AdminSubscriptionPlans = () => {
   const { loading: authLoading } = useAuth("moderator");
@@ -55,14 +60,36 @@ const AdminSubscriptionPlans = () => {
   const openNew = () => { setEditingPlan(null); setPlanForm(emptyPlan); setFeaturesText(""); setDialogOpen(true); };
   const openEdit = (plan: Plan) => { setEditingPlan(plan); setPlanForm({ ...plan }); setFeaturesText((plan.features || []).join("\n")); setDialogOpen(true); };
 
+  const updateDiscount = (zone: "a" | "b", value: number) => {
+    const discount = Math.min(100, Math.max(0, value));
+    if (zone === "a") {
+      setPlanForm(f => ({ ...f, discount_zone_a: discount, price_zone_a: calcZonePrice(f.price_default, discount) }));
+    } else {
+      setPlanForm(f => ({ ...f, discount_zone_b: discount, price_zone_b: calcZonePrice(f.price_default, discount) }));
+    }
+  };
+
+  const updateDefaultPrice = (value: number) => {
+    setPlanForm(f => ({
+      ...f,
+      price_default: value,
+      price_zone_a: calcZonePrice(value, f.discount_zone_a),
+      price_zone_b: calcZonePrice(value, f.discount_zone_b),
+    }));
+  };
+
   const handleSave = async () => {
     if (!planForm.name || !planForm.slug) { toast({ variant: "destructive", title: "الاسم والمعرف مطلوبان" }); return; }
     setSaving(true);
     const payload: any = {
       name: planForm.name, slug: planForm.slug, description: planForm.description,
       features: featuresText.split("\n").map(s => s.trim()).filter(Boolean),
-      price_zone_a: Number(planForm.price_zone_a), price_zone_b: Number(planForm.price_zone_b),
-      price_default: Number(planForm.price_default), currency: planForm.currency,
+      price_default: Number(planForm.price_default),
+      discount_zone_a: Number(planForm.discount_zone_a),
+      discount_zone_b: Number(planForm.discount_zone_b),
+      price_zone_a: calcZonePrice(Number(planForm.price_default), Number(planForm.discount_zone_a)),
+      price_zone_b: calcZonePrice(Number(planForm.price_default), Number(planForm.discount_zone_b)),
+      currency: planForm.currency,
       is_active: planForm.is_active, display_order: Number(planForm.display_order), is_free: planForm.is_free,
     };
     const { error } = editingPlan
@@ -100,8 +127,8 @@ const AdminSubscriptionPlans = () => {
                     <TableHead>الاسم</TableHead>
                     <TableHead>المعرف</TableHead>
                     <TableHead>السعر الافتراضي</TableHead>
-                    <TableHead>منطقة ب</TableHead>
-                    <TableHead>منطقة أ</TableHead>
+                    <TableHead>منطقة ب (خصم / سعر)</TableHead>
+                    <TableHead>منطقة أ (خصم / سعر)</TableHead>
                     <TableHead>الحالة</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -112,8 +139,22 @@ const AdminSubscriptionPlans = () => {
                       <TableCell className="font-medium">{p.name}</TableCell>
                       <TableCell><code className="text-xs">{p.slug}</code></TableCell>
                       <TableCell>{p.is_free ? "مجاني" : p.price_default.toLocaleString()}</TableCell>
-                      <TableCell>{p.is_free ? "-" : p.price_zone_a.toLocaleString()}</TableCell>
-                      <TableCell>{p.is_free ? "-" : p.price_zone_b.toLocaleString()}</TableCell>
+                      <TableCell>
+                        {p.is_free ? "-" : (
+                          <span className="flex items-center gap-1 text-sm">
+                            <Badge variant="outline" className="text-xs">{p.discount_zone_a || 0}%</Badge>
+                            <span>{p.price_zone_a.toLocaleString()}</span>
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {p.is_free ? "-" : (
+                          <span className="flex items-center gap-1 text-sm">
+                            <Badge variant="outline" className="text-xs">{p.discount_zone_b || 0}%</Badge>
+                            <span>{p.price_zone_b.toLocaleString()}</span>
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={p.is_active ? "default" : "secondary"}>{p.is_active ? "نشطة" : "معطلة"}</Badge>
                       </TableCell>
@@ -143,15 +184,57 @@ const AdminSubscriptionPlans = () => {
                   <div className="space-y-1"><Label>المعرف (slug) *</Label><Input value={planForm.slug} onChange={(e) => setPlanForm({ ...planForm, slug: e.target.value })} placeholder="medical" /></div>
                 </div>
                 <div className="space-y-1"><Label>الوصف</Label><Textarea value={planForm.description} onChange={(e) => setPlanForm({ ...planForm, description: e.target.value })} /></div>
-                <div className="space-y-1"><Label>الميزات (سطر لكل ميزة)</Label><Textarea value={featuresText} onChange={(e) => setFeaturesText(e.target.value)} rows={4} placeholder="أسئلة الأحياء&#10;شرح الحلول&#10;وضع أوفلاين" /></div>
+                <div className="space-y-1"><Label>الميزات (سطر لكل ميزة)</Label><Textarea value={featuresText} onChange={(e) => setFeaturesText(e.target.value)} rows={4} placeholder={"أسئلة الأحياء\nشرح الحلول\nوضع أوفلاين"} /></div>
                 <div className="flex items-center gap-3"><Switch checked={planForm.is_free} onCheckedChange={(v) => setPlanForm({ ...planForm, is_free: v })} /><Label>خطة مجانية</Label></div>
+
                 {!planForm.is_free && (
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1"><Label>السعر الافتراضي</Label><Input type="number" value={planForm.price_default} onChange={(e) => setPlanForm({ ...planForm, price_default: Number(e.target.value) })} /></div>
-                    <div className="space-y-1"><Label>منطقة ب</Label><Input type="number" value={planForm.price_zone_a} onChange={(e) => setPlanForm({ ...planForm, price_zone_a: Number(e.target.value) })} /></div>
-                    <div className="space-y-1"><Label>منطقة أ</Label><Input type="number" value={planForm.price_zone_b} onChange={(e) => setPlanForm({ ...planForm, price_zone_b: Number(e.target.value) })} /></div>
+                  <div className="space-y-3 rounded-md border p-3">
+                    {/* Default price */}
+                    <div className="space-y-1">
+                      <Label>السعر الافتراضي ({planForm.currency})</Label>
+                      <Input type="number" min={0} value={planForm.price_default} onChange={(e) => updateDefaultPrice(Number(e.target.value))} />
+                    </div>
+
+                    {/* Zone B (price_zone_a in DB = المنطقة ب per user request) */}
+                    <div className="space-y-1">
+                      <Label className="flex items-center gap-1">
+                        <Percent className="w-3.5 h-3.5" /> خصم المنطقة ب
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number" min={0} max={100}
+                          value={planForm.discount_zone_a}
+                          onChange={(e) => updateDiscount("a", Number(e.target.value))}
+                          className="w-24"
+                        />
+                        <span className="text-sm text-muted-foreground">%</span>
+                        <span className="mr-auto text-sm font-medium">
+                          = {calcZonePrice(planForm.price_default, planForm.discount_zone_a).toLocaleString()} {planForm.currency}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Zone A (price_zone_b in DB = المنطقة أ per user request) */}
+                    <div className="space-y-1">
+                      <Label className="flex items-center gap-1">
+                        <Percent className="w-3.5 h-3.5" /> خصم المنطقة أ
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number" min={0} max={100}
+                          value={planForm.discount_zone_b}
+                          onChange={(e) => updateDiscount("b", Number(e.target.value))}
+                          className="w-24"
+                        />
+                        <span className="text-sm text-muted-foreground">%</span>
+                        <span className="mr-auto text-sm font-medium">
+                          = {calcZonePrice(planForm.price_default, planForm.discount_zone_b).toLocaleString()} {planForm.currency}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1"><Label>العملة</Label><Input value={planForm.currency} onChange={(e) => setPlanForm({ ...planForm, currency: e.target.value })} /></div>
                   <div className="space-y-1"><Label>ترتيب العرض</Label><Input type="number" value={planForm.display_order} onChange={(e) => setPlanForm({ ...planForm, display_order: Number(e.target.value) })} /></div>
