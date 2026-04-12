@@ -365,9 +365,14 @@ const AdminUsers = () => {
   return (
     <AdminLayout>
       <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold">إدارة المستخدمين والأدوار</h1>
-          <p className="text-sm text-muted-foreground">{filtered.length} مستخدم</p>
+      <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">إدارة المستخدمين والأدوار</h1>
+            <p className="text-sm text-muted-foreground">{filtered.length} مستخدم</p>
+          </div>
+          <Button onClick={() => setCreateDialogOpen(true)}>
+            <UserPlus className="w-4 h-4 ml-1" />إضافة مستخدم
+          </Button>
         </div>
 
         <div className="relative">
