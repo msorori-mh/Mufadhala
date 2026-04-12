@@ -201,6 +201,8 @@ const AdminColleges = () => {
     if (importFileRef.current) importFileRef.current.value = "";
   };
 
+  if (authLoading || loading) return <AdminLayout><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></AdminLayout>;
+
   return (
     <AdminLayout>
       <PermissionGate permission="universities">
@@ -210,8 +212,51 @@ const AdminColleges = () => {
             <h1 className="text-2xl font-bold">الكليات ودليل القبول</h1>
             <p className="text-sm text-muted-foreground">{filtered.length} كلية</p>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild><Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 ml-1" />إضافة</Button></DialogTrigger>
+          <div className="flex gap-2">
+            <Dialog open={importDialogOpen} onOpenChange={(o) => { setImportDialogOpen(o); if (!o) setImportResults(null); }}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5"><Upload className="w-4 h-4" />استيراد Excel</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>استيراد كليات من Excel</DialogTitle>
+                  <DialogDescription>حمّل القالب واملأه ثم ارفعه لإضافة كليات بالجملة</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <Button variant="outline" onClick={downloadCollegeTemplate} className="w-full gap-1.5">
+                    <Download className="w-4 h-4" /> تحميل قالب Excel
+                  </Button>
+                  <div className="space-y-2">
+                    <Label>اختر ملف (Excel)</Label>
+                    <Input ref={importFileRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImportFile} disabled={importing} />
+                  </div>
+                  {importing && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin" /> جاري الاستيراد...
+                    </div>
+                  )}
+                  {importResults && (
+                    <div className="space-y-2 text-sm">
+                      {importResults.added > 0 && (
+                        <p className="text-green-600 dark:text-green-400">✓ تم إضافة {importResults.added} كلية بنجاح</p>
+                      )}
+                      {importResults.errors.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-destructive font-medium">أخطاء ({importResults.errors.length}):</p>
+                          <ScrollArea className="max-h-32">
+                            {importResults.errors.map((err, i) => (
+                              <p key={i} className="text-xs text-destructive">{err}</p>
+                            ))}
+                          </ScrollArea>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild><Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 ml-1" />إضافة</Button></DialogTrigger>
             <DialogContent className="max-w-lg max-h-[90vh]">
               <DialogHeader>
                 <DialogTitle>{editing ? "تعديل كلية" : "إضافة كلية"}</DialogTitle>
