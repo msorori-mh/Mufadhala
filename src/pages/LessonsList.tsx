@@ -102,6 +102,7 @@ const LessonsList = () => {
 
   // Online lessons data — all in one parallel query
   const majorId = student?.major_id;
+  const collegeId = student?.college_id;
   const studentId = student?.id;
 
   const { data: lessonsData, isLoading: lessonsLoading } = useQuery({
