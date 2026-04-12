@@ -159,7 +159,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       <section className="bg-background py-6 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <CheckCircle className="w-7 h-7 text-accent mx-auto mb-2" />
-          <p className="text-muted-foreground leading-relaxed text-sm">
+          <p className="text-foreground font-semibold leading-relaxed text-sm">
             محتوى مراجع ومعتمد من خبراء وأكاديميين لضمان التوافق مع معايير المفاضلة.
           </p>
         </div>
