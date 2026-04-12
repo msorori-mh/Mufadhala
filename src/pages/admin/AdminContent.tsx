@@ -272,6 +272,7 @@ const AdminContent = () => {
     setLessonSubjectId("");
     setLessonPresentationFile(null);
     setLessonPresentationUrl("");
+    setLessonGradeLevel(null);
     setPendingQuestions([]);
     setExistingLessonQuestions([]);
     setShowAddQuestionForm(false);
@@ -296,6 +297,7 @@ const AdminContent = () => {
     setLessonSubjectId(l.subject_id || "");
     setLessonPresentationFile(null);
     setLessonPresentationUrl(l.presentation_url || "");
+    setLessonGradeLevel((l as any).grade_level ?? null);
     setPendingQuestions([]);
     setExistingLessonQuestions(questions.filter(q => q.lesson_id === l.id));
     setShowAddQuestionForm(false);
