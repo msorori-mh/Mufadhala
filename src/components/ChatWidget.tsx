@@ -175,7 +175,6 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
   const [dailyLimit, setDailyLimit] = useState(DEFAULT_DAILY_LIMIT);
   const [remaining, setRemaining] = useState(getRemainingMessages(DEFAULT_DAILY_LIMIT));
   const [pendingImages, setPendingImages] = useState<string[]>([]);
-  const [pendingImages, setPendingImages] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
