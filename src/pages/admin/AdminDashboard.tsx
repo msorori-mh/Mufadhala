@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,28 +7,26 @@ import { Building2, BookOpen, Users, Loader2 } from "lucide-react";
 
 const AdminDashboard = () => {
   const { loading: authLoading } = useAuth("moderator");
-  const [stats, setStats] = useState({ universities: 0, colleges: 0, majors: 0, students: 0 });
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (authLoading) return;
-    const fetchStats = async () => {
+  const { data: stats, isLoading: loading } = useQuery({
+    queryKey: ["admin-dashboard-stats"],
+    queryFn: async () => {
       const [u, c, m, s] = await Promise.all([
         supabase.from("universities").select("id", { count: "exact", head: true }),
         supabase.from("colleges").select("id", { count: "exact", head: true }),
         supabase.from("majors").select("id", { count: "exact", head: true }),
         supabase.from("students").select("id", { count: "exact", head: true }),
       ]);
-      setStats({
+      return {
         universities: u.count || 0,
         colleges: c.count || 0,
         majors: m.count || 0,
         students: s.count || 0,
-      });
-      setLoading(false);
-    };
-    fetchStats();
-  }, [authLoading]);
+      };
+    },
+    enabled: !authLoading,
+    staleTime: 2 * 60 * 1000, // 2 min
+  });
 
   if (authLoading || loading) {
     return (
@@ -41,10 +39,10 @@ const AdminDashboard = () => {
   }
 
   const cards = [
-    { label: "الجامعات", value: stats.universities, icon: Building2, color: "text-primary" },
-    { label: "الكليات", value: stats.colleges, icon: Building2, color: "text-accent" },
-    { label: "التخصصات", value: stats.majors, icon: BookOpen, color: "text-secondary" },
-    { label: "الطلاب", value: stats.students, icon: Users, color: "text-primary" },
+    { label: "الجامعات", value: stats?.universities ?? 0, icon: Building2, color: "text-primary" },
+    { label: "الكليات", value: stats?.colleges ?? 0, icon: Building2, color: "text-accent" },
+    { label: "التخصصات", value: stats?.majors ?? 0, icon: BookOpen, color: "text-secondary" },
+    { label: "الطلاب", value: stats?.students ?? 0, icon: Users, color: "text-primary" },
   ];
 
   return (
