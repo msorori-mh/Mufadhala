@@ -410,7 +410,7 @@ const LessonsList = () => {
                 return (
                   <div className="space-y-4">
                     {gradeGroups.map((group) => (
-                      <GradeLevelSection key={group.grade ?? "none"} label={group.label} count={group.lessons.length} completedCount={group.lessons.filter(l => completedLessons.has(l.id)).length}>
+                      <GradeLevelSection key={group.grade ?? "none"} label={group.label} count={group.lessons.length} completedCount={group.lessons.filter(l => completedLessons.has(l.id)).length} questionCount={group.lessons.reduce((sum, l) => sum + (questionCounts[l.id] || 0), 0)}>
                         <div className="space-y-3">
                           {group.lessons.map(renderLessonCard)}
                         </div>
