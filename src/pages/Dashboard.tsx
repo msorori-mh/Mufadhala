@@ -219,7 +219,7 @@ const Dashboard = () => {
               <h1 className="text-lg font-bold text-foreground mb-0.5">مرحباً، {userName}</h1>
               {!isAdmin && (
                 <p className="text-xs text-muted-foreground">
-                  {student?.gpa ? `معدلك: ${student.gpa}%` : "أكمل ملفك الشخصي"}
+                  {student?.gpa ? `معدلك: ${student.gpa}%` : "ابدأ التدريب الآن"}
                 </p>
               )}
             </div>
@@ -287,30 +287,12 @@ const Dashboard = () => {
               <h1 className="text-xl font-bold text-foreground mb-0.5">مرحباً، {userName}</h1>
               {!isAdmin && (
                 <p className="text-sm text-muted-foreground">
-                  {student?.gpa ? `معدلك: ${student.gpa}% • ابدأ التدريب على تخصصك الآن` : "أكمل ملفك الشخصي للبدء"}
+                  {student?.gpa ? `معدلك: ${student.gpa}% • ابدأ التدريب على تخصصك الآن` : "ابدأ التدريب على تخصصك الآن"}
                 </p>
               )}
             </div>
 
-            {/* Profile completion reminder */}
-            {!isAdmin && student && !student.major_id && (
-              <Card className="border-warning/50 bg-warning/5">
-                <CardContent className="flex items-center justify-between gap-3 py-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
-                      <UserCircle className="w-4 h-4 text-warning" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground text-xs">أكمل بياناتك الأكاديمية</p>
-                      <p className="text-[10px] text-muted-foreground">اختر جامعتك وكليتك وتخصصك</p>
-                    </div>
-                  </div>
-                  <Button size="sm" onClick={() => navigate("/complete-profile")} className="shrink-0 text-xs h-7 px-3">
-                    إكمال
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+            {/* Profile completion reminder removed — registration flow collects all needed data */}
 
             {/* Motivational Banner */}
             {!isAdmin && <MotivationalBanner collegeName={collegeName} avgScore={avgScore} />}
