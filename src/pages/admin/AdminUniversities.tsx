@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, Upload, FileText, X, CalendarClock } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Upload, FileText, X, CalendarClock, GripVertical } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 interface TimelinePhase {
