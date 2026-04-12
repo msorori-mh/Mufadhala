@@ -393,6 +393,9 @@ const AdminUsers = () => {
                         </Button>
                       </>
                     )}
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => openDeleteDialog(u)}>
+                      <UserX className="w-4 h-4 ml-1" />حذف
+                    </Button>
                   </div>
                 </div>
               </CardContent>
