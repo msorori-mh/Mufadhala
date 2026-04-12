@@ -2,16 +2,17 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, BookOpen, Link2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Link2, Building2 } from "lucide-react";
 
 interface Subject {
   id: string;
@@ -29,6 +30,12 @@ interface MajorSubject {
   subject_id: string;
 }
 
+interface CollegeSubject {
+  id: string;
+  college_id: string;
+  subject_id: string;
+}
+
 const AdminSubjects = () => {
   const { loading: authLoading, isAdmin } = useAuth("admin");
   const { toast } = useToast();
@@ -38,6 +45,7 @@ const AdminSubjects = () => {
   const [colleges, setColleges] = useState<any[]>([]);
   const [universities, setUniversities] = useState<any[]>([]);
   const [majorSubjects, setMajorSubjects] = useState<MajorSubject[]>([]);
+  const [collegeSubjects, setCollegeSubjects] = useState<CollegeSubject[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Subject dialog
@@ -51,22 +59,25 @@ const AdminSubjects = () => {
   const [order, setOrder] = useState(0);
   const [saving, setSaving] = useState(false);
 
-  // Link dialog
+  // Link dialog (shared for majors & colleges)
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkSubject, setLinkSubject] = useState<Subject | null>(null);
+  const [linkTab, setLinkTab] = useState<"colleges" | "majors">("colleges");
   const [filterUni, setFilterUni] = useState("");
   const [filterCollege, setFilterCollege] = useState("");
 
   const fetchData = async () => {
-    const [{ data: s }, { data: ms }, { data: m }, { data: c }, { data: u }] = await Promise.all([
+    const [{ data: s }, { data: ms }, { data: cs }, { data: m }, { data: c }, { data: u }] = await Promise.all([
       supabase.from("subjects").select("*").order("display_order"),
       supabase.from("major_subjects").select("*"),
+      supabase.from("college_subjects").select("*"),
       supabase.from("majors").select("*").order("display_order"),
       supabase.from("colleges").select("*").order("display_order"),
       supabase.from("universities").select("*").order("display_order"),
     ]);
     if (s) setSubjects(s as Subject[]);
     if (ms) setMajorSubjects(ms as MajorSubject[]);
+    if (cs) setCollegeSubjects(cs as CollegeSubject[]);
     if (m) setMajors(m);
     if (c) setColleges(c);
     if (u) setUniversities(u);
@@ -125,14 +136,16 @@ const AdminSubjects = () => {
     else { toast({ title: "تم الحذف" }); fetchData(); }
   };
 
-  // Link subjects to majors
+  // Link dialog
   const openLinkDialog = (s: Subject) => {
     setLinkSubject(s);
     setFilterUni("");
     setFilterCollege("");
+    setLinkTab("colleges");
     setLinkDialogOpen(true);
   };
 
+  // Major links
   const linkedMajorIds = (subjectId: string) =>
     new Set(majorSubjects.filter(ms => ms.subject_id === subjectId).map(ms => ms.major_id));
 
@@ -142,6 +155,20 @@ const AdminSubjects = () => {
       await supabase.from("major_subjects").delete().eq("id", existing.id);
     } else {
       await supabase.from("major_subjects").insert({ major_id: majorId, subject_id: subjectId });
+    }
+    fetchData();
+  };
+
+  // College links
+  const linkedCollegeIds = (subjectId: string) =>
+    new Set(collegeSubjects.filter(cs => cs.subject_id === subjectId).map(cs => cs.college_id));
+
+  const toggleCollegeLink = async (collegeId: string, subjectId: string) => {
+    const existing = collegeSubjects.find(cs => cs.college_id === collegeId && cs.subject_id === subjectId);
+    if (existing) {
+      await supabase.from("college_subjects").delete().eq("id", existing.id);
+    } else {
+      await supabase.from("college_subjects").insert({ college_id: collegeId, subject_id: subjectId });
     }
     fetchData();
   };
@@ -169,7 +196,8 @@ const AdminSubjects = () => {
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {subjects.map((s) => {
-              const linked = linkedMajorIds(s.id);
+              const linkedMajors = linkedMajorIds(s.id);
+              const linkedColleges = linkedCollegeIds(s.id);
               return (
                 <Card key={s.id} className={!s.is_active ? "opacity-60" : ""}>
                   <CardContent className="py-4 px-4">
@@ -182,12 +210,16 @@ const AdminSubjects = () => {
                             {s.is_active ? "نشطة" : "غير نشطة"}
                           </Badge>
                           <Badge variant="outline" className="text-[10px]">
-                            {linked.size} تخصص مرتبط
+                            <Building2 className="w-3 h-3 ml-0.5" />
+                            {linkedColleges.size} كلية
+                          </Badge>
+                          <Badge variant="outline" className="text-[10px]">
+                            {linkedMajors.size} تخصص
                           </Badge>
                         </div>
                       </div>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openLinkDialog(s)} title="ربط بالتخصصات">
+                        <Button variant="ghost" size="icon" onClick={() => openLinkDialog(s)} title="ربط بالكليات والتخصصات">
                           <Link2 className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => openEdit(s)}>
@@ -241,43 +273,87 @@ const AdminSubjects = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Link to Majors Dialog */}
+        {/* Link to Colleges & Majors Dialog */}
         <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
           <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>ربط "{linkSubject?.name_ar}" بالتخصصات</DialogTitle>
+              <DialogTitle>ربط "{linkSubject?.name_ar}"</DialogTitle>
             </DialogHeader>
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <select value={filterUni} onChange={(e) => { setFilterUni(e.target.value); setFilterCollege(""); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1">
+
+            <Tabs value={linkTab} onValueChange={(v) => setLinkTab(v as any)} dir="rtl">
+              <TabsList className="w-full">
+                <TabsTrigger value="colleges" className="flex-1 gap-1">
+                  <Building2 className="w-4 h-4" /> الكليات
+                </TabsTrigger>
+                <TabsTrigger value="majors" className="flex-1 gap-1">
+                  <Link2 className="w-4 h-4" /> التخصصات
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Colleges Tab */}
+              <TabsContent value="colleges" className="space-y-3 mt-3">
+                <select
+                  value={filterUni}
+                  onChange={(e) => setFilterUni(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                >
                   <option value="">جميع الجامعات</option>
                   {universities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
                 </select>
-                <select value={filterCollege} onChange={(e) => setFilterCollege(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1">
-                  <option value="">جميع الكليات</option>
-                  {filteredColleges.map((c: any) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
-                </select>
-              </div>
-              <div className="space-y-1 max-h-[50vh] overflow-y-auto">
-                {filteredMajors.map((m: any) => {
-                  const isLinked = linkSubject ? linkedMajorIds(linkSubject.id).has(m.id) : false;
-                  const college = colleges.find((c: any) => c.id === m.college_id);
-                  return (
-                    <div
-                      key={m.id}
-                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${isLinked ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/50"}`}
-                      onClick={() => linkSubject && toggleMajorLink(m.id, linkSubject.id)}
-                    >
-                      <div>
-                        <p className="text-sm font-medium">{m.name_ar}</p>
-                        <p className="text-[10px] text-muted-foreground">{college?.name_ar}</p>
+                <div className="space-y-1 max-h-[50vh] overflow-y-auto">
+                  {filteredColleges.map((c: any) => {
+                    const isLinked = linkSubject ? linkedCollegeIds(linkSubject.id).has(c.id) : false;
+                    const uni = universities.find((u: any) => u.id === c.university_id);
+                    return (
+                      <div
+                        key={c.id}
+                        className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${isLinked ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/50"}`}
+                        onClick={() => linkSubject && toggleCollegeLink(c.id, linkSubject.id)}
+                      >
+                        <div>
+                          <p className="text-sm font-medium">{c.name_ar}</p>
+                          <p className="text-[10px] text-muted-foreground">{uni?.name_ar}</p>
+                        </div>
+                        <Switch checked={isLinked} onChange={() => {}} />
                       </div>
-                      <Switch checked={isLinked} onChange={() => {}} />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+
+              {/* Majors Tab */}
+              <TabsContent value="majors" className="space-y-3 mt-3">
+                <div className="flex gap-2">
+                  <select value={filterUni} onChange={(e) => { setFilterUni(e.target.value); setFilterCollege(""); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1">
+                    <option value="">جميع الجامعات</option>
+                    {universities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
+                  </select>
+                  <select value={filterCollege} onChange={(e) => setFilterCollege(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1">
+                    <option value="">جميع الكليات</option>
+                    {filteredColleges.map((c: any) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1 max-h-[50vh] overflow-y-auto">
+                  {filteredMajors.map((m: any) => {
+                    const isLinked = linkSubject ? linkedMajorIds(linkSubject.id).has(m.id) : false;
+                    const college = colleges.find((c: any) => c.id === m.college_id);
+                    return (
+                      <div
+                        key={m.id}
+                        className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${isLinked ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/50"}`}
+                        onClick={() => linkSubject && toggleMajorLink(m.id, linkSubject.id)}
+                      >
+                        <div>
+                          <p className="text-sm font-medium">{m.name_ar}</p>
+                          <p className="text-[10px] text-muted-foreground">{college?.name_ar}</p>
+                        </div>
+                        <Switch checked={isLinked} onChange={() => {}} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
       </PermissionGate>
