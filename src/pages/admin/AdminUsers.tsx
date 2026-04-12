@@ -320,6 +320,38 @@ const AdminUsers = () => {
     setDeleteDialogOpen(false);
   };
 
+  // Create user
+  const handleCreateUser = async () => {
+    if (!createEmail || !createPassword) return;
+    setCreating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-user", {
+        body: {
+          email: createEmail,
+          password: createPassword,
+          first_name: createFirstName,
+          last_name: createLastName,
+          role: createRole,
+          permissions: createRole === "moderator" ? createPerms : undefined,
+          scope: createRole === "moderator" ? {
+            scope_type: createScopeType,
+            scope_id: createScopeType !== "global" ? createScopeId : null,
+          } : undefined,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "تم إنشاء المستخدم بنجاح" });
+      setCreateDialogOpen(false);
+      setCreateEmail(""); setCreatePassword(""); setCreateFirstName(""); setCreateLastName("");
+      setCreateRole("moderator"); setCreatePerms([]); setCreateScopeType("global"); setCreateScopeId("");
+      fetchUsers();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "فشل إنشاء المستخدم", description: err.message });
+    }
+    setCreating(false);
+  };
+
   if (authLoading || loading) {
     return (
       <AdminLayout>
