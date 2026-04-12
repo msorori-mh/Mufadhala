@@ -32,6 +32,7 @@ const Register = () => {
   const [governorate, setGovernorate] = useState("");
   const [universityId, setUniversityId] = useState("");
   const [collegeId, setCollegeId] = useState("");
+  const [highSchoolGpa, setHighSchoolGpa] = useState("");
 
   // Data
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
@@ -78,6 +79,7 @@ const Register = () => {
           governorate,
           university_id: universityId,
           college_id: collegeId,
+          high_school_gpa: highSchoolGpa ? parseFloat(highSchoolGpa) : null,
         },
       });
       if (res.error || res.data?.error) {
@@ -170,6 +172,22 @@ const Register = () => {
                   {universities.map(u => <SelectItem key={u.id} value={u.id}>{u.name_ar}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>معدل الثانوية (%) <span className="text-muted-foreground font-normal">اختياري</span></Label>
+              <Input
+                type="number"
+                placeholder="مثال: 85.5"
+                value={highSchoolGpa}
+                onChange={e => setHighSchoolGpa(e.target.value)}
+                dir="ltr"
+                className="text-left"
+                min="60" max="100" step="0.01"
+              />
+              {highSchoolGpa && (parseFloat(highSchoolGpa) < 60 || parseFloat(highSchoolGpa) > 100) && (
+                <p className="text-xs text-destructive">يجب أن يكون المعدل بين 60 و 100</p>
+              )}
             </div>
 
             <div className="space-y-1.5">
