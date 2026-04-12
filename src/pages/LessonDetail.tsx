@@ -293,6 +293,11 @@ const LessonDetail = () => {
                 <Download className="w-3 h-3" /> محفوظ أوفلاين
               </Badge>
             )}
+            {lesson.grade_level && GRADE_LABELS[lesson.grade_level] && (
+              <Badge variant="outline" className="text-xs gap-1 border-amber-500 text-amber-600">
+                {GRADE_LABELS[lesson.grade_level]}
+              </Badge>
+            )}
           </div>
         </div>
 
