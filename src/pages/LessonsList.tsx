@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useStudentData } from "@/hooks/useStudentData";
-import { GraduationCap, BookOpen, ArrowRight, ChevronLeft, ChevronDown, ChevronUp, Loader2, CheckCircle2, Search, X, Lock, Sparkles, Download, WifiOff } from "lucide-react";
+import { GraduationCap, BookOpen, ArrowRight, ChevronLeft, ChevronDown, ChevronUp, Loader2, CheckCircle2, Search, X, Lock, Sparkles, Download, WifiOff, Rocket } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useOfflineStatus } from "@/hooks/useOfflineStatus";
 import { getSavedLessonIds, getAllSavedLessons } from "@/lib/offlineStorage";
@@ -74,6 +75,7 @@ const LessonsList = () => {
   const [savedOfflineIds, setSavedOfflineIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSubjectFilter, setActiveSubjectFilter] = useState<string>("all");
+  const [lockedLesson, setLockedLesson] = useState<Lesson | null>(null);
 
   useEffect(() => {
     if (!authLoading && (isAdmin || isModerator)) {
@@ -442,7 +444,18 @@ const LessonsList = () => {
                 const isLocked = !isOffline && !isFree && !hasPaidAccess;
                 const isSavedOffline = savedOfflineIds.has(lesson.id);
                 return (
-                  <Link key={lesson.id} to={`/lessons/${lesson.id}`} className="block">
+                  <div
+                    key={lesson.id}
+                    className="block"
+                    onClick={(e) => {
+                      if (isLocked) {
+                        e.preventDefault();
+                        setLockedLesson(lesson);
+                      } else {
+                        navigate(`/lessons/${lesson.id}`);
+                      }
+                    }}
+                  >
                     <Card className={`hover:shadow-md transition-shadow cursor-pointer border-r-4 ${done ? "border-r-green-500" : isLocked ? "border-r-muted-foreground/30" : "border-r-primary"}`}>
                       <CardContent className="py-4 px-4">
                         <div className="flex items-center justify-between">
@@ -488,7 +501,7 @@ const LessonsList = () => {
                         </div>
                       </CardContent>
                     </Card>
-                  </Link>
+                  </div>
                 );
               };
 
@@ -529,6 +542,32 @@ const LessonsList = () => {
           </>
         )}
       </main>
+
+      {/* Locked lesson dialog */}
+      <Dialog open={!!lockedLesson} onOpenChange={(open) => !open && setLockedLesson(null)}>
+        <DialogContent className="text-center max-w-sm" dir="rtl">
+          <DialogHeader className="items-center">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
+              <Lock className="w-8 h-8 text-primary" />
+            </div>
+            <DialogTitle className="text-lg">{lockedLesson?.title}</DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed mt-2">
+              هذا الدرس جزء من المحتوى المتقدم 🚀
+              <br />
+              اشترك الآن واحصل على جميع الدروس والأسئلة لتتفوق في المفاضلة!
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-2 sm:flex-col mt-2">
+            <Button onClick={() => { setLockedLesson(null); navigate("/subscription"); }} className="w-full gap-2">
+              <Rocket className="w-4 h-4" />
+              تفعيل الاشتراك
+            </Button>
+            <Button variant="ghost" onClick={() => setLockedLesson(null)} className="w-full">
+              لاحقاً
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
