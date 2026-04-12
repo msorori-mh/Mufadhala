@@ -73,18 +73,27 @@ const AdminUniversities = () => {
     setDialogOpen(true);
   };
 
+  const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.type !== "application/pdf") {
-      toast({ variant: "destructive", title: "يُقبل فقط ملفات PDF" });
+    if (!allowedTypes.includes(file.type)) {
+      toast({ variant: "destructive", title: "يُقبل فقط ملفات PDF أو صور (JPG, PNG, WebP)" });
       return;
     }
     setUploading(true);
     const fileName = `${Date.now()}_${file.name}`;
-    const { error } = await supabase.storage.from("university-guides").upload(fileName, file);
-    if (error) {
-      toast({ variant: "destructive", title: "فشل رفع الملف: " + error.message });
+
+    // Try upload, retry once after session refresh on auth errors
+    let result = await supabase.storage.from("university-guides").upload(fileName, file);
+    if (result.error && result.error.message?.includes("claim")) {
+      await supabase.auth.refreshSession();
+      result = await supabase.storage.from("university-guides").upload(fileName, file);
+    }
+
+    if (result.error) {
+      toast({ variant: "destructive", title: "فشل رفع الملف: " + result.error.message });
     } else {
       const { data: pub } = supabase.storage.from("university-guides").getPublicUrl(fileName);
       setGuideUrl(pub.publicUrl);
