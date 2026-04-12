@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { GraduationCap, ArrowRight, User, School, Phone, Save, Loader2 } from "lucide-react";
+import { GraduationCap, ArrowRight, User, School, Phone, Save, Loader2, Pencil } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -28,6 +28,8 @@ const StudentProfile = () => {
   const { user, loading: authLoading } = useAuthContext();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [originalPhone, setOriginalPhone] = useState("");
+  const [phoneEditing, setPhoneEditing] = useState(false);
 
   // Student data
   const [firstName, setFirstName] = useState("");
@@ -66,6 +68,7 @@ const StudentProfile = () => {
         setThirdName(studentData.third_name || "");
         setFourthName(studentData.fourth_name || "");
         setPhone(studentData.phone || "");
+        setOriginalPhone(studentData.phone || "");
         setGovernorate(studentData.governorate || "");
         setGpa(studentData.gpa?.toString() || "");
         setCoordinationNumber(studentData.coordination_number || "");
@@ -238,16 +241,48 @@ const StudentProfile = () => {
                 <Phone className="w-3 h-3" />
                 رقم الجوال
               </Label>
-              <Input
-                value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
-                placeholder="مثال: 777123456"
-                type="tel"
-                dir="ltr"
-                className={`text-left ${phone && !isValidYemeniPhone(phone) ? "border-destructive" : ""}`}
-              />
+              {originalPhone && !phoneEditing ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={phone}
+                    readOnly
+                    dir="ltr"
+                    className="text-left bg-muted cursor-not-allowed"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0"
+                    onClick={() => setPhoneEditing(true)}
+                    title="تعديل الرقم"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
+                  placeholder="مثال: 777123456"
+                  type="tel"
+                  dir="ltr"
+                  className={`text-left ${phone && !isValidYemeniPhone(phone) ? "border-destructive" : ""}`}
+                />
+              )}
               {phone && !isValidYemeniPhone(phone) && (
                 <p className="text-xs text-destructive">يجب أن يبدأ بـ 7 ويتكون من 9 أرقام</p>
+              )}
+              {phoneEditing && originalPhone && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground"
+                  onClick={() => { setPhone(originalPhone); setPhoneEditing(false); }}
+                >
+                  إلغاء التعديل
+                </Button>
               )}
             </div>
 
