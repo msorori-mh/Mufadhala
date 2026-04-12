@@ -119,6 +119,27 @@ const AdminUniversities = () => {
     setCoordinationTimeline(coordinationTimeline.filter((_, i) => i !== index));
   };
 
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
+
+  const handleDragStart = (index: number) => {
+    dragItem.current = index;
+  };
+
+  const handleDragEnter = (index: number) => {
+    dragOverItem.current = index;
+  };
+
+  const handleDragEnd = () => {
+    if (dragItem.current === null || dragOverItem.current === null) return;
+    const items = [...coordinationTimeline];
+    const [removed] = items.splice(dragItem.current, 1);
+    items.splice(dragOverItem.current, 0, removed);
+    setCoordinationTimeline(items);
+    dragItem.current = null;
+    dragOverItem.current = null;
+  };
+
   const handleSave = async () => {
     if (!nameAr || !code) {
       toast({ variant: "destructive", title: "يرجى ملء الحقول المطلوبة" });
