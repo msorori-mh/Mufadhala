@@ -37,6 +37,27 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    // Check if phone is already used by another student
+    const { data: existingStudent } = await supabase
+      .from("students")
+      .select("user_id")
+      .eq("phone", phone)
+      .maybeSingle();
+
+    if (existingStudent) {
+      // Phone exists — check if it belongs to a different user (not the same phone-based email)
+      const dummyEmailCheck = `${phone}@mufadhala.app`;
+      const { data: existingUsers } = await supabase.auth.admin.listUsers();
+      const matchingUser = existingUsers?.users?.find(u => u.email === dummyEmailCheck);
+
+      if (!matchingUser || matchingUser.id !== existingStudent.user_id) {
+        return new Response(
+          JSON.stringify({ error: "هذا الرقم مسجل بحساب آخر" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     const dummyEmail = `${phone}@mufadhala.app`;
     const dummyPassword = `muf_${phone}_${Date.now()}`;
 
