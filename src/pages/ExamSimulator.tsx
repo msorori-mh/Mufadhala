@@ -83,7 +83,7 @@ const fetchExamData = async (userId: string) => {
 
 const MAX_QUESTIONS = 45;
 const FULL_TIME = 90 * 60;
-const TRIAL_TIME = 5 * 60; // 5 minutes for non-subscribers
+const DEFAULT_TRIAL_MINUTES = 5;
 const PER_QUESTION_TIME = 2 * 60;
 const MAX_ATTEMPTS = 3;
 
