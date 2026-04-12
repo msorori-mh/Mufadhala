@@ -199,7 +199,7 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
     if ((!text && images.length === 0) || loading) return;
 
     if (getRemainingMessages() <= 0) {
-      toast.error("لقد وصلت للحد اليومي من الرسائل (20 رسالة). حاول مرة أخرى غداً!");
+      toast.error("لقد وصلت للحد اليومي من الرسائل (30 رسالة). حاول مرة أخرى غداً!");
       return;
     }
 
