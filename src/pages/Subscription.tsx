@@ -32,6 +32,7 @@ interface Plan {
   price_default: number; currency: string; is_free: boolean;
   display_order: number; allowed_major_ids: string[] | null;
   discount_zone_a: number; discount_zone_b: number;
+  default_price_zone_a: number; default_price_zone_b: number;
 }
 
 interface PaymentMethod {
@@ -406,7 +407,7 @@ const Subscription = () => {
                             )}
                             {(zoneDiscount > 0 || promoDiscount > 0) && (
                               <span className="text-sm text-muted-foreground line-through ml-2">
-                                {promoDiscount > 0 ? price.toLocaleString() : plan.price_default.toLocaleString()}
+                                {promoDiscount > 0 ? price.toLocaleString() : (zone === "a" ? plan.default_price_zone_a : plan.default_price_zone_b).toLocaleString()}
                               </span>
                             )}
                           </>
@@ -455,7 +456,7 @@ const Subscription = () => {
                         </div>
                         {plan.discount_zone_a > 0 && (
                           <p className="text-[10px] text-muted-foreground mb-1">
-                            السعر الأصلي: <span className="line-through">{plan.price_default.toLocaleString()}</span> ريال
+                            السعر الأصلي: <span className="line-through">{plan.default_price_zone_a.toLocaleString()}</span> ريال
                           </p>
                         )}
                         <p className="text-xs text-muted-foreground leading-relaxed">
@@ -477,7 +478,7 @@ const Subscription = () => {
                         </div>
                         {plan.discount_zone_b > 0 && (
                           <p className="text-[10px] text-muted-foreground mb-1">
-                            السعر الأصلي: <span className="line-through">{plan.price_default.toLocaleString()}</span> ريال
+                            السعر الأصلي: <span className="line-through">{plan.default_price_zone_b.toLocaleString()}</span> ريال
                           </p>
                         )}
                         <p className="text-xs text-muted-foreground leading-relaxed">
