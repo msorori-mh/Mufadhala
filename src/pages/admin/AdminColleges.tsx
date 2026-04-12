@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,9 +12,10 @@ import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, GraduationCap, Percent, CalendarClock, FileText, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, GraduationCap, Percent, CalendarClock, FileText, AlertCircle, Upload, Download } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import * as XLSX from "xlsx";
 
 const AdminColleges = () => {
   const { loading: authLoading, isAdmin } = useAuth("moderator");
@@ -38,7 +39,10 @@ const AdminColleges = () => {
   const [registrationDeadline, setRegistrationDeadline] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
-
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResults, setImportResults] = useState<{ added: number; errors: string[] } | null>(null);
+  const importFileRef = useRef<HTMLInputElement>(null);
   const fetchData = async () => {
     const [{ data: c }, { data: u }] = await Promise.all([
       supabase.from("colleges").select("*").order("display_order"),
@@ -106,6 +110,97 @@ const AdminColleges = () => {
     return { filled, total };
   };
 
+  // --- Excel Import ---
+  const downloadCollegeTemplate = () => {
+    const headers = ["الجامعة", "اسم الكلية بالعربية", "اسم الكلية بالإنجليزية", "الرمز", "الحد الأدنى للمعدل", "الطاقة الاستيعابية", "موعد التنسيق", "الوثائق المطلوبة (مفصولة بفاصلة)", "ملاحظات"];
+    const example = ["جامعة صنعاء", "كلية الطب", "Faculty of Medicine", "MED", "85", "150", "سبتمبر 2025", "شهادة الثانوية, صورة الهوية", ""];
+    const ws = XLSX.utils.aoa_to_sheet([headers, example]);
+    ws["!cols"] = headers.map(() => ({ wch: 25 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "كليات");
+    XLSX.writeFile(wb, "قالب_استيراد_الكليات.xlsx");
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    setImportResults(null);
+
+    try {
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data);
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+      if (rows.length < 2) {
+        toast({ variant: "destructive", title: "الملف فارغ أو لا يحتوي على بيانات" });
+        setImporting(false);
+        return;
+      }
+
+      // Build university name → id map
+      const uniMap = new Map<string, string>();
+      universities.forEach(u => {
+        uniMap.set(u.name_ar.trim(), u.id);
+        if (u.name_en) uniMap.set(u.name_en.trim().toLowerCase(), u.id);
+        uniMap.set(u.code.trim().toLowerCase(), u.id);
+      });
+
+      const errors: string[] = [];
+      let added = 0;
+      const dataRows = rows.slice(1).filter(r => r.some(cell => cell != null && String(cell).trim()));
+
+      for (let i = 0; i < dataRows.length; i++) {
+        const row = dataRows[i];
+        const rowNum = i + 2;
+        const uniName = String(row[0] || "").trim();
+        const nameAr = String(row[1] || "").trim();
+        const nameEn = String(row[2] || "").trim() || null;
+        const code = String(row[3] || "").trim();
+        const minGpa = row[4] != null && String(row[4]).trim() ? Number(row[4]) : null;
+        const capacity = row[5] != null && String(row[5]).trim() ? Number(row[5]) : null;
+        const deadline = String(row[6] || "").trim() || null;
+        const docsStr = String(row[7] || "").trim();
+        const docs = docsStr ? docsStr.split(",").map(d => d.trim()).filter(Boolean) : null;
+        const notes = String(row[8] || "").trim() || null;
+
+        if (!nameAr || !code) {
+          errors.push(`سطر ${rowNum}: اسم الكلية والرمز مطلوبان`);
+          continue;
+        }
+
+        const uniId = uniMap.get(uniName) || uniMap.get(uniName.toLowerCase());
+        if (!uniId) {
+          errors.push(`سطر ${rowNum}: الجامعة "${uniName}" غير موجودة`);
+          continue;
+        }
+
+        const { error } = await supabase.from("colleges").insert({
+          name_ar: nameAr, name_en: nameEn, code, university_id: uniId,
+          min_gpa: minGpa, capacity, registration_deadline: deadline,
+          required_documents: docs, notes, is_active: true, display_order: 0,
+        });
+
+        if (error) {
+          errors.push(`سطر ${rowNum}: ${error.message}`);
+        } else {
+          added++;
+        }
+      }
+
+      setImportResults({ added, errors });
+      if (added > 0) {
+        toast({ title: `تم استيراد ${added} كلية بنجاح` });
+        fetchData();
+      }
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "خطأ في قراءة الملف: " + err.message });
+    }
+    setImporting(false);
+    if (importFileRef.current) importFileRef.current.value = "";
+  };
+
   if (authLoading || loading) return <AdminLayout><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></AdminLayout>;
 
   return (
@@ -117,8 +212,51 @@ const AdminColleges = () => {
             <h1 className="text-2xl font-bold">الكليات ودليل القبول</h1>
             <p className="text-sm text-muted-foreground">{filtered.length} كلية</p>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild><Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 ml-1" />إضافة</Button></DialogTrigger>
+          <div className="flex gap-2">
+            <Dialog open={importDialogOpen} onOpenChange={(o) => { setImportDialogOpen(o); if (!o) setImportResults(null); }}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5"><Upload className="w-4 h-4" />استيراد Excel</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>استيراد كليات من Excel</DialogTitle>
+                  <DialogDescription>حمّل القالب واملأه ثم ارفعه لإضافة كليات بالجملة</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <Button variant="outline" onClick={downloadCollegeTemplate} className="w-full gap-1.5">
+                    <Download className="w-4 h-4" /> تحميل قالب Excel
+                  </Button>
+                  <div className="space-y-2">
+                    <Label>اختر ملف (Excel)</Label>
+                    <Input ref={importFileRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImportFile} disabled={importing} />
+                  </div>
+                  {importing && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin" /> جاري الاستيراد...
+                    </div>
+                  )}
+                  {importResults && (
+                    <div className="space-y-2 text-sm">
+                      {importResults.added > 0 && (
+                        <p className="text-green-600 dark:text-green-400">✓ تم إضافة {importResults.added} كلية بنجاح</p>
+                      )}
+                      {importResults.errors.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-destructive font-medium">أخطاء ({importResults.errors.length}):</p>
+                          <ScrollArea className="max-h-32">
+                            {importResults.errors.map((err, i) => (
+                              <p key={i} className="text-xs text-destructive">{err}</p>
+                            ))}
+                          </ScrollArea>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild><Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 ml-1" />إضافة</Button></DialogTrigger>
             <DialogContent className="max-w-lg max-h-[90vh]">
               <DialogHeader>
                 <DialogTitle>{editing ? "تعديل كلية" : "إضافة كلية"}</DialogTitle>
@@ -186,6 +324,7 @@ const AdminColleges = () => {
               </ScrollArea>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         <select value={filterUni} onChange={(e) => setFilterUni(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm w-full md:w-64">
