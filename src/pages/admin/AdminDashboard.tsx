@@ -156,6 +156,22 @@ const AdminDashboard = () => {
     }
   };
 
+  const saveFreeLessons = () => {
+    const val = Number(freeLessonsInput);
+    if (val >= 0 && val <= 50) {
+      saveCacheMutation.mutate({ key: "free_lessons_count", value: val });
+      setFreeLessonsInput("");
+    }
+  };
+
+  const saveFreeExam = () => {
+    const val = Number(freeExamInput);
+    if (val >= 0 && val <= 90) {
+      saveCacheMutation.mutate({ key: "free_exam_minutes", value: val });
+      setFreeExamInput("");
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <AdminLayout>
