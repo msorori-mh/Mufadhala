@@ -265,7 +265,7 @@ const ExamSimulator = () => {
             answers: finalAnswers,
             score: clientScore,
             total: questions.length,
-            startedAt: new Date(Date.now() - TOTAL_TIME * 1000).toISOString(),
+            startedAt: new Date(Date.now() - FULL_TIME * 1000).toISOString(),
             completedAt: new Date().toISOString(),
           });
           const pending = await getPendingExamResults();
@@ -395,7 +395,8 @@ const ExamSimulator = () => {
 
     setCurrentIndex(0);
     setAnswers({});
-    setTotalTimeLeft(TOTAL_TIME);
+    setTotalTimeLeft(isTrial ? TRIAL_TIME : FULL_TIME);
+    setTrialExpired(false);
     setQuestionTimeLeft(PER_QUESTION_TIME);
     setAttemptId(null);
     setPhase("exam");
