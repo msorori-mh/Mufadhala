@@ -20,18 +20,33 @@ const STORAGE_KEY = "mufadhala_chat_usage";
 const MAX_IMAGE_SIZE = 1024; // max dimension for resizing
 
 let cachedDailyLimit: number | null = null;
+let cachedWelcomeText: string | null = null;
 
-async function fetchDailyLimit(): Promise<number> {
-  if (cachedDailyLimit !== null) return cachedDailyLimit;
+async function fetchChatSettings(): Promise<{ limit: number; welcome: string }> {
+  if (cachedDailyLimit !== null && cachedWelcomeText !== null) {
+    return { limit: cachedDailyLimit, welcome: cachedWelcomeText };
+  }
   try {
-    const { data } = await supabase.rpc("get_cache", { _key: "chat_daily_limit" });
-    if (data != null) {
-      cachedDailyLimit = typeof data === "number" ? data : Number(data);
-      if (!isNaN(cachedDailyLimit!)) return cachedDailyLimit!;
+    const [limitRes, welcomeRes] = await Promise.all([
+      supabase.rpc("get_cache", { _key: "chat_daily_limit" }),
+      supabase.rpc("get_cache", { _key: "chat_welcome_text" }),
+    ]);
+    if (limitRes.data != null) {
+      cachedDailyLimit = typeof limitRes.data === "number" ? limitRes.data : Number(limitRes.data);
+      if (isNaN(cachedDailyLimit!)) cachedDailyLimit = DEFAULT_DAILY_LIMIT;
+    } else {
+      cachedDailyLimit = DEFAULT_DAILY_LIMIT;
     }
-  } catch {}
-  cachedDailyLimit = DEFAULT_DAILY_LIMIT;
-  return DEFAULT_DAILY_LIMIT;
+    if (welcomeRes.data != null && typeof welcomeRes.data === "string") {
+      cachedWelcomeText = welcomeRes.data;
+    } else {
+      cachedWelcomeText = "مرحباً! أنا مساعد مُفَاضَلَة الذكي 👋";
+    }
+  } catch {
+    cachedDailyLimit = DEFAULT_DAILY_LIMIT;
+    cachedWelcomeText = "مرحباً! أنا مساعد مُفَاضَلَة الذكي 👋";
+  }
+  return { limit: cachedDailyLimit!, welcome: cachedWelcomeText! };
 }
 
 function getDailyUsage(): { count: number; date: string } {
@@ -174,14 +189,16 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
   const [loading, setLoading] = useState(false);
   const [dailyLimit, setDailyLimit] = useState(DEFAULT_DAILY_LIMIT);
   const [remaining, setRemaining] = useState(getRemainingMessages(DEFAULT_DAILY_LIMIT));
+  const [welcomeText, setWelcomeText] = useState("مرحباً! أنا مساعد مُفَاضَلَة الذكي 👋");
   const [pendingImages, setPendingImages] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchDailyLimit().then((limit) => {
+    fetchChatSettings().then(({ limit, welcome }) => {
       setDailyLimit(limit);
       setRemaining(getRemainingMessages(limit));
+      setWelcomeText(welcome);
     });
   }, []);
 
@@ -312,7 +329,7 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-2 px-4">
                 <Bot className="h-10 w-10 text-primary/40" />
-                <p className="text-sm">مرحباً! أنا مساعد مُفَاضَلَة الذكي 👋</p>
+                <p className="text-sm">{welcomeText}</p>
                 <p className="text-xs">اسألني عن الدروس، الاختبارات، أو صوّر سؤالك وأرسله لي 📸</p>
               </div>
             )}
