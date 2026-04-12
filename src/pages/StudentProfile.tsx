@@ -120,6 +120,22 @@ const StudentProfile = () => {
 
     setSaving(true);
 
+    // Check phone uniqueness before saving
+    if (phone) {
+      const { data: existing } = await supabase
+        .from("students")
+        .select("user_id")
+        .eq("phone", phone)
+        .neq("user_id", user.id)
+        .maybeSingle();
+
+      if (existing) {
+        toast({ variant: "destructive", title: "هذا الرقم مسجل بحساب آخر" });
+        setSaving(false);
+        return;
+      }
+    }
+
     const { error } = await supabase
       .from("students")
       .update({
@@ -138,7 +154,10 @@ const StudentProfile = () => {
       .eq("user_id", user.id);
 
     if (error) {
-      toast({ variant: "destructive", title: "خطأ في الحفظ", description: error.message });
+      const msg = error.message.includes("idx_students_phone_unique")
+        ? "هذا الرقم مسجل بحساب آخر"
+        : error.message;
+      toast({ variant: "destructive", title: "خطأ في الحفظ", description: msg });
     } else {
       toast({ title: "تم حفظ البيانات بنجاح" });
     }
