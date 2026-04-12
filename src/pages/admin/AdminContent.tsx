@@ -1137,6 +1137,11 @@ const AdminContent = () => {
                               <Presentation className="w-2.5 h-2.5" /> عرض
                             </Badge>
                           )}
+                          {l.grade_level && (
+                            <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600 gap-0.5">
+                              {getGradeLevelLabel(l.grade_level)}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
