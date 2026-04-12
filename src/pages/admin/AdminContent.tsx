@@ -466,6 +466,7 @@ const AdminContent = () => {
         is_published: lessonPublished,
         is_free: lessonFree,
         presentation_url: presentationUrl || null,
+        grade_level: lessonGradeLevel,
       };
       const { error } = await supabase.from("lessons").update(payload).eq("id", editingLesson.id);
       if (error) toast({ variant: "destructive", title: error.message });
@@ -505,6 +506,7 @@ const AdminContent = () => {
           is_published: lessonPublished,
           is_free: lessonFree,
           presentation_url: presentationUrl || null,
+          grade_level: lessonGradeLevel,
         };
         const { data: inserted, error } = await supabase.from("lessons").insert(payload).select("id").single();
         if (error) {
