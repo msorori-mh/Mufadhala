@@ -317,6 +317,20 @@ const CollegeGuide = () => {
                                  الطاقة الاستيعابية: {c.capacity}
                               </Badge>
                             )}
+                            {/* GPA eligibility indicator */}
+                            {c.min_gpa != null && studentGpa != null && (
+                              studentGpa >= c.min_gpa ? (
+                                <Badge className="text-xs gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  مؤهل
+                                </Badge>
+                              ) : (
+                                <Badge className="text-xs gap-1 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border-red-200 dark:border-red-800">
+                                  <XCircle className="w-3 h-3" />
+                                  غير مؤهل
+                                </Badge>
+                              )
+                            )}
                           </div>
 
                           {c.registration_deadline && (
