@@ -104,7 +104,6 @@ const AdminStudents = () => {
   const hasActiveFilter = !!(filterGovernorate || filterUniversityId || filterCollegeId || filterMajorId);
 
   const filtered = useMemo(() => {
-    if (!hasActiveFilter) return [];
     return scopedStudents.filter((s) => {
       if (filterGovernorate && s.governorate !== filterGovernorate) return false;
       if (filterUniversityId && s.university_id !== filterUniversityId) return false;
@@ -116,7 +115,7 @@ const AdminStudents = () => {
       }
       return true;
     });
-  }, [scopedStudents, filterGovernorate, filterUniversityId, filterCollegeId, filterMajorId, search, hasActiveFilter]);
+  }, [scopedStudents, filterGovernorate, filterUniversityId, filterCollegeId, filterMajorId, search]);
 
   const clearFilters = () => {
     setFilterGovernorate("");
@@ -252,52 +251,41 @@ const AdminStudents = () => {
           </CardContent>
         </Card>
 
-        {/* Content */}
-        {!hasActiveFilter ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Users className="w-16 h-16 text-muted-foreground/30 mb-4" />
-            <h3 className="text-lg font-medium text-muted-foreground">اختر فلتراً لعرض الطلاب</h3>
-            <p className="text-sm text-muted-foreground/70 mt-1">استخدم الفلاتر أعلاه لتصفية الطلاب بحسب المحافظة أو الجامعة أو الكلية أو التخصص</p>
-          </div>
-        ) : (
-          <>
-            {/* Search within filtered results */}
-            <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="بحث بالاسم أو رقم التنسيق..." value={search} onChange={(e) => setSearch(e.target.value)} className="pr-9" />
-            </div>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="بحث بالاسم أو رقم التنسيق..." value={search} onChange={(e) => setSearch(e.target.value)} className="pr-9" />
+        </div>
 
-            <p className="text-sm text-muted-foreground">{filtered.length} نتيجة</p>
+        <p className="text-sm text-muted-foreground">{filtered.length} نتيجة</p>
 
-            <div className="space-y-2">
-              {filtered.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">لا توجد نتائج</p>
-              ) : (
-                filtered.map((s) => (
-                  <Card key={s.id}>
-                    <CardContent className="py-3 px-4">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-semibold text-sm">{getFullName(s)}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {getUniName(s.university_id)} • {getMajorName(s.major_id)}
-                          </p>
-                          {s.governorate && <p className="text-xs text-muted-foreground">{s.governorate}</p>}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {s.gpa && <Badge variant="secondary" className="text-xs">{s.gpa}%</Badge>}
-                          <Button variant="ghost" size="icon" onClick={() => openView(s)}><Eye className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="w-4 h-4" /></Button>
-                          {isAdmin && <Button variant="ghost" size="icon" onClick={() => handleDelete(s.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </>
-        )}
+        <div className="space-y-2">
+          {filtered.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">لا توجد نتائج</p>
+          ) : (
+            filtered.map((s) => (
+              <Card key={s.id}>
+                <CardContent className="py-3 px-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-semibold text-sm">{getFullName(s)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {getUniName(s.university_id)} • {getMajorName(s.major_id)}
+                      </p>
+                      {s.governorate && <p className="text-xs text-muted-foreground">{s.governorate}</p>}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {s.gpa && <Badge variant="secondary" className="text-xs">{s.gpa}%</Badge>}
+                      <Button variant="ghost" size="icon" onClick={() => openView(s)}><Eye className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="w-4 h-4" /></Button>
+                      {isAdmin && <Button variant="ghost" size="icon" onClick={() => handleDelete(s.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
       </div>
 
       {/* View Dialog */}
