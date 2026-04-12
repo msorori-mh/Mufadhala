@@ -54,6 +54,7 @@ const SCOPE_TYPE_LABELS: Record<string, string> = {
 
 const AdminUsers = () => {
   const { loading: authLoading } = useAuth("admin");
+  const { user: currentUser } = useAuthContext();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserWithRoles[]>([]);
   const [universities, setUniversities] = useState<any[]>([]);
