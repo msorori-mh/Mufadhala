@@ -112,7 +112,7 @@ const AdminContent = () => {
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonContent, setLessonContent] = useState("");
   const [lessonSummary, setLessonSummary] = useState("");
-  const [lessonMajorId, setLessonMajorId] = useState("");
+  
   const [lessonUniId, setLessonUniId] = useState("");
   const [lessonCollegeIds, setLessonCollegeIds] = useState<string[]>([]);
   const [lessonOrder, setLessonOrder] = useState(0);
@@ -229,23 +229,7 @@ const AdminContent = () => {
 
   const filteredColleges = filterUni ? scopedColleges.filter((c: any) => c.university_id === filterUni) : scopedColleges;
   
-  // Compute available subjects based on selected college filter
-  const getSubjectsForColleges = (collegeIds: string[]): Subject[] => {
-    if (collegeIds.length === 0) return subjects;
-    const collegeMajorIds = scopedMajors.filter((m: any) => collegeIds.includes(m.college_id)).map((m: any) => m.id);
-    const subjectIds = new Set<string>();
-    collegeMajorIds.forEach((mId: string) => {
-      (majorSubjectsMap[mId] || []).forEach((sId: string) => subjectIds.add(sId));
-    });
-    return subjectIds.size > 0 ? subjects.filter(s => subjectIds.has(s.id)) : subjects;
-  };
-
-  // Keep single-college helper for lesson dialog
-  const getSubjectsForCollege = (collegeId: string): Subject[] => {
-    return getSubjectsForColleges(collegeId ? [collegeId] : []);
-  };
-
-  const availableFilterSubjects = getSubjectsForColleges(filterCollegeIds);
+  const availableFilterSubjects = subjects;
 
   const filteredLessons = (() => {
     let result = scopedLessons;
@@ -269,7 +253,7 @@ const AdminContent = () => {
     setLessonTitle("");
     setLessonContent("");
     setLessonSummary("");
-    setLessonMajorId("");
+    
     setLessonUniId(filterUni);
     setLessonCollegeIds(filterCollegeIds.length > 0 ? filterCollegeIds : []);
     setLessonOrder(filteredLessons.length);
@@ -291,7 +275,7 @@ const AdminContent = () => {
     setLessonTitle(l.title);
     setLessonContent(l.content);
     setLessonSummary(l.summary);
-    setLessonMajorId(l.major_id || "");
+    
     // Derive uni/college from the lesson
     const lessonCollege = l.college_id ? colleges.find((c: any) => c.id === l.college_id) : null;
     setLessonCollegeIds(l.college_id ? [l.college_id] : []);
@@ -460,7 +444,7 @@ const AdminContent = () => {
         content: lessonContent,
         summary: lessonSummary,
         college_id: lessonCollegeIds[0],
-        major_id: lessonMajorId || null,
+        major_id: null,
         subject_id: lessonSubjectId || null,
         display_order: lessonOrder,
         is_published: lessonPublished,
@@ -499,7 +483,7 @@ const AdminContent = () => {
           content: lessonContent,
           summary: lessonSummary,
           college_id: collegeId,
-          major_id: lessonMajorId || null,
+          major_id: null,
           subject_id: lessonSubjectId || null,
           display_order: lessonOrder,
           is_published: lessonPublished,
@@ -1314,7 +1298,7 @@ const AdminContent = () => {
               <Label>المادة الدراسية</Label>
               <select value={lessonSubjectId} onChange={(e) => setLessonSubjectId(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                 <option value="">بدون تصنيف</option>
-                {(lessonCollegeIds.length === 1 ? getSubjectsForCollege(lessonCollegeIds[0]) : subjects).map((s) => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
+                {subjects.map((s) => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
               </select>
             </div>
             <div className="space-y-2">
