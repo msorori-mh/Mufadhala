@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useOfflineStatus } from "@/hooks/useOfflineStatus";
+import { useQuery } from "@tanstack/react-query";
 import {
   saveExamQuestions, getExamQuestions, savePendingExamResult,
   getPendingExamResults, type OfflineQuestion,
@@ -19,6 +20,49 @@ import {
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
+
+const fetchExamData = async (userId: string) => {
+  const { data: s } = await supabase.from("students").select("id, major_id, user_id").eq("user_id", userId).maybeSingle();
+  if (!s?.major_id) return { student: s, majorName: "", allQuestions: [] as Question[], pastAttempts: [] as ExamAttempt[], offlineInfo: { has: false, count: 0 } };
+
+  const [{ data: major }, { data: lessons }, { data: attempts }] = await Promise.all([
+    supabase.from("majors").select("name_ar").eq("id", s.major_id).maybeSingle(),
+    supabase.from("lessons").select("id, subject_id").eq("major_id", s.major_id).eq("is_published", true),
+    supabase.from("exam_attempts").select("id, score, total, started_at, completed_at, answers, major_id").eq("student_id", s.id).order("created_at", { ascending: false }),
+  ]);
+
+  const lessonIds = (lessons || []).map((l: any) => l.id);
+  const { data: qs } = lessonIds.length > 0
+    ? await supabase.from("questions").select("id, question_text, option_a, option_b, option_c, option_d, correct_option, explanation, lesson_id, subject")
+        .in("lesson_id", lessonIds).order("display_order")
+    : { data: [] };
+
+  let allQuestions: Question[] = [];
+  if (qs && lessons) {
+    const lessonIdSet = new Set(lessons.map((l: any) => l.id));
+    const lessonSubjectMap = new Map<string, string>();
+    lessons.forEach((l: any) => { if (l.subject_id) lessonSubjectMap.set(l.id, l.subject_id); });
+    allQuestions = (qs as any[]).filter((q) => lessonIdSet.has(q.lesson_id)).map(q => ({
+      ...q,
+      subject: q.subject || lessonSubjectMap.get(q.lesson_id) || undefined,
+    }));
+  }
+
+  // Check offline questions
+  let offlineInfo = { has: false, count: 0 };
+  try {
+    const cached = await getExamQuestions(s.major_id);
+    if (cached && cached.length > 0) offlineInfo = { has: true, count: cached.length };
+  } catch {}
+
+  return {
+    student: s,
+    majorName: major?.name_ar || "",
+    allQuestions,
+    pastAttempts: (attempts || []) as ExamAttempt[],
+    offlineInfo,
+  };
+};
 
 const MAX_QUESTIONS = 45;
 const TOTAL_TIME = 90 * 60;
@@ -56,11 +100,9 @@ const ExamSimulator = () => {
   const { toast } = useToast();
 
   const [student, setStudent] = useState<any>(null);
-  // NOTE: Can't use useStudentData here because exam phase state depends on student being set synchronously
   const [majorName, setMajorName] = useState("");
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [pastAttempts, setPastAttempts] = useState<ExamAttempt[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // Offline state
   const [hasOfflineQuestions, setHasOfflineQuestions] = useState(false);
@@ -87,7 +129,27 @@ const ExamSimulator = () => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const questionTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Check offline questions & pending results
+  // Fetch exam data with React Query
+  const { isLoading: dataLoading } = useQuery({
+    queryKey: ["exam-data", user?.id],
+    queryFn: () => fetchExamData(user!.id),
+    enabled: !!user && !isOffline,
+    staleTime: 2 * 60 * 1000,
+    select: (data) => {
+      // Sync to local state for exam phase mutations
+      if (data.student) setStudent(data.student);
+      setMajorName(data.majorName);
+      setAllQuestions(data.allQuestions);
+      setPastAttempts(data.pastAttempts);
+      setHasOfflineQuestions(data.offlineInfo.has);
+      setOfflineQuestionCount(data.offlineInfo.count);
+      return data;
+    },
+  });
+
+  const loading = dataLoading && !isOffline;
+
+  // Check pending results on phase change
   useEffect(() => {
     const checkOffline = async () => {
       try {
@@ -98,60 +160,14 @@ const ExamSimulator = () => {
     checkOffline();
   }, [phase]);
 
-  // Fetch data
+  // Handle offline-only mode
   useEffect(() => {
-    if (authLoading || !user) return;
-    const fetchData = async () => {
-      if (isOffline) {
-        setLoading(false);
-        return;
-      }
-
-      const { data: s } = await supabase.from("students").select("id, major_id, user_id").eq("user_id", user.id).maybeSingle();
-      if (!s?.major_id) { setLoading(false); return; }
-      setStudent(s);
-
-      // Fetch lessons first to get IDs, then questions filtered by those IDs
-      const [{ data: major }, { data: lessons }, { data: attempts }] = await Promise.all([
-        supabase.from("majors").select("name_ar").eq("id", s.major_id).maybeSingle(),
-        supabase.from("lessons").select("id, subject_id").eq("major_id", s.major_id).eq("is_published", true),
-        supabase.from("exam_attempts").select("id, score, total, started_at, completed_at, answers, major_id").eq("student_id", s.id).order("created_at", { ascending: false }),
-      ]);
-
-      // Fetch only questions for this major's lessons (not ALL questions)
-      const lessonIds = (lessons || []).map((l: any) => l.id);
-      const { data: qs } = lessonIds.length > 0
-        ? await supabase.from("questions").select("id, question_text, option_a, option_b, option_c, option_d, correct_option, explanation, lesson_id, subject")
-            .in("lesson_id", lessonIds).order("display_order")
-        : { data: [] };
-
-      if (major) setMajorName(major.name_ar);
-      if (attempts) setPastAttempts(attempts as ExamAttempt[]);
-
-      if (qs && lessons) {
-        const lessonIds = new Set(lessons.map((l: any) => l.id));
-        const lessonSubjectMap = new Map<string, string>();
-        lessons.forEach((l: any) => { if (l.subject_id) lessonSubjectMap.set(l.id, l.subject_id); });
-        const filtered = (qs as any[]).filter((q) => lessonIds.has(q.lesson_id)).map(q => ({
-          ...q,
-          subject: q.subject || lessonSubjectMap.get(q.lesson_id) || undefined,
-        }));
-        setAllQuestions(filtered as Question[]);
-      }
-
-      // Check offline questions
-      try {
-        const cached = await getExamQuestions(s.major_id);
-        if (cached && cached.length > 0) {
-          setHasOfflineQuestions(true);
-          setOfflineQuestionCount(cached.length);
-        }
-      } catch {}
-
-      setLoading(false);
-    };
-    fetchData();
-  }, [authLoading, user, isOffline]);
+    if (isOffline && !authLoading && user) {
+      // Set student from what we know for offline
+      supabase.from("students").select("id, major_id, user_id").eq("user_id", user.id).maybeSingle()
+        .then(({ data: s }) => { if (s) setStudent(s); });
+    }
+  }, [isOffline, authLoading, user]);
 
   // Cleanup timers
   useEffect(() => {
