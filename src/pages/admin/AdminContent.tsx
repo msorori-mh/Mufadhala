@@ -252,6 +252,10 @@ const AdminContent = () => {
     if (filterSubject) {
       result = result.filter((l) => l.subject_id === filterSubject);
     }
+    if (filterGradeLevel) {
+      const gl = Number(filterGradeLevel);
+      result = result.filter((l) => l.grade_level === gl);
+    }
     return result;
   })();
 
