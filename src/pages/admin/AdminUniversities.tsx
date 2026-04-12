@@ -220,7 +220,7 @@ const AdminUniversities = () => {
                     <p className="text-xs text-muted-foreground">{u.code} {u.name_en && `• ${u.name_en}`}</p>
                   </div>
                   {(u as any).guide_url && (
-                    <FileText className="w-4 h-4 text-primary" title="يوجد دليل تنسيق" />
+                    <span title="يوجد دليل تنسيق"><FileText className="w-4 h-4 text-primary" /></span>
                   )}
                 </div>
                 <div className="flex gap-1">
