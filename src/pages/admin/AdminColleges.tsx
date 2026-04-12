@@ -160,7 +160,7 @@ const AdminColleges = () => {
                     </div>
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1">
-                        <Percent className="w-3.5 h-3.5" /> نسبة القبول
+                        <Percent className="w-3.5 h-3.5" /> الطاقة الاستيعابية
                       </Label>
                       <Input type="number" step="0.1" value={acceptanceRate} onChange={(e) => setAcceptanceRate(e.target.value)} placeholder="مثال: 30" />
                     </div>
@@ -227,7 +227,7 @@ const AdminColleges = () => {
                       <span className="flex items-center gap-1"><GraduationCap className="w-3 h-3" /> الحد الأدنى: {c.min_gpa}%</span>
                     )}
                     {c.acceptance_rate != null && (
-                      <span className="flex items-center gap-1"><Percent className="w-3 h-3" /> نسبة القبول: {c.acceptance_rate}%</span>
+                      <span className="flex items-center gap-1"><Percent className="w-3 h-3" /> الطاقة الاستيعابية: {c.acceptance_rate}</span>
                     )}
                     {c.registration_deadline && (
                       <span className="flex items-center gap-1"><CalendarClock className="w-3 h-3" /> {c.registration_deadline}</span>
