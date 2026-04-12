@@ -37,7 +37,15 @@ interface Lesson {
   is_free: boolean;
   created_at: string;
   presentation_url: string | null;
+  grade_level: number | null;
 }
+
+const GRADE_LEVELS = [
+  { value: 1, label: "أول ثانوي" },
+  { value: 2, label: "ثاني ثانوي" },
+  { value: 3, label: "ثالث ثانوي" },
+];
+const getGradeLevelLabel = (v: number | null) => GRADE_LEVELS.find(g => g.value === v)?.label || "";
 
 interface Question {
   id: string;
