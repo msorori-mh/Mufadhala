@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX idx_students_phone_unique ON public.students (phone) WHERE phone IS NOT NULL;
