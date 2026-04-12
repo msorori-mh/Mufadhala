@@ -14,7 +14,7 @@ type Message = {
 };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
-const DAILY_LIMIT = 20;
+const DAILY_LIMIT = 30;
 const STORAGE_KEY = "mufadhala_chat_usage";
 const MAX_IMAGE_SIZE = 1024; // max dimension for resizing
 
@@ -199,7 +199,7 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
     if ((!text && images.length === 0) || loading) return;
 
     if (getRemainingMessages() <= 0) {
-      toast.error("لقد وصلت للحد اليومي من الرسائل (20 رسالة). حاول مرة أخرى غداً!");
+      toast.error("لقد وصلت للحد اليومي من الرسائل (30 رسالة). حاول مرة أخرى غداً!");
       return;
     }
 
@@ -335,7 +335,7 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
           <div className="border-t border-border p-3">
             {remaining <= 0 ? (
               <p className="text-xs text-center text-destructive py-2">
-                لقد وصلت للحد اليومي (20 رسالة). حاول مرة أخرى غداً!
+                لقد وصلت للحد اليومي (30 رسالة). حاول مرة أخرى غداً!
               </p>
             ) : (
               <>
