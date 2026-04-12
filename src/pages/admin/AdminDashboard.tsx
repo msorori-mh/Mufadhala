@@ -186,6 +186,58 @@ const AdminDashboard = () => {
           ))}
         </div>
 
+        {/* Chat Usage Stats — admin only */}
+        {isAdmin && chatStats && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                إحصائيات المساعد الذكي
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+                <div className="rounded-lg bg-primary/5 p-3 text-center">
+                  <p className="text-2xl font-bold text-primary">{chatStats.total_messages ?? 0}</p>
+                  <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1"><MessageCircle className="w-3 h-3" />إجمالي الرسائل</p>
+                </div>
+                <div className="rounded-lg bg-green-500/10 p-3 text-center">
+                  <p className="text-2xl font-bold text-green-600">{chatStats.today_messages ?? 0}</p>
+                  <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1"><TrendingUp className="w-3 h-3" />رسائل اليوم</p>
+                </div>
+                <div className="rounded-lg bg-blue-500/10 p-3 text-center">
+                  <p className="text-2xl font-bold text-blue-600">{chatStats.unique_users ?? 0}</p>
+                  <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1"><Users className="w-3 h-3" />مستخدمين فريدين</p>
+                </div>
+                <div className="rounded-lg bg-orange-500/10 p-3 text-center">
+                  <p className="text-2xl font-bold text-orange-600">{chatStats.today_users ?? 0}</p>
+                  <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1"><UserCheck className="w-3 h-3" />مستخدمو اليوم</p>
+                </div>
+              </div>
+
+              {chartData.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">الرسائل اليومية (آخر 30 يوم)</p>
+                  <div className="h-48 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                        <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                        <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                        <Tooltip
+                          contentStyle={{ fontSize: 12, direction: "rtl" }}
+                          formatter={(value: number, name: string) => [value, name === "messages" ? "رسائل" : "مستخدمين"]}
+                        />
+                        <Bar dataKey="messages" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} name="messages" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Chat Settings — admin only */}
         {isAdmin && (
           <Card>
