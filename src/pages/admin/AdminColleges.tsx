@@ -324,6 +324,7 @@ const AdminColleges = () => {
               </ScrollArea>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         <select value={filterUni} onChange={(e) => setFilterUni(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm w-full md:w-64">
