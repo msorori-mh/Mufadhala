@@ -141,14 +141,6 @@ const StudentProfile = () => {
     if (!otpCode || otpCode.length !== 6) return;
     setVerifyingOtp(true);
     try {
-      const fullPhone = `+967${phone}`;
-      const supabaseAdmin = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-      );
-      // Just verify OTP is correct — we don't need the session from verify-otp
-      // We'll check it manually via the otp_codes table approach
-      // Actually, let's call a lightweight check. We can use send-otp's verify endpoint
       const res = await supabase.functions.invoke("verify-otp", {
         body: { phone, code: otpCode },
       });
