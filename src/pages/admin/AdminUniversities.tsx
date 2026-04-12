@@ -11,8 +11,13 @@ import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, Upload, FileText, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Upload, FileText, X, CalendarClock } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+
+interface TimelinePhase {
+  phase: string;
+  date: string;
+}
 
 const AdminUniversities = () => {
   const { loading: authLoading, isAdmin } = useAuth("moderator");
@@ -28,6 +33,8 @@ const AdminUniversities = () => {
   const [displayOrder, setDisplayOrder] = useState(0);
   const [guideText, setGuideText] = useState("");
   const [guideUrl, setGuideUrl] = useState("");
+  const [coordinationTimeline, setCoordinationTimeline] = useState<TimelinePhase[]>([]);
+  const [coordinationInstructions, setCoordinationInstructions] = useState("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -47,6 +54,7 @@ const AdminUniversities = () => {
     setNameAr(""); setNameEn(""); setCode("");
     setIsActive(true); setDisplayOrder(universities.length);
     setGuideText(""); setGuideUrl("");
+    setCoordinationTimeline([]); setCoordinationInstructions("");
     setDialogOpen(true);
   };
 
@@ -57,8 +65,11 @@ const AdminUniversities = () => {
     setCode(u.code);
     setIsActive(u.is_active);
     setDisplayOrder(u.display_order);
-    setGuideText((u as any).guide_text || "");
-    setGuideUrl((u as any).guide_url || "");
+    setGuideText(u.guide_text || "");
+    setGuideUrl(u.guide_url || "");
+    const timeline = (u as any).coordination_timeline;
+    setCoordinationTimeline(Array.isArray(timeline) ? timeline : []);
+    setCoordinationInstructions((u as any).coordination_instructions || "");
     setDialogOpen(true);
   };
 
@@ -83,8 +94,20 @@ const AdminUniversities = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const removeGuide = () => {
-    setGuideUrl("");
+  const removeGuide = () => setGuideUrl("");
+
+  const addTimelinePhase = () => {
+    setCoordinationTimeline([...coordinationTimeline, { phase: "", date: "" }]);
+  };
+
+  const updateTimelinePhase = (index: number, field: keyof TimelinePhase, value: string) => {
+    const updated = [...coordinationTimeline];
+    updated[index] = { ...updated[index], [field]: value };
+    setCoordinationTimeline(updated);
+  };
+
+  const removeTimelinePhase = (index: number) => {
+    setCoordinationTimeline(coordinationTimeline.filter((_, i) => i !== index));
   };
 
   const handleSave = async () => {
@@ -97,6 +120,8 @@ const AdminUniversities = () => {
       name_ar: nameAr, name_en: nameEn || null, code,
       is_active: isActive, display_order: displayOrder,
       guide_url: guideUrl || null, guide_text: guideText || null,
+      coordination_timeline: coordinationTimeline.filter(p => p.phase || p.date),
+      coordination_instructions: coordinationInstructions || null,
     };
 
     if (editing) {
@@ -202,6 +227,57 @@ const AdminUniversities = () => {
                   </div>
                 </div>
 
+                {/* Coordination Timeline */}
+                <div className="border-t pt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-semibold flex items-center gap-1.5">
+                      <CalendarClock className="w-4 h-4" />
+                      الجدول الزمني للتنسيق
+                    </Label>
+                    <Button type="button" variant="outline" size="sm" onClick={addTimelinePhase} className="gap-1">
+                      <Plus className="w-3 h-3" /> إضافة مرحلة
+                    </Button>
+                  </div>
+                  {coordinationTimeline.length === 0 && (
+                    <p className="text-xs text-muted-foreground">لم تتم إضافة مراحل بعد</p>
+                  )}
+                  <div className="space-y-2">
+                    {coordinationTimeline.map((item, idx) => (
+                      <div key={idx} className="flex gap-2 items-start">
+                        <div className="flex-1 space-y-1">
+                          <Input
+                            placeholder="اسم المرحلة (مثال: المرحلة الأولى)"
+                            value={item.phase}
+                            onChange={(e) => updateTimelinePhase(idx, "phase", e.target.value)}
+                          />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <Input
+                            placeholder="التاريخ (مثال: 1 - 15 سبتمبر 2025)"
+                            value={item.date}
+                            onChange={(e) => updateTimelinePhase(idx, "date", e.target.value)}
+                          />
+                        </div>
+                        <Button type="button" variant="ghost" size="icon" className="h-10 w-10 shrink-0" onClick={() => removeTimelinePhase(idx)}>
+                          <X className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Coordination Instructions */}
+                <div className="border-t pt-4 space-y-2">
+                  <Label className="text-base font-semibold">تعليمات التنسيق</Label>
+                  <Textarea
+                    value={coordinationInstructions}
+                    onChange={(e) => setCoordinationInstructions(e.target.value)}
+                    placeholder="أدخل تعليمات وإرشادات التنسيق للطلاب (تظهر تلقائياً في بطاقات الكليات)..."
+                    rows={4}
+                  />
+                  <p className="text-xs text-muted-foreground">تظهر هذه التعليمات تلقائياً في دليل الكليات التابعة لهذه الجامعة</p>
+                </div>
+
                 <Button onClick={handleSave} disabled={saving} className="w-full">
                   {saving ? "جاري الحفظ..." : "حفظ"}
                 </Button>
@@ -219,8 +295,11 @@ const AdminUniversities = () => {
                     <p className="font-semibold text-sm">{u.name_ar}</p>
                     <p className="text-xs text-muted-foreground">{u.code} {u.name_en && `• ${u.name_en}`}</p>
                   </div>
-                  {(u as any).guide_url && (
+                  {u.guide_url && (
                     <span title="يوجد دليل تنسيق"><FileText className="w-4 h-4 text-primary" /></span>
+                  )}
+                  {(u as any).coordination_timeline && Array.isArray((u as any).coordination_timeline) && (u as any).coordination_timeline.length > 0 && (
+                    <span title="يوجد جدول زمني للتنسيق"><CalendarClock className="w-4 h-4 text-primary" /></span>
                   )}
                 </div>
                 <div className="flex gap-1">
