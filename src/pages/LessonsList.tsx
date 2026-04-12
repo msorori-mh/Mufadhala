@@ -202,6 +202,25 @@ const LessonsList = () => {
     return ids;
   }, [lessons, FREE_COUNT]);
 
+  // Compute free lessons remaining per subject
+  const freeCountBySubject = useMemo(() => {
+    const result = new Map<string | null, { total: number; free: number; remaining: number }>();
+    const bySubject = new Map<string | null, Lesson[]>();
+    lessons.forEach(l => {
+      const key = l.subject_id || null;
+      if (!bySubject.has(key)) bySubject.set(key, []);
+      bySubject.get(key)!.push(l);
+    });
+    bySubject.forEach((group, key) => {
+      const sorted = [...group].sort((a, b) => a.display_order - b.display_order);
+      const freeInSubject = sorted.slice(0, FREE_COUNT).length;
+      const totalInSubject = sorted.length;
+      const remaining = Math.max(0, FREE_COUNT - freeInSubject);
+      result.set(key, { total: totalInSubject, free: freeInSubject, remaining });
+    });
+    return result;
+  }, [lessons, FREE_COUNT]);
+
   const loading = authLoading || studentLoading || (!isOffline && lessonsLoading) || subLoading;
 
   const filteredLessons = useMemo(() => {
@@ -331,6 +350,45 @@ const LessonsList = () => {
                   ) : null;
                 })()}
               </div>
+            )}
+
+            {/* Free lessons remaining counter */}
+            {!isOffline && !hasSubscription && lessons.length > 0 && !searchQuery && (
+              <Card className="mb-5 border-green-200 bg-green-50/50 dark:bg-green-950/10 dark:border-green-900/50">
+                <CardContent className="py-3 px-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="w-4 h-4 text-green-600" />
+                    <span className="text-sm font-semibold text-green-700 dark:text-green-400">الدروس المجانية</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {subjects.map(s => {
+                      const info = freeCountBySubject.get(s.id);
+                      if (!info) return null;
+                      const freeUsed = Math.min(info.free, info.total);
+                      return (
+                        <div key={s.id} className="flex items-center gap-1.5 text-xs bg-background rounded-md px-2.5 py-1.5 border">
+                          <span className="text-muted-foreground">{s.name_ar}:</span>
+                          <span className="font-bold text-green-600 dark:text-green-400">{freeUsed}</span>
+                          <span className="text-muted-foreground">/ {FREE_COUNT}</span>
+                        </div>
+                      );
+                    })}
+                    {(() => {
+                      const info = freeCountBySubject.get(null);
+                      if (!info) return null;
+                      const freeUsed = Math.min(info.free, info.total);
+                      return (
+                        <div className="flex items-center gap-1.5 text-xs bg-background rounded-md px-2.5 py-1.5 border">
+                          <span className="text-muted-foreground">غير مصنف:</span>
+                          <span className="font-bold text-green-600 dark:text-green-400">{freeUsed}</span>
+                          <span className="text-muted-foreground">/ {FREE_COUNT}</span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2">أول {FREE_COUNT} دروس من كل مادة متاحة مجاناً بالكامل</p>
+                </CardContent>
+              </Card>
             )}
 
             {!isOffline && lessons.length > 0 && !searchQuery && (
