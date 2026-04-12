@@ -8,26 +8,32 @@ const corsHeaders = {
 };
 
 let DAILY_LIMIT = 30;
+let AI_MODEL = "google/gemini-3-flash-preview";
 let limitFetchedAt = 0;
 const LIMIT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const ipUsage = new Map<string, { count: number; date: string }>();
 
-async function fetchDailyLimit(): Promise<number> {
-  if (Date.now() - limitFetchedAt < LIMIT_CACHE_TTL) return DAILY_LIMIT;
+async function fetchChatSettings(): Promise<void> {
+  if (Date.now() - limitFetchedAt < LIMIT_CACHE_TTL) return;
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const sb = createClient(supabaseUrl, supabaseKey);
-    const { data } = await sb.rpc("get_cache", { _key: "chat_daily_limit" });
-    if (data != null) {
-      const val = typeof data === "number" ? data : Number(data);
+    const [limitRes, modelRes] = await Promise.all([
+      sb.rpc("get_cache", { _key: "chat_daily_limit" }),
+      sb.rpc("get_cache", { _key: "chat_ai_model" }),
+    ]);
+    if (limitRes.data != null) {
+      const val = typeof limitRes.data === "number" ? limitRes.data : Number(limitRes.data);
       if (!isNaN(val)) DAILY_LIMIT = val;
+    }
+    if (modelRes.data != null && typeof modelRes.data === "string") {
+      AI_MODEL = modelRes.data;
     }
     limitFetchedAt = Date.now();
   } catch (e) {
-    console.error("Failed to fetch daily limit:", e);
+    console.error("Failed to fetch chat settings:", e);
   }
-  return DAILY_LIMIT;
 }
 
 function checkIpLimit(ip: string): boolean {
@@ -84,7 +90,7 @@ serve(async (req) => {
   }
 
   try {
-    await fetchDailyLimit();
+    await fetchChatSettings();
     const clientIp = getClientIp(req);
     if (!checkIpLimit(clientIp)) {
       return new Response(
@@ -147,7 +153,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: AI_MODEL,
           messages: [
             { role: "system", content: systemPrompt },
             ...messages,
