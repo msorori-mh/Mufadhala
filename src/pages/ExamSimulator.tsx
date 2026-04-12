@@ -56,6 +56,7 @@ const ExamSimulator = () => {
   const { toast } = useToast();
 
   const [student, setStudent] = useState<any>(null);
+  // NOTE: Can't use useStudentData here because exam phase state depends on student being set synchronously
   const [majorName, setMajorName] = useState("");
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [pastAttempts, setPastAttempts] = useState<ExamAttempt[]>([]);
@@ -106,18 +107,23 @@ const ExamSimulator = () => {
         return;
       }
 
-      const { data: s } = await supabase.from("students").select("*").eq("user_id", user.id).maybeSingle();
+      const { data: s } = await supabase.from("students").select("id, major_id, user_id").eq("user_id", user.id).maybeSingle();
       if (!s?.major_id) { setLoading(false); return; }
       setStudent(s);
 
-      // ALL queries in parallel — including lessons (was sequential before)
-      const [{ data: major }, { data: qs }, { data: attempts }, { data: lessons }] = await Promise.all([
+      // Fetch lessons first to get IDs, then questions filtered by those IDs
+      const [{ data: major }, { data: lessons }, { data: attempts }] = await Promise.all([
         supabase.from("majors").select("name_ar").eq("id", s.major_id).maybeSingle(),
-        supabase.from("questions").select("id, question_text, option_a, option_b, option_c, option_d, correct_option, explanation, lesson_id, subject")
-          .order("display_order"),
-        supabase.from("exam_attempts").select("*").eq("student_id", s.id).order("created_at", { ascending: false }),
         supabase.from("lessons").select("id, subject_id").eq("major_id", s.major_id).eq("is_published", true),
+        supabase.from("exam_attempts").select("id, score, total, started_at, completed_at, answers, major_id").eq("student_id", s.id).order("created_at", { ascending: false }),
       ]);
+
+      // Fetch only questions for this major's lessons (not ALL questions)
+      const lessonIds = (lessons || []).map((l: any) => l.id);
+      const { data: qs } = lessonIds.length > 0
+        ? await supabase.from("questions").select("id, question_text, option_a, option_b, option_c, option_d, correct_option, explanation, lesson_id, subject")
+            .in("lesson_id", lessonIds).order("display_order")
+        : { data: [] };
 
       if (major) setMajorName(major.name_ar);
       if (attempts) setPastAttempts(attempts as ExamAttempt[]);
