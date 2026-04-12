@@ -529,9 +529,9 @@ const ExamSimulator = () => {
               <CardContent className="py-4 px-4 flex items-start gap-3">
                 <Clock className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">تجربة مجانية — 5 دقائق فقط</p>
+                  <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">تجربة مجانية — {trialMinutesLabel} دقائق فقط</p>
                   <p className="text-xs text-blue-600 dark:text-blue-500 mt-1">
-                    يمكنك تجربة محاكي الاختبار لمدة 5 دقائق. لفتح الاختبار الكامل (90 دقيقة)، فعّل اشتراكك.
+                    يمكنك تجربة محاكي الاختبار لمدة {trialMinutesLabel} دقائق. لفتح الاختبار الكامل (90 دقيقة)، فعّل اشتراكك.
                   </p>
                   <Button size="sm" variant="outline" className="mt-2 text-xs" onClick={() => navigate("/subscription")}>
                     تفعيل الاشتراك
@@ -545,7 +545,7 @@ const ExamSimulator = () => {
             <CardContent className="py-5 space-y-4">
               <h2 className="font-semibold text-foreground">تعليمات الاختبار</h2>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2"><Clock className="w-4 h-4 mt-0.5 text-primary shrink-0" /><span><strong>{Math.min(questionsAvailable, MAX_QUESTIONS)} سؤال</strong> في <strong>{isTrial ? "5 دقائق" : "90 دقيقة"}</strong> كحد أقصى</span></li>
+                <li className="flex items-start gap-2"><Clock className="w-4 h-4 mt-0.5 text-primary shrink-0" /><span><strong>{Math.min(questionsAvailable, MAX_QUESTIONS)} سؤال</strong> في <strong>{isTrial ? `${trialMinutesLabel} دقائق` : "90 دقيقة"}</strong> كحد أقصى</span></li>
                 <li className="flex items-start gap-2"><AlertTriangle className="w-4 h-4 mt-0.5 text-orange-500 shrink-0" /><span>حد أقصى <strong>دقيقتين</strong> لكل سؤال — ينتقل تلقائياً عند انتهاء الوقت</span></li>
                 {!isTrial && (
                   <li className="flex items-start gap-2"><RotateCcw className="w-4 h-4 mt-0.5 text-secondary shrink-0" /><span>مسموح بـ <strong>{MAX_ATTEMPTS} محاولات</strong> فقط {!isOffline && `(استخدمت ${attemptsUsed})`}</span></li>
@@ -601,7 +601,7 @@ const ExamSimulator = () => {
             <Play className="w-5 h-5 ml-2" />
             {isOffline
               ? (hasOfflineQuestions ? "ابدأ اختبار أوفلاين" : "لا توجد أسئلة محفوظة")
-              : (attemptsUsed >= MAX_ATTEMPTS && canAccessFull ? "استنفذت جميع المحاولات" : isTrial ? "ابدأ التجربة المجانية (5 دقائق)" : "ابدأ الاختبار")}
+              : (attemptsUsed >= MAX_ATTEMPTS && canAccessFull ? "استنفذت جميع المحاولات" : isTrial ? `ابدأ التجربة المجانية (${trialMinutesLabel} دقائق)` : "ابدأ الاختبار")}
           </Button>
 
           {/* Past attempts */}
@@ -807,7 +807,7 @@ const ExamSimulator = () => {
           <Card className="border-primary bg-primary/5">
             <CardContent className="py-5 text-center space-y-3">
               <Clock className="w-10 h-10 text-primary mx-auto" />
-              <p className="font-semibold text-foreground">انتهت التجربة المجانية (5 دقائق)</p>
+              <p className="font-semibold text-foreground">انتهت التجربة المجانية ({trialMinutesLabel} دقائق)</p>
               <p className="text-sm text-muted-foreground">
                 فعّل اشتراكك لفتح الاختبار الكامل (90 دقيقة) مع {MAX_ATTEMPTS} محاولات وتحليل أداء مفصّل
               </p>
