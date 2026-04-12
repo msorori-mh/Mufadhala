@@ -304,7 +304,7 @@ const StudentProfile = () => {
 
             <Separator />
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label className="text-xs flex items-center gap-1">
                 <Phone className="w-3 h-3" />
                 رقم الجوال
@@ -329,28 +329,80 @@ const StudentProfile = () => {
                   </Button>
                 </div>
               ) : (
-                <Input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
-                  placeholder="مثال: 777123456"
-                  type="tel"
-                  dir="ltr"
-                  className={`text-left ${phone && !isValidYemeniPhone(phone) ? "border-destructive" : ""}`}
-                />
-              )}
-              {phone && !isValidYemeniPhone(phone) && (
-                <p className="text-xs text-destructive">يجب أن يبدأ بـ 7 ويتكون من 9 أرقام</p>
-              )}
-              {phoneEditing && originalPhone && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs text-muted-foreground"
-                  onClick={() => { setPhone(originalPhone); setPhoneEditing(false); }}
-                >
-                  إلغاء التعديل
-                </Button>
+                <>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={phone}
+                      onChange={(e) => {
+                        setPhone(e.target.value.replace(/\D/g, "").slice(0, 9));
+                        setPhoneVerified(false);
+                        setOtpSent(false);
+                        setOtpCode("");
+                      }}
+                      placeholder="مثال: 777123456"
+                      type="tel"
+                      dir="ltr"
+                      disabled={phoneVerified}
+                      className={`text-left ${phone && !isValidYemeniPhone(phone) ? "border-destructive" : ""} ${phoneVerified ? "bg-muted" : ""}`}
+                    />
+                    {phoneChanged && phone && isValidYemeniPhone(phone) && !phoneVerified && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0 gap-1"
+                        disabled={sendingOtp || (otpCooldown > 0)}
+                        onClick={handleSendOtp}
+                      >
+                        {sendingOtp ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                        {otpCooldown > 0 ? `${otpCooldown}ث` : otpSent ? "إعادة الإرسال" : "إرسال رمز"}
+                      </Button>
+                    )}
+                    {phoneVerified && (
+                      <ShieldCheck className="w-5 h-5 text-green-500 shrink-0" />
+                    )}
+                  </div>
+
+                  {phone && !isValidYemeniPhone(phone) && (
+                    <p className="text-xs text-destructive">يجب أن يبدأ بـ 7 ويتكون من 9 أرقام</p>
+                  )}
+
+                  {otpSent && !phoneVerified && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <Input
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        placeholder="أدخل رمز التحقق (6 أرقام)"
+                        type="tel"
+                        dir="ltr"
+                        className="text-left font-mono tracking-widest"
+                        maxLength={6}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={verifyingOtp || otpCode.length !== 6}
+                        onClick={handleVerifyOtp}
+                        className="shrink-0 gap-1"
+                      >
+                        {verifyingOtp ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
+                        تحقق
+                      </Button>
+                    </div>
+                  )}
+
+                  {phoneEditing && originalPhone && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-muted-foreground"
+                      onClick={resetPhoneEdit}
+                    >
+                      إلغاء التعديل
+                    </Button>
+                  )}
+                </>
               )}
             </div>
 
