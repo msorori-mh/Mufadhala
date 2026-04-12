@@ -38,6 +38,32 @@ const GRADE_LABELS: Record<number, string> = {
   3: "مقرر الصف الثالث الثانوي",
 };
 
+const GradeLevelSection = ({ label, count, completedCount, children }: { label: string; count: number; completedCount: number; children: React.ReactNode }) => {
+  const [open, setOpen] = useState(true);
+  return (
+    <Card className="overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between w-full p-3 text-sm font-semibold hover:bg-muted/50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-primary" />
+          <span className="text-foreground">{label}</span>
+          <Badge variant="outline" className="text-[10px]">{count} درس</Badge>
+          {completedCount > 0 && (
+            <Badge className="text-[10px] bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400">
+              {completedCount}/{count} مكتمل
+            </Badge>
+          )}
+        </div>
+        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+      </button>
+      {open && <div className="p-3 pt-0">{children}</div>}
+    </Card>
+  );
+};
+
 const LessonsList = () => {
   const { user, loading: authLoading, isAdmin, isModerator } = useAuth();
   const { isActive: hasSubscription, loading: subLoading, planId, allowedMajorIds } = useSubscription(user?.id);
