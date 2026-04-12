@@ -94,6 +94,36 @@ export type Database = {
           },
         ]
       }
+      deletion_logs: {
+        Row: {
+          created_at: string
+          deleted_by: string
+          deleted_by_name: string | null
+          deleted_user_id: string
+          deleted_user_name: string | null
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          deleted_by: string
+          deleted_by_name?: string | null
+          deleted_user_id: string
+          deleted_user_name?: string | null
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          deleted_by?: string
+          deleted_by_name?: string | null
+          deleted_user_id?: string
+          deleted_user_name?: string | null
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       exam_attempts: {
         Row: {
           answers: Json
