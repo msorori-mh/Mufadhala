@@ -102,10 +102,11 @@ const LessonsList = () => {
 
   // Online lessons data — all in one parallel query
   const majorId = student?.major_id;
+  const collegeId = student?.college_id;
   const studentId = student?.id;
 
   const { data: lessonsData, isLoading: lessonsLoading } = useQuery({
-    queryKey: ["lessons-list", majorId],
+    queryKey: ["lessons-list", majorId, collegeId],
     queryFn: async () => {
       const [{ data: major }, { data: ls }, { data: lessonsFull }] = await Promise.all([
         supabase.from("majors").select("name_ar").eq("id", majorId!).maybeSingle(),
@@ -120,13 +121,23 @@ const LessonsList = () => {
         return { ...l, subject_id: extra?.subject_id || null, grade_level: extra?.grade_level || null };
       });
 
-      // Fetch subjects for this major
-      const { data: ms } = await supabase.from("major_subjects").select("subject_id").eq("major_id", majorId!);
+      // Fetch subjects: prioritize college_subjects, fallback to major_subjects
       let subjects: SubjectInfo[] = [];
-      if (ms && ms.length > 0) {
-        const subjectIds = ms.map((m: any) => m.subject_id);
-        const { data: subs } = await supabase.from("subjects").select("id, name_ar, code").in("id", subjectIds).order("display_order");
-        if (subs) subjects = subs as SubjectInfo[];
+      if (collegeId) {
+        const { data: cs } = await supabase.from("college_subjects").select("subject_id").eq("college_id", collegeId);
+        if (cs && cs.length > 0) {
+          const subjectIds = cs.map((c: any) => c.subject_id);
+          const { data: subs } = await supabase.from("subjects").select("id, name_ar, code").in("id", subjectIds).order("display_order");
+          if (subs) subjects = subs as SubjectInfo[];
+        }
+      }
+      if (subjects.length === 0 && majorId) {
+        const { data: ms } = await supabase.from("major_subjects").select("subject_id").eq("major_id", majorId!);
+        if (ms && ms.length > 0) {
+          const subjectIds = ms.map((m: any) => m.subject_id);
+          const { data: subs } = await supabase.from("subjects").select("id, name_ar, code").in("id", subjectIds).order("display_order");
+          if (subs) subjects = subs as SubjectInfo[];
+        }
       }
 
       // Fetch question counts and progress in parallel

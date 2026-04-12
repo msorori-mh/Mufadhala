@@ -22,7 +22,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
 
 const fetchExamData = async (userId: string) => {
-  const { data: s } = await supabase.from("students").select("id, major_id, user_id").eq("user_id", userId).maybeSingle();
+  const { data: s } = await supabase.from("students").select("id, major_id, college_id, user_id").eq("user_id", userId).maybeSingle();
   if (!s?.major_id) return { student: s, majorName: "", allQuestions: [] as Question[], pastAttempts: [] as ExamAttempt[], offlineInfo: { has: false, count: 0 } };
 
   const [{ data: major }, { data: lessons }, { data: attempts }] = await Promise.all([
@@ -37,11 +37,28 @@ const fetchExamData = async (userId: string) => {
         .in("lesson_id", lessonIds).order("display_order")
     : { data: [] };
 
+  // Build subject map: prioritize college_subjects, fallback to major_subjects
+  const lessonSubjectMap = new Map<string, string>();
+  (lessons || []).forEach((l: any) => { if (l.subject_id) lessonSubjectMap.set(l.id, l.subject_id); });
+
+  // Fetch subject names for display
+  let subjectNameMap = new Map<string, string>();
+  if (s.college_id) {
+    const { data: cs } = await supabase.from("college_subjects").select("subject_id, subjects(id, name_ar)").eq("college_id", s.college_id);
+    if (cs && cs.length > 0) {
+      cs.forEach((c: any) => { if (c.subjects) subjectNameMap.set(c.subjects.id, c.subjects.name_ar); });
+    }
+  }
+  if (subjectNameMap.size === 0 && s.major_id) {
+    const { data: ms } = await supabase.from("major_subjects").select("subject_id, subjects(id, name_ar)").eq("major_id", s.major_id);
+    if (ms && ms.length > 0) {
+      ms.forEach((m: any) => { if (m.subjects) subjectNameMap.set(m.subjects.id, m.subjects.name_ar); });
+    }
+  }
+
   let allQuestions: Question[] = [];
   if (qs && lessons) {
     const lessonIdSet = new Set(lessons.map((l: any) => l.id));
-    const lessonSubjectMap = new Map<string, string>();
-    lessons.forEach((l: any) => { if (l.subject_id) lessonSubjectMap.set(l.id, l.subject_id); });
     allQuestions = (qs as any[]).filter((q) => lessonIdSet.has(q.lesson_id)).map(q => ({
       ...q,
       subject: q.subject || lessonSubjectMap.get(q.lesson_id) || undefined,
