@@ -856,7 +856,7 @@ const ExamSimulator = () => {
                 className="gap-2"
                 onClick={() => {
                   const text = `حققت ${percentage}% في اختبار المحاكاة على #مُفَاضَلَة 🎓✨`;
-                  const url = "https://uni-admission-coach.lovable.app";
+                  const url = "https://mufadhala.com";
                   window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");
                 }}
               >
