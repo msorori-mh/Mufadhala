@@ -21,6 +21,10 @@ interface TimelinePhase {
 }
 
 const CollegeGuide = () => {
+  const { user } = useAuthContext();
+  const { data: studentData } = useStudentData(user?.id);
+  const studentGpa = studentData?.gpa ?? null;
+
   const [universities, setUniversities] = useState<any[]>([]);
   const [colleges, setColleges] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
