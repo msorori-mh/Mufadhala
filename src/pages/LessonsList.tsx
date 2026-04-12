@@ -202,6 +202,25 @@ const LessonsList = () => {
     return ids;
   }, [lessons, FREE_COUNT]);
 
+  // Compute free lessons remaining per subject
+  const freeCountBySubject = useMemo(() => {
+    const result = new Map<string | null, { total: number; free: number; remaining: number }>();
+    const bySubject = new Map<string | null, Lesson[]>();
+    lessons.forEach(l => {
+      const key = l.subject_id || null;
+      if (!bySubject.has(key)) bySubject.set(key, []);
+      bySubject.get(key)!.push(l);
+    });
+    bySubject.forEach((group, key) => {
+      const sorted = [...group].sort((a, b) => a.display_order - b.display_order);
+      const freeInSubject = sorted.slice(0, FREE_COUNT).length;
+      const totalInSubject = sorted.length;
+      const remaining = Math.max(0, FREE_COUNT - freeInSubject);
+      result.set(key, { total: totalInSubject, free: freeInSubject, remaining });
+    });
+    return result;
+  }, [lessons, FREE_COUNT]);
+
   const loading = authLoading || studentLoading || (!isOffline && lessonsLoading) || subLoading;
 
   const filteredLessons = useMemo(() => {
