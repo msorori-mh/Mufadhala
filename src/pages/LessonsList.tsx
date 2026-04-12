@@ -38,7 +38,7 @@ const GRADE_LABELS: Record<number, string> = {
   3: "مقرر الصف الثالث الثانوي",
 };
 
-const GradeLevelSection = ({ label, count, completedCount, children }: { label: string; count: number; completedCount: number; children: React.ReactNode }) => {
+const GradeLevelSection = ({ label, count, completedCount, questionCount, children }: { label: string; count: number; completedCount: number; questionCount: number; children: React.ReactNode }) => {
   const [open, setOpen] = useState(true);
   return (
     <Card className="overflow-hidden">
@@ -47,10 +47,11 @@ const GradeLevelSection = ({ label, count, completedCount, children }: { label: 
         onClick={() => setOpen(!open)}
         className="flex items-center justify-between w-full p-3 text-sm font-semibold hover:bg-muted/50 transition-colors"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <BookOpen className="w-4 h-4 text-primary" />
           <span className="text-foreground">{label}</span>
           <Badge variant="outline" className="text-[10px]">{count} درس</Badge>
+          <Badge variant="outline" className="text-[10px]">{questionCount} سؤال</Badge>
           {completedCount > 0 && (
             <Badge className="text-[10px] bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400">
               {completedCount}/{count} مكتمل
@@ -409,7 +410,7 @@ const LessonsList = () => {
                 return (
                   <div className="space-y-4">
                     {gradeGroups.map((group) => (
-                      <GradeLevelSection key={group.grade ?? "none"} label={group.label} count={group.lessons.length} completedCount={group.lessons.filter(l => completedLessons.has(l.id)).length}>
+                      <GradeLevelSection key={group.grade ?? "none"} label={group.label} count={group.lessons.length} completedCount={group.lessons.filter(l => completedLessons.has(l.id)).length} questionCount={group.lessons.reduce((sum, l) => sum + (questionCounts[l.id] || 0), 0)}>
                         <div className="space-y-3">
                           {group.lessons.map(renderLessonCard)}
                         </div>
