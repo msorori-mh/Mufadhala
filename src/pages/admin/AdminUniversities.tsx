@@ -273,7 +273,18 @@ const AdminUniversities = () => {
                   )}
                   <div className="space-y-2">
                     {coordinationTimeline.map((item, idx) => (
-                      <div key={idx} className="flex gap-2 items-start">
+                      <div
+                        key={idx}
+                        className="flex gap-2 items-start border rounded-md p-2 bg-background"
+                        draggable
+                        onDragStart={() => handleDragStart(idx)}
+                        onDragEnter={() => handleDragEnter(idx)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={(e) => e.preventDefault()}
+                      >
+                        <div className="cursor-grab active:cursor-grabbing pt-2 text-muted-foreground">
+                          <GripVertical className="w-4 h-4" />
+                        </div>
                         <div className="flex-1 space-y-1">
                           <Input
                             placeholder="اسم المرحلة (مثال: المرحلة الأولى)"
