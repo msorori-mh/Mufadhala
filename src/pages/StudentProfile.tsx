@@ -177,6 +177,12 @@ const StudentProfile = () => {
       return;
     }
 
+    // If phone changed and has a value, require OTP verification
+    if (phoneChanged && phone && !phoneVerified) {
+      toast({ variant: "destructive", title: "يرجى التحقق من رقم الجوال الجديد عبر رمز OTP أولاً" });
+      return;
+    }
+
     const gpaNum = gpa ? parseFloat(gpa) : null;
     if (gpa && (isNaN(gpaNum!) || gpaNum! < 0 || gpaNum! > 100)) {
       toast({ variant: "destructive", title: "يرجى إدخال معدل صحيح بين 0 و 100" });
