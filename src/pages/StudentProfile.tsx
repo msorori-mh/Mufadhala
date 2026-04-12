@@ -177,8 +177,8 @@ const StudentProfile = () => {
       return;
     }
 
-    // If phone changed and has a value, require OTP verification
-    if (phoneChanged && phone && !phoneVerified) {
+    // Only require OTP when CHANGING an existing phone, not when entering for the first time
+    if (phoneChanged && phone && originalPhone && !phoneVerified) {
       toast({ variant: "destructive", title: "يرجى التحقق من رقم الجوال الجديد عبر رمز OTP أولاً" });
       return;
     }
@@ -350,7 +350,7 @@ const StudentProfile = () => {
                       disabled={phoneVerified}
                       className={`text-left ${phone && !isValidYemeniPhone(phone) ? "border-destructive" : ""} ${phoneVerified ? "bg-muted" : ""}`}
                     />
-                    {phoneChanged && phone && isValidYemeniPhone(phone) && !phoneVerified && (
+                    {phoneChanged && phone && isValidYemeniPhone(phone) && !phoneVerified && originalPhone && (
                       <Button
                         type="button"
                         variant="outline"
