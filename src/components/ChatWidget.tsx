@@ -359,7 +359,7 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
           <div className="border-t border-border p-3">
             {remaining <= 0 ? (
               <p className="text-xs text-center text-destructive py-2">
-                لقد وصلت للحد اليومي (30 رسالة). حاول مرة أخرى غداً!
+                لقد وصلت للحد اليومي ({dailyLimit} رسالة). حاول مرة أخرى غداً!
               </p>
             ) : (
               <>

@@ -84,6 +84,7 @@ serve(async (req) => {
   }
 
   try {
+    await fetchDailyLimit();
     const clientIp = getClientIp(req);
     if (!checkIpLimit(clientIp)) {
       return new Response(
