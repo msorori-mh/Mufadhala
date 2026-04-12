@@ -167,6 +167,19 @@ const ExamSimulator = () => {
     },
   });
 
+  // Fetch free exam trial duration from cache
+  const { data: freeExamMinutes } = useQuery({
+    queryKey: ["free-exam-minutes"],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("get_cache", { _key: "free_exam_minutes" });
+      return data != null ? Number(data) : DEFAULT_TRIAL_MINUTES;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const TRIAL_TIME = (freeExamMinutes ?? DEFAULT_TRIAL_MINUTES) * 60;
+  const trialMinutesLabel = freeExamMinutes ?? DEFAULT_TRIAL_MINUTES;
+
   const loading = dataLoading && !isOffline;
 
   // Check pending results on phase change
