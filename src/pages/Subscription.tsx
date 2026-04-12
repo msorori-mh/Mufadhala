@@ -427,8 +427,20 @@ const Subscription = () => {
                       <div className={`rounded-lg p-3 border ${getZone(studentGovernorate) === "a" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border"}`}>
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-semibold text-sm">المنطقة ب</span>
-                          <Badge variant={getZone(studentGovernorate) === "a" ? "default" : "secondary"}>3,000 ريال</Badge>
+                          <div className="flex items-center gap-2">
+                            {plan.discount_zone_a > 0 && (
+                              <Badge variant="outline" className="text-xs border-green-500 text-green-600">خصم {plan.discount_zone_a}%</Badge>
+                            )}
+                            <Badge variant={getZone(studentGovernorate) === "a" ? "default" : "secondary"}>
+                              {plan.price_zone_a.toLocaleString()} ريال
+                            </Badge>
+                          </div>
                         </div>
+                        {plan.discount_zone_a > 0 && (
+                          <p className="text-[10px] text-muted-foreground mb-1">
+                            السعر الأصلي: <span className="line-through">{plan.price_default.toLocaleString()}</span> ريال
+                          </p>
+                        )}
                         <p className="text-xs text-muted-foreground leading-relaxed">
                           {ZONE_A_GOVERNORATES.join(" · ")}
                         </p>
@@ -437,8 +449,20 @@ const Subscription = () => {
                       <div className={`rounded-lg p-3 border ${getZone(studentGovernorate) === "b" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border"}`}>
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-semibold text-sm">المنطقة أ</span>
-                          <Badge variant={getZone(studentGovernorate) === "b" ? "default" : "secondary"}>7,000 ريال</Badge>
+                          <div className="flex items-center gap-2">
+                            {plan.discount_zone_b > 0 && (
+                              <Badge variant="outline" className="text-xs border-green-500 text-green-600">خصم {plan.discount_zone_b}%</Badge>
+                            )}
+                            <Badge variant={getZone(studentGovernorate) === "b" ? "default" : "secondary"}>
+                              {plan.price_zone_b.toLocaleString()} ريال
+                            </Badge>
+                          </div>
                         </div>
+                        {plan.discount_zone_b > 0 && (
+                          <p className="text-[10px] text-muted-foreground mb-1">
+                            السعر الأصلي: <span className="line-through">{plan.price_default.toLocaleString()}</span> ريال
+                          </p>
+                        )}
                         <p className="text-xs text-muted-foreground leading-relaxed">
                           {ZONE_B_GOVERNORATES.join(" · ")}
                         </p>
