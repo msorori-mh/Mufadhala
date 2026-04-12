@@ -4,11 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { Building2, BookOpen, Users, Loader2, MessageCircle, Save } from "lucide-react";
+import { Building2, BookOpen, Users, Loader2, MessageCircle, Save, Bot, Type } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+const AI_MODELS = [
+  { value: "google/gemini-3-flash-preview", label: "Gemini 3 Flash (سريع - افتراضي)" },
+  { value: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash (متوازن)" },
+  { value: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro (دقيق - أبطأ)" },
+  { value: "google/gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite (أسرع - أقل دقة)" },
+  { value: "openai/gpt-5-mini", label: "GPT-5 Mini (متوازن)" },
+  { value: "openai/gpt-5", label: "GPT-5 (دقيق جداً - مكلف)" },
+];
 
 const AdminDashboard = () => {
   const { loading: authLoading, isAdmin } = useAuth("moderator");
@@ -35,37 +46,71 @@ const AdminDashboard = () => {
     staleTime: 2 * 60 * 1000,
   });
 
-  // Chat daily limit setting
-  const { data: chatLimit } = useQuery({
-    queryKey: ["chat-daily-limit"],
+  // Chat settings from cache
+  const { data: chatSettings } = useQuery({
+    queryKey: ["chat-settings"],
     queryFn: async () => {
-      const { data } = await supabase.rpc("get_cache", { _key: "chat_daily_limit" });
-      return data != null ? Number(data) : 30;
+      const [limitRes, modelRes, welcomeRes] = await Promise.all([
+        supabase.rpc("get_cache", { _key: "chat_daily_limit" }),
+        supabase.rpc("get_cache", { _key: "chat_ai_model" }),
+        supabase.rpc("get_cache", { _key: "chat_welcome_text" }),
+      ]);
+      return {
+        limit: limitRes.data != null ? Number(limitRes.data) : 30,
+        model: typeof modelRes.data === "string" ? modelRes.data : "google/gemini-3-flash-preview",
+        welcome: typeof welcomeRes.data === "string" ? welcomeRes.data : "مرحباً! أنا مساعد مُفَاضَلَة الذكي 👋",
+      };
     },
     enabled: !authLoading && isAdmin,
   });
 
-  const [limitInput, setLimitInput] = useState<string>("");
-  const limitValue = limitInput || String(chatLimit ?? 30);
+  const [limitInput, setLimitInput] = useState("");
+  const [modelInput, setModelInput] = useState("");
+  const [welcomeInput, setWelcomeInput] = useState("");
 
-  const saveLimitMutation = useMutation({
-    mutationFn: async (newLimit: number) => {
+  const currentLimit = limitInput || String(chatSettings?.limit ?? 30);
+  const currentModel = modelInput || chatSettings?.model || "google/gemini-3-flash-preview";
+  const currentWelcome = welcomeInput !== "" ? welcomeInput : (chatSettings?.welcome ?? "");
+
+  const saveCacheMutation = useMutation({
+    mutationFn: async ({ key, value }: { key: string; value: any }) => {
       const { error } = await supabase.rpc("set_cache", {
-        _key: "chat_daily_limit",
-        _value: newLimit as any,
-        _ttl_seconds: 315360000, // 10 years
+        _key: key,
+        _value: value as any,
+        _ttl_seconds: 315360000,
       });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "تم حفظ حد الرسائل اليومي بنجاح" });
-      setLimitInput("");
-      queryClient.invalidateQueries({ queryKey: ["chat-daily-limit"] });
+      toast({ title: "تم حفظ الإعداد بنجاح" });
+      queryClient.invalidateQueries({ queryKey: ["chat-settings"] });
     },
     onError: (err: any) => {
       toast({ variant: "destructive", title: "فشل حفظ الإعداد", description: err.message });
     },
   });
+
+  const saveLimit = () => {
+    const val = Number(limitInput);
+    if (val >= 1 && val <= 500) {
+      saveCacheMutation.mutate({ key: "chat_daily_limit", value: val });
+      setLimitInput("");
+    }
+  };
+
+  const saveModel = () => {
+    if (modelInput && modelInput !== chatSettings?.model) {
+      saveCacheMutation.mutate({ key: "chat_ai_model", value: modelInput });
+      setModelInput("");
+    }
+  };
+
+  const saveWelcome = () => {
+    if (welcomeInput && welcomeInput !== chatSettings?.welcome) {
+      saveCacheMutation.mutate({ key: "chat_welcome_text", value: welcomeInput });
+      setWelcomeInput("");
+    }
+  };
 
   if (authLoading || loading) {
     return (
@@ -114,35 +159,93 @@ const AdminDashboard = () => {
                 إعدادات المساعد الذكي
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-end gap-3 max-w-sm">
-                <div className="flex-1 space-y-1.5">
-                  <Label htmlFor="chat-limit" className="text-sm">حد الرسائل اليومي لكل طالب</Label>
+            <CardContent className="space-y-5">
+              {/* Daily limit */}
+              <div className="flex items-end gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="chat-limit" className="text-sm flex items-center gap-1.5">
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    حد الرسائل اليومي
+                  </Label>
                   <Input
                     id="chat-limit"
                     type="number"
                     min={1}
                     max={500}
-                    value={limitValue}
+                    value={currentLimit}
                     onChange={(e) => setLimitInput(e.target.value)}
                     className="max-w-[120px]"
                   />
+                  <p className="text-[10px] text-muted-foreground">الحالي: {chatSettings?.limit ?? 30} رسالة</p>
                 </div>
                 <Button
                   size="sm"
-                  disabled={saveLimitMutation.isPending || !limitInput || Number(limitInput) === chatLimit}
-                  onClick={() => {
-                    const val = Number(limitInput);
-                    if (val >= 1 && val <= 500) saveLimitMutation.mutate(val);
-                  }}
+                  disabled={saveCacheMutation.isPending || !limitInput || Number(limitInput) === chatSettings?.limit}
+                  onClick={saveLimit}
                 >
-                  {saveLimitMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 ml-1" />}
+                  {saveCacheMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 ml-1" />}
                   حفظ
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                الحد الحالي: {chatLimit ?? 30} رسالة يومياً
-              </p>
+
+              {/* AI Model */}
+              <div className="flex items-end gap-3">
+                <div className="space-y-1.5 flex-1 max-w-sm">
+                  <Label htmlFor="chat-model" className="text-sm flex items-center gap-1.5">
+                    <Bot className="w-3.5 h-3.5" />
+                    نموذج الذكاء الاصطناعي
+                  </Label>
+                  <Select value={currentModel} onValueChange={(v) => setModelInput(v)}>
+                    <SelectTrigger id="chat-model">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AI_MODELS.map((m) => (
+                        <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground">
+                    الحالي: {AI_MODELS.find(m => m.value === chatSettings?.model)?.label || chatSettings?.model}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  disabled={saveCacheMutation.isPending || !modelInput || modelInput === chatSettings?.model}
+                  onClick={saveModel}
+                >
+                  {saveCacheMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 ml-1" />}
+                  حفظ
+                </Button>
+              </div>
+
+              {/* Welcome text */}
+              <div className="space-y-1.5 max-w-lg">
+                <Label htmlFor="chat-welcome" className="text-sm flex items-center gap-1.5">
+                  <Type className="w-3.5 h-3.5" />
+                  نص الترحيب
+                </Label>
+                <div className="flex gap-2">
+                  <Textarea
+                    id="chat-welcome"
+                    value={currentWelcome}
+                    onChange={(e) => setWelcomeInput(e.target.value)}
+                    rows={2}
+                    className="text-sm"
+                    placeholder="مرحباً! أنا مساعد مُفَاضَلَة الذكي 👋"
+                  />
+                  <Button
+                    size="sm"
+                    className="shrink-0 self-end"
+                    disabled={saveCacheMutation.isPending || !welcomeInput || welcomeInput === chatSettings?.welcome}
+                    onClick={saveWelcome}
+                  >
+                    {saveCacheMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 ml-1" />}
+                    حفظ
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground">يظهر للطالب عند فتح المحادثة لأول مرة</p>
+              </div>
             </CardContent>
           </Card>
         )}
