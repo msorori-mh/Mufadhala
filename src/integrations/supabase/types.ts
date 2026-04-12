@@ -35,6 +35,42 @@ export type Database = {
         }
         Relationships: []
       }
+      college_subjects: {
+        Row: {
+          college_id: string
+          created_at: string
+          id: string
+          subject_id: string
+        }
+        Insert: {
+          college_id: string
+          created_at?: string
+          id?: string
+          subject_id: string
+        }
+        Update: {
+          college_id?: string
+          created_at?: string
+          id?: string
+          subject_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "college_subjects_college_id_fkey"
+            columns: ["college_id"]
+            isOneToOne: false
+            referencedRelation: "colleges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "college_subjects_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       colleges: {
         Row: {
           acceptance_rate: number | null
