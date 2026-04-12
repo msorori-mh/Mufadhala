@@ -108,6 +108,70 @@ const StudentProfile = () => {
       .then(({ data }) => { if (data) setMajors(data); });
   }, [collegeId]);
 
+  // OTP cooldown timer
+  useEffect(() => {
+    if (otpCooldown <= 0) return;
+    const timer = setTimeout(() => setOtpCooldown(otpCooldown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [otpCooldown]);
+
+  const phoneChanged = phone !== originalPhone;
+
+  const handleSendOtp = async () => {
+    if (!phone || !isValidYemeniPhone(phone)) return;
+    setSendingOtp(true);
+    try {
+      const res = await supabase.functions.invoke("send-otp", { body: { phone } });
+      if (res.error || res.data?.error) {
+        const retryAfter = res.data?.retryAfter;
+        if (retryAfter) setOtpCooldown(retryAfter);
+        toast({ variant: "destructive", title: "خطأ", description: res.data?.error || "فشل إرسال رمز التحقق" });
+      } else {
+        setOtpSent(true);
+        setOtpCooldown(60);
+        toast({ title: "تم إرسال رمز التحقق إلى رقمك الجديد" });
+      }
+    } catch {
+      toast({ variant: "destructive", title: "خطأ غير متوقع" });
+    }
+    setSendingOtp(false);
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpCode || otpCode.length !== 6) return;
+    setVerifyingOtp(true);
+    try {
+      const fullPhone = `+967${phone}`;
+      const supabaseAdmin = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+      );
+      // Just verify OTP is correct — we don't need the session from verify-otp
+      // We'll check it manually via the otp_codes table approach
+      // Actually, let's call a lightweight check. We can use send-otp's verify endpoint
+      const res = await supabase.functions.invoke("verify-otp", {
+        body: { phone, code: otpCode },
+      });
+      if (res.error || res.data?.error) {
+        toast({ variant: "destructive", title: "رمز التحقق غير صحيح أو منتهي الصلاحية" });
+      } else {
+        setPhoneVerified(true);
+        toast({ title: "تم التحقق من الرقم بنجاح ✅" });
+      }
+    } catch {
+      toast({ variant: "destructive", title: "خطأ غير متوقع" });
+    }
+    setVerifyingOtp(false);
+  };
+
+  const resetPhoneEdit = () => {
+    setPhone(originalPhone);
+    setPhoneEditing(false);
+    setOtpSent(false);
+    setOtpCode("");
+    setPhoneVerified(false);
+  };
+
   const handleSave = async () => {
     if (!user) return;
 
