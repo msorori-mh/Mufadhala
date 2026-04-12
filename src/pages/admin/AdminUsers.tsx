@@ -138,10 +138,10 @@ const AdminUsers = () => {
       permsMap.set(p.user_id, list);
     });
 
-    const userList: UserWithRoles[] = students.map((s) => ({
+    const allUsers: UserWithRoles[] = students.map((s) => ({
       user_id: s.user_id,
       name: [s.first_name, s.second_name, s.third_name, s.fourth_name].filter(Boolean).join(" ") || "بدون اسم",
-      roles: rolesMap.get(s.user_id) || ["student"],
+      roles: rolesMap.get(s.user_id) || [],
       scopes: scopesMap.get(s.user_id) || [],
       permissions: permsMap.get(s.user_id) || [],
     }));
@@ -149,11 +149,13 @@ const AdminUsers = () => {
     const studentUserIds = new Set(students.map((s) => s.user_id));
     rolesMap.forEach((roles, userId) => {
       if (!studentUserIds.has(userId)) {
-        userList.push({ user_id: userId, name: "مستخدم", roles, scopes: scopesMap.get(userId) || [], permissions: permsMap.get(userId) || [] });
+        allUsers.push({ user_id: userId, name: "مستخدم", roles, scopes: scopesMap.get(userId) || [], permissions: permsMap.get(userId) || [] });
       }
     });
 
-    setUsers(userList);
+    // Only show users who have admin or moderator roles (exclude pure students)
+    const staffUsers = allUsers.filter(u => u.roles.some(r => r === 'admin' || r === 'moderator'));
+    setUsers(staffUsers);
     setLoading(false);
   };
 
@@ -472,7 +474,7 @@ const AdminUsers = () => {
             <Select value={newRole} onValueChange={(v) => setNewRole(v as AppRole)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(["admin", "moderator", "student"] as AppRole[])
+                {(["admin", "moderator"] as AppRole[])
                   .filter((r) => !selectedUser?.roles.includes(r))
                   .map((r) => (<SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>))}
               </SelectContent>
