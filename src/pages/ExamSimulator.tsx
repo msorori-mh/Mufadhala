@@ -466,9 +466,9 @@ const ExamSimulator = () => {
 
   // ---- INTRO PHASE ----
   if (phase === "intro") {
-    const canAccess = isStaff || hasActiveSubscription;
+    const canAccessFull = isStaff || hasActiveSubscription;
     const attemptsUsed = pastAttempts.length;
-    const canStartOnline = canAccess && attemptsUsed < MAX_ATTEMPTS && allQuestions.length > 0;
+    const canStartOnline = (canAccessFull ? attemptsUsed < MAX_ATTEMPTS : true) && allQuestions.length > 0;
     const canStartOffline = isOffline && hasOfflineQuestions;
     const canStart = isOffline ? canStartOffline : canStartOnline;
     const questionsAvailable = isOffline ? offlineQuestionCount : Math.min(allQuestions.length, MAX_QUESTIONS);
@@ -510,19 +510,39 @@ const ExamSimulator = () => {
             <p className="text-sm text-muted-foreground mt-1">تدرب بذكاء.. لتضمن القبول.</p>
           </div>
 
+          {/* Trial notice for non-subscribers */}
+          {!isOffline && isTrial && allQuestions.length > 0 && (
+            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900">
+              <CardContent className="py-4 px-4 flex items-start gap-3">
+                <Clock className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">تجربة مجانية — 5 دقائق فقط</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-500 mt-1">
+                    يمكنك تجربة محاكي الاختبار لمدة 5 دقائق. لفتح الاختبار الكامل (90 دقيقة)، فعّل اشتراكك.
+                  </p>
+                  <Button size="sm" variant="outline" className="mt-2 text-xs" onClick={() => navigate("/subscription")}>
+                    تفعيل الاشتراك
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardContent className="py-5 space-y-4">
               <h2 className="font-semibold text-foreground">تعليمات الاختبار</h2>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2"><Clock className="w-4 h-4 mt-0.5 text-primary shrink-0" /><span><strong>{Math.min(questionsAvailable, MAX_QUESTIONS)} سؤال</strong> في <strong>90 دقيقة</strong> كحد أقصى</span></li>
+                <li className="flex items-start gap-2"><Clock className="w-4 h-4 mt-0.5 text-primary shrink-0" /><span><strong>{Math.min(questionsAvailable, MAX_QUESTIONS)} سؤال</strong> في <strong>{isTrial ? "5 دقائق" : "90 دقيقة"}</strong> كحد أقصى</span></li>
                 <li className="flex items-start gap-2"><AlertTriangle className="w-4 h-4 mt-0.5 text-orange-500 shrink-0" /><span>حد أقصى <strong>دقيقتين</strong> لكل سؤال — ينتقل تلقائياً عند انتهاء الوقت</span></li>
-                <li className="flex items-start gap-2"><RotateCcw className="w-4 h-4 mt-0.5 text-secondary shrink-0" /><span>مسموح بـ <strong>{MAX_ATTEMPTS} محاولات</strong> فقط {!isOffline && `(استخدمت ${attemptsUsed})`}</span></li>
+                {!isTrial && (
+                  <li className="flex items-start gap-2"><RotateCcw className="w-4 h-4 mt-0.5 text-secondary shrink-0" /><span>مسموح بـ <strong>{MAX_ATTEMPTS} محاولات</strong> فقط {!isOffline && `(استخدمت ${attemptsUsed})`}</span></li>
+                )}
               </ul>
             </CardContent>
           </Card>
 
           {/* Download for offline button */}
-          {!isOffline && allQuestions.length > 0 && (
+          {!isOffline && canAccessFull && allQuestions.length > 0 && (
             <Button
               variant="outline"
               className="w-full"
@@ -564,20 +584,11 @@ const ExamSimulator = () => {
             </Card>
           )}
 
-          {!isOffline && !canAccess && (
-            <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-900">
-              <CardContent className="py-4 text-center">
-                <p className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">يجب تفعيل اشتراكك للوصول إلى الاختبارات</p>
-                <Button className="mt-2" size="sm" onClick={() => navigate("/subscription")}>تفعيل الاشتراك</Button>
-              </CardContent>
-            </Card>
-          )}
-
           <Button onClick={startExam} disabled={!canStart} className="w-full" size="lg">
             <Play className="w-5 h-5 ml-2" />
             {isOffline
               ? (hasOfflineQuestions ? "ابدأ اختبار أوفلاين" : "لا توجد أسئلة محفوظة")
-              : (!canAccess ? "يجب تفعيل الاشتراك أولاً" : attemptsUsed >= MAX_ATTEMPTS ? "استنفذت جميع المحاولات" : "ابدأ الاختبار")}
+              : (attemptsUsed >= MAX_ATTEMPTS && canAccessFull ? "استنفذت جميع المحاولات" : isTrial ? "ابدأ التجربة المجانية (5 دقائق)" : "ابدأ الاختبار")}
           </Button>
 
           {/* Past attempts */}
