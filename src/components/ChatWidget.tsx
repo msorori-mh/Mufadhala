@@ -3,6 +3,7 @@ import { MessageCircle, X, Send, Bot, User, Loader2, Camera, ImageIcon } from "l
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import { supabase } from "@/integrations/supabase/client";
 
 type ContentPart =
   | { type: "text"; text: string }
@@ -14,9 +15,24 @@ type Message = {
 };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
-const DAILY_LIMIT = 30;
+const DEFAULT_DAILY_LIMIT = 30;
 const STORAGE_KEY = "mufadhala_chat_usage";
 const MAX_IMAGE_SIZE = 1024; // max dimension for resizing
+
+let cachedDailyLimit: number | null = null;
+
+async function fetchDailyLimit(): Promise<number> {
+  if (cachedDailyLimit !== null) return cachedDailyLimit;
+  try {
+    const { data } = await supabase.rpc("get_cache", { _key: "chat_daily_limit" });
+    if (data != null) {
+      cachedDailyLimit = typeof data === "number" ? data : Number(data);
+      if (!isNaN(cachedDailyLimit!)) return cachedDailyLimit!;
+    }
+  } catch {}
+  cachedDailyLimit = DEFAULT_DAILY_LIMIT;
+  return DEFAULT_DAILY_LIMIT;
+}
 
 function getDailyUsage(): { count: number; date: string } {
   try {
@@ -37,8 +53,8 @@ function incrementUsage() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(usage));
 }
 
-function getRemainingMessages(): number {
-  return Math.max(0, DAILY_LIMIT - getDailyUsage().count);
+function getRemainingMessages(limit: number): number {
+  return Math.max(0, limit - getDailyUsage().count);
 }
 
 function resizeImage(file: File): Promise<string> {
@@ -156,10 +172,18 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [remaining, setRemaining] = useState(getRemainingMessages());
+  const [dailyLimit, setDailyLimit] = useState(DEFAULT_DAILY_LIMIT);
+  const [remaining, setRemaining] = useState(getRemainingMessages(DEFAULT_DAILY_LIMIT));
   const [pendingImages, setPendingImages] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetchDailyLimit().then((limit) => {
+      setDailyLimit(limit);
+      setRemaining(getRemainingMessages(limit));
+    });
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -198,13 +222,13 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
     const images = [...pendingImages];
     if ((!text && images.length === 0) || loading) return;
 
-    if (getRemainingMessages() <= 0) {
-      toast.error("لقد وصلت للحد اليومي من الرسائل (30 رسالة). حاول مرة أخرى غداً!");
+    if (getRemainingMessages(dailyLimit) <= 0) {
+      toast.error(`لقد وصلت للحد اليومي من الرسائل (${dailyLimit} رسالة). حاول مرة أخرى غداً!`);
       return;
     }
 
     incrementUsage();
-    setRemaining(getRemainingMessages());
+    setRemaining(getRemainingMessages(dailyLimit));
 
     // Build multimodal content if images exist
     let userContent: string | ContentPart[];
@@ -335,7 +359,7 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
           <div className="border-t border-border p-3">
             {remaining <= 0 ? (
               <p className="text-xs text-center text-destructive py-2">
-                لقد وصلت للحد اليومي (30 رسالة). حاول مرة أخرى غداً!
+                لقد وصلت للحد اليومي ({dailyLimit} رسالة). حاول مرة أخرى غداً!
               </p>
             ) : (
               <>
