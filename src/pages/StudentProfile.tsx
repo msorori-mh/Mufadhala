@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { GraduationCap, ArrowRight, User, School, Phone, Save, Loader2, Pencil } from "lucide-react";
+import { GraduationCap, ArrowRight, User, School, Phone, Save, Loader2, Pencil, ShieldCheck, Send } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -30,6 +30,12 @@ const StudentProfile = () => {
   const [saving, setSaving] = useState(false);
   const [originalPhone, setOriginalPhone] = useState("");
   const [phoneEditing, setPhoneEditing] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState(0);
 
   // Student data
   const [firstName, setFirstName] = useState("");
@@ -102,6 +108,62 @@ const StudentProfile = () => {
       .then(({ data }) => { if (data) setMajors(data); });
   }, [collegeId]);
 
+  // OTP cooldown timer
+  useEffect(() => {
+    if (otpCooldown <= 0) return;
+    const timer = setTimeout(() => setOtpCooldown(otpCooldown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [otpCooldown]);
+
+  const phoneChanged = phone !== originalPhone;
+
+  const handleSendOtp = async () => {
+    if (!phone || !isValidYemeniPhone(phone)) return;
+    setSendingOtp(true);
+    try {
+      const res = await supabase.functions.invoke("send-otp", { body: { phone } });
+      if (res.error || res.data?.error) {
+        const retryAfter = res.data?.retryAfter;
+        if (retryAfter) setOtpCooldown(retryAfter);
+        toast({ variant: "destructive", title: "خطأ", description: res.data?.error || "فشل إرسال رمز التحقق" });
+      } else {
+        setOtpSent(true);
+        setOtpCooldown(60);
+        toast({ title: "تم إرسال رمز التحقق إلى رقمك الجديد" });
+      }
+    } catch {
+      toast({ variant: "destructive", title: "خطأ غير متوقع" });
+    }
+    setSendingOtp(false);
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpCode || otpCode.length !== 6) return;
+    setVerifyingOtp(true);
+    try {
+      const res = await supabase.functions.invoke("verify-otp", {
+        body: { phone, code: otpCode },
+      });
+      if (res.error || res.data?.error) {
+        toast({ variant: "destructive", title: "رمز التحقق غير صحيح أو منتهي الصلاحية" });
+      } else {
+        setPhoneVerified(true);
+        toast({ title: "تم التحقق من الرقم بنجاح ✅" });
+      }
+    } catch {
+      toast({ variant: "destructive", title: "خطأ غير متوقع" });
+    }
+    setVerifyingOtp(false);
+  };
+
+  const resetPhoneEdit = () => {
+    setPhone(originalPhone);
+    setPhoneEditing(false);
+    setOtpSent(false);
+    setOtpCode("");
+    setPhoneVerified(false);
+  };
+
   const handleSave = async () => {
     if (!user) return;
 
@@ -112,6 +174,12 @@ const StudentProfile = () => {
 
     if (phone && !isValidYemeniPhone(phone)) {
       toast({ variant: "destructive", title: "رقم الجوال غير صحيح", description: "يجب أن يبدأ بـ 7 ويتكون من 9 أرقام" });
+      return;
+    }
+
+    // If phone changed and has a value, require OTP verification
+    if (phoneChanged && phone && !phoneVerified) {
+      toast({ variant: "destructive", title: "يرجى التحقق من رقم الجوال الجديد عبر رمز OTP أولاً" });
       return;
     }
 
@@ -163,6 +231,11 @@ const StudentProfile = () => {
       toast({ variant: "destructive", title: "خطأ في الحفظ", description: msg });
     } else {
       toast({ title: "تم حفظ البيانات بنجاح" });
+      setOriginalPhone(phone);
+      setPhoneEditing(false);
+      setOtpSent(false);
+      setOtpCode("");
+      setPhoneVerified(false);
     }
     setSaving(false);
   };
@@ -236,7 +309,7 @@ const StudentProfile = () => {
 
             <Separator />
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label className="text-xs flex items-center gap-1">
                 <Phone className="w-3 h-3" />
                 رقم الجوال
@@ -261,28 +334,80 @@ const StudentProfile = () => {
                   </Button>
                 </div>
               ) : (
-                <Input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
-                  placeholder="مثال: 777123456"
-                  type="tel"
-                  dir="ltr"
-                  className={`text-left ${phone && !isValidYemeniPhone(phone) ? "border-destructive" : ""}`}
-                />
-              )}
-              {phone && !isValidYemeniPhone(phone) && (
-                <p className="text-xs text-destructive">يجب أن يبدأ بـ 7 ويتكون من 9 أرقام</p>
-              )}
-              {phoneEditing && originalPhone && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs text-muted-foreground"
-                  onClick={() => { setPhone(originalPhone); setPhoneEditing(false); }}
-                >
-                  إلغاء التعديل
-                </Button>
+                <>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={phone}
+                      onChange={(e) => {
+                        setPhone(e.target.value.replace(/\D/g, "").slice(0, 9));
+                        setPhoneVerified(false);
+                        setOtpSent(false);
+                        setOtpCode("");
+                      }}
+                      placeholder="مثال: 777123456"
+                      type="tel"
+                      dir="ltr"
+                      disabled={phoneVerified}
+                      className={`text-left ${phone && !isValidYemeniPhone(phone) ? "border-destructive" : ""} ${phoneVerified ? "bg-muted" : ""}`}
+                    />
+                    {phoneChanged && phone && isValidYemeniPhone(phone) && !phoneVerified && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0 gap-1"
+                        disabled={sendingOtp || (otpCooldown > 0)}
+                        onClick={handleSendOtp}
+                      >
+                        {sendingOtp ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                        {otpCooldown > 0 ? `${otpCooldown}ث` : otpSent ? "إعادة الإرسال" : "إرسال رمز"}
+                      </Button>
+                    )}
+                    {phoneVerified && (
+                      <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    )}
+                  </div>
+
+                  {phone && !isValidYemeniPhone(phone) && (
+                    <p className="text-xs text-destructive">يجب أن يبدأ بـ 7 ويتكون من 9 أرقام</p>
+                  )}
+
+                  {otpSent && !phoneVerified && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <Input
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        placeholder="أدخل رمز التحقق (6 أرقام)"
+                        type="tel"
+                        dir="ltr"
+                        className="text-left font-mono tracking-widest"
+                        maxLength={6}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={verifyingOtp || otpCode.length !== 6}
+                        onClick={handleVerifyOtp}
+                        className="shrink-0 gap-1"
+                      >
+                        {verifyingOtp ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
+                        تحقق
+                      </Button>
+                    </div>
+                  )}
+
+                  {phoneEditing && originalPhone && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-muted-foreground"
+                      onClick={resetPhoneEdit}
+                    >
+                      إلغاء التعديل
+                    </Button>
+                  )}
+                </>
               )}
             </div>
 
