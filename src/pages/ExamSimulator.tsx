@@ -82,7 +82,8 @@ const fetchExamData = async (userId: string) => {
 };
 
 const MAX_QUESTIONS = 45;
-const TOTAL_TIME = 90 * 60;
+const FULL_TIME = 90 * 60;
+const TRIAL_TIME = 5 * 60; // 5 minutes for non-subscribers
 const PER_QUESTION_TIME = 2 * 60;
 const MAX_ATTEMPTS = 3;
 
@@ -115,6 +116,7 @@ const ExamSimulator = () => {
   const { isActive: hasActiveSubscription, loading: subLoading } = useSubscription(user?.id);
   const isOffline = useOfflineStatus();
   const { toast } = useToast();
+  const isTrial = !isStaff && !hasActiveSubscription;
 
   const [student, setStudent] = useState<any>(null);
   const [majorName, setMajorName] = useState("");
@@ -133,7 +135,8 @@ const ExamSimulator = () => {
   const [examQuestions, setExamQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [totalTimeLeft, setTotalTimeLeft] = useState(TOTAL_TIME);
+  const [totalTimeLeft, setTotalTimeLeft] = useState(FULL_TIME);
+  const [trialExpired, setTrialExpired] = useState(false);
   const [questionTimeLeft, setQuestionTimeLeft] = useState(PER_QUESTION_TIME);
   const [_attemptId, setAttemptId] = useState<string | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
