@@ -172,10 +172,19 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [remaining, setRemaining] = useState(getRemainingMessages());
+  const [dailyLimit, setDailyLimit] = useState(DEFAULT_DAILY_LIMIT);
+  const [remaining, setRemaining] = useState(getRemainingMessages(DEFAULT_DAILY_LIMIT));
+  const [pendingImages, setPendingImages] = useState<string[]>([]);
   const [pendingImages, setPendingImages] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetchDailyLimit().then((limit) => {
+      setDailyLimit(limit);
+      setRemaining(getRemainingMessages(limit));
+    });
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -214,13 +223,13 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
     const images = [...pendingImages];
     if ((!text && images.length === 0) || loading) return;
 
-    if (getRemainingMessages() <= 0) {
-      toast.error("لقد وصلت للحد اليومي من الرسائل (30 رسالة). حاول مرة أخرى غداً!");
+    if (getRemainingMessages(dailyLimit) <= 0) {
+      toast.error(`لقد وصلت للحد اليومي من الرسائل (${dailyLimit} رسالة). حاول مرة أخرى غداً!`);
       return;
     }
 
     incrementUsage();
-    setRemaining(getRemainingMessages());
+    setRemaining(getRemainingMessages(dailyLimit));
 
     // Build multimodal content if images exist
     let userContent: string | ContentPart[];
