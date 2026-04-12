@@ -1331,6 +1331,13 @@ const AdminContent = () => {
               </select>
             </div>
             <div className="space-y-2">
+              <Label>الصف الدراسي</Label>
+              <select value={lessonGradeLevel ?? ""} onChange={(e) => setLessonGradeLevel(e.target.value ? Number(e.target.value) : null)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <option value="">بدون تصنيف</option>
+                {GRADE_LEVELS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
               <Label>عنوان الدرس *</Label>
               <Input value={lessonTitle} onChange={(e) => setLessonTitle(e.target.value)} />
             </div>
