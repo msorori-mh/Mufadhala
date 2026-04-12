@@ -12,7 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Search, ShieldPlus, Trash2, UserCog, Settings2, KeyRound } from "lucide-react";
+import { Loader2, Search, ShieldPlus, Trash2, UserCog, Settings2, KeyRound, UserX } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ALL_PERMISSIONS, PERMISSION_LABELS, type ModeratorPermission } from "@/hooks/useModeratorPermissions";
 
 type AppRole = "admin" | "moderator" | "student";
