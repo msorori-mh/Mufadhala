@@ -237,6 +237,20 @@ const AdminColleges = () => {
                     <Download className="w-4 h-4" /> تحميل قالب Excel
                   </Button>
                   <div className="space-y-2">
+                    <Label>وضع الاستيراد</Label>
+                    <div className="flex gap-2">
+                      <Button variant={importMode === "add" ? "default" : "outline"} size="sm" className="flex-1" onClick={() => setImportMode("add")}>
+                        إضافة فقط
+                      </Button>
+                      <Button variant={importMode === "update" ? "default" : "outline"} size="sm" className="flex-1" onClick={() => setImportMode("update")}>
+                        تحديث الموجود
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {importMode === "add" ? "سيتم إضافة جميع السطور ككليات جديدة" : "سيتم تحديث الكليات الموجودة (بالرمز أو الاسم) وإضافة الجديدة"}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
                     <Label>اختر ملف (Excel)</Label>
                     <Input ref={importFileRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImportFile} disabled={importing} />
                   </div>
@@ -248,7 +262,10 @@ const AdminColleges = () => {
                   {importResults && (
                     <div className="space-y-2 text-sm">
                       {importResults.added > 0 && (
-                        <p className="text-green-600 dark:text-green-400">✓ تم إضافة {importResults.added} كلية بنجاح</p>
+                        <p className="text-green-600 dark:text-green-400">✓ تم إضافة {importResults.added} كلية جديدة</p>
+                      )}
+                      {importResults.updated > 0 && (
+                        <p className="text-blue-600 dark:text-blue-400">✓ تم تحديث {importResults.updated} كلية موجودة</p>
                       )}
                       {importResults.errors.length > 0 && (
                         <div className="space-y-1">
