@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,9 +12,10 @@ import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, GraduationCap, Percent, CalendarClock, FileText, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, GraduationCap, Percent, CalendarClock, FileText, AlertCircle, Upload, Download } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import * as XLSX from "xlsx";
 
 const AdminColleges = () => {
   const { loading: authLoading, isAdmin } = useAuth("moderator");
