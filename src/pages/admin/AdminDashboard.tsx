@@ -99,11 +99,15 @@ const AdminDashboard = () => {
   const [modelInput, setModelInput] = useState("");
   const [welcomeInput, setWelcomeInput] = useState("");
   const [promptInput, setPromptInput] = useState<string | null>(null);
+  const [freeLessonsInput, setFreeLessonsInput] = useState("");
+  const [freeExamInput, setFreeExamInput] = useState("");
 
   const currentLimit = limitInput || String(chatSettings?.limit ?? 30);
   const currentModel = modelInput || chatSettings?.model || "google/gemini-3-flash-preview";
   const currentWelcome = welcomeInput !== "" ? welcomeInput : (chatSettings?.welcome ?? "");
   const currentPrompt = promptInput !== null ? promptInput : (chatSettings?.systemPrompt ?? "");
+  const currentFreeLessons = freeLessonsInput || String(chatSettings?.freeLessonsCount ?? 3);
+  const currentFreeExam = freeExamInput || String(chatSettings?.freeExamMinutes ?? 5);
 
   const saveCacheMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
