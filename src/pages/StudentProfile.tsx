@@ -364,7 +364,7 @@ const StudentProfile = () => {
                       </Button>
                     )}
                     {phoneVerified && (
-                      <ShieldCheck className="w-5 h-5 text-green-500 shrink-0" />
+                      <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     )}
                   </div>
 
