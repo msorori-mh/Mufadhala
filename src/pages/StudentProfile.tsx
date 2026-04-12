@@ -231,6 +231,11 @@ const StudentProfile = () => {
       toast({ variant: "destructive", title: "خطأ في الحفظ", description: msg });
     } else {
       toast({ title: "تم حفظ البيانات بنجاح" });
+      setOriginalPhone(phone);
+      setPhoneEditing(false);
+      setOtpSent(false);
+      setOtpCode("");
+      setPhoneVerified(false);
     }
     setSaving(false);
   };
