@@ -41,7 +41,8 @@ const AdminColleges = () => {
   const [saving, setSaving] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [importResults, setImportResults] = useState<{ added: number; errors: string[] } | null>(null);
+  const [importMode, setImportMode] = useState<"add" | "update">("add");
+  const [importResults, setImportResults] = useState<{ added: number; updated: number; errors: string[] } | null>(null);
   const importFileRef = useRef<HTMLInputElement>(null);
   const fetchData = async () => {
     const [{ data: c }, { data: u }] = await Promise.all([
@@ -149,6 +150,7 @@ const AdminColleges = () => {
 
       const errors: string[] = [];
       let added = 0;
+      let updated = 0;
       const dataRows = rows.slice(1).filter(r => r.some(cell => cell != null && String(cell).trim()));
 
       for (let i = 0; i < dataRows.length; i++) {
@@ -176,22 +178,30 @@ const AdminColleges = () => {
           continue;
         }
 
-        const { error } = await supabase.from("colleges").insert({
+        const payload = {
           name_ar: nameAr, name_en: nameEn, code, university_id: uniId,
           min_gpa: minGpa, capacity, registration_deadline: deadline,
           required_documents: docs, notes, is_active: true, display_order: 0,
-        });
+        };
 
-        if (error) {
-          errors.push(`سطر ${rowNum}: ${error.message}`);
-        } else {
-          added++;
+        if (importMode === "update") {
+          // Try to find existing college by code + university
+          const existing = colleges.find(c => c.university_id === uniId && (c.code === code || c.name_ar === nameAr));
+          if (existing) {
+            const { error } = await supabase.from("colleges").update(payload).eq("id", existing.id);
+            if (error) { errors.push(`سطر ${rowNum}: ${error.message}`); } else { updated++; }
+            continue;
+          }
         }
+
+        // Insert new
+        const { error } = await supabase.from("colleges").insert(payload);
+        if (error) { errors.push(`سطر ${rowNum}: ${error.message}`); } else { added++; }
       }
 
-      setImportResults({ added, errors });
-      if (added > 0) {
-        toast({ title: `تم استيراد ${added} كلية بنجاح` });
+      setImportResults({ added, updated, errors });
+      if (added > 0 || updated > 0) {
+        toast({ title: `تم استيراد ${added} كلية جديدة${updated > 0 ? ` وتحديث ${updated} كلية` : ""}` });
         fetchData();
       }
     } catch (err: any) {
@@ -227,6 +237,20 @@ const AdminColleges = () => {
                     <Download className="w-4 h-4" /> تحميل قالب Excel
                   </Button>
                   <div className="space-y-2">
+                    <Label>وضع الاستيراد</Label>
+                    <div className="flex gap-2">
+                      <Button variant={importMode === "add" ? "default" : "outline"} size="sm" className="flex-1" onClick={() => setImportMode("add")}>
+                        إضافة فقط
+                      </Button>
+                      <Button variant={importMode === "update" ? "default" : "outline"} size="sm" className="flex-1" onClick={() => setImportMode("update")}>
+                        تحديث الموجود
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {importMode === "add" ? "سيتم إضافة جميع السطور ككليات جديدة" : "سيتم تحديث الكليات الموجودة (بالرمز أو الاسم) وإضافة الجديدة"}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
                     <Label>اختر ملف (Excel)</Label>
                     <Input ref={importFileRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImportFile} disabled={importing} />
                   </div>
@@ -238,7 +262,10 @@ const AdminColleges = () => {
                   {importResults && (
                     <div className="space-y-2 text-sm">
                       {importResults.added > 0 && (
-                        <p className="text-green-600 dark:text-green-400">✓ تم إضافة {importResults.added} كلية بنجاح</p>
+                        <p className="text-green-600 dark:text-green-400">✓ تم إضافة {importResults.added} كلية جديدة</p>
+                      )}
+                      {importResults.updated > 0 && (
+                        <p className="text-blue-600 dark:text-blue-400">✓ تم تحديث {importResults.updated} كلية موجودة</p>
                       )}
                       {importResults.errors.length > 0 && (
                         <div className="space-y-1">
