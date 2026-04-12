@@ -9,8 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
   GraduationCap, ChevronLeft, Loader2, Search, MapPin, FileText,
-  Calendar, TrendingUp, Star, Download, BookOpen,
+  Calendar, TrendingUp, Star, Download, BookOpen, CalendarClock, Info,
 } from "lucide-react";
+
+interface TimelinePhase {
+  phase: string;
+  date: string;
+}
 
 const CollegeGuide = () => {
   const [universities, setUniversities] = useState<any[]>([]);
@@ -41,18 +46,29 @@ const CollegeGuide = () => {
       c.code?.toLowerCase().includes(searchText.toLowerCase())
     );
 
-  const getUniName = (id: string) => universities.find((u) => u.id === id)?.name_ar || "";
-  const getUniGuideUrl = (id: string) => universities.find((u) => u.id === id)?.guide_url;
+  const getUni = (id: string) => universities.find((u) => u.id === id);
+  const getUniName = (id: string) => getUni(id)?.name_ar || "";
+  const getUniGuideUrl = (id: string) => getUni(id)?.guide_url;
+  const getUniTimeline = (id: string): TimelinePhase[] => {
+    const t = getUni(id)?.coordination_timeline;
+    return Array.isArray(t) ? t : [];
+  };
+  const getUniInstructions = (id: string): string => getUni(id)?.coordination_instructions || "";
 
   const exportGuideAsPDF = () => {
     const win = window.open("", "_blank");
     if (!win) return;
 
     // Group filtered colleges by university
-    const grouped: Record<string, { uniName: string; colleges: any[] }> = {};
+    const grouped: Record<string, { uniName: string; colleges: any[]; timeline: TimelinePhase[]; instructions: string }> = {};
     filtered.forEach((c) => {
       const uniId = c.university_id;
-      if (!grouped[uniId]) grouped[uniId] = { uniName: getUniName(uniId), colleges: [] };
+      if (!grouped[uniId]) grouped[uniId] = {
+        uniName: getUniName(uniId),
+        colleges: [],
+        timeline: getUniTimeline(uniId),
+        instructions: getUniInstructions(uniId),
+      };
       grouped[uniId].colleges.push(c);
     });
 
@@ -68,7 +84,22 @@ const CollegeGuide = () => {
         </tr>`
       ).join("");
 
-      return `<tr><td colspan="6" style="background:#e5e7eb;padding:8px;font-weight:bold;border:1px solid #ddd">${g.uniName}</td></tr>${rows}`;
+      let timelineHtml = "";
+      if (g.timeline.length > 0) {
+        const phases = g.timeline.map(p =>
+          `<li style="margin-bottom:2px"><strong>${p.phase}:</strong> ${p.date}</li>`
+        ).join("");
+        timelineHtml = `<tr><td colspan="6" style="border:1px solid #ddd;padding:6px 8px;font-size:11px;background:#f0f9ff">
+          <strong>الجدول الزمني:</strong><ul style="margin:4px 16px 0 0;padding:0">${phases}</ul></td></tr>`;
+      }
+
+      let instructionsHtml = "";
+      if (g.instructions) {
+        instructionsHtml = `<tr><td colspan="6" style="border:1px solid #ddd;padding:6px 8px;font-size:11px;background:#fffbeb">
+          <strong>تعليمات التنسيق:</strong> ${g.instructions}</td></tr>`;
+      }
+
+      return `<tr><td colspan="6" style="background:#e5e7eb;padding:8px;font-weight:bold;border:1px solid #ddd">${g.uniName}</td></tr>${timelineHtml}${instructionsHtml}${rows}`;
     }).join("");
 
     win.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>دليل الكليات والمتطلبات</title>
@@ -99,6 +130,9 @@ const CollegeGuide = () => {
 
   // Universities that have guides
   const universityGuides = universities.filter((u) => u.guide_url);
+
+  // Track which universities have been rendered (for showing timeline/instructions once per uni group)
+  const renderedUniTimeline = new Set<string>();
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -179,71 +213,137 @@ const CollegeGuide = () => {
 
         <p className="text-sm text-muted-foreground">{filtered.length} كلية</p>
 
-        {/* College Cards */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          {filtered.map((c) => {
-            const uniGuide = getUniGuideUrl(c.university_id);
+        {/* College Cards — grouped by university to show timeline once */}
+        {(() => {
+          // Group filtered colleges by university for display
+          const groupedByUni: Record<string, any[]> = {};
+          filtered.forEach(c => {
+            const uid = c.university_id;
+            if (!groupedByUni[uid]) groupedByUni[uid] = [];
+            groupedByUni[uid].push(c);
+          });
+
+          // Maintain university order
+          const orderedUniIds = universities.map(u => u.id).filter(id => groupedByUni[id]);
+
+          return orderedUniIds.map(uniId => {
+            const timeline = getUniTimeline(uniId);
+            const instructions = getUniInstructions(uniId);
+            const hasExtra = timeline.length > 0 || instructions;
+
             return (
-              <Card key={c.id} className="overflow-hidden">
-                <CardContent className="p-4 space-y-3">
-                  <div>
-                    <h3 className="font-bold text-foreground">{c.name_ar}</h3>
-                    {c.name_en && <p className="text-xs text-muted-foreground" dir="ltr">{c.name_en}</p>}
-                    <div className="flex items-center gap-1 mt-1">
-                      <MapPin className="w-3 h-3 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">{getUniName(c.university_id)}</span>
-                      {uniGuide && (
-                        <a href={uniGuide} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs mr-1 flex items-center gap-0.5">
-                          <FileText className="w-3 h-3" /> الدليل
-                        </a>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Stats row */}
-                  <div className="flex gap-2 flex-wrap">
-                    {c.min_gpa != null && (
-                      <Badge variant="outline" className="text-xs gap-1">
-                        <Star className="w-3 h-3" />
-                        الحد الأدنى: {c.min_gpa}%
-                      </Badge>
-                    )}
-                    {c.acceptance_rate != null && (
-                      <Badge variant="outline" className="text-xs gap-1">
-                         <TrendingUp className="w-3 h-3" />
-                         الطاقة الاستيعابية: {c.acceptance_rate}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {c.registration_deadline && (
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Calendar className="w-3 h-3" />
-                      <span>موعد التنسيق: {c.registration_deadline}</span>
-                    </div>
-                  )}
-
-                  {c.required_documents && c.required_documents.length > 0 && (
-                    <div className="space-y-1">
-                      <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                        <FileText className="w-3 h-3" /> الوثائق المطلوبة:
+              <div key={uniId} className="space-y-3">
+                {/* University header with timeline/instructions */}
+                {hasExtra && (
+                  <Card className="border-primary/20 bg-accent/30">
+                    <CardContent className="p-4 space-y-3">
+                      <p className="font-bold text-sm text-foreground flex items-center gap-1.5">
+                        <GraduationCap className="w-4 h-4 text-primary" />
+                        {getUniName(uniId)}
                       </p>
-                      <ul className="text-xs text-muted-foreground space-y-0.5 pr-4">
-                        {c.required_documents.map((doc: string, i: number) => (
-                          <li key={i} className="list-disc">{doc}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
 
-                  {c.notes && (
-                    <p className="text-xs text-muted-foreground bg-muted p-2 rounded">{c.notes}</p>
-                  )}
-                </CardContent>
-              </Card>
+                      {timeline.length > 0 && (
+                        <div className="space-y-1.5">
+                          <p className="text-xs font-semibold text-foreground flex items-center gap-1">
+                            <CalendarClock className="w-3.5 h-3.5 text-primary" />
+                            الجدول الزمني للتنسيق
+                          </p>
+                          <div className="space-y-1 pr-2">
+                            {timeline.map((t, i) => (
+                              <div key={i} className="flex items-start gap-2 text-xs">
+                                <div className="w-2 h-2 rounded-full bg-primary mt-1 shrink-0" />
+                                <span className="font-medium text-foreground">{t.phase}:</span>
+                                <span className="text-muted-foreground">{t.date}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {instructions && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-foreground flex items-center gap-1">
+                            <Info className="w-3.5 h-3.5 text-primary" />
+                            تعليمات التنسيق
+                          </p>
+                          <p className="text-xs text-muted-foreground bg-background/50 p-2 rounded whitespace-pre-line">
+                            {instructions}
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* College cards for this university */}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {groupedByUni[uniId].map((c: any) => {
+                    const uniGuide = getUniGuideUrl(c.university_id);
+                    return (
+                      <Card key={c.id} className="overflow-hidden">
+                        <CardContent className="p-4 space-y-3">
+                          <div>
+                            <h3 className="font-bold text-foreground">{c.name_ar}</h3>
+                            {c.name_en && <p className="text-xs text-muted-foreground" dir="ltr">{c.name_en}</p>}
+                            <div className="flex items-center gap-1 mt-1">
+                              <MapPin className="w-3 h-3 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">{getUniName(c.university_id)}</span>
+                              {uniGuide && (
+                                <a href={uniGuide} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs mr-1 flex items-center gap-0.5">
+                                  <FileText className="w-3 h-3" /> الدليل
+                                </a>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Stats row */}
+                          <div className="flex gap-2 flex-wrap">
+                            {c.min_gpa != null && (
+                              <Badge variant="outline" className="text-xs gap-1">
+                                <Star className="w-3 h-3" />
+                                الحد الأدنى: {c.min_gpa}%
+                              </Badge>
+                            )}
+                            {c.acceptance_rate != null && (
+                              <Badge variant="outline" className="text-xs gap-1">
+                                 <TrendingUp className="w-3 h-3" />
+                                 الطاقة الاستيعابية: {c.acceptance_rate}
+                              </Badge>
+                            )}
+                          </div>
+
+                          {c.registration_deadline && (
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Calendar className="w-3 h-3" />
+                              <span>موعد التنسيق: {c.registration_deadline}</span>
+                            </div>
+                          )}
+
+                          {c.required_documents && c.required_documents.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                                <FileText className="w-3 h-3" /> الوثائق المطلوبة:
+                              </p>
+                              <ul className="text-xs text-muted-foreground space-y-0.5 pr-4">
+                                {c.required_documents.map((doc: string, i: number) => (
+                                  <li key={i} className="list-disc">{doc}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {c.notes && (
+                            <p className="text-xs text-muted-foreground bg-muted p-2 rounded">{c.notes}</p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
             );
-          })}
-        </div>
+          });
+        })()}
 
         {filtered.length === 0 && (
           <div className="text-center py-12">
