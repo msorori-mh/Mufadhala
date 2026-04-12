@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { phone, code } = await req.json();
+    const { phone, code, metadata } = await req.json();
 
     if (!phone || !code || code.length !== 6) {
       return new Response(
@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     let session;
 
     if (existingUser) {
-      // Generate magic link / session for existing user
+      // Generate session for existing user
       const { data, error } = await supabaseAdmin.auth.admin.generateLink({
         type: "magiclink",
         email: existingUser.email || `${fullPhone.replace("+", "")}@phone.mufadhala.app`,
@@ -75,7 +75,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Use the token to verify and get session
       const { data: verifyData, error: verifyError } = await supabaseAdmin.auth.verifyOtp({
         token_hash: data.properties?.hashed_token,
         type: "magiclink",
@@ -90,15 +89,44 @@ Deno.serve(async (req) => {
       }
 
       session = verifyData.session;
+
+      // If metadata provided (from registration), update the student record
+      if (metadata && existingUser.id) {
+        const updateData: Record<string, unknown> = {};
+        if (metadata.first_name) updateData.first_name = metadata.first_name;
+        if (metadata.fourth_name) updateData.fourth_name = metadata.fourth_name;
+        if (metadata.governorate) updateData.governorate = metadata.governorate;
+        if (metadata.university_id) updateData.university_id = metadata.university_id;
+        if (metadata.college_id) updateData.college_id = metadata.college_id;
+        if (metadata.phone) updateData.phone = metadata.phone;
+
+        if (Object.keys(updateData).length > 0) {
+          await supabaseAdmin
+            .from("students")
+            .update(updateData)
+            .eq("user_id", existingUser.id);
+        }
+      }
     } else {
-      // Create new user with phone
+      // Create new user with phone + metadata
       const fakeEmail = `${fullPhone.replace("+", "")}@phone.mufadhala.app`;
+      const userMetadata: Record<string, unknown> = { phone: fullPhone };
+      
+      // Pass registration metadata so the handle_new_user trigger picks it up
+      if (metadata) {
+        if (metadata.first_name) userMetadata.first_name = metadata.first_name;
+        if (metadata.fourth_name) userMetadata.fourth_name = metadata.fourth_name;
+        if (metadata.governorate) userMetadata.governorate = metadata.governorate;
+        if (metadata.university_id) userMetadata.university_id = metadata.university_id;
+        if (metadata.college_id) userMetadata.college_id = metadata.college_id;
+      }
+
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email: fakeEmail,
         phone: fullPhone,
         email_confirm: true,
         phone_confirm: true,
-        user_metadata: { phone: fullPhone },
+        user_metadata: userMetadata,
       });
 
       if (createError || !newUser.user) {
@@ -107,6 +135,14 @@ Deno.serve(async (req) => {
           JSON.stringify({ error: "فشل في إنشاء الحساب" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
+      }
+
+      // Also update the phone in students table (trigger creates student but may not set phone)
+      if (metadata?.phone || fullPhone) {
+        await supabaseAdmin
+          .from("students")
+          .update({ phone: fullPhone.replace("+967", "") })
+          .eq("user_id", newUser.user.id);
       }
 
       // Generate session for new user
@@ -148,6 +184,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
+        isNewUser: !existingUser,
         session: {
           access_token: session.access_token,
           refresh_token: session.refresh_token,

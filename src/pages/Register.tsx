@@ -1,203 +1,167 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Eye, EyeOff, X } from "lucide-react";
+import { Phone, ArrowRight, Loader2 } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import type { Tables } from "@/integrations/supabase/types";
 
-const governorates = [
-  "عدن", "تعز", "مأرب", "حضرموت", "شبوة", "أبين", "لحج", "الضالع",
-  "صنعاء", "عمران", "ذمار", "إب", "الحديدة", "حجة", "صعدة", "المهرة",
-  "سقطرى", "الجوف", "البيضاء", "المحويت", "ريمة",
+const GOVERNORATES = [
+  "أمانة العاصمة", "عدن", "تعز", "الحديدة", "إب", "ذمار", "حجة",
+  "صعدة", "عمران", "صنعاء", "المحويت", "ريمة", "البيضاء", "مأرب",
+  "الجوف", "شبوة", "حضرموت", "المهرة", "أبين", "لحج", "الضالع", "سقطرى",
 ];
+
+const YEMEN_PHONE_REGEX = /^7[0-9]{8}$/;
+
+const useWebOTP = (active: boolean, onCodeReceived: (code: string) => void) => {
+  useEffect(() => {
+    if (!active || !("OTPCredential" in window)) return;
+    const ac = new AbortController();
+    (navigator.credentials as any)
+      .get({ otp: { transport: ["sms"] }, signal: ac.signal })
+      .then((c: any) => { if (c?.code) onCodeReceived(c.code); })
+      .catch(() => {});
+    return () => ac.abort();
+  }, [active, onCodeReceived]);
+};
 
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<"form" | "otp">("form");
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
 
-  // Data from database
-  const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
-  const [colleges, setColleges] = useState<Tables<"colleges">[]>([]);
-  const [majors, setMajors] = useState<Tables<"majors">[]>([]);
-
-  // Step 1 - Account
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
-  // Step 2 - Personal
+  // Form fields
   const [firstName, setFirstName] = useState("");
   const [fourthName, setFourthName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [governorate, setGovernorate] = useState("");
-
-  // Step 3 - Academic
   const [universityId, setUniversityId] = useState("");
   const [collegeId, setCollegeId] = useState("");
-  const [majorId, setMajorId] = useState("");
 
-  // Fetch universities on mount
+  // OTP
+  const [otpCode, setOtpCode] = useState("");
+  const [resendCountdown, setResendCountdown] = useState(0);
+
+  // Data
+  const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
+  const [colleges, setColleges] = useState<Tables<"colleges">[]>([]);
+
+  // WebOTP
+  const handleWebOTPCode = useCallback((code: string) => setOtpCode(code), []);
+  useWebOTP(step === "otp", handleWebOTPCode);
+
+  // Check session on mount
   useEffect(() => {
-    const fetchUniversities = async () => {
-      const { data } = await supabase
-        .from("universities")
-        .select("*")
-        .eq("is_active", true)
-        .order("display_order");
-      if (data) setUniversities(data);
-    };
-    fetchUniversities();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate("/dashboard", { replace: true });
+      } else {
+        setCheckingSession(false);
+      }
+    });
+  }, [navigate]);
+
+  // Fetch universities
+  useEffect(() => {
+    supabase.from("universities").select("*").eq("is_active", true).order("display_order")
+      .then(({ data }) => { if (data) setUniversities(data); });
   }, []);
 
   // Fetch colleges when university changes
   useEffect(() => {
-    if (!universityId) {
-      setColleges([]);
-      return;
-    }
-    const fetchColleges = async () => {
-      const { data } = await supabase
-        .from("colleges")
-        .select("*")
-        .eq("university_id", universityId)
-        .eq("is_active", true)
-        .order("display_order");
-      if (data) setColleges(data);
-    };
-    fetchColleges();
+    if (!universityId) { setColleges([]); setCollegeId(""); return; }
+    supabase.from("colleges").select("*").eq("university_id", universityId).eq("is_active", true).order("display_order")
+      .then(({ data }) => { setColleges(data || []); setCollegeId(""); });
   }, [universityId]);
 
-  // Fetch majors when college changes
+  // Countdown timer
   useEffect(() => {
-    if (!collegeId) {
-      setMajors([]);
+    if (resendCountdown <= 0) return;
+    const timer = setTimeout(() => setResendCountdown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCountdown]);
+
+  const isFormValid = firstName.trim() && fourthName.trim() && YEMEN_PHONE_REGEX.test(phoneNumber) && governorate && universityId && collegeId;
+
+  const handleSendOtp = async () => {
+    if (!isFormValid) {
+      toast({ variant: "destructive", title: "يرجى ملء جميع الحقول بشكل صحيح" });
       return;
     }
-    const fetchMajors = async () => {
-      const { data } = await supabase
-        .from("majors")
-        .select("*")
-        .eq("college_id", collegeId)
-        .eq("is_active", true)
-        .order("display_order");
-      if (data) setMajors(data);
-    };
-    fetchMajors();
-  }, [collegeId]);
-
-  const validateStep1 = () => {
-    if (!email || !password || !confirmPassword) {
-      toast({ variant: "destructive", title: "يرجى ملء جميع الحقول" });
-      return false;
-    }
-    if (password.length < 8) {
-      toast({ variant: "destructive", title: "كلمة المرور يجب أن تكون 8 أحرف على الأقل" });
-      return false;
-    }
-    if (password !== confirmPassword) {
-      toast({ variant: "destructive", title: "كلمة المرور غير متطابقة" });
-      return false;
-    }
-    return true;
-  };
-
-  const validateStep2 = () => {
-    if (!firstName || !fourthName || !governorate) {
-      toast({ variant: "destructive", title: "يرجى ملء جميع الحقول المطلوبة" });
-      return false;
-    }
-    return true;
-  };
-
-  const validateStep3 = () => {
-    if (!universityId || !collegeId || !majorId) {
-      toast({ variant: "destructive", title: "يرجى اختيار الجامعة والكلية والتخصص" });
-      return false;
-    }
-    return true;
-  };
-
-  const handleNext = () => {
-    if (step === 1 && validateStep1()) setStep(2);
-    else if (step === 2 && validateStep2()) setStep(3);
-  };
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateStep3()) return;
-
     setLoading(true);
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: {
-          first_name: firstName,
-          fourth_name: fourthName,
-          governorate,
-          university_id: universityId,
-          college_id: collegeId,
-          major_id: majorId,
-        },
-      },
-    });
-
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "خطأ في التسجيل",
-        description: error.message,
+    try {
+      const res = await supabase.functions.invoke("send-otp", {
+        body: { phone: phoneNumber },
       });
-    } else {
-      toast({
-        title: "تم التسجيل بنجاح!",
-        description: "تحقق من بريدك الإلكتروني لتأكيد الحساب",
-      });
-      navigate("/login");
+      if (res.error || res.data?.error) {
+        toast({ variant: "destructive", title: "خطأ", description: res.data?.error || "فشل في إرسال رمز التحقق" });
+      } else {
+        toast({ title: "تم الإرسال", description: "تم إرسال رمز التحقق إلى جوالك" });
+        setStep("otp");
+        setResendCountdown(60);
+      }
+    } catch {
+      toast({ variant: "destructive", title: "خطأ", description: "حدث خطأ غير متوقع" });
     }
-
     setLoading(false);
   };
 
-  const stepIndicator = (
-    <div className="flex items-center justify-center gap-2 mb-6">
-      {[1, 2, 3].map((s) => (
-        <div key={s} className="flex items-center gap-2">
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
-              s === step
-                ? "bg-primary text-primary-foreground"
-                : s < step
-                ? "bg-accent text-accent-foreground"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            {s}
-          </div>
-          {s < 3 && <div className={`w-8 h-0.5 ${s < step ? "bg-accent" : "bg-muted"}`} />}
-        </div>
-      ))}
-    </div>
-  );
+  const handleVerifyOtp = async () => {
+    if (otpCode.length !== 6) return;
+    setLoading(true);
+    try {
+      const res = await supabase.functions.invoke("verify-otp", {
+        body: {
+          phone: phoneNumber,
+          code: otpCode,
+          metadata: {
+            first_name: firstName.trim(),
+            fourth_name: fourthName.trim(),
+            governorate,
+            university_id: universityId,
+            college_id: collegeId,
+            phone: phoneNumber,
+          },
+        },
+      });
+      if (res.error || res.data?.error) {
+        toast({ variant: "destructive", title: "خطأ", description: res.data?.error || "فشل في التحقق من الرمز" });
+        setLoading(false);
+        return;
+      }
+      const { access_token, refresh_token } = res.data.session;
+      await supabase.auth.setSession({ access_token, refresh_token });
+      toast({ title: "تم التسجيل بنجاح! 🎉" });
+      navigate("/dashboard", { replace: true });
+    } catch {
+      toast({ variant: "destructive", title: "خطأ", description: "حدث خطأ غير متوقع" });
+    }
+    setLoading(false);
+  };
 
-  const stepLabels = ["بيانات الحساب", "البيانات الشخصية", "البيانات الأكاديمية"];
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen gradient-hero flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-white animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-lg">
+      <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-6">
-          <Link to="/" className="inline-flex items-center gap-2">
+          <Link to="/" className="inline-flex flex-col items-center gap-2">
             <div className="w-20 h-20 flex items-center justify-center animate-scale-in rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
               <img src={logoImg} alt="شعار مُفَاضَلَة" className="w-full h-full object-cover drop-shadow-lg" />
             </div>
@@ -207,192 +171,131 @@ const Register = () => {
 
         <Card className="shadow-2xl border-0">
           <CardHeader className="text-center pb-2">
-            <CardTitle className="text-xl">إنشاء حساب جديد</CardTitle>
-            <CardDescription>{stepLabels[step - 1]}</CardDescription>
+            <CardTitle className="text-xl">أنشئ حسابك</CardTitle>
+            <CardDescription>
+              {step === "form" ? "أدخل بياناتك للبدء" : "أدخل رمز التحقق"}
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            {stepIndicator}
+          <CardContent className="space-y-4">
+            {step === "form" && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>الاسم الأول</Label>
+                    <Input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="أحمد" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>اللقب</Label>
+                    <Input value={fourthName} onChange={e => setFourthName(e.target.value)} placeholder="العمري" />
+                  </div>
+                </div>
 
-            <form onSubmit={handleRegister} className="space-y-4">
-              {/* Step 1: Account */}
-              {step === 1 && (
-                <>
-                  <div className="space-y-2">
-                    <Label>البريد الإلكتروني</Label>
+                <div className="space-y-1.5">
+                  <Label>رقم الجوال</Label>
+                  <div className="flex gap-2" dir="ltr">
+                    <div className="flex items-center px-3 border rounded-md bg-muted text-sm font-mono">+967</div>
                     <Input
-                      type="email"
-                      placeholder="example@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      type="tel"
+                      placeholder="7XXXXXXXX"
+                      value={phoneNumber}
+                      onChange={e => setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 9))}
+                      className="text-left font-mono"
                       dir="ltr"
-                      className="text-left"
-                      required
+                      maxLength={9}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>كلمة المرور</Label>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="8 أحرف على الأقل"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        dir="ltr"
-                        className="pl-10"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>تأكيد كلمة المرور</Label>
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="أعد إدخال كلمة المرور"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      dir="ltr"
-                      required
-                    />
-                    {confirmPassword && password !== confirmPassword && (
-                      <p className="text-xs text-destructive flex items-center gap-1">
-                        <X className="w-3.5 h-3.5" /> كلمة المرور غير متطابقة
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
+                  {phoneNumber && !YEMEN_PHONE_REGEX.test(phoneNumber) && (
+                    <p className="text-xs text-destructive">يجب أن يبدأ بـ 7 ويتكون من 9 أرقام</p>
+                  )}
+                </div>
 
-              {/* Step 2: Personal */}
-              {step === 2 && (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label>الاسم</Label>
-                      <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="مثال: أحمد" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>اللقب</Label>
-                      <Input value={fourthName} onChange={(e) => setFourthName(e.target.value)} placeholder="مثال: العمري" required />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>المحافظة</Label>
-                    <Select value={governorate} onValueChange={setGovernorate}>
-                      <SelectTrigger><SelectValue placeholder="اختر المحافظة" /></SelectTrigger>
-                      <SelectContent>
-                        {governorates.map((g) => (
-                          <SelectItem key={g} value={g}>{g}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              )}
+                <div className="space-y-1.5">
+                  <Label>المحافظة</Label>
+                  <Select value={governorate} onValueChange={setGovernorate}>
+                    <SelectTrigger><SelectValue placeholder="اختر المحافظة" /></SelectTrigger>
+                    <SelectContent>
+                      {GOVERNORATES.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              {/* Step 3: Academic */}
-              {step === 3 && (
-                <>
-                  <div className="space-y-2">
-                    <Label>الجامعة</Label>
-                    <select
-                      value={universityId}
-                      onChange={(e) => {
-                        setUniversityId(e.target.value);
-                        setCollegeId("");
-                        setMajorId("");
-                      }}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    >
-                      <option value="">اختر الجامعة</option>
-                      {universities.map((u) => (
-                        <option key={u.id} value={u.id}>{u.name_ar}</option>
-                      ))}
-                    </select>
-                  </div>
+                <div className="space-y-1.5">
+                  <Label>الجامعة</Label>
+                  <Select value={universityId} onValueChange={v => { setUniversityId(v); setCollegeId(""); }}>
+                    <SelectTrigger><SelectValue placeholder="اختر الجامعة" /></SelectTrigger>
+                    <SelectContent>
+                      {universities.map(u => <SelectItem key={u.id} value={u.id}>{u.name_ar}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label>الكلية</Label>
-                    <select
-                      value={collegeId}
-                      onChange={(e) => {
-                        setCollegeId(e.target.value);
-                        setMajorId("");
-                      }}
-                      disabled={!universityId || colleges.length === 0}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <option value="">{!universityId ? "اختر الجامعة أولاً" : "اختر الكلية"}</option>
-                      {colleges.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name_ar}</option>
-                      ))}
-                    </select>
-                  </div>
+                <div className="space-y-1.5">
+                  <Label>الكلية</Label>
+                  <Select value={collegeId} onValueChange={setCollegeId} disabled={!universityId}>
+                    <SelectTrigger><SelectValue placeholder={!universityId ? "اختر الجامعة أولاً" : "اختر الكلية"} /></SelectTrigger>
+                    <SelectContent>
+                      {colleges.map(c => <SelectItem key={c.id} value={c.id}>{c.name_ar}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label>التخصص</Label>
-                    <select
-                      value={majorId}
-                      onChange={(e) => setMajorId(e.target.value)}
-                      disabled={!collegeId || majors.length === 0}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <option value="">{!collegeId ? "اختر الكلية أولاً" : "اختر التخصص"}</option>
-                      {majors.map((m) => (
-                        <option key={m.id} value={m.id}>{m.name_ar}</option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
+                <Button
+                  onClick={handleSendOtp}
+                  disabled={loading || !isFormValid}
+                  className="w-full py-5 text-base font-bold gap-2"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Phone className="w-4 h-4" />}
+                  {loading ? "جاري الإرسال..." : "إرسال رمز التحقق"}
+                </Button>
+              </>
+            )}
 
-              {/* Navigation Buttons */}
-              <div className="flex gap-3 pt-2">
-                {step > 1 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setStep(step - 1)}
-                    className="flex-1 py-5"
-                  >
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                    السابق
-                  </Button>
-                )}
-                {step < 3 ? (
-                  <Button
-                    type="button"
-                    onClick={handleNext}
-                    className="flex-1 py-5 font-bold"
-                  >
-                    التالي
-                    <ChevronLeft className="w-4 h-4 mr-1" />
-                  </Button>
-                ) : (
-                  <Button
-                    type="submit"
-                    className="flex-1 py-5 font-bold"
-                    disabled={loading}
-                  >
-                    {loading ? "جاري التسجيل..." : "إنشاء الحساب"}
-                  </Button>
-                )}
+            {step === "otp" && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <button onClick={() => { setStep("form"); setOtpCode(""); }} className="text-muted-foreground hover:text-foreground">
+                    <ArrowRight className="w-5 h-5" />
+                  </button>
+                  <span className="font-semibold">أدخل رمز التحقق</span>
+                </div>
+                <p className="text-sm text-muted-foreground text-center">
+                  تم إرسال رمز مكون من 6 أرقام إلى +967{phoneNumber}
+                </p>
+                <div className="flex justify-center" dir="ltr">
+                  <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode} autoComplete="one-time-code">
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+                <Button
+                  onClick={handleVerifyOtp}
+                  disabled={loading || otpCode.length !== 6}
+                  className="w-full py-5 text-base font-bold"
+                >
+                  {loading ? "جاري التحقق..." : "تحقق وأنشئ حسابك"}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => { setOtpCode(""); handleSendOtp(); }}
+                  disabled={loading || resendCountdown > 0}
+                  className="w-full text-sm text-center text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
+                >
+                  {resendCountdown > 0 ? `إعادة الإرسال بعد ${resendCountdown} ثانية` : "إعادة إرسال الرمز"}
+                </button>
               </div>
-            </form>
+            )}
 
-            <div className="mt-6 text-center text-sm">
+            <div className="mt-4 text-center text-sm">
               <span className="text-muted-foreground">لديك حساب بالفعل؟</span>{" "}
-              <Link to="/login" className="text-primary font-semibold hover:underline">
-                تسجيل الدخول
-              </Link>
+              <Link to="/login" className="text-primary font-semibold hover:underline">تسجيل الدخول</Link>
             </div>
-            <p className="mt-4 text-center text-xs text-muted-foreground">
+            <p className="mt-2 text-center text-xs text-muted-foreground">
               بتسجيلك فإنك توافق على{" "}
               <Link to="/privacy-policy" className="text-primary hover:underline">سياسة الخصوصية</Link>
               {" "}و{" "}
