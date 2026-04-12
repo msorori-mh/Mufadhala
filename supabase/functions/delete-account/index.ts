@@ -12,7 +12,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
@@ -21,36 +20,53 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create user-scoped client to verify identity
     const supabaseUser = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseUser.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user: callingUser }, error: userError } = await supabaseUser.auth.getUser();
+    if (userError || !callingUser) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const userId = claimsData.claims.sub as string;
+    const callingUserId = callingUser.id;
 
-    // Create admin client for deletion operations
+    // Check if a target_user_id was provided (admin deleting another user)
+    let targetUserId = callingUserId;
+    let body: any = {};
+    try { body = await req.json(); } catch { /* no body = self-delete */ }
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
+    if (body.target_user_id && body.target_user_id !== callingUserId) {
+      // Verify the caller is an admin
+      const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
+        _user_id: callingUserId,
+        _role: "admin",
+      });
+      if (!isAdmin) {
+        return new Response(
+          JSON.stringify({ error: "Only admins can delete other users" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      targetUserId = body.target_user_id;
+    }
+
     // Get student record ID
     const { data: student } = await supabaseAdmin
       .from("students")
       .select("id")
-      .eq("user_id", userId)
+      .eq("user_id", targetUserId)
       .maybeSingle();
 
     const studentId = student?.id;
@@ -62,19 +78,19 @@ Deno.serve(async (req) => {
       await supabaseAdmin.from("exam_attempts").delete().eq("student_id", studentId);
     }
 
-    await supabaseAdmin.from("notifications").delete().eq("user_id", userId);
-    await supabaseAdmin.from("payment_requests").delete().eq("user_id", userId);
-    await supabaseAdmin.from("subscriptions").delete().eq("user_id", userId);
-    await supabaseAdmin.from("moderator_permissions").delete().eq("user_id", userId);
-    await supabaseAdmin.from("moderator_scopes").delete().eq("user_id", userId);
-    await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
+    await supabaseAdmin.from("notifications").delete().eq("user_id", targetUserId);
+    await supabaseAdmin.from("payment_requests").delete().eq("user_id", targetUserId);
+    await supabaseAdmin.from("subscriptions").delete().eq("user_id", targetUserId);
+    await supabaseAdmin.from("moderator_permissions").delete().eq("user_id", targetUserId);
+    await supabaseAdmin.from("moderator_scopes").delete().eq("user_id", targetUserId);
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", targetUserId);
 
     if (studentId) {
       await supabaseAdmin.from("students").delete().eq("id", studentId);
     }
 
     // Delete the auth user
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
     if (deleteError) {
       console.error("Error deleting auth user:", deleteError);
       return new Response(
