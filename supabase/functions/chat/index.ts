@@ -113,6 +113,30 @@ serve(async (req) => {
       );
     }
 
+    // Extract user_id from JWT if present
+    let userId: string | null = null;
+    try {
+      const authHeader = req.headers.get("authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.slice(7);
+        // Decode JWT payload (no verification needed, just extract user_id for logging)
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        if (payload.sub && payload.sub !== payload.iss) userId = payload.sub;
+      }
+    } catch { /* ignore */ }
+
+    // Log usage asynchronously (fire-and-forget)
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sb = createClient(supabaseUrl, supabaseKey);
+      sb.from("chat_usage").insert({
+        user_id: userId,
+        ip_address: clientIp,
+        model: AI_MODEL,
+      }).then(() => {});
+    } catch { /* non-blocking */ }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");

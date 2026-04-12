@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { Building2, BookOpen, Users, Loader2, MessageCircle, Save, Bot, Type, FileText } from "lucide-react";
+import { Building2, BookOpen, Users, Loader2, MessageCircle, Save, Bot, Type, FileText, BarChart3, TrendingUp, UserCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const AI_MODELS = [
   { value: "google/gemini-3-flash-preview", label: "Gemini 3 Flash (سريع - افتراضي)" },
@@ -45,6 +46,30 @@ const AdminDashboard = () => {
     enabled: !authLoading,
     staleTime: 2 * 60 * 1000,
   });
+
+  // Chat usage stats
+  const { data: chatStats } = useQuery({
+    queryKey: ["chat-usage-stats"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_chat_stats", { _days: 30 });
+      if (error) throw error;
+      return data?.[0] || null;
+    },
+    enabled: !authLoading && isAdmin,
+    staleTime: 60 * 1000,
+  });
+
+  const chartData = useMemo(() => {
+    if (!chatStats?.daily_breakdown) return [];
+    const breakdown = typeof chatStats.daily_breakdown === "string"
+      ? JSON.parse(chatStats.daily_breakdown)
+      : chatStats.daily_breakdown;
+    return (breakdown as any[]).map((d: any) => ({
+      date: new Date(d.date).toLocaleDateString("ar-EG", { month: "short", day: "numeric" }),
+      messages: d.messages,
+      users: d.users,
+    }));
+  }, [chatStats]);
 
   // Chat settings from cache
   const { data: chatSettings } = useQuery({
@@ -160,6 +185,58 @@ const AdminDashboard = () => {
             </Card>
           ))}
         </div>
+
+        {/* Chat Usage Stats — admin only */}
+        {isAdmin && chatStats && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                إحصائيات المساعد الذكي
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+                <div className="rounded-lg bg-primary/5 p-3 text-center">
+                  <p className="text-2xl font-bold text-primary">{chatStats.total_messages ?? 0}</p>
+                  <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1"><MessageCircle className="w-3 h-3" />إجمالي الرسائل</p>
+                </div>
+                <div className="rounded-lg bg-green-500/10 p-3 text-center">
+                  <p className="text-2xl font-bold text-green-600">{chatStats.today_messages ?? 0}</p>
+                  <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1"><TrendingUp className="w-3 h-3" />رسائل اليوم</p>
+                </div>
+                <div className="rounded-lg bg-blue-500/10 p-3 text-center">
+                  <p className="text-2xl font-bold text-blue-600">{chatStats.unique_users ?? 0}</p>
+                  <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1"><Users className="w-3 h-3" />مستخدمين فريدين</p>
+                </div>
+                <div className="rounded-lg bg-orange-500/10 p-3 text-center">
+                  <p className="text-2xl font-bold text-orange-600">{chatStats.today_users ?? 0}</p>
+                  <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1"><UserCheck className="w-3 h-3" />مستخدمو اليوم</p>
+                </div>
+              </div>
+
+              {chartData.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">الرسائل اليومية (آخر 30 يوم)</p>
+                  <div className="h-48 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                        <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                        <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                        <Tooltip
+                          contentStyle={{ fontSize: 12, direction: "rtl" }}
+                          formatter={(value: number, name: string) => [value, name === "messages" ? "رسائل" : "مستخدمين"]}
+                        />
+                        <Bar dataKey="messages" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} name="messages" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Chat Settings — admin only */}
         {isAdmin && (

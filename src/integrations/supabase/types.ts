@@ -35,6 +35,36 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_usage: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          model: string | null
+          tokens_completion: number | null
+          tokens_prompt: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          model?: string | null
+          tokens_completion?: number | null
+          tokens_prompt?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          model?: string | null
+          tokens_completion?: number | null
+          tokens_prompt?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       college_subjects: {
         Row: {
           college_id: string
@@ -1130,6 +1160,16 @@ export type Database = {
     }
     Functions: {
       get_cache: { Args: { _key: string }; Returns: Json }
+      get_chat_stats: {
+        Args: { _days?: number }
+        Returns: {
+          daily_breakdown: Json
+          today_messages: number
+          today_users: number
+          total_messages: number
+          unique_users: number
+        }[]
+      }
       get_leaderboard: {
         Args: { _limit?: number; _major_id?: string }
         Returns: {
