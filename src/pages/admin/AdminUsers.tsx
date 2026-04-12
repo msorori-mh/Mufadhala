@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Search, ShieldPlus, Trash2, UserCog, Settings2, KeyRound, UserX } from "lucide-react";
+import { Loader2, Search, ShieldPlus, Trash2, UserCog, Settings2, KeyRound, UserX, UserPlus, Eye, EyeOff } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ALL_PERMISSIONS, PERMISSION_LABELS, type ModeratorPermission } from "@/hooks/useModeratorPermissions";
 
@@ -86,6 +86,19 @@ const AdminUsers = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteUser, setDeleteUser] = useState<UserWithRoles | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Create user dialog
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createEmail, setCreateEmail] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [createFirstName, setCreateFirstName] = useState("");
+  const [createLastName, setCreateLastName] = useState("");
+  const [createRole, setCreateRole] = useState<"admin" | "moderator">("moderator");
+  const [createPerms, setCreatePerms] = useState<ModeratorPermission[]>([]);
+  const [createScopeType, setCreateScopeType] = useState<string>("global");
+  const [createScopeId, setCreateScopeId] = useState("");
+  const [creating, setCreating] = useState(false);
   const fetchUsers = async () => {
     const [{ data: students }, { data: allRoles }, { data: allScopes }, { data: allPerms }, { data: u }, { data: c }, { data: m }] = await Promise.all([
       supabase.from("students").select("user_id, first_name, second_name, third_name, fourth_name"),
@@ -307,6 +320,38 @@ const AdminUsers = () => {
     setDeleteDialogOpen(false);
   };
 
+  // Create user
+  const handleCreateUser = async () => {
+    if (!createEmail || !createPassword) return;
+    setCreating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-user", {
+        body: {
+          email: createEmail,
+          password: createPassword,
+          first_name: createFirstName,
+          last_name: createLastName,
+          role: createRole,
+          permissions: createRole === "moderator" ? createPerms : undefined,
+          scope: createRole === "moderator" ? {
+            scope_type: createScopeType,
+            scope_id: createScopeType !== "global" ? createScopeId : null,
+          } : undefined,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "تم إنشاء المستخدم بنجاح" });
+      setCreateDialogOpen(false);
+      setCreateEmail(""); setCreatePassword(""); setCreateFirstName(""); setCreateLastName("");
+      setCreateRole("moderator"); setCreatePerms([]); setCreateScopeType("global"); setCreateScopeId("");
+      fetchUsers();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "فشل إنشاء المستخدم", description: err.message });
+    }
+    setCreating(false);
+  };
+
   if (authLoading || loading) {
     return (
       <AdminLayout>
@@ -320,9 +365,14 @@ const AdminUsers = () => {
   return (
     <AdminLayout>
       <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold">إدارة المستخدمين والأدوار</h1>
-          <p className="text-sm text-muted-foreground">{filtered.length} مستخدم</p>
+      <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">إدارة المستخدمين والأدوار</h1>
+            <p className="text-sm text-muted-foreground">{filtered.length} مستخدم</p>
+          </div>
+          <Button onClick={() => setCreateDialogOpen(true)}>
+            <UserPlus className="w-4 h-4 ml-1" />إضافة مستخدم
+          </Button>
         </div>
 
         <div className="relative">
@@ -576,6 +626,93 @@ const AdminUsers = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Create User Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><UserPlus className="w-5 h-5" />إضافة مستخدم جديد</DialogTitle>
+            <DialogDescription>إنشاء حساب مدير أو مشرف جديد مع تحديد الصلاحيات</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>البريد الإلكتروني</Label>
+              <Input type="email" dir="ltr" placeholder="user@example.com" value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>كلمة المرور</Label>
+              <div className="relative">
+                <Input type={showCreatePassword ? "text" : "password"} dir="ltr" placeholder="••••••••" value={createPassword} onChange={(e) => setCreatePassword(e.target.value)} className="pl-10" />
+                <button type="button" onClick={() => setShowCreatePassword(!showCreatePassword)} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showCreatePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2">
+                <Label>الاسم الأول</Label>
+                <Input value={createFirstName} onChange={(e) => setCreateFirstName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>الاسم الأخير</Label>
+                <Input value={createLastName} onChange={(e) => setCreateLastName(e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>الدور</Label>
+              <Select value={createRole} onValueChange={(v) => setCreateRole(v as "admin" | "moderator")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">مدير</SelectItem>
+                  <SelectItem value="moderator">مشرف</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {createRole === "moderator" && (
+              <>
+                <div className="space-y-2">
+                  <Label className="font-semibold">الصلاحيات</Label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                    {ALL_PERMISSIONS.map((perm) => (
+                      <div key={perm} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`create-perm-${perm}`}
+                          checked={createPerms.includes(perm)}
+                          onCheckedChange={() => setCreatePerms((prev) => prev.includes(perm) ? prev.filter((p) => p !== perm) : [...prev, perm])}
+                        />
+                        <Label htmlFor={`create-perm-${perm}`} className="text-sm cursor-pointer">{PERMISSION_LABELS[perm]}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-semibold">النطاق</Label>
+                  <Select value={createScopeType} onValueChange={(v) => { setCreateScopeType(v); setCreateScopeId(""); }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="global">عام (كل المحتوى)</SelectItem>
+                      <SelectItem value="university">جامعة</SelectItem>
+                      <SelectItem value="college">كلية</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {createScopeType !== "global" && (
+                    <select value={createScopeId} onChange={(e) => setCreateScopeId(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                      <option value="">اختر...</option>
+                      {(createScopeType === "university" ? universities : colleges).map((item: any) => (
+                        <option key={item.id} value={item.id}>{item.name_ar}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              </>
+            )}
+
+            <Button onClick={handleCreateUser} disabled={creating || !createEmail || !createPassword} className="w-full">
+              {creating ? "جاري الإنشاء..." : "إنشاء المستخدم"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
