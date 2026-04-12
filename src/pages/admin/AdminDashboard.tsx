@@ -47,6 +47,30 @@ const AdminDashboard = () => {
     staleTime: 2 * 60 * 1000,
   });
 
+  // Chat usage stats
+  const { data: chatStats } = useQuery({
+    queryKey: ["chat-usage-stats"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_chat_stats", { _days: 30 });
+      if (error) throw error;
+      return data?.[0] || null;
+    },
+    enabled: !authLoading && isAdmin,
+    staleTime: 60 * 1000,
+  });
+
+  const chartData = useMemo(() => {
+    if (!chatStats?.daily_breakdown) return [];
+    const breakdown = typeof chatStats.daily_breakdown === "string"
+      ? JSON.parse(chatStats.daily_breakdown)
+      : chatStats.daily_breakdown;
+    return (breakdown as any[]).map((d: any) => ({
+      date: new Date(d.date).toLocaleDateString("ar-EG", { month: "short", day: "numeric" }),
+      messages: d.messages,
+      users: d.users,
+    }));
+  }, [chatStats]);
+
   // Chat settings from cache
   const { data: chatSettings } = useQuery({
     queryKey: ["chat-settings"],
