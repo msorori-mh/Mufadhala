@@ -297,8 +297,12 @@ const AdminUsers = () => {
   };
 
   // Delete user
-  const openDeleteDialog = (user: UserWithRoles) => {
-    setDeleteUser(user);
+  const openDeleteDialog = (u: UserWithRoles) => {
+    if (u.user_id === user?.id) {
+      toast({ variant: "destructive", title: "لا يمكنك حذف حسابك الخاص من لوحة الإدارة" });
+      return;
+    }
+    setDeleteUser(u);
     setDeleteDialogOpen(true);
   };
 
@@ -443,9 +447,11 @@ const AdminUsers = () => {
                         </Button>
                       </>
                     )}
-                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => openDeleteDialog(u)}>
-                      <UserX className="w-4 h-4 ml-1" />حذف
-                    </Button>
+                    {u.user_id !== user?.id && (
+                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => openDeleteDialog(u)}>
+                        <UserX className="w-4 h-4 ml-1" />حذف
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>
