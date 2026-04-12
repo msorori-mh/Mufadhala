@@ -41,7 +41,8 @@ const AdminColleges = () => {
   const [saving, setSaving] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [importResults, setImportResults] = useState<{ added: number; errors: string[] } | null>(null);
+  const [importMode, setImportMode] = useState<"add" | "update">("add");
+  const [importResults, setImportResults] = useState<{ added: number; updated: number; errors: string[] } | null>(null);
   const importFileRef = useRef<HTMLInputElement>(null);
   const fetchData = async () => {
     const [{ data: c }, { data: u }] = await Promise.all([
