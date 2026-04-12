@@ -150,6 +150,7 @@ const AdminColleges = () => {
 
       const errors: string[] = [];
       let added = 0;
+      let updated = 0;
       const dataRows = rows.slice(1).filter(r => r.some(cell => cell != null && String(cell).trim()));
 
       for (let i = 0; i < dataRows.length; i++) {
@@ -177,22 +178,30 @@ const AdminColleges = () => {
           continue;
         }
 
-        const { error } = await supabase.from("colleges").insert({
+        const payload = {
           name_ar: nameAr, name_en: nameEn, code, university_id: uniId,
           min_gpa: minGpa, capacity, registration_deadline: deadline,
           required_documents: docs, notes, is_active: true, display_order: 0,
-        });
+        };
 
-        if (error) {
-          errors.push(`سطر ${rowNum}: ${error.message}`);
-        } else {
-          added++;
+        if (importMode === "update") {
+          // Try to find existing college by code + university
+          const existing = colleges.find(c => c.university_id === uniId && (c.code === code || c.name_ar === nameAr));
+          if (existing) {
+            const { error } = await supabase.from("colleges").update(payload).eq("id", existing.id);
+            if (error) { errors.push(`سطر ${rowNum}: ${error.message}`); } else { updated++; }
+            continue;
+          }
         }
+
+        // Insert new
+        const { error } = await supabase.from("colleges").insert(payload);
+        if (error) { errors.push(`سطر ${rowNum}: ${error.message}`); } else { added++; }
       }
 
-      setImportResults({ added, errors });
-      if (added > 0) {
-        toast({ title: `تم استيراد ${added} كلية بنجاح` });
+      setImportResults({ added, updated, errors });
+      if (added > 0 || updated > 0) {
+        toast({ title: `تم استيراد ${added} كلية جديدة${updated > 0 ? ` وتحديث ${updated} كلية` : ""}` });
         fetchData();
       }
     } catch (err: any) {
