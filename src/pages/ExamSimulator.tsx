@@ -789,6 +789,22 @@ const ExamSimulator = () => {
           </Card>
         )}
 
+        {/* Trial expired upgrade prompt */}
+        {trialExpired && (
+          <Card className="border-primary bg-primary/5">
+            <CardContent className="py-5 text-center space-y-3">
+              <Clock className="w-10 h-10 text-primary mx-auto" />
+              <p className="font-semibold text-foreground">انتهت التجربة المجانية (5 دقائق)</p>
+              <p className="text-sm text-muted-foreground">
+                فعّل اشتراكك لفتح الاختبار الكامل (90 دقيقة) مع {MAX_ATTEMPTS} محاولات وتحليل أداء مفصّل
+              </p>
+              <Button onClick={() => navigate("/subscription")}>
+                تفعيل الاشتراك الآن
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className={passed ? "border-green-500" : "border-orange-500"}>
           <CardContent className="py-8 text-center">
             {passed ? (
@@ -799,7 +815,7 @@ const ExamSimulator = () => {
             <p className="text-4xl font-bold text-foreground">{percentage}%</p>
             <p className="text-lg text-muted-foreground mt-1">{resultScore} / {resultTotal}</p>
             <p className="text-sm mt-3">
-              {passed ? "أداء ممتاز! أنت جاهز للاختبار الحقيقي 🎉" : "تحتاج مزيداً من التدريب. راجع الدروس وحاول مرة أخرى"}
+              {trialExpired ? "هذه نتيجتك في الدقائق الخمس الأولى. فعّل اشتراكك لتتدرب على الاختبار الكامل!" : passed ? "أداء ممتاز! أنت جاهز للاختبار الحقيقي 🎉" : "تحتاج مزيداً من التدريب. راجع الدروس وحاول مرة أخرى"}
             </p>
           </CardContent>
         </Card>
