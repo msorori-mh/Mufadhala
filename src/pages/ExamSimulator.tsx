@@ -320,6 +320,9 @@ const ExamSimulator = () => {
     timerRef.current = setInterval(() => {
       setTotalTimeLeft((prev) => {
         if (prev <= 1) {
+          if (isTrial) {
+            setTrialExpired(true);
+          }
           finishExam(answers, examQuestions);
           return 0;
         }
