@@ -36,8 +36,8 @@ Deno.serve(async (req) => {
 
     const callingUserId = callingUser.id;
 
-    // Check if a target_user_id was provided (admin deleting another user)
     let targetUserId = callingUserId;
+    let isAdminAction = false;
     let body: any = {};
     try { body = await req.json(); } catch { /* no body = self-delete */ }
 
@@ -48,7 +48,6 @@ Deno.serve(async (req) => {
     );
 
     if (body.target_user_id && body.target_user_id !== callingUserId) {
-      // Verify the caller is an admin
       const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
         _user_id: callingUserId,
         _role: "admin",
@@ -60,18 +59,35 @@ Deno.serve(async (req) => {
         );
       }
       targetUserId = body.target_user_id;
+      isAdminAction = true;
     }
 
-    // Get student record ID
-    const { data: student } = await supabaseAdmin
+    // Get target user's student info for logging
+    const { data: targetStudent } = await supabaseAdmin
       .from("students")
-      .select("id")
+      .select("id, first_name, second_name, third_name, fourth_name")
       .eq("user_id", targetUserId)
       .maybeSingle();
 
-    const studentId = student?.id;
+    const studentId = targetStudent?.id;
+    const deletedUserName = targetStudent
+      ? [targetStudent.first_name, targetStudent.second_name, targetStudent.third_name, targetStudent.fourth_name].filter(Boolean).join(" ")
+      : "مستخدم غير معروف";
 
-    // Delete user data from all tables (order matters for dependencies)
+    // Get admin name for logging
+    let deletedByName = "حذف ذاتي";
+    if (isAdminAction) {
+      const { data: adminStudent } = await supabaseAdmin
+        .from("students")
+        .select("first_name, second_name, third_name, fourth_name")
+        .eq("user_id", callingUserId)
+        .maybeSingle();
+      deletedByName = adminStudent
+        ? [adminStudent.first_name, adminStudent.second_name, adminStudent.third_name, adminStudent.fourth_name].filter(Boolean).join(" ")
+        : "مدير";
+    }
+
+    // Delete user data from all tables
     if (studentId) {
       await supabaseAdmin.from("lesson_reviews").delete().eq("student_id", studentId);
       await supabaseAdmin.from("lesson_progress").delete().eq("student_id", studentId);
@@ -88,6 +104,15 @@ Deno.serve(async (req) => {
     if (studentId) {
       await supabaseAdmin.from("students").delete().eq("id", studentId);
     }
+
+    // Log the deletion
+    await supabaseAdmin.from("deletion_logs").insert({
+      deleted_user_id: targetUserId,
+      deleted_user_name: deletedUserName,
+      deleted_by: callingUserId,
+      deleted_by_name: isAdminAction ? deletedByName : "حذف ذاتي",
+      reason: body.reason || (isAdminAction ? "حذف بواسطة المدير" : "حذف ذاتي بواسطة المستخدم"),
+    });
 
     // Delete the auth user
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
