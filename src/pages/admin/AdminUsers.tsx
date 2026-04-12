@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "@/contexts/AuthContext";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Search, ShieldPlus, Trash2, UserCog, Settings2, KeyRound, UserX, UserPlus, Eye, EyeOff } from "lucide-react";
@@ -54,6 +55,7 @@ const SCOPE_TYPE_LABELS: Record<string, string> = {
 
 const AdminUsers = () => {
   const { loading: authLoading } = useAuth("admin");
+  const { user: currentUser } = useAuthContext();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserWithRoles[]>([]);
   const [universities, setUniversities] = useState<any[]>([]);
@@ -297,8 +299,12 @@ const AdminUsers = () => {
   };
 
   // Delete user
-  const openDeleteDialog = (user: UserWithRoles) => {
-    setDeleteUser(user);
+  const openDeleteDialog = (u: UserWithRoles) => {
+    if (u.user_id === currentUser?.id) {
+      toast({ variant: "destructive", title: "لا يمكنك حذف حسابك الخاص من لوحة الإدارة" });
+      return;
+    }
+    setDeleteUser(u);
     setDeleteDialogOpen(true);
   };
 
@@ -443,9 +449,11 @@ const AdminUsers = () => {
                         </Button>
                       </>
                     )}
-                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => openDeleteDialog(u)}>
-                      <UserX className="w-4 h-4 ml-1" />حذف
-                    </Button>
+                    {u.user_id !== currentUser?.id && (
+                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => openDeleteDialog(u)}>
+                        <UserX className="w-4 h-4 ml-1" />حذف
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>

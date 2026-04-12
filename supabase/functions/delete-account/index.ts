@@ -62,6 +62,20 @@ Deno.serve(async (req) => {
       isAdminAction = true;
     }
 
+    // Prevent admin from deleting their own account via admin panel
+    if (body.target_user_id && body.target_user_id === callingUserId) {
+      const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
+        _user_id: callingUserId,
+        _role: "admin",
+      });
+      if (isAdmin) {
+        return new Response(
+          JSON.stringify({ error: "لا يمكن للمدير حذف حسابه الخاص من لوحة الإدارة" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // Get target user's student info for logging
     const { data: targetStudent } = await supabaseAdmin
       .from("students")
