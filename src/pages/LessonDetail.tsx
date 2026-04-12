@@ -24,6 +24,7 @@ interface Lesson {
   major_id: string;
   presentation_url: string | null;
   grade_level: number | null;
+  subject_id: string | null;
 }
 
 const GRADE_LABELS: Record<number, string> = {
@@ -66,6 +67,8 @@ const LessonDetail = () => {
   // Reveal answer state
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
 
+  const [isDynamicallyFree, setIsDynamicallyFree] = useState(false);
+
   useEffect(() => {
     if (authLoading || !id || !user) return;
     const fetchData = async () => {
@@ -76,7 +79,7 @@ const LessonDetail = () => {
       if (isOffline) {
         // Load from cache
         if (cached) {
-          setLesson({ id: cached.id, title: cached.title, content: cached.content, summary: cached.summary, is_free: cached.is_free, major_id: "", presentation_url: null, grade_level: null });
+          setLesson({ id: cached.id, title: cached.title, content: cached.content, summary: cached.summary, is_free: cached.is_free, major_id: "", presentation_url: null, grade_level: null, subject_id: null });
           setQuestions(cached.questions as Question[]);
           setIsFromCache(true);
         }
@@ -85,7 +88,7 @@ const LessonDetail = () => {
       }
 
       const [{ data: l }, { data: q }, { data: s }] = await Promise.all([
-        supabase.from("lessons").select("id, title, content, summary, is_free, major_id, presentation_url, grade_level").eq("id", id).maybeSingle(),
+        supabase.from("lessons").select("id, title, content, summary, is_free, major_id, presentation_url, grade_level, subject_id").eq("id", id).maybeSingle(),
         supabase.from("questions").select("*").eq("lesson_id", id).order("display_order"),
         supabase.from("students").select("id").eq("user_id", user.id).maybeSingle(),
       ]);
@@ -94,13 +97,29 @@ const LessonDetail = () => {
         // Check if the subscription plan covers this lesson's major
         if (planId) {
           if (!allowedMajorIds || allowedMajorIds.length === 0) {
-            // Plan covers all majors
             setPlanCoversLesson(true);
           } else {
             setPlanCoversLesson(allowedMajorIds.includes(l.major_id));
           }
         }
-        // If no planId (e.g. trial without plan), planCoversLesson stays false
+
+        // Check if this lesson is among first 3 in its subject (dynamically free)
+        if (l.major_id && l.subject_id) {
+          const { data: siblingsInSubject } = await supabase
+            .from("lessons")
+            .select("id, display_order")
+            .eq("major_id", l.major_id)
+            .eq("subject_id", l.subject_id)
+            .eq("is_published", true)
+            .order("display_order")
+            .limit(3);
+          if (siblingsInSubject && siblingsInSubject.some((s: any) => s.id === id)) {
+            setIsDynamicallyFree(true);
+          }
+        } else if (l.is_free) {
+          setIsDynamicallyFree(true);
+        }
+
         // Fetch sibling lessons for prev/next navigation
         if (l.major_id) {
           const { data: siblings } = await supabase
@@ -190,7 +209,7 @@ const LessonDetail = () => {
     );
   }
 
-  const canAccess = isStaff || (hasActiveSubscription && planCoversLesson) || (lesson?.is_free === true) || isFromCache;
+  const canAccess = isStaff || (hasActiveSubscription && planCoversLesson) || isDynamicallyFree || (lesson?.is_free === true) || isFromCache;
 
   if (!lesson) {
     return (

@@ -172,6 +172,24 @@ const LessonsList = () => {
   const questionCounts = lessonsData?.questionCounts || {};
   const completedLessons = lessonsData?.completedLessons || new Set<string>();
 
+  // Compute which lessons are free: first 3 per subject (by display_order)
+  const freeLessonIds = useMemo(() => {
+    const ids = new Set<string>();
+    const bySubject = new Map<string | null, Lesson[]>();
+    lessons.forEach(l => {
+      const key = l.subject_id || null;
+      if (!bySubject.has(key)) bySubject.set(key, []);
+      bySubject.get(key)!.push(l);
+    });
+    bySubject.forEach(group => {
+      const sorted = [...group].sort((a, b) => a.display_order - b.display_order);
+      sorted.slice(0, 3).forEach(l => ids.add(l.id));
+    });
+    // Also include any lesson with is_free=true from DB
+    lessons.forEach(l => { if (l.is_free) ids.add(l.id); });
+    return ids;
+  }, [lessons]);
+
   const loading = authLoading || studentLoading || (!isOffline && lessonsLoading) || subLoading;
 
   const filteredLessons = useMemo(() => {
@@ -350,7 +368,8 @@ const LessonsList = () => {
                 const done = completedLessons.has(lesson.id);
                 const originalIndex = lessons.findIndex(l => l.id === lesson.id);
                 const hasPaidAccess = hasSubscription && !!planId && (!allowedMajorIds || allowedMajorIds.length === 0 || allowedMajorIds.includes(lesson.major_id));
-                const isLocked = !isOffline && !lesson.is_free && !hasPaidAccess;
+                const isFree = freeLessonIds.has(lesson.id);
+                const isLocked = !isOffline && !isFree && !hasPaidAccess;
                 const isSavedOffline = savedOfflineIds.has(lesson.id);
                 return (
                   <Link key={lesson.id} to={`/lessons/${lesson.id}`} className="block">
@@ -363,7 +382,7 @@ const LessonsList = () => {
                                 {done ? <CheckCircle2 className="w-4 h-4" /> : isLocked ? <Lock className="w-3.5 h-3.5" /> : originalIndex + 1}
                               </span>
                               <p className="font-semibold text-foreground">{lesson.title}</p>
-                              {lesson.is_free && !hasSubscription && !isOffline && (
+                              {isFree && !hasSubscription && !isOffline && (
                                 <Badge variant="outline" className="text-xs border-green-500 text-green-600 gap-0.5">
                                   <Sparkles className="w-3 h-3" /> مجاني
                                 </Badge>

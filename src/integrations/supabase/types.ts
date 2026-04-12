@@ -1167,6 +1167,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_free_lesson: { Args: { _lesson_id: string }; Returns: boolean }
       refresh_leaderboard: { Args: never; Returns: undefined }
       set_cache: {
         Args: { _key: string; _ttl_seconds?: number; _value: Json }

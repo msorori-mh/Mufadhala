@@ -82,7 +82,8 @@ const fetchExamData = async (userId: string) => {
 };
 
 const MAX_QUESTIONS = 45;
-const TOTAL_TIME = 90 * 60;
+const FULL_TIME = 90 * 60;
+const TRIAL_TIME = 5 * 60; // 5 minutes for non-subscribers
 const PER_QUESTION_TIME = 2 * 60;
 const MAX_ATTEMPTS = 3;
 
@@ -115,6 +116,7 @@ const ExamSimulator = () => {
   const { isActive: hasActiveSubscription, loading: subLoading } = useSubscription(user?.id);
   const isOffline = useOfflineStatus();
   const { toast } = useToast();
+  const isTrial = !isStaff && !hasActiveSubscription;
 
   const [student, setStudent] = useState<any>(null);
   const [majorName, setMajorName] = useState("");
@@ -133,7 +135,8 @@ const ExamSimulator = () => {
   const [examQuestions, setExamQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [totalTimeLeft, setTotalTimeLeft] = useState(TOTAL_TIME);
+  const [totalTimeLeft, setTotalTimeLeft] = useState(FULL_TIME);
+  const [trialExpired, setTrialExpired] = useState(false);
   const [questionTimeLeft, setQuestionTimeLeft] = useState(PER_QUESTION_TIME);
   const [_attemptId, setAttemptId] = useState<string | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -262,7 +265,7 @@ const ExamSimulator = () => {
             answers: finalAnswers,
             score: clientScore,
             total: questions.length,
-            startedAt: new Date(Date.now() - TOTAL_TIME * 1000).toISOString(),
+            startedAt: new Date(Date.now() - FULL_TIME * 1000).toISOString(),
             completedAt: new Date().toISOString(),
           });
           const pending = await getPendingExamResults();
@@ -317,6 +320,9 @@ const ExamSimulator = () => {
     timerRef.current = setInterval(() => {
       setTotalTimeLeft((prev) => {
         if (prev <= 1) {
+          if (isTrial) {
+            setTrialExpired(true);
+          }
           finishExam(answers, examQuestions);
           return 0;
         }
@@ -392,7 +398,8 @@ const ExamSimulator = () => {
 
     setCurrentIndex(0);
     setAnswers({});
-    setTotalTimeLeft(TOTAL_TIME);
+    setTotalTimeLeft(isTrial ? TRIAL_TIME : FULL_TIME);
+    setTrialExpired(false);
     setQuestionTimeLeft(PER_QUESTION_TIME);
     setAttemptId(null);
     setPhase("exam");
@@ -459,9 +466,9 @@ const ExamSimulator = () => {
 
   // ---- INTRO PHASE ----
   if (phase === "intro") {
-    const canAccess = isStaff || hasActiveSubscription;
+    const canAccessFull = isStaff || hasActiveSubscription;
     const attemptsUsed = pastAttempts.length;
-    const canStartOnline = canAccess && attemptsUsed < MAX_ATTEMPTS && allQuestions.length > 0;
+    const canStartOnline = (canAccessFull ? attemptsUsed < MAX_ATTEMPTS : true) && allQuestions.length > 0;
     const canStartOffline = isOffline && hasOfflineQuestions;
     const canStart = isOffline ? canStartOffline : canStartOnline;
     const questionsAvailable = isOffline ? offlineQuestionCount : Math.min(allQuestions.length, MAX_QUESTIONS);
@@ -503,19 +510,39 @@ const ExamSimulator = () => {
             <p className="text-sm text-muted-foreground mt-1">تدرب بذكاء.. لتضمن القبول.</p>
           </div>
 
+          {/* Trial notice for non-subscribers */}
+          {!isOffline && isTrial && allQuestions.length > 0 && (
+            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900">
+              <CardContent className="py-4 px-4 flex items-start gap-3">
+                <Clock className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">تجربة مجانية — 5 دقائق فقط</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-500 mt-1">
+                    يمكنك تجربة محاكي الاختبار لمدة 5 دقائق. لفتح الاختبار الكامل (90 دقيقة)، فعّل اشتراكك.
+                  </p>
+                  <Button size="sm" variant="outline" className="mt-2 text-xs" onClick={() => navigate("/subscription")}>
+                    تفعيل الاشتراك
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardContent className="py-5 space-y-4">
               <h2 className="font-semibold text-foreground">تعليمات الاختبار</h2>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2"><Clock className="w-4 h-4 mt-0.5 text-primary shrink-0" /><span><strong>{Math.min(questionsAvailable, MAX_QUESTIONS)} سؤال</strong> في <strong>90 دقيقة</strong> كحد أقصى</span></li>
+                <li className="flex items-start gap-2"><Clock className="w-4 h-4 mt-0.5 text-primary shrink-0" /><span><strong>{Math.min(questionsAvailable, MAX_QUESTIONS)} سؤال</strong> في <strong>{isTrial ? "5 دقائق" : "90 دقيقة"}</strong> كحد أقصى</span></li>
                 <li className="flex items-start gap-2"><AlertTriangle className="w-4 h-4 mt-0.5 text-orange-500 shrink-0" /><span>حد أقصى <strong>دقيقتين</strong> لكل سؤال — ينتقل تلقائياً عند انتهاء الوقت</span></li>
-                <li className="flex items-start gap-2"><RotateCcw className="w-4 h-4 mt-0.5 text-secondary shrink-0" /><span>مسموح بـ <strong>{MAX_ATTEMPTS} محاولات</strong> فقط {!isOffline && `(استخدمت ${attemptsUsed})`}</span></li>
+                {!isTrial && (
+                  <li className="flex items-start gap-2"><RotateCcw className="w-4 h-4 mt-0.5 text-secondary shrink-0" /><span>مسموح بـ <strong>{MAX_ATTEMPTS} محاولات</strong> فقط {!isOffline && `(استخدمت ${attemptsUsed})`}</span></li>
+                )}
               </ul>
             </CardContent>
           </Card>
 
           {/* Download for offline button */}
-          {!isOffline && allQuestions.length > 0 && (
+          {!isOffline && canAccessFull && allQuestions.length > 0 && (
             <Button
               variant="outline"
               className="w-full"
@@ -557,20 +584,11 @@ const ExamSimulator = () => {
             </Card>
           )}
 
-          {!isOffline && !canAccess && (
-            <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-900">
-              <CardContent className="py-4 text-center">
-                <p className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">يجب تفعيل اشتراكك للوصول إلى الاختبارات</p>
-                <Button className="mt-2" size="sm" onClick={() => navigate("/subscription")}>تفعيل الاشتراك</Button>
-              </CardContent>
-            </Card>
-          )}
-
           <Button onClick={startExam} disabled={!canStart} className="w-full" size="lg">
             <Play className="w-5 h-5 ml-2" />
             {isOffline
               ? (hasOfflineQuestions ? "ابدأ اختبار أوفلاين" : "لا توجد أسئلة محفوظة")
-              : (!canAccess ? "يجب تفعيل الاشتراك أولاً" : attemptsUsed >= MAX_ATTEMPTS ? "استنفذت جميع المحاولات" : "ابدأ الاختبار")}
+              : (attemptsUsed >= MAX_ATTEMPTS && canAccessFull ? "استنفذت جميع المحاولات" : isTrial ? "ابدأ التجربة المجانية (5 دقائق)" : "ابدأ الاختبار")}
           </Button>
 
           {/* Past attempts */}
@@ -771,6 +789,22 @@ const ExamSimulator = () => {
           </Card>
         )}
 
+        {/* Trial expired upgrade prompt */}
+        {trialExpired && (
+          <Card className="border-primary bg-primary/5">
+            <CardContent className="py-5 text-center space-y-3">
+              <Clock className="w-10 h-10 text-primary mx-auto" />
+              <p className="font-semibold text-foreground">انتهت التجربة المجانية (5 دقائق)</p>
+              <p className="text-sm text-muted-foreground">
+                فعّل اشتراكك لفتح الاختبار الكامل (90 دقيقة) مع {MAX_ATTEMPTS} محاولات وتحليل أداء مفصّل
+              </p>
+              <Button onClick={() => navigate("/subscription")}>
+                تفعيل الاشتراك الآن
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className={passed ? "border-green-500" : "border-orange-500"}>
           <CardContent className="py-8 text-center">
             {passed ? (
@@ -781,7 +815,7 @@ const ExamSimulator = () => {
             <p className="text-4xl font-bold text-foreground">{percentage}%</p>
             <p className="text-lg text-muted-foreground mt-1">{resultScore} / {resultTotal}</p>
             <p className="text-sm mt-3">
-              {passed ? "أداء ممتاز! أنت جاهز للاختبار الحقيقي 🎉" : "تحتاج مزيداً من التدريب. راجع الدروس وحاول مرة أخرى"}
+              {trialExpired ? "هذه نتيجتك في الدقائق الخمس الأولى. فعّل اشتراكك لتتدرب على الاختبار الكامل!" : passed ? "أداء ممتاز! أنت جاهز للاختبار الحقيقي 🎉" : "تحتاج مزيداً من التدريب. راجع الدروس وحاول مرة أخرى"}
             </p>
           </CardContent>
         </Card>
