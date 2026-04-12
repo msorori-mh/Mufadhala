@@ -103,8 +103,12 @@ const LessonDetail = () => {
           }
         }
 
-        // Check if this lesson is among first 3 in its subject (dynamically free)
+        // Check if this lesson is among first N in its subject (dynamically free)
         if (l.major_id && l.subject_id) {
+          // Read free lessons count from cache
+          const { data: freeCountData } = await supabase.rpc("get_cache", { _key: "free_lessons_count" });
+          const freeCount = freeCountData != null ? Number(freeCountData) : 3;
+
           const { data: siblingsInSubject } = await supabase
             .from("lessons")
             .select("id, display_order")
@@ -112,7 +116,7 @@ const LessonDetail = () => {
             .eq("subject_id", l.subject_id)
             .eq("is_published", true)
             .order("display_order")
-            .limit(3);
+            .limit(freeCount);
           if (siblingsInSubject && siblingsInSubject.some((s: any) => s.id === id)) {
             setIsDynamicallyFree(true);
           }

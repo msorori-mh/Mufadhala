@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { Building2, BookOpen, Users, Loader2, MessageCircle, Save, Bot, Type, FileText, BarChart3, TrendingUp, UserCheck } from "lucide-react";
+import { Building2, BookOpen, Users, Loader2, MessageCircle, Save, Bot, Type, FileText, BarChart3, TrendingUp, UserCheck, Unlock, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -75,17 +75,21 @@ const AdminDashboard = () => {
   const { data: chatSettings } = useQuery({
     queryKey: ["chat-settings"],
     queryFn: async () => {
-      const [limitRes, modelRes, welcomeRes, promptRes] = await Promise.all([
+      const [limitRes, modelRes, welcomeRes, promptRes, freeLessonsRes, freeExamRes] = await Promise.all([
         supabase.rpc("get_cache", { _key: "chat_daily_limit" }),
         supabase.rpc("get_cache", { _key: "chat_ai_model" }),
         supabase.rpc("get_cache", { _key: "chat_welcome_text" }),
         supabase.rpc("get_cache", { _key: "chat_system_prompt" }),
+        supabase.rpc("get_cache", { _key: "free_lessons_count" }),
+        supabase.rpc("get_cache", { _key: "free_exam_minutes" }),
       ]);
       return {
         limit: limitRes.data != null ? Number(limitRes.data) : 30,
         model: typeof modelRes.data === "string" ? modelRes.data : "google/gemini-3-flash-preview",
         welcome: typeof welcomeRes.data === "string" ? welcomeRes.data : "مرحباً! أنا مساعد مُفَاضَلَة الذكي 👋",
         systemPrompt: typeof promptRes.data === "string" ? promptRes.data : "",
+        freeLessonsCount: freeLessonsRes.data != null ? Number(freeLessonsRes.data) : 3,
+        freeExamMinutes: freeExamRes.data != null ? Number(freeExamRes.data) : 5,
       };
     },
     enabled: !authLoading && isAdmin,
@@ -95,11 +99,15 @@ const AdminDashboard = () => {
   const [modelInput, setModelInput] = useState("");
   const [welcomeInput, setWelcomeInput] = useState("");
   const [promptInput, setPromptInput] = useState<string | null>(null);
+  const [freeLessonsInput, setFreeLessonsInput] = useState("");
+  const [freeExamInput, setFreeExamInput] = useState("");
 
   const currentLimit = limitInput || String(chatSettings?.limit ?? 30);
   const currentModel = modelInput || chatSettings?.model || "google/gemini-3-flash-preview";
   const currentWelcome = welcomeInput !== "" ? welcomeInput : (chatSettings?.welcome ?? "");
   const currentPrompt = promptInput !== null ? promptInput : (chatSettings?.systemPrompt ?? "");
+  const currentFreeLessons = freeLessonsInput || String(chatSettings?.freeLessonsCount ?? 3);
+  const currentFreeExam = freeExamInput || String(chatSettings?.freeExamMinutes ?? 5);
 
   const saveCacheMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
@@ -145,6 +153,22 @@ const AdminDashboard = () => {
     if (promptInput !== null && promptInput !== chatSettings?.systemPrompt) {
       saveCacheMutation.mutate({ key: "chat_system_prompt", value: promptInput });
       setPromptInput(null);
+    }
+  };
+
+  const saveFreeLessons = () => {
+    const val = Number(freeLessonsInput);
+    if (val >= 0 && val <= 50) {
+      saveCacheMutation.mutate({ key: "free_lessons_count", value: val });
+      setFreeLessonsInput("");
+    }
+  };
+
+  const saveFreeExam = () => {
+    const val = Number(freeExamInput);
+    if (val >= 0 && val <= 90) {
+      saveCacheMutation.mutate({ key: "free_exam_minutes", value: val });
+      setFreeExamInput("");
     }
   };
 
@@ -362,6 +386,75 @@ const AdminDashboard = () => {
                   </Button>
                 </div>
                 <p className="text-[10px] text-muted-foreground">تعليمات توجّه المساعد الذكي في ردوده. اتركها فارغة لاستخدام التعليمات الافتراضية المدمجة.</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Free Content Settings — admin only */}
+        {isAdmin && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Unlock className="w-5 h-5 text-primary" />
+                إعدادات المحتوى المجاني
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {/* Free lessons count */}
+              <div className="flex items-end gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="free-lessons" className="text-sm flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5" />
+                    عدد الدروس المجانية لكل مادة
+                  </Label>
+                  <Input
+                    id="free-lessons"
+                    type="number"
+                    min={0}
+                    max={50}
+                    value={currentFreeLessons}
+                    onChange={(e) => setFreeLessonsInput(e.target.value)}
+                    className="max-w-[120px]"
+                  />
+                  <p className="text-[10px] text-muted-foreground">الحالي: {chatSettings?.freeLessonsCount ?? 3} دروس — أول {chatSettings?.freeLessonsCount ?? 3} دروس من كل مادة متاحة مجاناً</p>
+                </div>
+                <Button
+                  size="sm"
+                  disabled={saveCacheMutation.isPending || !freeLessonsInput || Number(freeLessonsInput) === chatSettings?.freeLessonsCount}
+                  onClick={saveFreeLessons}
+                >
+                  {saveCacheMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 ml-1" />}
+                  حفظ
+                </Button>
+              </div>
+
+              {/* Free exam minutes */}
+              <div className="flex items-end gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="free-exam" className="text-sm flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    مدة التجربة المجانية لمحاكي الاختبار (بالدقائق)
+                  </Label>
+                  <Input
+                    id="free-exam"
+                    type="number"
+                    min={0}
+                    max={90}
+                    value={currentFreeExam}
+                    onChange={(e) => setFreeExamInput(e.target.value)}
+                    className="max-w-[120px]"
+                  />
+                  <p className="text-[10px] text-muted-foreground">الحالي: {chatSettings?.freeExamMinutes ?? 5} دقائق — المدة المتاحة لغير المشتركين في محاكي الاختبار</p>
+                </div>
+                <Button
+                  size="sm"
+                  disabled={saveCacheMutation.isPending || !freeExamInput || Number(freeExamInput) === chatSettings?.freeExamMinutes}
+                  onClick={saveFreeExam}
+                >
+                  {saveCacheMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 ml-1" />}
+                  حفظ
+                </Button>
               </div>
             </CardContent>
           </Card>
