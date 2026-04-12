@@ -39,7 +39,10 @@ const AdminColleges = () => {
   const [registrationDeadline, setRegistrationDeadline] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
-
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResults, setImportResults] = useState<{ added: number; errors: string[] } | null>(null);
+  const importFileRef = useRef<HTMLInputElement>(null);
   const fetchData = async () => {
     const [{ data: c }, { data: u }] = await Promise.all([
       supabase.from("colleges").select("*").order("display_order"),
