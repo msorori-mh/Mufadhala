@@ -83,12 +83,15 @@ const LessonsList = () => {
       const [{ data: major }, { data: ls }, { data: lessonsFull }] = await Promise.all([
         supabase.from("majors").select("name_ar").eq("id", majorId!).maybeSingle(),
         supabase.rpc("get_published_lessons_list", { _major_id: majorId! }),
-        supabase.from("lessons").select("id, subject_id").eq("major_id", majorId!).eq("is_published", true),
+        supabase.from("lessons").select("id, subject_id, grade_level").eq("major_id", majorId!).eq("is_published", true),
       ]);
 
-      const subjectMap = new Map<string, string | null>();
-      (lessonsFull || []).forEach((lf: any) => subjectMap.set(lf.id, lf.subject_id));
-      const enrichedLessons = ((ls || []) as Lesson[]).map(l => ({ ...l, subject_id: subjectMap.get(l.id) || null }));
+      const subjectGradeMap = new Map<string, { subject_id: string | null; grade_level: number | null }>();
+      (lessonsFull || []).forEach((lf: any) => subjectGradeMap.set(lf.id, { subject_id: lf.subject_id, grade_level: lf.grade_level }));
+      const enrichedLessons = ((ls || []) as Lesson[]).map(l => {
+        const extra = subjectGradeMap.get(l.id);
+        return { ...l, subject_id: extra?.subject_id || null, grade_level: extra?.grade_level || null };
+      });
 
       // Fetch subjects for this major
       const { data: ms } = await supabase.from("major_subjects").select("subject_id").eq("major_id", majorId!);
