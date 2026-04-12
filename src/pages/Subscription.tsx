@@ -394,7 +394,24 @@ const Subscription = () => {
                     <h3 className="font-bold text-lg">{plan.name}</h3>
                     <p className="text-sm text-muted-foreground">{plan.description}</p>
                     <div>
-                      {promoDiscount > 0 && <span className="text-sm text-muted-foreground line-through ml-2">{price.toLocaleString()}</span>}
+                      {(() => {
+                        const zone = getZone(studentGovernorate);
+                        const zoneDiscount = zone === "a" ? plan.discount_zone_a : zone === "b" ? plan.discount_zone_b : 0;
+                        return (
+                          <>
+                            {zoneDiscount > 0 && (
+                              <div className="mb-1">
+                                <Badge variant="outline" className="text-xs border-green-500 text-green-600">خصم {zoneDiscount}% لمنطقتك</Badge>
+                              </div>
+                            )}
+                            {(zoneDiscount > 0 || promoDiscount > 0) && (
+                              <span className="text-sm text-muted-foreground line-through ml-2">
+                                {promoDiscount > 0 ? price.toLocaleString() : plan.price_default.toLocaleString()}
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
                       <span className="text-2xl font-bold text-primary">{finalPrice.toLocaleString()}</span>
                       <span className="text-sm text-muted-foreground mr-1">{plan.currency}</span>
                     </div>
