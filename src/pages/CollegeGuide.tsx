@@ -61,7 +61,7 @@ const CollegeGuide = () => {
         `<tr>
           <td style="border:1px solid #ddd;padding:6px 8px;text-align:right">${c.name_ar}</td>
           <td style="border:1px solid #ddd;padding:6px 8px;text-align:center">${c.min_gpa != null ? c.min_gpa + "%" : "—"}</td>
-          <td style="border:1px solid #ddd;padding:6px 8px;text-align:center">${c.acceptance_rate != null ? c.acceptance_rate + "%" : "—"}</td>
+          <td style="border:1px solid #ddd;padding:6px 8px;text-align:center">${c.acceptance_rate != null ? c.acceptance_rate : "—"}</td>
           <td style="border:1px solid #ddd;padding:6px 8px;text-align:right">${c.registration_deadline || "—"}</td>
           <td style="border:1px solid #ddd;padding:6px 8px;text-align:right;font-size:11px">${c.required_documents?.join("، ") || "—"}</td>
           <td style="border:1px solid #ddd;padding:6px 8px;text-align:right;font-size:11px">${c.notes || "—"}</td>
@@ -80,7 +80,7 @@ const CollegeGuide = () => {
       <p style="color:#666;font-size:12px;margin-bottom:8px">${new Date().toLocaleDateString("ar")} — ${filtered.length} كلية</p>
       <table>
         <thead><tr>
-          <th>الكلية</th><th style="text-align:center">الحد الأدنى</th><th style="text-align:center">نسبة القبول</th>
+          <th>الكلية</th><th style="text-align:center">الحد الأدنى</th><th style="text-align:center">الطاقة الاستيعابية</th>
           <th>موعد التنسيق</th><th>الوثائق المطلوبة</th><th>ملاحظات</th>
         </tr></thead>
         <tbody>${groupsHtml}</tbody>
@@ -210,8 +210,8 @@ const CollegeGuide = () => {
                     )}
                     {c.acceptance_rate != null && (
                       <Badge variant="outline" className="text-xs gap-1">
-                        <TrendingUp className="w-3 h-3" />
-                        نسبة القبول: {c.acceptance_rate}%
+                         <TrendingUp className="w-3 h-3" />
+                         الطاقة الاستيعابية: {c.acceptance_rate}
                       </Badge>
                     )}
                   </div>
