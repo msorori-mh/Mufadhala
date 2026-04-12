@@ -110,7 +110,96 @@ const AdminColleges = () => {
     return { filled, total };
   };
 
-  if (authLoading || loading) return <AdminLayout><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></AdminLayout>;
+  // --- Excel Import ---
+  const downloadCollegeTemplate = () => {
+    const headers = ["الجامعة", "اسم الكلية بالعربية", "اسم الكلية بالإنجليزية", "الرمز", "الحد الأدنى للمعدل", "الطاقة الاستيعابية", "موعد التنسيق", "الوثائق المطلوبة (مفصولة بفاصلة)", "ملاحظات"];
+    const example = ["جامعة صنعاء", "كلية الطب", "Faculty of Medicine", "MED", "85", "150", "سبتمبر 2025", "شهادة الثانوية, صورة الهوية", ""];
+    const ws = XLSX.utils.aoa_to_sheet([headers, example]);
+    ws["!cols"] = headers.map(() => ({ wch: 25 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "كليات");
+    XLSX.writeFile(wb, "قالب_استيراد_الكليات.xlsx");
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    setImportResults(null);
+
+    try {
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data);
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+      if (rows.length < 2) {
+        toast({ variant: "destructive", title: "الملف فارغ أو لا يحتوي على بيانات" });
+        setImporting(false);
+        return;
+      }
+
+      // Build university name → id map
+      const uniMap = new Map<string, string>();
+      universities.forEach(u => {
+        uniMap.set(u.name_ar.trim(), u.id);
+        if (u.name_en) uniMap.set(u.name_en.trim().toLowerCase(), u.id);
+        uniMap.set(u.code.trim().toLowerCase(), u.id);
+      });
+
+      const errors: string[] = [];
+      let added = 0;
+      const dataRows = rows.slice(1).filter(r => r.some(cell => cell != null && String(cell).trim()));
+
+      for (let i = 0; i < dataRows.length; i++) {
+        const row = dataRows[i];
+        const rowNum = i + 2;
+        const uniName = String(row[0] || "").trim();
+        const nameAr = String(row[1] || "").trim();
+        const nameEn = String(row[2] || "").trim() || null;
+        const code = String(row[3] || "").trim();
+        const minGpa = row[4] != null && String(row[4]).trim() ? Number(row[4]) : null;
+        const capacity = row[5] != null && String(row[5]).trim() ? Number(row[5]) : null;
+        const deadline = String(row[6] || "").trim() || null;
+        const docsStr = String(row[7] || "").trim();
+        const docs = docsStr ? docsStr.split(",").map(d => d.trim()).filter(Boolean) : null;
+        const notes = String(row[8] || "").trim() || null;
+
+        if (!nameAr || !code) {
+          errors.push(`سطر ${rowNum}: اسم الكلية والرمز مطلوبان`);
+          continue;
+        }
+
+        const uniId = uniMap.get(uniName) || uniMap.get(uniName.toLowerCase());
+        if (!uniId) {
+          errors.push(`سطر ${rowNum}: الجامعة "${uniName}" غير موجودة`);
+          continue;
+        }
+
+        const { error } = await supabase.from("colleges").insert({
+          name_ar: nameAr, name_en: nameEn, code, university_id: uniId,
+          min_gpa: minGpa, capacity, registration_deadline: deadline,
+          required_documents: docs, notes, is_active: true, display_order: 0,
+        });
+
+        if (error) {
+          errors.push(`سطر ${rowNum}: ${error.message}`);
+        } else {
+          added++;
+        }
+      }
+
+      setImportResults({ added, errors });
+      if (added > 0) {
+        toast({ title: `تم استيراد ${added} كلية بنجاح` });
+        fetchData();
+      }
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "خطأ في قراءة الملف: " + err.message });
+    }
+    setImporting(false);
+    if (importFileRef.current) importFileRef.current.value = "";
+  };
 
   return (
     <AdminLayout>
