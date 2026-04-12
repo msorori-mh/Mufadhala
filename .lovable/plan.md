@@ -1,23 +1,61 @@
 
 
-## خطة تحديث المسمى من "قبول" إلى "مُفَاضَلَة"
+## مراجعة تطبيق الجوال وخطوات البناء
 
-### الوضع الحالي
-تم فحص المشروع بالكامل. معظم عملية إعادة التسمية تمت سابقاً بنجاح. المتبقي **تعديل واحد فقط** يحتوي على اسم العلامة القديمة:
+### نتائج المراجعة
 
-### التغييرات المطلوبة
+تم فحص جميع الملفات الأساسية للتطبيق. **لا توجد مشاكل تمنع البناء:**
 
-**1. `src/pages/DeleteAccount.tsx` — سطر 161**
-- تغيير: `المساعد الذكي "قبول"` → `المساعد الذكي "مُفَاضَلَة"`
+- **الهوية**: اسم التطبيق "مُفَاضَلَة" ومعرّف `com.mufadhala.app` محدّثان في `capacitor.config.ts` و `manifest.json` و `index.html`
+- **الروابط**: تم استبدال جميع الروابط القديمة `uni-admission-coach.lovable.app` بـ `mufadhala.com` (لا يوجد أي أثر متبقي)
+- **المصادقة**: نظام حفظ الجلسة عبر Capacitor Preferences يعمل بشكل صحيح (AuthContext + nativeSessionStorage)
+- **الأداء**: الصفحات الأساسية (Dashboard, Lessons, Exam, Notifications) محمّلة مباشرة (Eager)، والثانوية (35+ صفحة) محمّلة كسولاً (Lazy)
+- **السلوك الأصلي**: زر الرجوع، شريط الحالة، لوحة المفاتيح، شاشة البداية — كلها مهيّأة
+- **التنقل**: شريط التنقل السفلي يظهر دائماً في البيئة الأصلية
+- **ChatWidget**: مخفي في بيئة Native (صحيح)
+- **الحزم**: Capacitor v8 مع جميع الملحقات متوافقة
 
-**2. `src/pages/ExamSimulator.tsx` — روابط المشاركة**
-- استبدال `uni-admission-coach.lovable.app` بـ `mufadhala.com` في نصوص المشاركة عبر واتساب وتويتر والنسخ (3 مواضع)
+### خطوات بناء APK
 
-**3. `supabase/functions/send-otp/index.ts` — رسالة OTP**
-- استبدال `@uni-admission-coach.lovable.app` بـ `@mufadhala.com` في نص رسالة SMS
+لا يوجد تعديلات برمجية مطلوبة. فقط اتبع هذه الأوامر على جهازك:
 
-### ملاحظة
-باقي استخدامات كلمة "قبول" في المشروع هي كلمات عربية عادية بمعنى "admission/acceptance" (مثل: متطلبات القبول، مقبول، نسب القبول) وليست إشارات للعلامة التجارية القديمة — لا تحتاج تغيير.
+**1. تحديث الكود من GitHub:**
+```bash
+git pull origin main
+```
 
-ملفات Capacitor و manifest.json و index.html كلها محدّثة بالفعل إلى "مُفَاضَلَة".
+**2. تثبيت التبعيات وبناء ملفات الويب:**
+```bash
+npm install
+npm run build
+```
+
+**3. مزامنة مع Android:**
+```bash
+npx cap sync android
+```
+
+**4. فتح المشروع في Android Studio:**
+```bash
+npx cap open android
+```
+
+**5. بناء نسخة الإصدار (Release APK):**
+
+من داخل مجلد `android`:
+```bash
+cd android
+gradlew.bat assembleRelease
+```
+أو من Android Studio: **Build → Generate Signed Bundle / APK** واختر APK ثم استخدم ملف التوقيع `mufadhala-release.keystore`.
+
+**6. موقع ملف APK الناتج:**
+```
+android/app/build/outputs/apk/release/app-release.apk
+```
+
+### ملاحظات مهمة
+- تأكد من استخدام **Java JDK 17** و **Android SDK** مع targetSdkVersion 34
+- إذا كان مجلد `android` غير موجود، أضفه أولاً: `npx cap add android` ثم انقل موارد الأيقونات وشاشة البداية المخصصة
+- للمزيد من التفاصيل حول Capacitor مع Lovable: [دليل Capacitor](https://docs.lovable.dev/tips-tricks/native-mobile-apps)
 
