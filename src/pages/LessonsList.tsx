@@ -172,7 +172,19 @@ const LessonsList = () => {
   const questionCounts = lessonsData?.questionCounts || {};
   const completedLessons = lessonsData?.completedLessons || new Set<string>();
 
-  // Compute which lessons are free: first 3 per subject (by display_order)
+  // Fetch free lessons count setting from cache
+  const { data: freeLessonsCount } = useQuery({
+    queryKey: ["free-lessons-count"],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("get_cache", { _key: "free_lessons_count" });
+      return data != null ? Number(data) : 3;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const FREE_COUNT = freeLessonsCount ?? 3;
+
+  // Compute which lessons are free: first N per subject (by display_order)
   const freeLessonIds = useMemo(() => {
     const ids = new Set<string>();
     const bySubject = new Map<string | null, Lesson[]>();
@@ -183,12 +195,12 @@ const LessonsList = () => {
     });
     bySubject.forEach(group => {
       const sorted = [...group].sort((a, b) => a.display_order - b.display_order);
-      sorted.slice(0, 3).forEach(l => ids.add(l.id));
+      sorted.slice(0, FREE_COUNT).forEach(l => ids.add(l.id));
     });
     // Also include any lesson with is_free=true from DB
     lessons.forEach(l => { if (l.is_free) ids.add(l.id); });
     return ids;
-  }, [lessons]);
+  }, [lessons, FREE_COUNT]);
 
   const loading = authLoading || studentLoading || (!isOffline && lessonsLoading) || subLoading;
 
