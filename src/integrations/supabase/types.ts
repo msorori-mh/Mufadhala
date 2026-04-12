@@ -73,7 +73,7 @@ export type Database = {
       }
       colleges: {
         Row: {
-          acceptance_rate: number | null
+          capacity: number | null
           code: string
           created_at: string
           display_order: number
@@ -89,7 +89,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          acceptance_rate?: number | null
+          capacity?: number | null
           code: string
           created_at?: string
           display_order?: number
@@ -105,7 +105,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          acceptance_rate?: number | null
+          capacity?: number | null
           code?: string
           created_at?: string
           display_order?: number
