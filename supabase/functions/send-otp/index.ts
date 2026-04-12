@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
       body: new URLSearchParams({
         To: fullPhone,
         From: fromPhone,
-        Body: `رمز التحقق الخاص بك في مُفَاضَلَة: ${code}\n\n@uni-admission-coach.lovable.app #${code}`,
+        Body: `رمز التحقق الخاص بك في مُفَاضَلَة: ${code}\n\nBody: `رمز التحقق الخاص بك في مُفَاضَلَة: ${code}\n\n@mufadhala.com #${code}`, #${code}`,
       }),
     });
 

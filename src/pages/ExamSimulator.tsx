@@ -843,7 +843,7 @@ const ExamSimulator = () => {
                 size="sm"
                 className="gap-2"
                 onClick={() => {
-                  const text = `حققت ${percentage}% (${resultScore}/${resultTotal}) في اختبار المحاكاة على تطبيق مُفَاضَلَة! 🎓\nhttps://uni-admission-coach.lovable.app`;
+                  const text = `حققت ${percentage}% (${resultScore}/${resultTotal}) في اختبار المحاكاة على تطبيق مُفَاضَلَة! 🎓\nhttps://mufadhala.com`;
                   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
                 }}
               >
@@ -856,7 +856,7 @@ const ExamSimulator = () => {
                 className="gap-2"
                 onClick={() => {
                   const text = `حققت ${percentage}% في اختبار المحاكاة على #مُفَاضَلَة 🎓✨`;
-                  const url = "https://uni-admission-coach.lovable.app";
+                  const url = "https://mufadhala.com";
                   window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");
                 }}
               >
@@ -868,7 +868,7 @@ const ExamSimulator = () => {
                 size="sm"
                 className="gap-2"
                 onClick={() => {
-                  const text = `حققت ${percentage}% (${resultScore}/${resultTotal}) في اختبار المحاكاة على تطبيق مُفَاضَلَة! 🎓\nhttps://uni-admission-coach.lovable.app`;
+                  const text = `حققت ${percentage}% (${resultScore}/${resultTotal}) في اختبار المحاكاة على تطبيق مُفَاضَلَة! 🎓\nhttps://mufadhala.com`;
                   navigator.clipboard.writeText(text);
                   toast({ title: "تم النسخ", description: "تم نسخ النتيجة إلى الحافظة" });
                 }}
