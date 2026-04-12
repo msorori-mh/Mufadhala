@@ -220,6 +220,24 @@ const CollegeGuide = () => {
 
         <p className="text-sm text-muted-foreground">{filtered.length} كلية</p>
 
+        {/* Motivational banner for students without GPA */}
+        {user && studentGpa == null && (
+          <Card className="border-amber-300/50 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-700/30">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="shrink-0 h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">أضف معدلك لتعرف الكليات المتاحة لك!</p>
+                <p className="text-xs text-muted-foreground mt-0.5">أدخل معدل الثانوية العامة في ملفك الشخصي لنوضح لك الكليات التي يؤهلك معدلك للقبول فيها.</p>
+              </div>
+              <Button variant="outline" size="sm" asChild className="shrink-0 gap-1 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/40">
+                <Link to="/profile"><Star className="w-3.5 h-3.5" />الملف الشخصي</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* College Cards — grouped by university to show timeline once */}
         {(() => {
           // Group filtered colleges by university for display
