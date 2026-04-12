@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, Upload, FileText, X, CalendarClock } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Upload, FileText, X, CalendarClock, GripVertical } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 interface TimelinePhase {
@@ -117,6 +117,27 @@ const AdminUniversities = () => {
 
   const removeTimelinePhase = (index: number) => {
     setCoordinationTimeline(coordinationTimeline.filter((_, i) => i !== index));
+  };
+
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
+
+  const handleDragStart = (index: number) => {
+    dragItem.current = index;
+  };
+
+  const handleDragEnter = (index: number) => {
+    dragOverItem.current = index;
+  };
+
+  const handleDragEnd = () => {
+    if (dragItem.current === null || dragOverItem.current === null) return;
+    const items = [...coordinationTimeline];
+    const [removed] = items.splice(dragItem.current, 1);
+    items.splice(dragOverItem.current, 0, removed);
+    setCoordinationTimeline(items);
+    dragItem.current = null;
+    dragOverItem.current = null;
   };
 
   const handleSave = async () => {
@@ -252,7 +273,18 @@ const AdminUniversities = () => {
                   )}
                   <div className="space-y-2">
                     {coordinationTimeline.map((item, idx) => (
-                      <div key={idx} className="flex gap-2 items-start">
+                      <div
+                        key={idx}
+                        className="flex gap-2 items-start border rounded-md p-2 bg-background"
+                        draggable
+                        onDragStart={() => handleDragStart(idx)}
+                        onDragEnter={() => handleDragEnter(idx)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={(e) => e.preventDefault()}
+                      >
+                        <div className="cursor-grab active:cursor-grabbing pt-2 text-muted-foreground">
+                          <GripVertical className="w-4 h-4" />
+                        </div>
                         <div className="flex-1 space-y-1">
                           <Input
                             placeholder="اسم المرحلة (مثال: المرحلة الأولى)"
