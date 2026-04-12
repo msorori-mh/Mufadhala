@@ -1057,6 +1057,11 @@ const AdminContent = () => {
               return <option key={s.id} value={s.id}>{s.name_ar} ({subjectLessons.length} درس، {questionCount} سؤال)</option>;
             })}
           </select>
+
+          <select value={filterGradeLevel} onChange={(e) => setFilterGradeLevel(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[120px]">
+            <option value="">جميع الصفوف</option>
+            {GRADE_LEVELS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+          </select>
         </div>
 
         {/* Lessons + Questions split view */}
