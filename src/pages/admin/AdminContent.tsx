@@ -37,7 +37,15 @@ interface Lesson {
   is_free: boolean;
   created_at: string;
   presentation_url: string | null;
+  grade_level: number | null;
 }
+
+const GRADE_LEVELS = [
+  { value: 1, label: "أول ثانوي" },
+  { value: 2, label: "ثاني ثانوي" },
+  { value: 3, label: "ثالث ثانوي" },
+];
+const getGradeLevelLabel = (v: number | null) => GRADE_LEVELS.find(g => g.value === v)?.label || "";
 
 interface Question {
   id: string;
@@ -103,6 +111,7 @@ const AdminContent = () => {
   const [filterUni, setFilterUni] = useState("");
   const [filterCollegeIds, setFilterCollegeIds] = useState<string[]>([]);
   const [filterSubject, setFilterSubject] = useState("");
+  const [filterGradeLevel, setFilterGradeLevel] = useState("");
   const [bulkSelectMode, setBulkSelectMode] = useState(false);
   const [selectedLessonIds, setSelectedLessonIds] = useState<string[]>([]);
 
@@ -121,6 +130,7 @@ const AdminContent = () => {
   const [lessonSubjectId, setLessonSubjectId] = useState("");
   const [lessonPresentationFile, setLessonPresentationFile] = useState<File | null>(null);
   const [lessonPresentationUrl, setLessonPresentationUrl] = useState("");
+  const [lessonGradeLevel, setLessonGradeLevel] = useState<number | null>(null);
   const [uploadingPresentation, setUploadingPresentation] = useState(false);
   const presentationFileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
@@ -242,6 +252,10 @@ const AdminContent = () => {
     if (filterSubject) {
       result = result.filter((l) => l.subject_id === filterSubject);
     }
+    if (filterGradeLevel) {
+      const gl = Number(filterGradeLevel);
+      result = result.filter((l) => l.grade_level === gl);
+    }
     return result;
   })();
 
@@ -262,6 +276,7 @@ const AdminContent = () => {
     setLessonSubjectId("");
     setLessonPresentationFile(null);
     setLessonPresentationUrl("");
+    setLessonGradeLevel(null);
     setPendingQuestions([]);
     setExistingLessonQuestions([]);
     setShowAddQuestionForm(false);
@@ -286,6 +301,7 @@ const AdminContent = () => {
     setLessonSubjectId(l.subject_id || "");
     setLessonPresentationFile(null);
     setLessonPresentationUrl(l.presentation_url || "");
+    setLessonGradeLevel((l as any).grade_level ?? null);
     setPendingQuestions([]);
     setExistingLessonQuestions(questions.filter(q => q.lesson_id === l.id));
     setShowAddQuestionForm(false);
@@ -450,6 +466,7 @@ const AdminContent = () => {
         is_published: lessonPublished,
         is_free: lessonFree,
         presentation_url: presentationUrl || null,
+        grade_level: lessonGradeLevel,
       };
       const { error } = await supabase.from("lessons").update(payload).eq("id", editingLesson.id);
       if (error) toast({ variant: "destructive", title: error.message });
@@ -489,6 +506,7 @@ const AdminContent = () => {
           is_published: lessonPublished,
           is_free: lessonFree,
           presentation_url: presentationUrl || null,
+          grade_level: lessonGradeLevel,
         };
         const { data: inserted, error } = await supabase.from("lessons").insert(payload).select("id").single();
         if (error) {
@@ -572,6 +590,7 @@ const AdminContent = () => {
         is_published: copyingLesson.is_published,
         is_free: copyingLesson.is_free,
         presentation_url: copyingLesson.presentation_url,
+        grade_level: copyingLesson.grade_level,
       }).select("id").single();
       if (error) {
         toast({ variant: "destructive", title: error.message });
@@ -1038,6 +1057,11 @@ const AdminContent = () => {
               return <option key={s.id} value={s.id}>{s.name_ar} ({subjectLessons.length} درس، {questionCount} سؤال)</option>;
             })}
           </select>
+
+          <select value={filterGradeLevel} onChange={(e) => setFilterGradeLevel(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[120px]">
+            <option value="">جميع الصفوف</option>
+            {GRADE_LEVELS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+          </select>
         </div>
 
         {/* Lessons + Questions split view */}
@@ -1111,6 +1135,11 @@ const AdminContent = () => {
                           {l.presentation_url && (
                             <Badge variant="outline" className="text-[10px] border-blue-500 text-blue-600 gap-0.5">
                               <Presentation className="w-2.5 h-2.5" /> عرض
+                            </Badge>
+                          )}
+                          {l.grade_level && (
+                            <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600 gap-0.5">
+                              {getGradeLevelLabel(l.grade_level)}
                             </Badge>
                           )}
                         </div>
@@ -1299,6 +1328,13 @@ const AdminContent = () => {
               <select value={lessonSubjectId} onChange={(e) => setLessonSubjectId(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                 <option value="">بدون تصنيف</option>
                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>الصف الدراسي</Label>
+              <select value={lessonGradeLevel ?? ""} onChange={(e) => setLessonGradeLevel(e.target.value ? Number(e.target.value) : null)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <option value="">بدون تصنيف</option>
+                {GRADE_LEVELS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
               </select>
             </div>
             <div className="space-y-2">

@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useStudentData } from "@/hooks/useStudentData";
-import { GraduationCap, BookOpen, ArrowRight, ChevronLeft, Loader2, CheckCircle2, Search, X, Lock, Sparkles, Download, WifiOff } from "lucide-react";
+import { GraduationCap, BookOpen, ArrowRight, ChevronLeft, ChevronDown, ChevronUp, Loader2, CheckCircle2, Search, X, Lock, Sparkles, Download, WifiOff } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useOfflineStatus } from "@/hooks/useOfflineStatus";
 import { getSavedLessonIds, getAllSavedLessons } from "@/lib/offlineStorage";
@@ -29,7 +29,40 @@ interface Lesson {
   display_order: number;
   is_free: boolean;
   subject_id?: string | null;
+  grade_level?: number | null;
 }
+
+const GRADE_LABELS: Record<number, string> = {
+  1: "مقرر الصف الأول الثانوي",
+  2: "مقرر الصف الثاني الثانوي",
+  3: "مقرر الصف الثالث الثانوي",
+};
+
+const GradeLevelSection = ({ label, count, completedCount, children }: { label: string; count: number; completedCount: number; children: React.ReactNode }) => {
+  const [open, setOpen] = useState(true);
+  return (
+    <Card className="overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between w-full p-3 text-sm font-semibold hover:bg-muted/50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-primary" />
+          <span className="text-foreground">{label}</span>
+          <Badge variant="outline" className="text-[10px]">{count} درس</Badge>
+          {completedCount > 0 && (
+            <Badge className="text-[10px] bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400">
+              {completedCount}/{count} مكتمل
+            </Badge>
+          )}
+        </div>
+        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+      </button>
+      {open && <div className="p-3 pt-0">{children}</div>}
+    </Card>
+  );
+};
 
 const LessonsList = () => {
   const { user, loading: authLoading, isAdmin, isModerator } = useAuth();
@@ -76,12 +109,15 @@ const LessonsList = () => {
       const [{ data: major }, { data: ls }, { data: lessonsFull }] = await Promise.all([
         supabase.from("majors").select("name_ar").eq("id", majorId!).maybeSingle(),
         supabase.rpc("get_published_lessons_list", { _major_id: majorId! }),
-        supabase.from("lessons").select("id, subject_id").eq("major_id", majorId!).eq("is_published", true),
+        supabase.from("lessons").select("id, subject_id, grade_level").eq("major_id", majorId!).eq("is_published", true),
       ]);
 
-      const subjectMap = new Map<string, string | null>();
-      (lessonsFull || []).forEach((lf: any) => subjectMap.set(lf.id, lf.subject_id));
-      const enrichedLessons = ((ls || []) as Lesson[]).map(l => ({ ...l, subject_id: subjectMap.get(l.id) || null }));
+      const subjectGradeMap = new Map<string, { subject_id: string | null; grade_level: number | null }>();
+      (lessonsFull || []).forEach((lf: any) => subjectGradeMap.set(lf.id, { subject_id: lf.subject_id, grade_level: lf.grade_level }));
+      const enrichedLessons = ((ls || []) as Lesson[]).map(l => {
+        const extra = subjectGradeMap.get(l.id);
+        return { ...l, subject_id: extra?.subject_id || null, grade_level: extra?.grade_level || null };
+      });
 
       // Fetch subjects for this major
       const { data: ms } = await supabase.from("major_subjects").select("subject_id").eq("major_id", majorId!);
@@ -293,8 +329,12 @@ const LessonsList = () => {
               <p className="text-sm text-muted-foreground mb-3">{filteredLessons.length} نتيجة</p>
             )}
 
-            <div className="space-y-3">
-              {filteredLessons.map((lesson) => {
+            {(() => {
+              // Check if we should group by grade level (when filtering by subject or "all" with subjects)
+              const hasGradeLevels = filteredLessons.some(l => l.grade_level);
+              const shouldGroup = !searchQuery && !isOffline && hasGradeLevels && activeSubjectFilter !== "all";
+
+              const renderLessonCard = (lesson: Lesson) => {
                 const done = completedLessons.has(lesson.id);
                 const originalIndex = lessons.findIndex(l => l.id === lesson.id);
                 const hasPaidAccess = hasSubscription && !!planId && (!allowedMajorIds || allowedMajorIds.length === 0 || allowedMajorIds.includes(lesson.major_id));
@@ -349,8 +389,42 @@ const LessonsList = () => {
                     </Card>
                   </Link>
                 );
-              })}
-            </div>
+              };
+
+              if (shouldGroup) {
+                // Group by grade level
+                const gradeGroups: { grade: number | null; label: string; lessons: Lesson[] }[] = [];
+                const grades = [1, 2, 3];
+                for (const g of grades) {
+                  const gLessons = filteredLessons.filter(l => l.grade_level === g);
+                  if (gLessons.length > 0) {
+                    gradeGroups.push({ grade: g, label: GRADE_LABELS[g], lessons: gLessons });
+                  }
+                }
+                const ungrouped = filteredLessons.filter(l => !l.grade_level);
+                if (ungrouped.length > 0) {
+                  gradeGroups.push({ grade: null, label: "دروس عامة", lessons: ungrouped });
+                }
+
+                return (
+                  <div className="space-y-4">
+                    {gradeGroups.map((group) => (
+                      <GradeLevelSection key={group.grade ?? "none"} label={group.label} count={group.lessons.length} completedCount={group.lessons.filter(l => completedLessons.has(l.id)).length}>
+                        <div className="space-y-3">
+                          {group.lessons.map(renderLessonCard)}
+                        </div>
+                      </GradeLevelSection>
+                    ))}
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3">
+                  {filteredLessons.map(renderLessonCard)}
+                </div>
+              );
+            })()}
           </>
         )}
       </main>

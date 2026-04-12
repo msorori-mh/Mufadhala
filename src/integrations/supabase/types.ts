@@ -292,6 +292,7 @@ export type Database = {
           content: string
           created_at: string
           display_order: number
+          grade_level: number | null
           id: string
           is_free: boolean
           is_published: boolean
@@ -307,6 +308,7 @@ export type Database = {
           content?: string
           created_at?: string
           display_order?: number
+          grade_level?: number | null
           id?: string
           is_free?: boolean
           is_published?: boolean
@@ -322,6 +324,7 @@ export type Database = {
           content?: string
           created_at?: string
           display_order?: number
+          grade_level?: number | null
           id?: string
           is_free?: boolean
           is_published?: boolean
