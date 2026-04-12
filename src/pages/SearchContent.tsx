@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
   Search, X, ChevronRight, Loader2, BookOpen, HelpCircle,
@@ -27,68 +28,83 @@ interface QuestionResult {
   option_a: string; option_b: string; option_c: string; option_d: string;
 }
 
+const fetchReferenceData = async () => {
+  const [{ data: unis }, { data: cols }, { data: majs }] = await Promise.all([
+    supabase.from("universities").select("id, name_ar").eq("is_active", true).order("display_order"),
+    supabase.from("colleges").select("id, name_ar, university_id").eq("is_active", true).order("display_order"),
+    supabase.from("majors").select("id, name_ar, college_id").eq("is_active", true).order("display_order"),
+  ]);
+  return {
+    universities: (unis || []) as University[],
+    colleges: (cols || []) as College[],
+    majors: (majs || []) as Major[],
+  };
+};
+
+const fetchSearchContent = async () => {
+  const { data: lessons } = await supabase
+    .from("lessons")
+    .select("id, title, summary, major_id, majors(name_ar)")
+    .eq("is_published", true)
+    .order("display_order");
+
+  if (!lessons) return { lessons: [] as LessonResult[], questions: [] as QuestionResult[] };
+
+  const mappedLessons: LessonResult[] = lessons.map((l: any) => ({
+    id: l.id, title: l.title, summary: l.summary,
+    major_id: l.major_id, major_name: l.majors?.name_ar || "",
+  }));
+
+  const lessonIds = lessons.map((l: any) => l.id);
+  let mappedQuestions: QuestionResult[] = [];
+
+  if (lessonIds.length > 0) {
+    const { data: qs } = await supabase
+      .from("questions")
+      .select("id, question_text, lesson_id, option_a, option_b, option_c, option_d")
+      .in("lesson_id", lessonIds);
+    if (qs) {
+      const lessonMap = new Map(lessons.map((l: any) => [l.id, { title: l.title, major_name: l.majors?.name_ar || "" }]));
+      mappedQuestions = qs.map((q: any) => {
+        const info = lessonMap.get(q.lesson_id) || { title: "", major_name: "" };
+        return { ...q, lesson_title: info.title, major_name: info.major_name };
+      });
+    }
+  }
+
+  return { lessons: mappedLessons, questions: mappedQuestions };
+};
+
 const SearchContent = () => {
   const { user, loading: authLoading } = useAuth();
   const [query, setQuery] = useState("");
-  const [universities, setUniversities] = useState<University[]>([]);
-  const [colleges, setColleges] = useState<College[]>([]);
-  const [majors, setMajors] = useState<Major[]>([]);
   const [selectedUni, setSelectedUni] = useState<string>("all");
   const [selectedCollege, setSelectedCollege] = useState<string>("all");
   const [selectedMajor, setSelectedMajor] = useState<string>("all");
-  const [allLessons, setAllLessons] = useState<LessonResult[]>([]);
-  const [allQuestions, setAllQuestions] = useState<QuestionResult[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState("lessons");
 
-  useEffect(() => {
-    if (authLoading || !user) return;
-    const fetchData = async () => {
-      const [{ data: unis }, { data: cols }, { data: majs }] = await Promise.all([
-        supabase.from("universities").select("id, name_ar").eq("is_active", true).order("display_order"),
-        supabase.from("colleges").select("id, name_ar, university_id").eq("is_active", true).order("display_order"),
-        supabase.from("majors").select("id, name_ar, college_id").eq("is_active", true).order("display_order"),
-      ]);
-      if (unis) setUniversities(unis);
-      if (cols) setColleges(cols as College[]);
-      if (majs) setMajors(majs as Major[]);
+  const { data: refData, isLoading: refLoading } = useQuery({
+    queryKey: ["search-reference-data"],
+    queryFn: fetchReferenceData,
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
 
-      // Fetch lessons with major names
-      const { data: lessons } = await supabase
-        .from("lessons")
-        .select("id, title, summary, major_id, majors(name_ar)")
-        .eq("is_published", true)
-        .order("display_order");
+  const { data: contentData, isLoading: contentLoading } = useQuery({
+    queryKey: ["search-content"],
+    queryFn: fetchSearchContent,
+    enabled: !!user,
+    staleTime: 2 * 60 * 1000,
+  });
 
-      if (lessons) {
-        setAllLessons(lessons.map((l: any) => ({
-          id: l.id, title: l.title, summary: l.summary,
-          major_id: l.major_id, major_name: l.majors?.name_ar || "",
-        })));
+  const universities = refData?.universities || [];
+  const colleges = refData?.colleges || [];
+  const majors = refData?.majors || [];
+  const allLessons = contentData?.lessons || [];
+  const allQuestions = contentData?.questions || [];
 
-        // Fetch questions for these lessons
-        const lessonIds = lessons.map((l: any) => l.id);
-        if (lessonIds.length > 0) {
-          const { data: qs } = await supabase
-            .from("questions")
-            .select("id, question_text, lesson_id, option_a, option_b, option_c, option_d")
-            .in("lesson_id", lessonIds);
-          if (qs) {
-            const lessonMap = new Map(lessons.map((l: any) => [l.id, { title: l.title, major_name: l.majors?.name_ar || "" }]));
-            setAllQuestions(qs.map((q: any) => {
-              const info = lessonMap.get(q.lesson_id) || { title: "", major_name: "" };
-              return {
-                ...q, lesson_title: info.title, major_name: info.major_name,
-              };
-            }));
-          }
-        }
-      }
-      setLoading(false);
-    };
-    fetchData();
-  }, [authLoading, user]);
+  const loading = refLoading || contentLoading;
 
   // Filter colleges/majors based on selection
   const filteredColleges = useMemo(() =>
@@ -109,13 +125,12 @@ const SearchContent = () => {
       const collegeIds = new Set(colleges.filter(c => c.university_id === selectedUni).map(c => c.id));
       return new Set(majors.filter(m => collegeIds.has(m.college_id)).map(m => m.id));
     }
-    return null; // no filter
+    return null;
   }, [selectedUni, selectedCollege, selectedMajor, colleges, majors]);
 
   const matchesQuery = useCallback((text: string) => {
     if (!query.trim()) return true;
-    const q = query.trim().toLowerCase();
-    return text.toLowerCase().includes(q);
+    return text.toLowerCase().includes(query.trim().toLowerCase());
   }, [query]);
 
   const filteredLessons = useMemo(() => {
@@ -270,7 +285,6 @@ const SearchContent = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Lessons Tab */}
           <TabsContent value="lessons" className="space-y-2 mt-3">
             {filteredLessons.length === 0 ? (
               <div className="text-center py-8">
@@ -294,7 +308,6 @@ const SearchContent = () => {
             )}
           </TabsContent>
 
-          {/* Questions Tab */}
           <TabsContent value="questions" className="space-y-2 mt-3">
             {filteredQuestions.length === 0 ? (
               <div className="text-center py-8">
