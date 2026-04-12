@@ -12,7 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Search, ShieldPlus, Trash2, UserCog, Settings2, KeyRound } from "lucide-react";
+import { Loader2, Search, ShieldPlus, Trash2, UserCog, Settings2, KeyRound, UserX } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ALL_PERMISSIONS, PERMISSION_LABELS, type ModeratorPermission } from "@/hooks/useModeratorPermissions";
 
 type AppRole = "admin" | "moderator" | "student";
@@ -81,6 +82,10 @@ const AdminUsers = () => {
   const [selectedPerms, setSelectedPerms] = useState<ModeratorPermission[]>([]);
   const [permSaving, setPermSaving] = useState(false);
 
+  // Delete user state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteUser, setDeleteUser] = useState<UserWithRoles | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const fetchUsers = async () => {
     const [{ data: students }, { data: allRoles }, { data: allScopes }, { data: allPerms }, { data: u }, { data: c }, { data: m }] = await Promise.all([
       supabase.from("students").select("user_id, first_name, second_name, third_name, fourth_name"),
@@ -278,6 +283,30 @@ const AdminUsers = () => {
     fetchUsers();
   };
 
+  // Delete user
+  const openDeleteDialog = (user: UserWithRoles) => {
+    setDeleteUser(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteUser) return;
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-account", {
+        body: { target_user_id: deleteUser.user_id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: `تم حذف المستخدم "${deleteUser.name}" بنجاح` });
+      fetchUsers();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "فشل حذف المستخدم", description: err.message });
+    }
+    setDeleting(false);
+    setDeleteDialogOpen(false);
+  };
+
   if (authLoading || loading) {
     return (
       <AdminLayout>
@@ -364,6 +393,9 @@ const AdminUsers = () => {
                         </Button>
                       </>
                     )}
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => openDeleteDialog(u)}>
+                      <UserX className="w-4 h-4 ml-1" />حذف
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -520,6 +552,30 @@ const AdminUsers = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete User Confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>حذف المستخدم</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف المستخدم <strong>"{deleteUser?.name}"</strong>؟
+              <br />
+              سيتم حذف جميع بياناته بشكل نهائي بما في ذلك الاشتراكات والاختبارات والإشعارات. لا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel disabled={deleting}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "جاري الحذف..." : "حذف نهائي"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };
