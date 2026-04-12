@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { GraduationCap, ArrowRight, User, School, Phone, Save, Loader2, Pencil } from "lucide-react";
+import { GraduationCap, ArrowRight, User, School, Phone, Save, Loader2, Pencil, ShieldCheck, Send } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -30,6 +30,12 @@ const StudentProfile = () => {
   const [saving, setSaving] = useState(false);
   const [originalPhone, setOriginalPhone] = useState("");
   const [phoneEditing, setPhoneEditing] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState(0);
 
   // Student data
   const [firstName, setFirstName] = useState("");
