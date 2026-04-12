@@ -7,8 +7,28 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const DAILY_LIMIT = 30;
+let DAILY_LIMIT = 30;
+let limitFetchedAt = 0;
+const LIMIT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const ipUsage = new Map<string, { count: number; date: string }>();
+
+async function fetchDailyLimit(): Promise<number> {
+  if (Date.now() - limitFetchedAt < LIMIT_CACHE_TTL) return DAILY_LIMIT;
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const sb = createClient(supabaseUrl, supabaseKey);
+    const { data } = await sb.rpc("get_cache", { _key: "chat_daily_limit" });
+    if (data != null) {
+      const val = typeof data === "number" ? data : Number(data);
+      if (!isNaN(val)) DAILY_LIMIT = val;
+    }
+    limitFetchedAt = Date.now();
+  } catch (e) {
+    console.error("Failed to fetch daily limit:", e);
+  }
+  return DAILY_LIMIT;
+}
 
 function checkIpLimit(ip: string): boolean {
   const today = new Date().toDateString();
