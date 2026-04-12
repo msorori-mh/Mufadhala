@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "@/contexts/AuthContext";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Search, ShieldPlus, Trash2, UserCog, Settings2, KeyRound, UserX, UserPlus, Eye, EyeOff } from "lucide-react";
@@ -299,7 +300,7 @@ const AdminUsers = () => {
 
   // Delete user
   const openDeleteDialog = (u: UserWithRoles) => {
-    if (u.user_id === user?.id) {
+    if (u.user_id === currentUser?.id) {
       toast({ variant: "destructive", title: "لا يمكنك حذف حسابك الخاص من لوحة الإدارة" });
       return;
     }
@@ -448,7 +449,7 @@ const AdminUsers = () => {
                         </Button>
                       </>
                     )}
-                    {u.user_id !== user?.id && (
+                    {u.user_id !== currentUser?.id && (
                       <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => openDeleteDialog(u)}>
                         <UserX className="w-4 h-4 ml-1" />حذف
                       </Button>
