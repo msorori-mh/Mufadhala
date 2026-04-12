@@ -75,17 +75,21 @@ const AdminDashboard = () => {
   const { data: chatSettings } = useQuery({
     queryKey: ["chat-settings"],
     queryFn: async () => {
-      const [limitRes, modelRes, welcomeRes, promptRes] = await Promise.all([
+      const [limitRes, modelRes, welcomeRes, promptRes, freeLessonsRes, freeExamRes] = await Promise.all([
         supabase.rpc("get_cache", { _key: "chat_daily_limit" }),
         supabase.rpc("get_cache", { _key: "chat_ai_model" }),
         supabase.rpc("get_cache", { _key: "chat_welcome_text" }),
         supabase.rpc("get_cache", { _key: "chat_system_prompt" }),
+        supabase.rpc("get_cache", { _key: "free_lessons_count" }),
+        supabase.rpc("get_cache", { _key: "free_exam_minutes" }),
       ]);
       return {
         limit: limitRes.data != null ? Number(limitRes.data) : 30,
         model: typeof modelRes.data === "string" ? modelRes.data : "google/gemini-3-flash-preview",
         welcome: typeof welcomeRes.data === "string" ? welcomeRes.data : "مرحباً! أنا مساعد مُفَاضَلَة الذكي 👋",
         systemPrompt: typeof promptRes.data === "string" ? promptRes.data : "",
+        freeLessonsCount: freeLessonsRes.data != null ? Number(freeLessonsRes.data) : 3,
+        freeExamMinutes: freeExamRes.data != null ? Number(freeExamRes.data) : 5,
       };
     },
     enabled: !authLoading && isAdmin,
