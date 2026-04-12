@@ -350,7 +350,7 @@ const StudentProfile = () => {
                       disabled={phoneVerified}
                       className={`text-left ${phone && !isValidYemeniPhone(phone) ? "border-destructive" : ""} ${phoneVerified ? "bg-muted" : ""}`}
                     />
-                    {phoneChanged && phone && isValidYemeniPhone(phone) && !phoneVerified && (
+                    {phoneChanged && phone && isValidYemeniPhone(phone) && !phoneVerified && originalPhone && (
                       <Button
                         type="button"
                         variant="outline"
