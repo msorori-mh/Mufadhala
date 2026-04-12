@@ -82,6 +82,10 @@ const AdminUsers = () => {
   const [selectedPerms, setSelectedPerms] = useState<ModeratorPermission[]>([]);
   const [permSaving, setPermSaving] = useState(false);
 
+  // Delete user state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteUser, setDeleteUser] = useState<UserWithRoles | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const fetchUsers = async () => {
     const [{ data: students }, { data: allRoles }, { data: allScopes }, { data: allPerms }, { data: u }, { data: c }, { data: m }] = await Promise.all([
       supabase.from("students").select("user_id, first_name, second_name, third_name, fourth_name"),
