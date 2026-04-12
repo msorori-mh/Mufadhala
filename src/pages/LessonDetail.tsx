@@ -24,6 +24,7 @@ interface Lesson {
   major_id: string;
   presentation_url: string | null;
   grade_level: number | null;
+  subject_id: string | null;
 }
 
 const GRADE_LABELS: Record<number, string> = {
