@@ -303,8 +303,12 @@ const LessonsList = () => {
               <p className="text-sm text-muted-foreground mb-3">{filteredLessons.length} نتيجة</p>
             )}
 
-            <div className="space-y-3">
-              {filteredLessons.map((lesson) => {
+            {(() => {
+              // Check if we should group by grade level (when filtering by subject or "all" with subjects)
+              const hasGradeLevels = filteredLessons.some(l => l.grade_level);
+              const shouldGroup = !searchQuery && !isOffline && hasGradeLevels && activeSubjectFilter !== "all";
+
+              const renderLessonCard = (lesson: Lesson) => {
                 const done = completedLessons.has(lesson.id);
                 const originalIndex = lessons.findIndex(l => l.id === lesson.id);
                 const hasPaidAccess = hasSubscription && !!planId && (!allowedMajorIds || allowedMajorIds.length === 0 || allowedMajorIds.includes(lesson.major_id));
@@ -359,8 +363,42 @@ const LessonsList = () => {
                     </Card>
                   </Link>
                 );
-              })}
-            </div>
+              };
+
+              if (shouldGroup) {
+                // Group by grade level
+                const gradeGroups: { grade: number | null; label: string; lessons: Lesson[] }[] = [];
+                const grades = [1, 2, 3];
+                for (const g of grades) {
+                  const gLessons = filteredLessons.filter(l => l.grade_level === g);
+                  if (gLessons.length > 0) {
+                    gradeGroups.push({ grade: g, label: GRADE_LABELS[g], lessons: gLessons });
+                  }
+                }
+                const ungrouped = filteredLessons.filter(l => !l.grade_level);
+                if (ungrouped.length > 0) {
+                  gradeGroups.push({ grade: null, label: "دروس عامة", lessons: ungrouped });
+                }
+
+                return (
+                  <div className="space-y-4">
+                    {gradeGroups.map((group) => (
+                      <GradeLevelSection key={group.grade ?? "none"} label={group.label} count={group.lessons.length} completedCount={group.lessons.filter(l => completedLessons.has(l.id)).length}>
+                        <div className="space-y-3">
+                          {group.lessons.map(renderLessonCard)}
+                        </div>
+                      </GradeLevelSection>
+                    ))}
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3">
+                  {filteredLessons.map(renderLessonCard)}
+                </div>
+              );
+            })()}
           </>
         )}
       </main>
