@@ -283,6 +283,30 @@ const AdminUsers = () => {
     fetchUsers();
   };
 
+  // Delete user
+  const openDeleteDialog = (user: UserWithRoles) => {
+    setDeleteUser(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteUser) return;
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-account", {
+        body: { target_user_id: deleteUser.user_id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: `تم حذف المستخدم "${deleteUser.name}" بنجاح` });
+      fetchUsers();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "فشل حذف المستخدم", description: err.message });
+    }
+    setDeleting(false);
+    setDeleteDialogOpen(false);
+  };
+
   if (authLoading || loading) {
     return (
       <AdminLayout>
