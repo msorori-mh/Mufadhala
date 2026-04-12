@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { Building2, BookOpen, Users, Loader2, MessageCircle, Save, Bot, Type } from "lucide-react";
+import { Building2, BookOpen, Users, Loader2, MessageCircle, Save, Bot, Type, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AI_MODELS = [
@@ -50,15 +50,17 @@ const AdminDashboard = () => {
   const { data: chatSettings } = useQuery({
     queryKey: ["chat-settings"],
     queryFn: async () => {
-      const [limitRes, modelRes, welcomeRes] = await Promise.all([
+      const [limitRes, modelRes, welcomeRes, promptRes] = await Promise.all([
         supabase.rpc("get_cache", { _key: "chat_daily_limit" }),
         supabase.rpc("get_cache", { _key: "chat_ai_model" }),
         supabase.rpc("get_cache", { _key: "chat_welcome_text" }),
+        supabase.rpc("get_cache", { _key: "chat_system_prompt" }),
       ]);
       return {
         limit: limitRes.data != null ? Number(limitRes.data) : 30,
         model: typeof modelRes.data === "string" ? modelRes.data : "google/gemini-3-flash-preview",
         welcome: typeof welcomeRes.data === "string" ? welcomeRes.data : "مرحباً! أنا مساعد مُفَاضَلَة الذكي 👋",
+        systemPrompt: typeof promptRes.data === "string" ? promptRes.data : "",
       };
     },
     enabled: !authLoading && isAdmin,
@@ -67,10 +69,12 @@ const AdminDashboard = () => {
   const [limitInput, setLimitInput] = useState("");
   const [modelInput, setModelInput] = useState("");
   const [welcomeInput, setWelcomeInput] = useState("");
+  const [promptInput, setPromptInput] = useState<string | null>(null);
 
   const currentLimit = limitInput || String(chatSettings?.limit ?? 30);
   const currentModel = modelInput || chatSettings?.model || "google/gemini-3-flash-preview";
   const currentWelcome = welcomeInput !== "" ? welcomeInput : (chatSettings?.welcome ?? "");
+  const currentPrompt = promptInput !== null ? promptInput : (chatSettings?.systemPrompt ?? "");
 
   const saveCacheMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
@@ -109,6 +113,13 @@ const AdminDashboard = () => {
     if (welcomeInput && welcomeInput !== chatSettings?.welcome) {
       saveCacheMutation.mutate({ key: "chat_welcome_text", value: welcomeInput });
       setWelcomeInput("");
+    }
+  };
+
+  const savePrompt = () => {
+    if (promptInput !== null && promptInput !== chatSettings?.systemPrompt) {
+      saveCacheMutation.mutate({ key: "chat_system_prompt", value: promptInput });
+      setPromptInput(null);
     }
   };
 
@@ -245,6 +256,35 @@ const AdminDashboard = () => {
                   </Button>
                 </div>
                 <p className="text-[10px] text-muted-foreground">يظهر للطالب عند فتح المحادثة لأول مرة</p>
+              </div>
+
+              {/* System Prompt */}
+              <div className="space-y-1.5 max-w-lg">
+                <Label htmlFor="chat-prompt" className="text-sm flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5" />
+                  تعليمات المساعد (System Prompt)
+                </Label>
+                <div className="flex gap-2">
+                  <Textarea
+                    id="chat-prompt"
+                    value={currentPrompt}
+                    onChange={(e) => setPromptInput(e.target.value)}
+                    rows={6}
+                    className="text-sm font-mono text-xs"
+                    placeholder="اتركه فارغاً لاستخدام التعليمات الافتراضية..."
+                    dir="auto"
+                  />
+                  <Button
+                    size="sm"
+                    className="shrink-0 self-end"
+                    disabled={saveCacheMutation.isPending || promptInput === null || promptInput === chatSettings?.systemPrompt}
+                    onClick={savePrompt}
+                  >
+                    {saveCacheMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 ml-1" />}
+                    حفظ
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground">تعليمات توجّه المساعد الذكي في ردوده. اتركها فارغة لاستخدام التعليمات الافتراضية المدمجة.</p>
               </div>
             </CardContent>
           </Card>

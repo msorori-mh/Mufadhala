@@ -9,6 +9,7 @@ const corsHeaders = {
 
 let DAILY_LIMIT = 30;
 let AI_MODEL = "google/gemini-3-flash-preview";
+let CUSTOM_SYSTEM_PROMPT = "";
 let limitFetchedAt = 0;
 const LIMIT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const ipUsage = new Map<string, { count: number; date: string }>();
@@ -19,9 +20,10 @@ async function fetchChatSettings(): Promise<void> {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const sb = createClient(supabaseUrl, supabaseKey);
-    const [limitRes, modelRes] = await Promise.all([
+    const [limitRes, modelRes, promptRes] = await Promise.all([
       sb.rpc("get_cache", { _key: "chat_daily_limit" }),
       sb.rpc("get_cache", { _key: "chat_ai_model" }),
+      sb.rpc("get_cache", { _key: "chat_system_prompt" }),
     ]);
     if (limitRes.data != null) {
       const val = typeof limitRes.data === "number" ? limitRes.data : Number(limitRes.data);
@@ -29,6 +31,9 @@ async function fetchChatSettings(): Promise<void> {
     }
     if (modelRes.data != null && typeof modelRes.data === "string") {
       AI_MODEL = modelRes.data;
+    }
+    if (promptRes.data != null && typeof promptRes.data === "string") {
+      CUSTOM_SYSTEM_PROMPT = promptRes.data;
     }
     limitFetchedAt = Date.now();
   } catch (e) {
@@ -116,7 +121,7 @@ serve(async (req) => {
     // Fetch university guides context
     const guidesContext = await getGuidesContext();
 
-    let systemPrompt = `أنت "مساعد مُفَاضَلَة"، مساعد ذكي لمنصة مُفَاضَلَة (Mufadhala) للتحضير لاختبارات القبول الجامعي في اليمن.
+    const DEFAULT_SYSTEM_PROMPT = `أنت "مساعد مُفَاضَلَة"، مساعد ذكي لمنصة مُفَاضَلَة (Mufadhala) للتحضير لاختبارات القبول الجامعي في اليمن.
 
 مهامك:
 1. **حل وشرح الواجبات**: عندما يرسل الطالب سؤالاً أو واجباً، لا تكتفِ بإعطاء الإجابة النهائية فقط، بل:
@@ -139,6 +144,8 @@ serve(async (req) => {
 - عند بداية المحادثة أو الترحيب، استخدم "أهلاً عزيزي الطالب/الطالبة" بدلاً من "يا بطل" أو "يا بطلة" أو أي عبارات مشابهة
 - لا تستخدم كلمة "بطل" أو "بطلة" في أي سياق للمخاطبة
 - لا تُكرر أو تُعيد صياغة سؤال/رسالة الطالب في بداية ردك. ابدأ مباشرة بالإجابة أو الشرح دون إعادة ذكر ما قاله الطالب`;
+
+    let systemPrompt = CUSTOM_SYSTEM_PROMPT.trim() || DEFAULT_SYSTEM_PROMPT;
 
     if (guidesContext) {
       systemPrompt += `\n\n--- أدلة التنسيق والتسجيل في الجامعات ---\n${guidesContext}`;
