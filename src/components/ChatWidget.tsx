@@ -189,14 +189,16 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
   const [loading, setLoading] = useState(false);
   const [dailyLimit, setDailyLimit] = useState(DEFAULT_DAILY_LIMIT);
   const [remaining, setRemaining] = useState(getRemainingMessages(DEFAULT_DAILY_LIMIT));
+  const [welcomeText, setWelcomeText] = useState("مرحباً! أنا مساعد مُفَاضَلَة الذكي 👋");
   const [pendingImages, setPendingImages] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchDailyLimit().then((limit) => {
+    fetchChatSettings().then(({ limit, welcome }) => {
       setDailyLimit(limit);
       setRemaining(getRemainingMessages(limit));
+      setWelcomeText(welcome);
     });
   }, []);
 
