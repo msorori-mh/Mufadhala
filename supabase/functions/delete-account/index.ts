@@ -114,9 +114,9 @@ Deno.serve(async (req) => {
       reason: body.reason || (isAdminAction ? "حذف بواسطة المدير" : "حذف ذاتي بواسطة المستخدم"),
     });
 
-    // Delete the auth user
+    // Delete the auth user (ignore "user not found" if already deleted)
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
-    if (deleteError) {
+    if (deleteError && deleteError.status !== 404) {
       console.error("Error deleting auth user:", deleteError);
       return new Response(
         JSON.stringify({ error: "Failed to delete account" }),
