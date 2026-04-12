@@ -590,6 +590,7 @@ const AdminContent = () => {
         is_published: copyingLesson.is_published,
         is_free: copyingLesson.is_free,
         presentation_url: copyingLesson.presentation_url,
+        grade_level: copyingLesson.grade_level,
       }).select("id").single();
       if (error) {
         toast({ variant: "destructive", title: error.message });
