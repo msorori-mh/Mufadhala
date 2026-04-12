@@ -5,7 +5,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { BookOpen, ClipboardCheck, TrendingUp, Loader2, Brain, FileCheck, Shield, Focus, WifiOff, Users, CheckCircle, Bot, Clock, Headphones, HelpCircle } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
-import { resolveAuthDestination } from "@/lib/authRouting";
 
 function useCountUp(end: number, duration = 2000) {
   const [value, setValue] = useState(0);
@@ -30,10 +29,9 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        const dest = await resolveAuthDestination(session.user.id);
-        navigate(dest.path, { replace: true });
+        navigate("/dashboard", { replace: true });
       } else {
         setChecking(false);
       }
@@ -66,7 +64,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
           </div>
           <h1 className="text-2xl md:text-4xl font-bold text-primary-foreground mb-3 leading-tight">مُفَاضَلَة</h1>
           <p className="text-base md:text-lg text-primary-foreground/85 mb-5 leading-relaxed">مُفَاضَلَة... هندسة النجاح في اختبارات القبول.</p>
-          <Button size="lg" onClick={() => navigate("/login")} className="bg-secondary text-secondary-foreground hover:bg-secondary/90 text-base font-bold px-8 py-5 rounded-xl shadow-lg">
+          <Button size="lg" onClick={() => navigate("/register")} className="bg-secondary text-secondary-foreground hover:bg-secondary/90 text-base font-bold px-8 py-5 rounded-xl shadow-lg">
             ابدأ الآن
           </Button>
         </div>
