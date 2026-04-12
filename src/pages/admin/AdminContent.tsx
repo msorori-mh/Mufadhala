@@ -111,6 +111,7 @@ const AdminContent = () => {
   const [filterUni, setFilterUni] = useState("");
   const [filterCollegeIds, setFilterCollegeIds] = useState<string[]>([]);
   const [filterSubject, setFilterSubject] = useState("");
+  const [filterGradeLevel, setFilterGradeLevel] = useState("");
   const [bulkSelectMode, setBulkSelectMode] = useState(false);
   const [selectedLessonIds, setSelectedLessonIds] = useState<string[]>([]);
 
@@ -129,6 +130,7 @@ const AdminContent = () => {
   const [lessonSubjectId, setLessonSubjectId] = useState("");
   const [lessonPresentationFile, setLessonPresentationFile] = useState<File | null>(null);
   const [lessonPresentationUrl, setLessonPresentationUrl] = useState("");
+  const [lessonGradeLevel, setLessonGradeLevel] = useState<number | null>(null);
   const [uploadingPresentation, setUploadingPresentation] = useState(false);
   const presentationFileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
