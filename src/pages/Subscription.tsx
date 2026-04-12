@@ -31,6 +31,7 @@ interface Plan {
   features: string[]; price_zone_a: number; price_zone_b: number;
   price_default: number; currency: string; is_free: boolean;
   display_order: number; allowed_major_ids: string[] | null;
+  discount_zone_a: number; discount_zone_b: number;
 }
 
 interface PaymentMethod {
