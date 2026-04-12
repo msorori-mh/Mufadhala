@@ -23,7 +23,14 @@ interface Lesson {
   is_free: boolean;
   major_id: string;
   presentation_url: string | null;
+  grade_level: number | null;
 }
+
+const GRADE_LABELS: Record<number, string> = {
+  1: "أول ثانوي",
+  2: "ثاني ثانوي",
+  3: "ثالث ثانوي",
+};
 
 interface Question {
   id: string;
