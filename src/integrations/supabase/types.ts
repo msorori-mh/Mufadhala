@@ -1036,6 +1036,8 @@ export type Database = {
       universities: {
         Row: {
           code: string
+          coordination_instructions: string | null
+          coordination_timeline: Json | null
           created_at: string
           display_order: number
           guide_text: string | null
@@ -1048,6 +1050,8 @@ export type Database = {
         }
         Insert: {
           code: string
+          coordination_instructions?: string | null
+          coordination_timeline?: Json | null
           created_at?: string
           display_order?: number
           guide_text?: string | null
@@ -1060,6 +1064,8 @@ export type Database = {
         }
         Update: {
           code?: string
+          coordination_instructions?: string | null
+          coordination_timeline?: Json | null
           created_at?: string
           display_order?: number
           guide_text?: string | null
