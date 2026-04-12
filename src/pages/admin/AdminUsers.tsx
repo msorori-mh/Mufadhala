@@ -86,6 +86,19 @@ const AdminUsers = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteUser, setDeleteUser] = useState<UserWithRoles | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Create user dialog
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createEmail, setCreateEmail] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [createFirstName, setCreateFirstName] = useState("");
+  const [createLastName, setCreateLastName] = useState("");
+  const [createRole, setCreateRole] = useState<"admin" | "moderator">("moderator");
+  const [createPerms, setCreatePerms] = useState<ModeratorPermission[]>([]);
+  const [createScopeType, setCreateScopeType] = useState<string>("global");
+  const [createScopeId, setCreateScopeId] = useState("");
+  const [creating, setCreating] = useState(false);
   const fetchUsers = async () => {
     const [{ data: students }, { data: allRoles }, { data: allScopes }, { data: allPerms }, { data: u }, { data: c }, { data: m }] = await Promise.all([
       supabase.from("students").select("user_id, first_name, second_name, third_name, fourth_name"),
