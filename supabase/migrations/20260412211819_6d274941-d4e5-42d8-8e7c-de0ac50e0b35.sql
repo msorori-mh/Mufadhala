@@ -1,0 +1,1 @@
+ALTER TABLE public.colleges RENAME COLUMN acceptance_rate TO capacity;
