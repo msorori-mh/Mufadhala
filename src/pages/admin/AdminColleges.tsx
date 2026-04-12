@@ -62,7 +62,7 @@ const AdminColleges = () => {
 
   const openEdit = (c: Tables<"colleges">) => {
     setEditing(c); setNameAr(c.name_ar); setNameEn(c.name_en || ""); setCode(c.code); setUniversityId(c.university_id); setIsActive(c.is_active); setDisplayOrder(c.display_order);
-    setMinGpa(c.min_gpa != null ? String(c.min_gpa) : ""); setAcceptanceRate(c.acceptance_rate != null ? String(c.acceptance_rate) : "");
+    setMinGpa(c.min_gpa != null ? String(c.min_gpa) : ""); setAcceptanceRate(c.capacity != null ? String(c.capacity) : "");
     setRequiredDocs(c.required_documents ? c.required_documents.join("\n") : ""); setRegistrationDeadline(c.registration_deadline || ""); setNotes(c.notes || "");
     setDialogOpen(true);
   };
@@ -74,7 +74,7 @@ const AdminColleges = () => {
     const payload = {
       name_ar: nameAr, name_en: nameEn || null, code, university_id: universityId, is_active: isActive, display_order: displayOrder,
       min_gpa: minGpa ? Number(minGpa) : null,
-      acceptance_rate: acceptanceRate ? Number(acceptanceRate) : null,
+      capacity: acceptanceRate ? Number(acceptanceRate) : null,
       required_documents: docsArray,
       registration_deadline: registrationDeadline || null,
       notes: notes || null,
@@ -100,7 +100,7 @@ const AdminColleges = () => {
     let filled = 0;
     let total = 4;
     if (c.min_gpa != null) filled++;
-    if (c.acceptance_rate != null) filled++;
+    if (c.capacity != null) filled++;
     if (c.registration_deadline) filled++;
     if (c.required_documents && c.required_documents.length > 0) filled++;
     return { filled, total };
@@ -226,8 +226,8 @@ const AdminColleges = () => {
                     {c.min_gpa != null && (
                       <span className="flex items-center gap-1"><GraduationCap className="w-3 h-3" /> الحد الأدنى: {c.min_gpa}%</span>
                     )}
-                    {c.acceptance_rate != null && (
-                      <span className="flex items-center gap-1"><Percent className="w-3 h-3" /> الطاقة الاستيعابية: {c.acceptance_rate}</span>
+                    {c.capacity != null && (
+                      <span className="flex items-center gap-1"><Percent className="w-3 h-3" /> الطاقة الاستيعابية: {c.capacity}</span>
                     )}
                     {c.registration_deadline && (
                       <span className="flex items-center gap-1"><CalendarClock className="w-3 h-3" /> {c.registration_deadline}</span>
