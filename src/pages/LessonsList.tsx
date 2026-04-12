@@ -29,7 +29,14 @@ interface Lesson {
   display_order: number;
   is_free: boolean;
   subject_id?: string | null;
+  grade_level?: number | null;
 }
+
+const GRADE_LABELS: Record<number, string> = {
+  1: "مقرر الصف الأول الثانوي",
+  2: "مقرر الصف الثاني الثانوي",
+  3: "مقرر الصف الثالث الثانوي",
+};
 
 const LessonsList = () => {
   const { user, loading: authLoading, isAdmin, isModerator } = useAuth();
