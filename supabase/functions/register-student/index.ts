@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { phone, first_name, fourth_name, governorate, university_id, college_id } =
+    const { phone, first_name, fourth_name, governorate, university_id, college_id, high_school_gpa } =
       await req.json();
 
     // Validate required fields
@@ -109,6 +109,7 @@ Deno.serve(async (req) => {
           governorate,
           university_id,
           college_id,
+          gpa: high_school_gpa ?? null,
         })
         .eq("user_id", userId);
     } else {
@@ -125,6 +126,7 @@ Deno.serve(async (req) => {
             governorate,
             university_id,
             college_id,
+            high_school_gpa: high_school_gpa ?? null,
           },
         });
 
@@ -158,10 +160,10 @@ Deno.serve(async (req) => {
         refresh_token: signInData.session.refresh_token,
       };
 
-      // Update student phone (trigger already creates the student record)
+      // Update student phone and gpa (trigger already creates the student record)
       await supabase
         .from("students")
-        .update({ phone })
+        .update({ phone, gpa: high_school_gpa ?? null })
         .eq("user_id", userId);
     }
 

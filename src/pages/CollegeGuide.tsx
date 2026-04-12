@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { useStudentData } from "@/hooks/useStudentData";
 
 import ThemeToggle from "@/components/ThemeToggle";
 import {
   GraduationCap, ChevronLeft, Loader2, Search, MapPin, FileText,
   Calendar, TrendingUp, Star, Download, BookOpen, CalendarClock, Info,
+  CheckCircle2, XCircle,
 } from "lucide-react";
 
 interface TimelinePhase {
@@ -18,6 +21,10 @@ interface TimelinePhase {
 }
 
 const CollegeGuide = () => {
+  const { user } = useAuthContext();
+  const { data: studentData } = useStudentData(user?.id);
+  const studentGpa = studentData?.gpa ?? null;
+
   const [universities, setUniversities] = useState<any[]>([]);
   const [colleges, setColleges] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -309,6 +316,20 @@ const CollegeGuide = () => {
                                  <TrendingUp className="w-3 h-3" />
                                  الطاقة الاستيعابية: {c.capacity}
                               </Badge>
+                            )}
+                            {/* GPA eligibility indicator */}
+                            {c.min_gpa != null && studentGpa != null && (
+                              studentGpa >= c.min_gpa ? (
+                                <Badge className="text-xs gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  مؤهل
+                                </Badge>
+                              ) : (
+                                <Badge className="text-xs gap-1 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border-red-200 dark:border-red-800">
+                                  <XCircle className="w-3 h-3" />
+                                  غير مؤهل
+                                </Badge>
+                              )
                             )}
                           </div>
 
