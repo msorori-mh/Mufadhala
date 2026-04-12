@@ -1038,6 +1038,8 @@ export type Database = {
           code: string
           created_at: string
           display_order: number
+          guide_text: string | null
+          guide_url: string | null
           id: string
           is_active: boolean
           name_ar: string
@@ -1048,6 +1050,8 @@ export type Database = {
           code: string
           created_at?: string
           display_order?: number
+          guide_text?: string | null
+          guide_url?: string | null
           id?: string
           is_active?: boolean
           name_ar: string
@@ -1058,6 +1062,8 @@ export type Database = {
           code?: string
           created_at?: string
           display_order?: number
+          guide_text?: string | null
+          guide_url?: string | null
           id?: string
           is_active?: boolean
           name_ar?: string

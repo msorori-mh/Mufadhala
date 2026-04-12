@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,7 +7,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// In-memory IP rate limiting (resets on cold start, but provides server-side protection)
 const DAILY_LIMIT = 20;
 const ipUsage = new Map<string, { count: number; date: string }>();
 
@@ -27,13 +27,43 @@ function getClientIp(req: Request): string {
     req.headers.get("x-real-ip") || "unknown";
 }
 
+// Cache guide text to avoid repeated DB queries
+let guidesCache: { text: string; fetchedAt: number } | null = null;
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+async function getGuidesContext(): Promise<string> {
+  if (guidesCache && Date.now() - guidesCache.fetchedAt < CACHE_TTL) {
+    return guidesCache.text;
+  }
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const sb = createClient(supabaseUrl, supabaseKey);
+    const { data } = await sb
+      .from("universities")
+      .select("name_ar, guide_text")
+      .not("guide_text", "is", null)
+      .eq("is_active", true);
+
+    if (data && data.length > 0) {
+      const text = data
+        .map((u: any) => `## ${u.name_ar}\n${u.guide_text}`)
+        .join("\n\n");
+      guidesCache = { text, fetchedAt: Date.now() };
+      return text;
+    }
+  } catch (e) {
+    console.error("Failed to fetch guides:", e);
+  }
+  return "";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Server-side rate limiting by IP
     const clientIp = getClientIp(req);
     if (!checkIpLimit(clientIp)) {
       return new Response(
@@ -56,7 +86,10 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `أنت "مساعد مُفَاضَلَة"، مساعد ذكي لمنصة مُفَاضَلَة (Mufadhala) للتحضير لاختبارات القبول الجامعي في اليمن.
+    // Fetch university guides context
+    const guidesContext = await getGuidesContext();
+
+    let systemPrompt = `أنت "مساعد مُفَاضَلَة"، مساعد ذكي لمنصة مُفَاضَلَة (Mufadhala) للتحضير لاختبارات القبول الجامعي في اليمن.
 
 مهامك:
 1. **حل وشرح الواجبات**: عندما يرسل الطالب سؤالاً أو واجباً، لا تكتفِ بإعطاء الإجابة النهائية فقط، بل:
@@ -67,6 +100,7 @@ serve(async (req) => {
    - قدّم نصيحة أو ملاحظة تساعد الطالب على حل أسئلة مشابهة مستقبلاً
 2. **المساعدة التعليمية**: شرح المفاهيم الأكاديمية، المساعدة في فهم الدروس، تقديم نصائح للدراسة والتحضير للاختبارات.
 3. **الدعم الفني**: الإجابة على أسئلة حول الاشتراكات، استخدام التطبيق، والميزات المتاحة.
+4. **معلومات التنسيق والتسجيل**: عند سؤال الطالب عن مواعيد التنسيق أو شروط التسجيل أو متطلبات القبول في جامعة معينة، استخدم المعلومات من أدلة الجامعات المتاحة أدناه.
 
 إرشادات:
 - أجب باللغة العربية دائماً
@@ -75,6 +109,10 @@ serve(async (req) => {
 - إذا كان السؤال يحتمل أكثر من طريقة حل، اذكر الطريقة الأسهل أولاً ثم أشر للطرق البديلة
 - شجّع الطالب على المحاولة بنفسه أولاً إذا بدا أنه يريد الإجابة فقط دون فهم
 - كن ودوداً ومشجعاً`;
+
+    if (guidesContext) {
+      systemPrompt += `\n\n--- أدلة التنسيق والتسجيل في الجامعات ---\n${guidesContext}`;
+    }
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",

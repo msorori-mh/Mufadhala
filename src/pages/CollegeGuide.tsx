@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
   GraduationCap, ChevronLeft, Loader2, Search, MapPin, FileText,
-  Calendar, TrendingUp, Star, Download,
+  Calendar, TrendingUp, Star, Download, BookOpen,
 } from "lucide-react";
 
 const CollegeGuide = () => {
@@ -42,6 +42,7 @@ const CollegeGuide = () => {
     );
 
   const getUniName = (id: string) => universities.find((u) => u.id === id)?.name_ar || "";
+  const getUniGuideUrl = (id: string) => universities.find((u) => u.id === id)?.guide_url;
 
   const exportGuideAsPDF = () => {
     const win = window.open("", "_blank");
@@ -96,6 +97,9 @@ const CollegeGuide = () => {
     );
   }
 
+  // Universities that have guides
+  const universityGuides = universities.filter((u) => u.guide_url);
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="gradient-primary text-white px-4 py-4">
@@ -118,6 +122,34 @@ const CollegeGuide = () => {
           <h1 className="text-2xl font-bold text-foreground">دليل الكليات والمتطلبات</h1>
           <p className="text-sm text-muted-foreground mt-1">تعرّف على متطلبات القبول ونسب القبول لكل كلية</p>
         </div>
+
+        {/* University Guides Section */}
+        {universityGuides.length > 0 && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-4 space-y-2">
+              <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                <BookOpen className="w-4 h-4 text-primary" />
+                أدلة التنسيق والتسجيل
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {universityGuides.map((u) => (
+                  <Button
+                    key={u.id}
+                    variant="outline"
+                    size="sm"
+                    asChild
+                    className="gap-1.5 text-xs"
+                  >
+                    <a href={u.guide_url} target="_blank" rel="noopener noreferrer">
+                      <FileText className="w-3.5 h-3.5" />
+                      {u.name_ar}
+                    </a>
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Filters */}
         <div className="flex gap-2 flex-wrap">
@@ -149,63 +181,68 @@ const CollegeGuide = () => {
 
         {/* College Cards */}
         <div className="grid gap-4 sm:grid-cols-2">
-          {filtered.map((c) => (
-            <Card key={c.id} className="overflow-hidden">
-              <CardContent className="p-4 space-y-3">
-                <div>
-                  <h3 className="font-bold text-foreground">{c.name_ar}</h3>
-                  {c.name_en && <p className="text-xs text-muted-foreground" dir="ltr">{c.name_en}</p>}
-                  <div className="flex items-center gap-1 mt-1">
-                    <MapPin className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">{getUniName(c.university_id)}</span>
+          {filtered.map((c) => {
+            const uniGuide = getUniGuideUrl(c.university_id);
+            return (
+              <Card key={c.id} className="overflow-hidden">
+                <CardContent className="p-4 space-y-3">
+                  <div>
+                    <h3 className="font-bold text-foreground">{c.name_ar}</h3>
+                    {c.name_en && <p className="text-xs text-muted-foreground" dir="ltr">{c.name_en}</p>}
+                    <div className="flex items-center gap-1 mt-1">
+                      <MapPin className="w-3 h-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">{getUniName(c.university_id)}</span>
+                      {uniGuide && (
+                        <a href={uniGuide} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs mr-1 flex items-center gap-0.5">
+                          <FileText className="w-3 h-3" /> الدليل
+                        </a>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Stats row */}
-                <div className="flex gap-2 flex-wrap">
-                  {c.min_gpa != null && (
-                    <Badge variant="outline" className="text-xs gap-1">
-                      <Star className="w-3 h-3" />
-                      الحد الأدنى: {c.min_gpa}%
-                    </Badge>
+                  {/* Stats row */}
+                  <div className="flex gap-2 flex-wrap">
+                    {c.min_gpa != null && (
+                      <Badge variant="outline" className="text-xs gap-1">
+                        <Star className="w-3 h-3" />
+                        الحد الأدنى: {c.min_gpa}%
+                      </Badge>
+                    )}
+                    {c.acceptance_rate != null && (
+                      <Badge variant="outline" className="text-xs gap-1">
+                        <TrendingUp className="w-3 h-3" />
+                        نسبة القبول: {c.acceptance_rate}%
+                      </Badge>
+                    )}
+                  </div>
+
+                  {c.registration_deadline && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Calendar className="w-3 h-3" />
+                      <span>موعد التنسيق: {c.registration_deadline}</span>
+                    </div>
                   )}
-                  {c.acceptance_rate != null && (
-                    <Badge variant="outline" className="text-xs gap-1">
-                      <TrendingUp className="w-3 h-3" />
-                      نسبة القبول: {c.acceptance_rate}%
-                    </Badge>
+
+                  {c.required_documents && c.required_documents.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                        <FileText className="w-3 h-3" /> الوثائق المطلوبة:
+                      </p>
+                      <ul className="text-xs text-muted-foreground space-y-0.5 pr-4">
+                        {c.required_documents.map((doc: string, i: number) => (
+                          <li key={i} className="list-disc">{doc}</li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
-                </div>
 
-                {/* Registration deadline */}
-                {c.registration_deadline && (
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Calendar className="w-3 h-3" />
-                    <span>موعد التنسيق: {c.registration_deadline}</span>
-                  </div>
-                )}
-
-                {/* Required documents */}
-                {c.required_documents && c.required_documents.length > 0 && (
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                      <FileText className="w-3 h-3" /> الوثائق المطلوبة:
-                    </p>
-                    <ul className="text-xs text-muted-foreground space-y-0.5 pr-4">
-                      {c.required_documents.map((doc: string, i: number) => (
-                        <li key={i} className="list-disc">{doc}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Notes */}
-                {c.notes && (
-                  <p className="text-xs text-muted-foreground bg-muted p-2 rounded">{c.notes}</p>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  {c.notes && (
+                    <p className="text-xs text-muted-foreground bg-muted p-2 rounded">{c.notes}</p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {filtered.length === 0 && (
