@@ -11,13 +11,16 @@ import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle, XCircle, Eye, Clock, ImageIcon, AlertTriangle, ScanSearch } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Eye, Clock, ImageIcon, AlertTriangle, ScanSearch, ShieldAlert, ShieldCheck, ShieldQuestion, Copy } from "lucide-react";
 
 interface PaymentRequest {
   id: string; user_id: string; subscription_id: string | null;
   payment_method_id: string | null; amount: number; currency: string;
   receipt_url: string | null; status: string; admin_notes: string | null;
   reviewed_at: string | null; reviewed_by: string | null; created_at: string;
+  fraud_status: string; duplicate_count: number;
+  extracted_amount: number | null; extracted_reference: string | null;
+  extracted_date: string | null; receipt_hash: string | null;
 }
 
 interface StudentInfo {
@@ -51,6 +54,7 @@ const AdminPayments = () => {
   const [adminNotes, setAdminNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState("pending");
+  const [fraudFilter, setFraudFilter] = useState<string>("all");
   const [signedReceiptUrl, setSignedReceiptUrl] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<ReceiptAnalysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -87,6 +91,30 @@ const AdminPayments = () => {
     }
   };
 
+  const fraudBadge = (fraudStatus: string, duplicateCount: number) => {
+    switch (fraudStatus) {
+      case "suspicious":
+        return (
+          <Badge variant="destructive" className="text-xs gap-1">
+            <ShieldAlert className="w-3 h-3" />مشبوه {duplicateCount > 0 && `(${duplicateCount}x)`}
+          </Badge>
+        );
+      case "review":
+        return (
+          <Badge variant="outline" className="text-xs gap-1 text-yellow-600 border-yellow-400">
+            <ShieldQuestion className="w-3 h-3" />مراجعة
+          </Badge>
+        );
+      case "clean":
+        return (
+          <Badge variant="outline" className="text-xs gap-1 text-green-600 border-green-300">
+            <ShieldCheck className="w-3 h-3" />سليم
+          </Badge>
+        );
+      default: return null;
+    }
+  };
+
   const analyzeReceipt = useCallback(async (receiptSignedUrl: string, expectedAccountName: string | null) => {
     setAnalyzing(true);
     setAnalysis(null);
@@ -101,7 +129,6 @@ const AdminPayments = () => {
         setAnalysis({ sender_name: null, recipient_name: null, amount: null, transaction_id: null, is_match: false, error: data.error });
       } else {
         setAnalysis(data as ReceiptAnalysis);
-        // Auto-fill rejection reason with detailed mismatch info
         if (data && !data.is_match) {
           const extractedName = data.recipient_name || "غير واضح";
           const expectedName = getMethodAccountName(selectedRequest?.payment_method_id ?? null) || "غير محدد";
@@ -133,7 +160,6 @@ const AdminPayments = () => {
     }
     setReviewDialog(true);
 
-    // Auto-analyze if receipt exists and status is pending
     if (url && req.status === "pending") {
       const accountName = getMethodAccountName(req.payment_method_id);
       analyzeReceipt(url, accountName);
@@ -188,7 +214,13 @@ const AdminPayments = () => {
 
   if (authLoading || loading) return <AdminLayout><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></AdminLayout>;
 
-  const filtered = requests.filter((r) => tab === "all" || r.status === tab);
+  const suspiciousCount = requests.filter((r) => r.fraud_status === "suspicious").length;
+  const reviewCount = requests.filter((r) => r.fraud_status === "review").length;
+
+  let filtered = requests.filter((r) => tab === "all" || r.status === tab);
+  if (fraudFilter !== "all") {
+    filtered = filtered.filter((r) => r.fraud_status === fraudFilter);
+  }
   const pendingCount = requests.filter((r) => r.status === "pending").length;
 
   return (
@@ -199,6 +231,19 @@ const AdminPayments = () => {
           <h1 className="text-2xl font-bold">طلبات الدفع</h1>
           <p className="text-sm text-muted-foreground">{requests.length} طلب • {pendingCount} معلق</p>
         </div>
+
+        {/* Fraud summary */}
+        {(suspiciousCount > 0 || reviewCount > 0) && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-3 text-sm">
+            <ShieldAlert className="w-5 h-5 text-destructive shrink-0" />
+            <div>
+              {suspiciousCount > 0 && <span className="text-destructive font-semibold">{suspiciousCount} طلب مشبوه</span>}
+              {suspiciousCount > 0 && reviewCount > 0 && <span className="text-muted-foreground mx-1">•</span>}
+              {reviewCount > 0 && <span className="text-yellow-600 font-semibold">{reviewCount} يحتاج مراجعة</span>}
+            </div>
+          </div>
+        )}
+
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="w-full">
             <TabsTrigger value="pending" className="flex-1">معلق ({pendingCount})</TabsTrigger>
@@ -207,16 +252,41 @@ const AdminPayments = () => {
             <TabsTrigger value="all" className="flex-1">الكل</TabsTrigger>
           </TabsList>
         </Tabs>
+
+        {/* Fraud filter */}
+        <div className="flex gap-2 flex-wrap">
+          {["all", "suspicious", "review", "clean"].map((f) => (
+            <Button
+              key={f}
+              size="sm"
+              variant={fraudFilter === f ? "default" : "outline"}
+              onClick={() => setFraudFilter(f)}
+              className="text-xs"
+            >
+              {f === "all" ? "الكل" : f === "suspicious" ? "🔴 مشبوه" : f === "review" ? "🟡 مراجعة" : "🟢 سليم"}
+            </Button>
+          ))}
+        </div>
+
         <div className="space-y-2">
           {filtered.map((req) => (
-            <Card key={req.id}>
+            <Card key={req.id} className={req.fraud_status === "suspicious" ? "border-destructive/50 bg-destructive/5" : req.fraud_status === "review" ? "border-yellow-400/50 bg-yellow-50/30 dark:bg-yellow-950/10" : ""}>
               <CardContent className="py-3 px-4">
                 <div className="flex items-start justify-between">
-                  <div>
+                  <div className="space-y-1">
                     <p className="font-semibold text-sm">{getStudentName(req.user_id)}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{req.amount.toLocaleString()} {req.currency} • {getMethodName(req.payment_method_id)}</p>
+                    <p className="text-xs text-muted-foreground">{req.amount.toLocaleString()} {req.currency} • {getMethodName(req.payment_method_id)}</p>
                     <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleDateString("ar")}</p>
-                    {req.admin_notes && <p className="text-xs text-muted-foreground mt-1">ملاحظات: {req.admin_notes}</p>}
+                    {req.admin_notes && <p className="text-xs text-muted-foreground">ملاحظات: {req.admin_notes}</p>}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {fraudBadge(req.fraud_status, req.duplicate_count)}
+                      {req.duplicate_count > 0 && (
+                        <span className="text-xs text-destructive font-medium">⚠️ هذا السند تم استخدامه {req.duplicate_count} مرات</span>
+                      )}
+                      {req.extracted_reference && (
+                        <span className="text-xs text-muted-foreground">مرجع: {req.extracted_reference}</span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {statusBadge(req.status)}
@@ -244,6 +314,44 @@ const AdminPayments = () => {
                 <div className="flex justify-between"><span className="text-muted-foreground">المبلغ:</span><span className="font-medium">{selectedRequest.amount.toLocaleString()} {selectedRequest.currency}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">طريقة الدفع:</span><span className="font-medium">{getMethodName(selectedRequest.payment_method_id)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">التاريخ:</span><span className="font-medium">{new Date(selectedRequest.created_at).toLocaleDateString("ar")}</span></div>
+              </div>
+
+              {/* Fraud Status Section */}
+              <div className="rounded-lg border p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold flex items-center gap-1">
+                    <ShieldAlert className="w-4 h-4" /> حالة الاحتيال
+                  </span>
+                  {fraudBadge(selectedRequest.fraud_status, selectedRequest.duplicate_count)}
+                </div>
+                {selectedRequest.duplicate_count > 0 && (
+                  <div className="bg-destructive/10 rounded p-2 text-xs text-destructive">
+                    ⚠️ هذا السند تم استخدامه {selectedRequest.duplicate_count} مرات
+                  </div>
+                )}
+                {(selectedRequest.extracted_amount || selectedRequest.extracted_reference || selectedRequest.extracted_date) && (
+                  <div className="space-y-1 text-xs">
+                    <p className="font-semibold text-muted-foreground">بيانات مستخرجة من السند:</p>
+                    {selectedRequest.extracted_amount && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">المبلغ المستخرج:</span>
+                        <span className="font-medium">{selectedRequest.extracted_amount.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {selectedRequest.extracted_reference && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">رقم المرجع:</span>
+                        <span className="font-medium">{selectedRequest.extracted_reference}</span>
+                      </div>
+                    )}
+                    {selectedRequest.extracted_date && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">التاريخ:</span>
+                        <span className="font-medium">{selectedRequest.extracted_date}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {signedReceiptUrl && (
@@ -314,6 +422,18 @@ const AdminPayments = () => {
                     </div>
                   )}
                 </div>
+              )}
+
+              {/* Auto-fill reject reason for suspicious */}
+              {selectedRequest.fraud_status === "suspicious" && !adminNotes && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => setAdminNotes("تم رفض طلب الدفع بسبب تكرار السند. يرجى رفع سند جديد غير مستخدم مسبقاً.")}
+                >
+                  <Copy className="w-3 h-3 ml-1" /> تعبئة سبب الرفض تلقائياً (سند مكرر)
+                </Button>
               )}
 
               <div className="space-y-2">

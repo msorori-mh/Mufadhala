@@ -13,7 +13,7 @@ import {
   Loader2, CreditCard, Upload, CheckCircle, Clock,
   Building, ArrowLeftRight, ChevronRight, GraduationCap, Smartphone, Globe,
   Star, Sparkles, Tag, Timer, Info, ChevronDown, ZoomIn, Download, Copy, Check,
-  Crown, Zap, Brain, BarChart3, BookOpen, ClipboardCheck, Lock, Bot
+  Crown, Zap, Brain, BarChart3, BookOpen, ClipboardCheck, Lock, Bot, AlertTriangle
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import ConversionBoosters from "@/components/ConversionBoosters";
@@ -202,6 +202,18 @@ const Subscription = () => {
     if (!user || !selectedMethod || !receiptFile || !selectedPlan) return;
     setSubmitting(true);
 
+    // Rate limit check: max 3 per day
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayRequests = paymentRequests.filter(
+      (pr) => new Date(pr.created_at) >= todayStart
+    );
+    if (todayRequests.length >= 3) {
+      toast({ variant: "destructive", title: "تجاوزت الحد اليومي", description: "الحد الأقصى 3 طلبات دفع يومياً. حاول غداً." });
+      setSubmitting(false);
+      return;
+    }
+
     const ext = receiptFile.name.split(".").pop();
     const filePath = `${user.id}/${Date.now()}.${ext}`;
     const { error: uploadErr } = await supabase.storage.from("receipts").upload(filePath, receiptFile);
@@ -245,7 +257,7 @@ const Subscription = () => {
     };
     if (promoId) paymentPayload.promo_code_id = promoId;
 
-    const { error: prErr } = await supabase.from("payment_requests").insert(paymentPayload);
+    const { data: prData, error: prErr } = await supabase.from("payment_requests").insert(paymentPayload).select().single();
 
     if (prErr) {
       const prMsg = prErr.message.includes("row-level security")
@@ -253,6 +265,19 @@ const Subscription = () => {
         : `فشل إرسال طلب الدفع: ${prErr.message}`;
       toast({ variant: "destructive", title: "خطأ في طلب الدفع", description: prMsg });
     } else {
+      // Trigger fraud check in background (non-blocking)
+      supabase.functions.invoke("check-receipt-fraud", {
+        body: { receipt_path: filePath, payment_request_id: prData.id },
+      }).then(({ data: fraudData }) => {
+        if (fraudData?.fraud_status === "suspicious") {
+          toast({
+            variant: "destructive",
+            title: "⚠️ تنبيه",
+            description: "تم اكتشاف أن هذا السند قد يكون مستخدماً مسبقاً وسيتم مراجعته",
+          });
+        }
+      }).catch(() => { /* non-critical */ });
+
       toast({ title: "تم إرسال طلب الدفع بنجاح!" });
       setSubscription({ id: newSub.id, status: "pending", plan_id: selectedPlan.id, starts_at: null, expires_at: null, trial_ends_at: null });
       setStep("plans");
@@ -740,6 +765,10 @@ const Subscription = () => {
               <CardHeader className="pb-2"><CardTitle className="text-base">رفع سند التحويل</CardTitle></CardHeader>
               <CardContent>
                 <div className="space-y-3">
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-sm text-destructive flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>⚠️ تنبيه: سيتم رفض أي سند مكرر أو مستخدم من قبل أكثر من حساب. النظام يتحقق تلقائياً.</span>
+                  </div>
                   <p className="text-sm text-muted-foreground">قم بتحويل المبلغ إلى الحساب المحدد أعلاه، ثم ارفع صورة سند التحويل هنا</p>
                   <div className="border-2 border-dashed rounded-lg p-6 text-center">
                     <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />

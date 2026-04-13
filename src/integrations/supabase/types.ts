@@ -674,9 +674,15 @@ export type Database = {
           amount: number
           created_at: string
           currency: string
+          duplicate_count: number
+          extracted_amount: number | null
+          extracted_date: string | null
+          extracted_reference: string | null
+          fraud_status: string
           id: string
           payment_method_id: string | null
           promo_code_id: string | null
+          receipt_hash: string | null
           receipt_url: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -689,9 +695,15 @@ export type Database = {
           amount: number
           created_at?: string
           currency?: string
+          duplicate_count?: number
+          extracted_amount?: number | null
+          extracted_date?: string | null
+          extracted_reference?: string | null
+          fraud_status?: string
           id?: string
           payment_method_id?: string | null
           promo_code_id?: string | null
+          receipt_hash?: string | null
           receipt_url?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -704,9 +716,15 @@ export type Database = {
           amount?: number
           created_at?: string
           currency?: string
+          duplicate_count?: number
+          extracted_amount?: number | null
+          extracted_date?: string | null
+          extracted_reference?: string | null
+          fraud_status?: string
           id?: string
           payment_method_id?: string | null
           promo_code_id?: string | null
+          receipt_hash?: string | null
           receipt_url?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
