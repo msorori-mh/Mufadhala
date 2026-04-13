@@ -1,36 +1,33 @@
 
 
-## خطة إضافة اختيار التخصص في نموذج التسجيل
+## خطة حل التعارض — إلغاء النموذج الثاني واعتماد الكلية لعرض الدروس
 
 ### المشكلة
-عند محاولة استعراض الدروس، يُطلب من الطالب اختيار التخصص من الملف الشخصي، لكن نموذج التسجيل لا يتضمن هذا الحقل أصلاً — مما يسبب خطوة إضافية غير ضرورية.
-
-### الحل
-إضافة حقل اختيار التخصص (major) في نموذج التسجيل، بحيث يظهر بعد اختيار الكلية ويُرسل مع بقية البيانات.
+صفحة الدروس (`LessonsList.tsx`) تحجب المحتوى إذا لم يكن للطالب `major_id`، وتوجّهه لصفحة الملف الشخصي. بما أن جدول التخصصات فارغ، لا يستطيع أي طالب مسجّل رؤية الدروس.
 
 ### التغييرات المطلوبة
 
-**1. نموذج التسجيل — `src/pages/Register.tsx`**
-- إضافة state لقائمة التخصصات (`majors`)
-- جلب التخصصات من جدول `majors` عند تغيير الكلية
-- إضافة حقل `NativeSelect` لاختيار التخصص بعد حقل الكلية
-- إضافة `majorId` إلى شرط التحقق `isFormValid`
-- إرسال `major_id` ضمن البيانات إلى `register-student`
-- إعادة تعيين التخصص عند تغيير الكلية
+**1. دالة SQL جديدة — `get_published_lessons_by_college`**
+- Migration تنشئ دالة مطابقة لـ `get_published_lessons_list` لكن تفلتر بـ `college_id` بدلاً من `major_id`
+```sql
+CREATE FUNCTION public.get_published_lessons_by_college(_college_id uuid)
+RETURNS TABLE(id uuid, title text, summary text, display_order integer, is_free boolean, major_id uuid)
+```
 
-**2. مسودة التسجيل — `src/lib/registrationDraft.ts`**
-- إضافة حقل `majorId` إلى `RegistrationDraft` و `emptyDraft`
+**2. صفحة الدروس — `src/pages/LessonsList.tsx`**
+- تغيير شرط الحجب (سطر 278): من `!student?.major_id` إلى `!student?.college_id`
+- تعديل رسالة الحجب لتقول "لم يتم اختيار كلية" بدل "تخصص"
+- تعديل استعلام الدروس (سطر 110-117):
+  - إذا `major_id` موجود → يستخدم `get_published_lessons_list` (السلوك الحالي)
+  - إذا غير موجود → يستخدم `get_published_lessons_by_college` مع `college_id`
+- تعديل `enabled` ليعمل بـ `collegeId` بدلاً من `majorId` فقط
+- تعديل عنوان الصفحة ليعرض اسم الكلية عند عدم وجود تخصص
 
-**3. Edge Function — `supabase/functions/register-student/index.ts`**
-- استقبال حقل `major_id` من الطلب
-- إضافة التحقق من صحته (UUID)
-- تمرير `major_id` عند إنشاء المستخدم (في `user_metadata`) وعند تحديث سجل الطالب
+**3. لا تغيير على:**
+- نموذج التسجيل (يبقى كما هو)
+- صفحة الملف الشخصي (تبقى الحقول الإضافية اختيارية)
+- صفحة `CompleteProfile` (هي بالفعل redirect فقط)
 
-**4. صفحة الدروس — `src/pages/LessonsList.tsx`**
-- لا تغيير مطلوب (الشرط الحالي `student?.major_id` سيعمل تلقائياً بعد إضافة التخصص في التسجيل)
-
-### ملاحظات
-- التخصصات مرتبطة بالكلية عبر جدول `majors` (عمود `college_id`)
-- الـ trigger `handle_new_user` يدعم `major_id` بالفعل من `user_metadata`
-- لن يؤثر هذا على المستخدمين المسجلين مسبقاً — سيظل بإمكانهم إضافة التخصص من الملف الشخصي
+### النتيجة
+الطالب بعد التسجيل يدخل مباشرة لصفحة الدروس ويرى دروس كليته بدون أي نموذج إضافي أو حاجز.
 
