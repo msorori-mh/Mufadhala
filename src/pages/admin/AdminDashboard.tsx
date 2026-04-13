@@ -387,7 +387,48 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Chat Usage Stats — admin only */}
+        {/* Daily Trends Chart — admin only */}
+        {isAdmin && trendsData && trendsData.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                تطور التسجيل والاشتراكات (آخر 30 يوم)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={trendsData}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                    <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{ fontSize: 12, direction: "rtl" }}
+                      formatter={(value: number, name: string) => [
+                        value,
+                        name === "registrations" ? "تسجيلات جديدة" : "اشتراكات جديدة",
+                      ]}
+                    />
+                    <Bar dataKey="registrations" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} name="registrations" />
+                    <Bar dataKey="subscriptions" fill="hsl(var(--primary) / 0.5)" radius={[3, 3, 0, 0]} name="subscriptions" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex items-center justify-center gap-6 mt-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-sm bg-primary" />
+                  تسجيلات جديدة
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-sm bg-primary/50" />
+                  اشتراكات جديدة
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {isAdmin && chatStats && (
           <Card>
             <CardHeader className="pb-3">
