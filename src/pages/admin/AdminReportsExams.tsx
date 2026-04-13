@@ -39,10 +39,16 @@ const AdminReportsExams = () => {
       supabase.from("majors").select("*").order("display_order"),
       supabase.from("students").select("*"),
       supabase.from("universities").select("*").order("display_order"),
-    ]).then(([{ data: e }, { data: m }, { data: s }, { data: u }]) => {
-      if (e) setExams(e as ExamRow[]);
+      supabase.from("user_roles").select("user_id, role"),
+    ]).then(([{ data: e }, { data: m }, { data: s }, { data: u }, { data: roles }]) => {
+      const staffIds = new Set(
+        (roles || []).filter((r) => r.role === "admin" || r.role === "moderator").map((r) => r.user_id)
+      );
+      const realStudents = (s || []).filter((st) => !staffIds.has(st.user_id));
+      const realStudentIds = new Set(realStudents.map((st) => st.id));
+      if (e) setExams((e as ExamRow[]).filter((ex) => realStudentIds.has(ex.student_id)));
       if (m) setMajors(m);
-      if (s) setStudents(s);
+      setStudents(realStudents);
       if (u) setUniversities(u);
       setLoading(false);
     });
