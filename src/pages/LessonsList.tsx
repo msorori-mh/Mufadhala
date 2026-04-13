@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { getContentFilter } from "@/lib/contentFilter";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useStudentData } from "@/hooks/useStudentData";
@@ -149,7 +150,7 @@ const LessonsList = () => {
         supabase.from("lessons").select("id, subject_id, grade_level").eq(filter.field, filter.value).eq("is_published", true),
       ]);
 
-      const { data: nameData } = majorResult;
+      const { data: nameData } = nameResult;
       const { data: ls } = lessonsResult;
       const { data: lessonsFull } = lessonsFullResult;
 

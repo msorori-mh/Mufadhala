@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import { getContentFilter } from "@/lib/contentFilter";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useStudentData } from "@/hooks/useStudentData";
 import { useUnreadCount } from "@/hooks/useUnreadCount";

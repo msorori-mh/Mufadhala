@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { getContentFilter } from "@/lib/contentFilter";
 import { useAuth } from "@/hooks/useAuth";
 import ThemeToggle from "@/components/ThemeToggle";
 import SubjectPerformanceDetail from "@/components/SubjectPerformanceDetail";
@@ -72,16 +73,16 @@ const StudentPerformance = () => {
           : supabase.from("colleges").select("name_ar").eq("id", filter.value).single(),
         supabase.from("exam_attempts").select("id, score, total, completed_at, major_id")
           .eq("student_id", s.id).not("completed_at", "is", null).order("completed_at", { ascending: true }),
-        supabase.from("lessons").select("id, title, major_id").eq(filterCol, currentFilterId).eq("is_published", true).order("display_order"),
+        supabase.from("lessons").select("id, title, major_id").eq(filter.field, filter.value).eq("is_published", true).order("display_order"),
         supabase.from("lesson_progress").select("lesson_id").eq("student_id", s.id).eq("is_completed", true),
         // Peers: only compare when student has a major (exam_attempts.major_id is always a major ID)
-        hasMajor
+        filter.type === "major"
           ? supabase.from("exam_attempts").select("score, total, student_id")
-              .eq("major_id", s.major_id!).not("completed_at", "is", null)
+              .eq("major_id", filter.value).not("completed_at", "is", null)
           : Promise.resolve({ data: [] }),
       ]);
 
-      if (major) setFilterName(major.name_ar);
+      if (nameData) setFilterName(nameData.name_ar);
       if (exams) setAttempts(exams);
       if (les) {
         setLessons(les as LessonRow[]);
