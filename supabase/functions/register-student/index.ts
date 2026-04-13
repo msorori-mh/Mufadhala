@@ -201,6 +201,7 @@ Deno.serve(async (req) => {
               governorate,
               university_id,
               college_id,
+              major_id,
               gpa: high_school_gpa ?? null,
             })
             .eq("user_id", userId);
@@ -231,7 +232,7 @@ Deno.serve(async (req) => {
       // Update student phone and GPA (trigger creates the student row)
       await supabase
         .from("students")
-        .update({ phone, gpa: high_school_gpa ?? null })
+        .update({ phone, major_id, gpa: high_school_gpa ?? null })
         .eq("user_id", userId);
     }
 
