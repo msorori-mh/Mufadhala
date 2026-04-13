@@ -256,7 +256,7 @@ const AdminDashboard = () => {
     { label: "إجمالي الإيرادات", value: `${(stats?.totalRevenue ?? 0).toLocaleString("ar")} ر.ي`, icon: DollarSign, bg: "bg-primary/5", color: "text-primary", small: true, path: "/admin/reports/payments" },
   ];
 
-  // navigate is declared at top level below
+  
 
   const ClickableStat = ({ card }: { card: { label: string; value: string | number; icon: any; bg: string; color: string; path: string; small?: boolean } }) => (
     <div
