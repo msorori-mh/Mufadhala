@@ -1,9 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Bot, User, Loader2, Camera, ImageIcon } from "lucide-react";
+import { MessageCircle, X, Send, Bot, User, Loader2, Camera, Lock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/hooks/useAuth";
 
 type ContentPart =
   | { type: "text"; text: string }
@@ -16,6 +19,7 @@ type Message = {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const DEFAULT_DAILY_LIMIT = 30;
+const FREE_DAILY_LIMIT = 5;
 const STORAGE_KEY = "mufadhala_chat_usage";
 const MAX_IMAGE_SIZE = 1024; // max dimension for resizing
 
@@ -183,21 +187,24 @@ async function streamChat({
 }
 
 const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
+  const { user } = useAuth();
+  const { isActive: hasSubscription } = useSubscription(user?.id);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [dailyLimit, setDailyLimit] = useState(DEFAULT_DAILY_LIMIT);
-  const [remaining, setRemaining] = useState(getRemainingMessages(DEFAULT_DAILY_LIMIT));
   const [welcomeText, setWelcomeText] = useState("مرحباً! أنا مساعد مُفَاضَلَة الذكي 👋");
   const [pendingImages, setPendingImages] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Determine effective limit based on subscription
+  const effectiveLimit = hasSubscription ? dailyLimit : Math.min(dailyLimit, FREE_DAILY_LIMIT);
+
   useEffect(() => {
     fetchChatSettings().then(({ limit, welcome }) => {
       setDailyLimit(limit);
-      setRemaining(getRemainingMessages(limit));
       setWelcomeText(welcome);
     });
   }, []);
@@ -239,13 +246,17 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
     const images = [...pendingImages];
     if ((!text && images.length === 0) || loading) return;
 
-    if (getRemainingMessages(dailyLimit) <= 0) {
-      toast.error(`لقد وصلت للحد اليومي من الرسائل (${dailyLimit} رسالة). حاول مرة أخرى غداً!`);
+    if (getRemainingMessages(effectiveLimit) <= 0) {
+      if (!hasSubscription) {
+        toast.error(`وصلت للحد المجاني (${FREE_DAILY_LIMIT} رسائل). فعّل اشتراكك للحصول على ${dailyLimit} رسالة يومياً!`);
+      } else {
+        toast.error(`لقد وصلت للحد اليومي من الرسائل (${effectiveLimit} رسالة). حاول مرة أخرى غداً!`);
+      }
       return;
     }
 
     incrementUsage();
-    setRemaining(getRemainingMessages(dailyLimit));
+    // usage tracked in localStorage
 
     // Build multimodal content if images exist
     let userContent: string | ContentPart[];
@@ -374,13 +385,26 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
 
           {/* Input */}
           <div className="border-t border-border p-3">
-            {remaining <= 0 ? (
-              <p className="text-xs text-center text-destructive py-2">
-                لقد وصلت للحد اليومي ({dailyLimit} رسالة). حاول مرة أخرى غداً!
-              </p>
+            {getRemainingMessages(effectiveLimit) <= 0 ? (
+              <div className="text-center py-2 space-y-2">
+                {!hasSubscription ? (
+                  <>
+                    <p className="text-xs text-muted-foreground">
+                      وصلت للحد المجاني ({FREE_DAILY_LIMIT} رسائل يومياً)
+                    </p>
+                    <a href="/subscription" className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+                      <Sparkles className="w-3 h-3" />
+                      فعّل الاشتراك للحصول على {dailyLimit} رسالة يومياً
+                    </a>
+                  </>
+                ) : (
+                  <p className="text-xs text-destructive">
+                    لقد وصلت للحد اليومي ({effectiveLimit} رسالة). حاول غداً!
+                  </p>
+                )}
+              </div>
             ) : (
               <>
-                {/* Pending images preview */}
                 {pendingImages.length > 0 && (
                   <div className="flex gap-2 mb-2 flex-wrap">
                     {pendingImages.map((src, i) => (
@@ -432,9 +456,17 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
                     <Send className="h-4 w-4" />
                   </Button>
                 </form>
-                <p className="text-[10px] text-muted-foreground text-center mt-1.5">
-                  {remaining} رسالة متبقية اليوم
-                </p>
+                <div className="flex items-center justify-between mt-1.5">
+                  <p className="text-[10px] text-muted-foreground">
+                    {getRemainingMessages(effectiveLimit)} رسالة متبقية اليوم
+                  </p>
+                  {!hasSubscription && (
+                    <a href="/subscription" className="text-[10px] text-primary hover:underline flex items-center gap-0.5">
+                      <Lock className="w-2.5 h-2.5" />
+                      {dailyLimit} رسالة للمشتركين
+                    </a>
+                  )}
+                </div>
               </>
             )}
           </div>

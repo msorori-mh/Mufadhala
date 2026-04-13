@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import DashboardCharts from "@/components/DashboardCharts";
 import UpgradeCTABanner from "@/components/UpgradeCTABanner";
+import SmartRecommendations from "@/components/SmartRecommendations";
+import AIPracticeQuestions from "@/components/AIPracticeQuestions";
 import type { Tables } from "@/integrations/supabase/types";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -423,6 +425,21 @@ const Dashboard = () => {
                   </p>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Smart Recommendations */}
+            {!isAdmin && (
+              <SmartRecommendations
+                attempts={attempts}
+                completedLessons={completedLessons}
+                totalLessons={lessonCount}
+                hasSubscription={hasActiveSubscription}
+              />
+            )}
+
+            {/* AI Practice Questions */}
+            {!isAdmin && (
+              <AIPracticeQuestions hasSubscription={hasActiveSubscription} />
             )}
 
             {/* Achievements */}
