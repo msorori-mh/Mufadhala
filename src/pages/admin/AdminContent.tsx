@@ -949,9 +949,14 @@ const AdminContent = () => {
             if (!lessonId) {
               continue;
             }
+            // Duplicate protection
+            const qText = String(row[1]).trim();
+            const existingQ = questions.find(q => q.lesson_id === lessonId && q.question_text.trim() === qText);
+            if (existingQ) continue;
+            const qType = row[9] ? String(row[9]).trim().toLowerCase() === "true_false" ? "true_false" : "multiple_choice" : "multiple_choice";
             const { error } = await supabase.from("questions").insert({
               lesson_id: lessonId,
-              question_text: String(row[1]),
+              question_text: qText,
               option_a: String(row[2] || ""),
               option_b: String(row[3] || ""),
               option_c: String(row[4] || ""),
@@ -959,6 +964,7 @@ const AdminContent = () => {
               correct_option: String(row[6] || "a").toLowerCase().trim(),
               explanation: row[7] ? String(row[7]) : "",
               subject: row[8] ? getSubjectValue(String(row[8])) : "general",
+              question_type: qType,
               display_order: i,
             });
             if (error) {
