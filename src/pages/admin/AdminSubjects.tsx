@@ -30,11 +30,6 @@ interface MajorSubject {
   subject_id: string;
 }
 
-interface CollegeSubject {
-  id: string;
-  college_id: string;
-  subject_id: string;
-}
 
 const AdminSubjects = () => {
   const { loading: authLoading, isAdmin } = useAuth("admin");
@@ -45,7 +40,6 @@ const AdminSubjects = () => {
   const [colleges, setColleges] = useState<any[]>([]);
   const [universities, setUniversities] = useState<any[]>([]);
   const [majorSubjects, setMajorSubjects] = useState<MajorSubject[]>([]);
-  const [collegeSubjects, setCollegeSubjects] = useState<CollegeSubject[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Subject dialog
@@ -62,22 +56,20 @@ const AdminSubjects = () => {
   // Link dialog (shared for majors & colleges)
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkSubject, setLinkSubject] = useState<Subject | null>(null);
-  const [linkTab, setLinkTab] = useState<"colleges" | "majors">("colleges");
+  const [linkTab, setLinkTab] = useState<"majors">("majors");
   const [filterUni, setFilterUni] = useState("");
   const [filterCollege, setFilterCollege] = useState("");
 
   const fetchData = async () => {
-    const [{ data: s }, { data: ms }, { data: cs }, { data: m }, { data: c }, { data: u }] = await Promise.all([
+    const [{ data: s }, { data: ms }, { data: m }, { data: c }, { data: u }] = await Promise.all([
       supabase.from("subjects").select("*").order("display_order"),
       supabase.from("major_subjects").select("*"),
-      supabase.from("college_subjects").select("*"),
       supabase.from("majors").select("*").order("display_order"),
       supabase.from("colleges").select("*").order("display_order"),
       supabase.from("universities").select("*").order("display_order"),
     ]);
     if (s) setSubjects(s as Subject[]);
     if (ms) setMajorSubjects(ms as MajorSubject[]);
-    if (cs) setCollegeSubjects(cs as CollegeSubject[]);
     if (m) setMajors(m);
     if (c) setColleges(c);
     if (u) setUniversities(u);
@@ -141,7 +133,7 @@ const AdminSubjects = () => {
     setLinkSubject(s);
     setFilterUni("");
     setFilterCollege("");
-    setLinkTab("colleges");
+    setLinkTab("majors");
     setLinkDialogOpen(true);
   };
 
@@ -159,19 +151,6 @@ const AdminSubjects = () => {
     fetchData();
   };
 
-  // College links
-  const linkedCollegeIds = (subjectId: string) =>
-    new Set(collegeSubjects.filter(cs => cs.subject_id === subjectId).map(cs => cs.college_id));
-
-  const toggleCollegeLink = async (collegeId: string, subjectId: string) => {
-    const existing = collegeSubjects.find(cs => cs.college_id === collegeId && cs.subject_id === subjectId);
-    if (existing) {
-      await supabase.from("college_subjects").delete().eq("id", existing.id);
-    } else {
-      await supabase.from("college_subjects").insert({ college_id: collegeId, subject_id: subjectId });
-    }
-    fetchData();
-  };
 
   const filteredColleges = filterUni ? colleges.filter((c: any) => c.university_id === filterUni) : colleges;
   const filteredMajors = filterCollege
