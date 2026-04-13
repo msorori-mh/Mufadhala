@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useOfflineStatus } from "@/hooks/useOfflineStatus";
 import { saveLesson as saveLessonOffline, getLesson as getOfflineLesson, removeLesson as removeOfflineLesson, type OfflineLesson } from "@/lib/offlineStorage";
+import { trackFunnelEvent, hasTrackedEvent } from "@/lib/funnelTracking";
 
 interface Lesson {
   id: string;
@@ -220,8 +221,21 @@ const LessonDetail = () => {
     if (!error) {
       setIsCompleted(true);
       toast.success("تم تحديد الدرس كمكتمل ✓");
+      trackFunnelEvent("lesson_completed", { lesson_id: id });
     }
   };
+
+  // Track first lesson opened — show motivational toast
+  useEffect(() => {
+    if (!lesson || !id || authLoading || loading) return;
+    if (!hasTrackedEvent("first_lesson_opened")) {
+      trackFunnelEvent("first_lesson_opened", { lesson_id: id });
+      toast("أنت الآن بدأت رحلة القبول 🎯", {
+        description: "واصل التعلم وستحقق هدفك!",
+        duration: 5000,
+      });
+    }
+  }, [lesson, id, authLoading, loading]);
 
   if (authLoading || loading || subLoading) {
     return (
