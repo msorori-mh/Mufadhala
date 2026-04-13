@@ -23,11 +23,18 @@ import { useToast } from "@/hooks/use-toast";
 
 const fetchExamData = async (userId: string) => {
   const { data: s } = await supabase.from("students").select("id, major_id, college_id, user_id").eq("user_id", userId).maybeSingle();
-  if (!s?.major_id) return { student: s, majorName: "", allQuestions: [] as Question[], pastAttempts: [] as ExamAttempt[], offlineInfo: { has: false, count: 0 } };
+  if (!s?.major_id && !s?.college_id) return { student: s, majorName: "", allQuestions: [] as Question[], pastAttempts: [] as ExamAttempt[], offlineInfo: { has: false, count: 0 } };
+  
+  // Use major_id if available, otherwise fetch lessons by college
+  const hasMajor = !!s.major_id;
 
   const [{ data: major }, { data: lessons }, { data: attempts }] = await Promise.all([
-    supabase.from("majors").select("name_ar").eq("id", s.major_id).maybeSingle(),
-    supabase.from("lessons").select("id, subject_id").eq("major_id", s.major_id).eq("is_published", true),
+    hasMajor
+      ? supabase.from("majors").select("name_ar").eq("id", s.major_id!).maybeSingle()
+      : supabase.from("colleges").select("name_ar").eq("id", s.college_id!).maybeSingle(),
+    hasMajor
+      ? supabase.from("lessons").select("id, subject_id").eq("major_id", s.major_id!).eq("is_published", true)
+      : supabase.from("lessons").select("id, subject_id").eq("college_id", s.college_id!).eq("is_published", true),
     supabase.from("exam_attempts").select("id, score, total, started_at, completed_at, answers, major_id").eq("student_id", s.id).order("created_at", { ascending: false }),
   ]);
 
@@ -459,7 +466,7 @@ const ExamSimulator = () => {
     );
   }
 
-  if (!student?.major_id && !isOffline) {
+  if (!student?.major_id && !student?.college_id && !isOffline) {
     return (
       <div className="min-h-screen bg-background">
         <header className="gradient-primary text-white px-4 py-4">
@@ -479,8 +486,9 @@ const ExamSimulator = () => {
           ) : (
             <>
               <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-              <p className="font-semibold">اختر تخصصك أولاً من الملف الشخصي</p>
-              <Button asChild className="mt-4"><Link to="/profile">الملف الشخصي</Link></Button>
+              <p className="font-semibold">لا توجد بيانات أكاديمية بعد</p>
+              <p className="text-sm text-muted-foreground mt-1">يرجى التأكد من اختيار الكلية عند التسجيل</p>
+              <Button asChild className="mt-4"><Link to="/dashboard">العودة للرئيسية</Link></Button>
             </>
           )}
         </main>

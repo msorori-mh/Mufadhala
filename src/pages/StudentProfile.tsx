@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,7 @@ const isValidYemeniPhone = (p: string) => !p || YEMEN_PHONE_REGEX.test(p);
 const StudentProfile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuthContext();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -231,6 +233,7 @@ const StudentProfile = () => {
       toast({ variant: "destructive", title: "خطأ في الحفظ", description: msg });
     } else {
       toast({ title: "تم حفظ البيانات بنجاح" });
+      queryClient.invalidateQueries({ queryKey: ["student"] });
       setOriginalPhone(phone);
       setPhoneEditing(false);
       setOtpSent(false);
@@ -292,14 +295,6 @@ const StudentProfile = () => {
               <div className="space-y-1.5">
                 <Label className="text-xs">الاسم الأول</Label>
                 <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">اسم الأب</Label>
-                <Input value={secondName} onChange={(e) => setSecondName(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">اسم الجد</Label>
-                <Input value={thirdName} onChange={(e) => setThirdName(e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">اللقب</Label>
@@ -486,17 +481,19 @@ const StudentProfile = () => {
               </Select>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs">التخصص</Label>
-              <Select value={majorId} onValueChange={setMajorId} disabled={!collegeId}>
-                <SelectTrigger><SelectValue placeholder={!collegeId ? "اختر الكلية أولاً" : "اختر التخصص"} /></SelectTrigger>
-                <SelectContent>
-                  {majors.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>{m.name_ar}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {majors.length > 0 && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">التخصص <span className="text-muted-foreground">(اختياري)</span></Label>
+                <Select value={majorId} onValueChange={setMajorId} disabled={!collegeId}>
+                  <SelectTrigger><SelectValue placeholder="اختر التخصص" /></SelectTrigger>
+                  <SelectContent>
+                    {majors.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>{m.name_ar}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
           </CardContent>
         </Card>

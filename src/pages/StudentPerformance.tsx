@@ -58,16 +58,22 @@ const StudentPerformance = () => {
   useEffect(() => {
     if (authLoading || !user) return;
     const fetchAll = async () => {
-      const { data: s } = await supabase.from("students").select("id, major_id").eq("user_id", user.id).maybeSingle();
-      if (!s || !s.major_id) { setLoading(false); return; }
+      const { data: s } = await supabase.from("students").select("id, major_id, college_id").eq("user_id", user.id).maybeSingle();
+      if (!s || (!s.major_id && !s.college_id)) { setLoading(false); return; }
       setStudentId(s.id);
-      setMajorId(s.major_id);
+      setMajorId(s.major_id || s.college_id);
 
+      const hasMajor = !!s.major_id;
+      const filterCol = hasMajor ? "major_id" : "college_id";
+      const filterId = hasMajor ? s.major_id! : s.college_id!;
+      
       const [{ data: major }, { data: exams }, { data: les }, { data: prog }, { data: peers }] = await Promise.all([
-        supabase.from("majors").select("name_ar").eq("id", s.major_id).single(),
+        hasMajor
+          ? supabase.from("majors").select("name_ar").eq("id", filterId).single()
+          : supabase.from("colleges").select("name_ar").eq("id", filterId).single(),
         supabase.from("exam_attempts").select("id, score, total, completed_at, major_id")
           .eq("student_id", s.id).not("completed_at", "is", null).order("completed_at", { ascending: true }),
-        supabase.from("lessons").select("id, title, major_id").eq("major_id", s.major_id).eq("is_published", true).order("display_order"),
+        supabase.from("lessons").select("id, title, major_id").eq(filterCol, filterId).eq("is_published", true).order("display_order"),
         supabase.from("lesson_progress").select("lesson_id").eq("student_id", s.id).eq("is_completed", true),
         supabase.from("exam_attempts").select("score, total, student_id")
           .eq("major_id", s.major_id).not("completed_at", "is", null),
@@ -98,8 +104,8 @@ const StudentPerformance = () => {
   if (!majorId) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center flex-col gap-4 p-4">
-        <p className="text-muted-foreground">أكمل ملفك الشخصي واختر تخصصك أولاً</p>
-        <Button asChild><Link to="/profile">الملف الشخصي</Link></Button>
+        <p className="text-muted-foreground">لا توجد بيانات أداء بعد</p>
+        <Button asChild><Link to="/dashboard">العودة للرئيسية</Link></Button>
       </div>
     );
   }
