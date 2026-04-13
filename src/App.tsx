@@ -26,7 +26,7 @@ import MobileBottomNav from "./components/MobileBottomNav";
 
 // Lazy imports — secondary pages
 
-const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
+
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminResetPassword = lazy(() => import("./pages/AdminResetPassword"));
 const StudentProfile = lazy(() => import("./pages/StudentProfile"));
@@ -116,7 +116,7 @@ function App() {
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
-                  <Route path="/complete-profile" element={<CompleteProfile />} />
+                  <Route path="/complete-profile" element={<Navigate to="/profile" replace />} />
                   <Route path="/admin-login" element={<AdminLogin />} />
                   <Route path="/admin-reset-password" element={<AdminResetPassword />} />
                   <Route path="/dashboard" element={<Dashboard />} />
