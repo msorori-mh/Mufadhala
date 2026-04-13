@@ -21,8 +21,10 @@ import {
   Building2, ChevronLeft, Lightbulb, RefreshCw,
 } from "lucide-react";
 import DashboardCharts from "@/components/DashboardCharts";
+import UpgradeCTABanner from "@/components/UpgradeCTABanner";
 import type { Tables } from "@/integrations/supabase/types";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface ExamAttemptRow {
   id: string;
@@ -74,6 +76,7 @@ const Dashboard = () => {
 
   const authLoading = accessLoading;
   const { data: unreadCount = 0 } = useUnreadCount(user?.id);
+  const { isActive: hasActiveSubscription } = useSubscription(user?.id);
 
   // Fetch all dashboard-specific data in ONE parallel batch
   const { data: dashData, isLoading: dashLoading } = useQuery({
@@ -349,6 +352,11 @@ const Dashboard = () => {
             {/* Daily Tip */}
             {!isAdmin && (
               <DailyTipCard />
+            )}
+
+            {/* Upgrade CTA for free users who engaged */}
+            {!isAdmin && !hasActiveSubscription && (
+              <UpgradeCTABanner completedLessons={completedLessons} totalLessons={lessonCount} />
             )}
 
 

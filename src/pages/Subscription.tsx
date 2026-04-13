@@ -15,6 +15,7 @@ import {
   Star, Sparkles, Tag, Timer, Info, ChevronDown, ZoomIn, Download, Copy, Check
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import ConversionBoosters from "@/components/ConversionBoosters";
 import { getZone, getPlanPrice } from "@/domain/pricing";
 import { ZONE_A_GOVERNORATES, ZONE_B_GOVERNORATES } from "@/domain/constants";
 
@@ -374,6 +375,9 @@ const Subscription = () => {
 
           return (
             <div className="space-y-4">
+              {/* Conversion boosters */}
+              <ConversionBoosters />
+
               <div className="text-center">
                 <h2 className="text-xl font-bold">الاشتراك في المنصة</h2>
                 {zoneName && <p className="text-xs text-muted-foreground mt-1">{zoneName} — {studentGovernorate}</p>}
