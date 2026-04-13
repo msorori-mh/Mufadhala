@@ -14,6 +14,7 @@ interface AuthState {
   isAdmin: boolean;
   isModerator: boolean;
   isStaff: boolean;
+  isRecoverySession: boolean;
 }
 
 const AuthContext = createContext<AuthState>({
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthState>({
   isAdmin: false,
   isModerator: false,
   isStaff: false,
+  isRecoverySession: false,
 });
 
 export const useAuthContext = () => useContext(AuthContext);
@@ -31,6 +33,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRecoverySession, setIsRecoverySession] = useState(
+    () => sessionStorage.getItem("supabase_recovery_mode") === "true"
+  );
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -100,6 +105,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "INITIAL_SESSION") return;
 
+      if (event === "PASSWORD_RECOVERY") {
+        setIsRecoverySession(true);
+        sessionStorage.setItem("supabase_recovery_mode", "true");
+      }
+
       if (session) {
         setUser(session.user);
         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
@@ -121,7 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isStaff = isAdmin || isModerator;
 
   return (
-    <AuthContext.Provider value={{ user, roles, loading, isAdmin, isModerator, isStaff }}>
+    <AuthContext.Provider value={{ user, roles, loading, isAdmin, isModerator, isStaff, isRecoverySession }}>
       {children}
     </AuthContext.Provider>
   );

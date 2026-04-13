@@ -15,25 +15,10 @@ const AdminResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isRecovery, setIsRecovery] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    // Listen for PASSWORD_RECOVERY event
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setIsRecovery(true);
-      }
-    });
-
-    // Check hash for recovery type
-    const hash = window.location.hash;
-    if (hash.includes("type=recovery")) {
-      setIsRecovery(true);
-    }
-
-    return () => subscription.unsubscribe();
-  }, []);
+  // Check recovery mode from sessionStorage (set before Supabase strips the hash)
+  const isRecovery = sessionStorage.getItem("supabase_recovery_mode") === "true";
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,8 +51,12 @@ const AdminResetPassword = () => {
         description: error.message,
       });
     } else {
+      // Clear recovery flag
+      sessionStorage.removeItem("supabase_recovery_mode");
       setSuccess(true);
       toast({ title: "تم تغيير كلمة المرور بنجاح" });
+      // Sign out to force fresh login with new password
+      await supabase.auth.signOut();
       setTimeout(() => navigate("/admin-login", { replace: true }), 2000);
     }
     setLoading(false);
