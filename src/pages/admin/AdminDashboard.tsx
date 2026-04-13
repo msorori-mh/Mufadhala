@@ -96,6 +96,56 @@ const AdminDashboard = () => {
     staleTime: 2 * 60 * 1000,
   });
 
+  // Daily trends: registrations & subscriptions over last 30 days
+  const { data: trendsData } = useQuery({
+    queryKey: ["admin-daily-trends"],
+    queryFn: async () => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const since = thirtyDaysAgo.toISOString();
+
+      const [studentsRes, rolesRes, subsRes] = await Promise.all([
+        supabase.from("students").select("user_id, created_at").gte("created_at", since),
+        supabase.from("user_roles").select("user_id, role"),
+        supabase.from("subscriptions").select("user_id, created_at, status").gte("created_at", since),
+      ]);
+
+      const staffIds = new Set(
+        (rolesRes.data || []).filter(r => r.role === "admin" || r.role === "moderator").map(r => r.user_id)
+      );
+
+      // Build daily map
+      const dayMap = new Map<string, { registrations: number; subscriptions: number }>();
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        dayMap.set(key, { registrations: 0, subscriptions: 0 });
+      }
+
+      (studentsRes.data || []).forEach(s => {
+        if (staffIds.has(s.user_id)) return;
+        const day = s.created_at.slice(0, 10);
+        const entry = dayMap.get(day);
+        if (entry) entry.registrations++;
+      });
+
+      (subsRes.data || []).forEach(sub => {
+        if (staffIds.has(sub.user_id)) return;
+        const day = sub.created_at.slice(0, 10);
+        const entry = dayMap.get(day);
+        if (entry) entry.subscriptions++;
+      });
+
+      return Array.from(dayMap.entries()).map(([date, counts]) => ({
+        date: new Date(date).toLocaleDateString("ar-EG", { month: "short", day: "numeric" }),
+        ...counts,
+      }));
+    },
+    enabled: !authLoading && isAdmin,
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Chat usage stats
   const { data: chatStats } = useQuery({
     queryKey: ["chat-usage-stats"],
@@ -337,7 +387,48 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Chat Usage Stats — admin only */}
+        {/* Daily Trends Chart — admin only */}
+        {isAdmin && trendsData && trendsData.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                تطور التسجيل والاشتراكات (آخر 30 يوم)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={trendsData}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                    <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{ fontSize: 12, direction: "rtl" }}
+                      formatter={(value: number, name: string) => [
+                        value,
+                        name === "registrations" ? "تسجيلات جديدة" : "اشتراكات جديدة",
+                      ]}
+                    />
+                    <Bar dataKey="registrations" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} name="registrations" />
+                    <Bar dataKey="subscriptions" fill="hsl(var(--primary) / 0.5)" radius={[3, 3, 0, 0]} name="subscriptions" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex items-center justify-center gap-6 mt-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-sm bg-primary" />
+                  تسجيلات جديدة
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-sm bg-primary/50" />
+                  اشتراكات جديدة
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {isAdmin && chatStats && (
           <Card>
             <CardHeader className="pb-3">
