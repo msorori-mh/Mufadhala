@@ -21,8 +21,10 @@ import {
   Building2, ChevronLeft, Lightbulb, RefreshCw,
 } from "lucide-react";
 import DashboardCharts from "@/components/DashboardCharts";
+import UpgradeCTABanner from "@/components/UpgradeCTABanner";
 import type { Tables } from "@/integrations/supabase/types";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface ExamAttemptRow {
   id: string;
