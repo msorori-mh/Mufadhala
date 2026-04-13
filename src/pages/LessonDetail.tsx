@@ -323,17 +323,30 @@ const LessonDetail = () => {
                 </CardContent>
               </Card>
             )}
-            <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-900">
-              <CardContent className="py-8 text-center">
-                <Lock className="w-12 h-12 text-yellow-600 mx-auto mb-3" />
-                <h2 className="text-lg font-bold text-yellow-700 dark:text-yellow-400">المحتوى الكامل مقفل</h2>
-                <p className="text-sm text-yellow-600 dark:text-yellow-500 mt-2">
+            <Card className="border-primary/30 bg-gradient-to-b from-primary/5 to-background">
+              <CardContent className="py-8 text-center space-y-4">
+                <Lock className="w-12 h-12 text-primary mx-auto mb-2" />
+                <h2 className="text-lg font-bold text-foreground">أنت على بعد خطوة من الوصول الكامل</h2>
+                <p className="text-sm text-muted-foreground">
                   {hasActiveSubscription && !planCoversLesson
                     ? "باقتك الحالية لا تغطي هذا التخصص. يمكنك ترقية اشتراكك للوصول لجميع التخصصات"
-                    : "يمكنك قراءة الملخص مجاناً. لفتح الشرح الكامل والأسئلة والتقييمات، فعّل اشتراكك"}
+                    : "يمكنك قراءة الملخص مجاناً. اشترك للوصول الكامل"}
                 </p>
-                <Button className="mt-4" onClick={() => navigate("/subscription")}>
-                  تفعيل الاشتراك
+                <div className="grid grid-cols-2 gap-2 max-w-xs mx-auto text-right">
+                  {[
+                    "✔ جميع الدروس والشروحات",
+                    "✔ بنك الأسئلة الكامل",
+                    "✔ محاكاة الاختبار الحقيقي",
+                    "✔ تحليل الأداء المتقدم",
+                  ].map((f) => (
+                    <p key={f} className="text-xs text-foreground font-medium">{f}</p>
+                  ))}
+                </div>
+                <Button className="mt-2 px-8 py-5 text-base font-bold" onClick={() => {
+                  trackFunnelEvent("subscribe_clicked", { source: "lesson_paywall" });
+                  navigate("/subscription");
+                }}>
+                  اشترك الآن
                 </Button>
               </CardContent>
             </Card>
