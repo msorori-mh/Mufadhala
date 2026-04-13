@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-// Content resolution now uses college_subjects → subject_ids (no getContentFilter needed)
+import { resolveSubjectIds } from "@/lib/contentFilter";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useOfflineStatus } from "@/hooks/useOfflineStatus";
@@ -58,13 +58,11 @@ const fetchExamData = async (userId: string) => {
       offlineInfo: { has: false, count: 0 },
     };
 
-  // ── Subject-based resolution ──────────────────────────
-  // 1) Get subject IDs from college_subjects
-  const { data: csData } = await supabase
-    .from("college_subjects")
-    .select("subject_id")
-    .eq("college_id", s.college_id);
-  const subjectIds = (csData || []).map((c: any) => c.subject_id as string);
+  // ── Subject-based resolution via admission_tracks (official) ──
+  const { subjectIds, resolvedVia } = await resolveSubjectIds(supabase, s.college_id);
+  if (resolvedVia === "college_subjects") {
+    console.warn("[ExamEngine] Resolved via college_subjects fallback for college:", s.college_id);
+  }
 
   if (subjectIds.length === 0)
     return {

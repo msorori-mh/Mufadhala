@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useStudentData } from "./useStudentData";
-import { getContentFilter, type ContentFilter } from "@/lib/contentFilter";
+import { getContentFilter, resolveSubjectIds, type ContentFilter } from "@/lib/contentFilter";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -22,8 +22,10 @@ export interface StudentAccessResult {
   student: ReturnType<typeof useStudentData>["data"];
   filter: ContentFilter | null;
   filterName: string;
-  /** Subject IDs derived from college_subjects — the PRIMARY content key */
+  /** Subject IDs derived from admission_tracks → track_subjects (official path) */
   subjectIds: string[];
+  /** How subject IDs were resolved */
+  resolvedVia: "track" | "college_subjects" | "none" | "pending";
   isAdmin: boolean;
   isModerator: boolean;
   isStaff: boolean;
@@ -36,8 +38,10 @@ export interface StudentAccessResult {
 /**
  * Centralized student access resolver — SINGLE SOURCE OF TRUTH.
  *
- * Content resolution path:
- *   student.college_id → college_subjects → subject_ids → lessons
+ * OFFICIAL content resolution path (v2):
+ *   student.college_id → colleges.admission_track_id → track_subjects → subject_ids → lessons
+ *
+ * Fallback: college_subjects (temporary)
  */
 export function useStudentAccess(): StudentAccessResult {
   const { user, loading: authLoading, isAdmin, isModerator, isStaff } = useAuthContext();
@@ -53,21 +57,20 @@ export function useStudentAccess(): StudentAccessResult {
     [student?.major_id, student?.college_id],
   );
 
-  // ── NEW: Fetch subject IDs from college_subjects ──────────
+  // ── OFFICIAL: Resolve subject IDs via admission_tracks ──
   const collegeId = student?.college_id;
-  const { data: subjectIds = [] } = useQuery({
-    queryKey: ["college-subject-ids", collegeId],
+  const { data: subjectResult } = useQuery({
+    queryKey: ["track-subject-ids", collegeId],
     queryFn: async () => {
-      if (!collegeId) return [];
-      const { data } = await supabase
-        .from("college_subjects")
-        .select("subject_id")
-        .eq("college_id", collegeId);
-      return (data || []).map((r: any) => r.subject_id as string);
+      if (!collegeId) return { subjectIds: [] as string[], resolvedVia: "none" as const };
+      return resolveSubjectIds(supabase, collegeId);
     },
     enabled: !!collegeId,
     staleTime: 10 * 60 * 1000,
   });
+
+  const subjectIds = subjectResult?.subjectIds ?? [];
+  const resolvedVia = subjectResult?.resolvedVia ?? "pending";
 
   // Fetch filter name (college display name)
   const { data: filterName = "" } = useQuery({
@@ -119,6 +122,7 @@ export function useStudentAccess(): StudentAccessResult {
     filter,
     filterName,
     subjectIds,
+    resolvedVia,
     isAdmin,
     isModerator,
     isStaff,
