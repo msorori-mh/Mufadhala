@@ -51,6 +51,7 @@ const AdminTracks = () => {
   const { loading: authLoading, isAdmin } = useAuth("admin");
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [activeTab, setActiveTab] = useState<"tracks" | "colleges">("tracks");
 
   // ── Data queries ──
   const { data: tracks = [], isLoading: tracksLoading } = useQuery({
