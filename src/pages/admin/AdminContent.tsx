@@ -17,6 +17,7 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles, ChevronDown, ChevronUp, Search, Presentation, Copy, CheckSquare } from "lucide-react";
 import * as XLSX from "xlsx";
+import { parseWorkbook, executeImport, downloadUnifiedTemplate, type ImportReport, type ValidationError } from "@/services/importEngine";
 
 interface Subject {
   id: string;
@@ -175,20 +176,16 @@ const AdminContent = () => {
   // Selected lesson for questions panel
   const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
 
-  // Import state
+  // Import state (unified)
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importUniId, setImportUniId] = useState("");
   const [importCollegeIds, setImportCollegeIds] = useState<string[]>([]);
   const [importSubjectId, setImportSubjectId] = useState("");
-  const [importMode, setImportMode] = useState<"full" | "questions_only">("full");
+  const [importReport, setImportReport] = useState<ImportReport | null>(null);
+  const [importPreviewErrors, setImportPreviewErrors] = useState<ValidationError[]>([]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Import questions for specific lesson (from questions panel)
-  const [importQuestionsDialogOpen, setImportQuestionsDialogOpen] = useState(false);
-  const [importingQuestions, setImportingQuestions] = useState(false);
-  const questionFileInputRef = useRef<HTMLInputElement>(null);
 
   // Copy lesson state
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
@@ -725,20 +722,10 @@ const AdminContent = () => {
     XLSX.writeFile(wb, "قالب_استيراد_أسئلة.xlsx");
   };
 
-  const downloadQuestionsOnlyTemplate = () => {
-    const wb = XLSX.utils.book_new();
-    const data = [
-      ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`, "نوع السؤال (multiple_choice / true_false)"],
-      ["مقدمة في البرمجة", "ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب", "عام", "multiple_choice"],
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), "الأسئلة");
-    XLSX.writeFile(wb, "قالب_استيراد_أسئلة_فقط.xlsx");
-  };
-
   const handleImportQuestions = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selectedLesson) return;
-    setImportingQuestions(true);
+    setImporting(true);
 
     try {
       const data = await file.arrayBuffer();
@@ -753,7 +740,6 @@ const AdminContent = () => {
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i] as any[];
         if (!row[0]) continue;
-        // Duplicate protection
         const qText = String(row[0]).trim();
         const existingQ = questions.find(q => q.lesson_id === selectedLesson && q.question_text.trim() === qText);
         if (existingQ) continue;
@@ -783,9 +769,8 @@ const AdminContent = () => {
     } catch (err: any) {
       toast({ variant: "destructive", title: `خطأ في قراءة الملف: ${err.message}` });
     }
-    setImportingQuestions(false);
-    setImportQuestionsDialogOpen(false);
-    if (questionFileInputRef.current) questionFileInputRef.current.value = "";
+    setImporting(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   // --- Export existing lessons ---
@@ -835,152 +820,44 @@ const AdminContent = () => {
     XLSX.writeFile(wb, "تصدير_الدروس_والأسئلة.xlsx");
   };
 
-  // --- Bulk Import ---
-  const downloadTemplate = () => {
-    const wb = XLSX.utils.book_new();
-    const subjectNames = subjects.map(s => s.name_ar).join(" / ");
-    const lessonsData = [
-      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`, "رابط العرض التقديمي", "الصف الدراسي (1/2/3)"],
-      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || "", "", ""],
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lessonsData), "الدروس");
-    XLSX.writeFile(wb, "قالب_استيراد_الدروس.xlsx");
+  // --- Bulk Import (Unified Engine) ---
+  const handleDownloadUnifiedTemplate = () => {
+    downloadUnifiedTemplate(subjects);
   };
 
-  const downloadFullTemplate = () => {
-    const wb = XLSX.utils.book_new();
-    const subjectNames = subjects.map(s => s.name_ar).join(" / ");
-    const lessonsData = [
-      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`, "رابط العرض التقديمي", "الصف الدراسي (1/2/3)"],
-      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || "", "", ""],
-    ];
-    const questionsData = [
-      ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`, "نوع السؤال (multiple_choice / true_false)"],
-      ["مقدمة في البرمجة", "ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب", "عام", "multiple_choice"],
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lessonsData), "الدروس");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(questionsData), "الأسئلة");
-    XLSX.writeFile(wb, "قالب_استيراد_المحتوى.xlsx");
-  };
-
-  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUnifiedImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || importCollegeIds.length === 0) return;
     setImporting(true);
+    setImportReport(null);
+    setImportPreviewErrors([]);
 
     try {
       const data = await file.arrayBuffer();
-      let lessonsSheet: any[][] = [];
-      let questionsSheet: any[][] = [];
+      const { lessonsRows, questionsRows } = parseWorkbook(data, file.name);
 
-      if (file.name.endsWith(".csv")) {
-        const text = new TextDecoder("utf-8").decode(data);
-        const wb = XLSX.read(text, { type: "string" });
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
-        if (rows[0] && (rows[0] as any[]).length >= 7) {
-          questionsSheet = rows;
-        } else {
-          lessonsSheet = rows;
-        }
+      const report = await executeImport({
+        lessonsRows,
+        questionsRows,
+        collegeIds: importCollegeIds,
+        subjects,
+        existingLessons: lessons.map(l => ({ id: l.id, college_id: l.college_id, title: l.title, lesson_code: (l as any).lesson_code || null })),
+        existingQuestions: questions.map(q => ({ id: q.id, lesson_id: q.lesson_id, question_text: q.question_text })),
+        fallbackSubjectId: importSubjectId || undefined,
+      });
+
+      setImportReport(report);
+
+      if (report.errors.length === 0) {
+        toast({ title: `تم الاستيراد: ${report.lessonsCreated} درس، ${report.questionsCreated} سؤال` });
       } else {
-        const wb = XLSX.read(data, { type: "array" });
-        wb.SheetNames.forEach((name) => {
-          const sheet = wb.Sheets[name];
-          const rows = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
-          if (name.includes("سئلة") || name.includes("question")) {
-            questionsSheet = rows;
-          } else {
-            lessonsSheet = rows;
-          }
-        });
+        toast({ variant: "destructive", title: `تم مع ${report.errors.length} خطأ — تحقق من التقرير` });
       }
-
-      // Loop through each selected college
-      for (const collegeId of importCollegeIds) {
-        const lessonMap = new Map<string, string>();
-        if (importMode === "questions_only") {
-          lessons.filter(l => l.college_id === collegeId).forEach(l => lessonMap.set(l.title, l.id));
-        } else if (lessonsSheet.length > 1) {
-          for (let i = 1; i < lessonsSheet.length; i++) {
-            const row = lessonsSheet[i] as any[];
-            if (!row[0]) continue;
-            const title = String(row[0]).trim();
-            // Duplicate protection: skip if lesson with same title exists in this college
-            const existingLesson = lessons.find(l => l.college_id === collegeId && l.title.trim() === title);
-            if (existingLesson) {
-              lessonMap.set(title, existingLesson.id);
-              continue;
-            }
-            const subjectName = row[5] ? String(row[5]).trim() : "";
-            const matchedSubject = subjectName ? subjects.find(s => s.name_ar === subjectName || s.code === subjectName) : null;
-            const resolvedSubjectId = importSubjectId || matchedSubject?.id || null;
-            const presentationUrl = row[6] ? String(row[6]).trim() : "";
-            const gradeLevel = row[7] ? Number(row[7]) : null;
-            const { data: inserted, error } = await supabase.from("lessons").insert({
-              college_id: collegeId,
-              title,
-              content: row[1] ? String(row[1]) : "",
-              summary: row[2] ? String(row[2]) : "",
-              display_order: row[3] ? Number(row[3]) : i,
-              is_published: row[4] ? String(row[4]).includes("نعم") || String(row[4]).toLowerCase() === "true" : false,
-              subject_id: resolvedSubjectId,
-              presentation_url: presentationUrl || null,
-              grade_level: gradeLevel,
-            }).select("id").single();
-            if (error) {
-              toast({ variant: "destructive", title: `خطأ في درس "${title}": ${error.message}` });
-            } else if (inserted) {
-              lessonMap.set(title, inserted.id);
-            }
-          }
-        }
-
-        if (questionsSheet.length > 1) {
-          if (lessonMap.size === 0) {
-            lessons.filter(l => l.college_id === collegeId).forEach(l => lessonMap.set(l.title, l.id));
-          }
-
-          for (let i = 1; i < questionsSheet.length; i++) {
-            const row = questionsSheet[i] as any[];
-            if (!row[0] || !row[1]) continue;
-            const lessonTitle = String(row[0]).trim();
-            const lessonId = lessonMap.get(lessonTitle);
-            if (!lessonId) {
-              continue;
-            }
-            // Duplicate protection
-            const qText = String(row[1]).trim();
-            const existingQ = questions.find(q => q.lesson_id === lessonId && q.question_text.trim() === qText);
-            if (existingQ) continue;
-            const qType = row[9] ? String(row[9]).trim().toLowerCase() === "true_false" ? "true_false" : "multiple_choice" : "multiple_choice";
-            const { error } = await supabase.from("questions").insert({
-              lesson_id: lessonId,
-              question_text: qText,
-              option_a: String(row[2] || ""),
-              option_b: String(row[3] || ""),
-              option_c: String(row[4] || ""),
-              option_d: String(row[5] || ""),
-              correct_option: String(row[6] || "a").toLowerCase().trim(),
-              explanation: row[7] ? String(row[7]) : "",
-              subject: row[8] ? getSubjectValue(String(row[8])) : "general",
-              question_type: qType,
-              display_order: i,
-            });
-            if (error) {
-              toast({ variant: "destructive", title: `خطأ في سؤال ${i}: ${error.message}` });
-            }
-          }
-        }
-      }
-
-      toast({ title: `تم الاستيراد بنجاح في ${importCollegeIds.length} كلية` });
       fetchData();
     } catch (err: any) {
       toast({ variant: "destructive", title: `خطأ في قراءة الملف: ${err.message}` });
     }
     setImporting(false);
-    setImportDialogOpen(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -1009,7 +886,7 @@ const AdminContent = () => {
             <Button onClick={exportLessons} size="sm" variant="outline">
               <Download className="w-4 h-4 ml-1" />تصدير
             </Button>
-            <Button onClick={() => { setImportUniId(filterUni); setImportCollegeIds(filterCollegeIds.length > 0 ? filterCollegeIds : []); setImportSubjectId(filterSubject); setImportMode("full"); setImportDialogOpen(true); }} size="sm" variant="outline">
+            <Button onClick={() => { setImportUniId(filterUni); setImportCollegeIds(filterCollegeIds.length > 0 ? filterCollegeIds : []); setImportSubjectId(filterSubject); setImportReport(null); setImportPreviewErrors([]); setImportDialogOpen(true); }} size="sm" variant="outline">
               <Upload className="w-4 h-4 ml-1" />استيراد
             </Button>
             <Button onClick={openCreateLesson} size="sm"><Plus className="w-4 h-4 ml-1" />إضافة درس</Button>
@@ -1208,9 +1085,6 @@ const AdminContent = () => {
               <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1 min-w-0"><HelpCircle className="w-4 h-4 shrink-0" />الأسئلة{selectedLessonData && <span className="text-xs font-normal text-muted-foreground/70 truncate"> — {selectedLessonData.title}</span>}</h2>
               {selectedLesson && (
                 <div className="flex gap-1">
-                  <Button size="sm" variant="outline" onClick={() => setImportQuestionsDialogOpen(true)}>
-                    <Upload className="w-3 h-3 ml-1" />استيراد أسئلة
-                  </Button>
                   <Button size="sm" variant="outline" onClick={() => openCreateQuestion(selectedLesson)}>
                     <Plus className="w-3 h-3 ml-1" />إضافة سؤال
                   </Button>
@@ -1643,39 +1517,19 @@ const AdminContent = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Import Dialog */}
+      {/* Unified Import Dialog */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Upload className="w-5 h-5" />
-              {importMode === "questions_only" ? "استيراد أسئلة فقط" : "استيراد دروس وأسئلة"}
+              استيراد موحد للمحتوى
             </DialogTitle>
             <DialogDescription>
-              {importMode === "questions_only"
-                ? "استورد أسئلة وربطها بالدروس الموجودة في الكلية المختارة"
-                : "استورد الدروس والأسئلة من ملف Excel أو CSV"}
+              ارفع ملف Excel يحتوي على ورقة "الدروس" و/أو ورقة "الأسئلة". النظام يكتشف المحتوى تلقائياً.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {/* Import Mode Toggle */}
-            <div className="flex gap-2 p-1 bg-muted rounded-lg">
-              <button
-                type="button"
-                onClick={() => setImportMode("full")}
-                className={`flex-1 text-sm py-1.5 px-3 rounded-md transition-colors ${importMode === "full" ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                دروس وأسئلة
-              </button>
-              <button
-                type="button"
-                onClick={() => setImportMode("questions_only")}
-                className={`flex-1 text-sm py-1.5 px-3 rounded-md transition-colors ${importMode === "questions_only" ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                أسئلة فقط
-              </button>
-            </div>
-
             <div className="space-y-2">
               <Label>الجامعة *</Label>
               <select value={importUniId} onChange={(e) => { setImportUniId(e.target.value); setImportCollegeIds([]); }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
@@ -1685,9 +1539,8 @@ const AdminContent = () => {
               </select>
             </div>
 
-            {/* Multi-select Colleges */}
             <div className="space-y-2">
-              <Label>الكليات * ({importCollegeIds.length} محددة)</Label>
+              <Label>الكليات المستهدفة * ({importCollegeIds.length} محددة)</Label>
               {(() => {
                 const availableImportColleges = importUniId === "all"
                   ? scopedColleges
@@ -1745,87 +1598,59 @@ const AdminContent = () => {
                 <option value="">تحديد من الملف</option>
                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
               </select>
-              <p className="text-[11px] text-muted-foreground">إذا تم تحديد مادة هنا، ستُطبق على جميع الدروس المستوردة. وإلا سيتم قراءتها من الملف.</p>
             </div>
 
-            {importMode === "questions_only" && importCollegeIds.length > 0 && (
-              <div className="text-xs text-muted-foreground bg-accent/50 rounded-md p-2">
-                سيتم ربط الأسئلة بالدروس الموجودة في {importCollegeIds.length} كلية عبر تطابق عنوان الدرس
-              </div>
-            )}
-
             <div className="space-y-2">
-              <Label>اختر ملف (Excel أو CSV)</Label>
-              <Input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImportFile} disabled={importCollegeIds.length === 0 || importing} />
+              <Label>اختر ملف (Excel)</Label>
+              <Input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleUnifiedImportFile} disabled={importCollegeIds.length === 0 || importing} />
             </div>
             {importing && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />جاري الاستيراد...
               </div>
             )}
-            <div className="bg-muted rounded-lg p-3 space-y-2">
-              <p className="text-xs font-semibold">تنسيق الملف المطلوب:</p>
-              {importMode === "questions_only" ? (
-                <p className="text-xs text-muted-foreground">
-                  <strong>ورقة "الأسئلة":</strong> عنوان الدرس | نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة (a/b/c/d) | الشرح | المادة
-                </p>
-              ) : (
-                <>
-                  <p className="text-xs text-muted-foreground">
-                    <strong>ورقة "الدروس":</strong> عنوان الدرس | المحتوى | الملخص | ترتيب العرض | منشور
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    <strong>ورقة "الأسئلة":</strong> عنوان الدرس | نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة (a/b/c/d) | الشرح | المادة
-                  </p>
-                </>
-              )}
-              <div className="flex gap-3 flex-wrap">
-                {importMode === "questions_only" ? (
-                  <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadQuestionsOnlyTemplate}>
-                    <Download className="w-3 h-3 ml-1" />تحميل قالب الأسئلة
-                  </Button>
-                ) : (
-                  <>
-                    <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadFullTemplate}>
-                      <Download className="w-3 h-3 ml-1" />قالب دروس + أسئلة
-                    </Button>
-                    <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadTemplate}>
-                      <Download className="w-3 h-3 ml-1" />قالب دروس فقط
-                    </Button>
-                  </>
+
+            {/* Import Report */}
+            {importReport && (
+              <div className="bg-muted rounded-lg p-3 space-y-2">
+                <p className="text-xs font-semibold">📊 تقرير الاستيراد ({importReport.mode === "combined" ? "دروس + أسئلة" : importReport.mode === "lessons_only" ? "دروس فقط" : "أسئلة فقط"}):</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <span>✅ دروس جديدة: {importReport.lessonsCreated}</span>
+                  <span>⏭️ دروس متكررة: {importReport.lessonsSkipped}</span>
+                  <span>✅ أسئلة جديدة: {importReport.questionsCreated}</span>
+                  <span>⏭️ أسئلة متكررة: {importReport.questionsSkipped}</span>
+                </div>
+                {importReport.errors.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs font-medium text-destructive">❌ أخطاء ({importReport.errors.length}):</p>
+                    <div className="max-h-32 overflow-y-auto space-y-1">
+                      {importReport.errors.slice(0, 20).map((err, i) => (
+                        <p key={i} className="text-[11px] text-destructive bg-destructive/10 rounded px-2 py-1">
+                          {err.sheet} - صف {err.row}: {err.message}
+                        </p>
+                      ))}
+                      {importReport.errors.length > 20 && (
+                        <p className="text-[11px] text-muted-foreground">... و {importReport.errors.length - 20} خطأ آخر</p>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Import Questions Dialog (from panel) */}
-      <Dialog open={importQuestionsDialogOpen} onOpenChange={setImportQuestionsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Upload className="w-5 h-5" />استيراد أسئلة للدرس</DialogTitle>
-            <DialogDescription>
-              {selectedLessonData ? `استيراد أسئلة لدرس: ${selectedLessonData.title}` : "اختر درساً أولاً"}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>اختر ملف (Excel أو CSV)</Label>
-              <Input ref={questionFileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImportQuestions} disabled={!selectedLesson || importingQuestions} />
-            </div>
-            {importingQuestions && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />جاري الاستيراد...
-              </div>
             )}
+
             <div className="bg-muted rounded-lg p-3 space-y-2">
-              <p className="text-xs font-semibold">تنسيق الملف المطلوب:</p>
+              <p className="text-xs font-semibold">📋 تنسيق الملف الموحد:</p>
               <p className="text-xs text-muted-foreground">
-                نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة (a/b/c/d) | الشرح
+                <strong>ورقة "الدروس":</strong> كود الدرس | المادة | العنوان | المحتوى | الملخص | الترتيب | منشور | مجاني | الصف
               </p>
-              <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadQuestionsTemplate}>
-                <Download className="w-3 h-3 ml-1" />تحميل قالب فارغ
+              <p className="text-xs text-muted-foreground">
+                <strong>ورقة "الأسئلة":</strong> كود الدرس | نوع السؤال | نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة | الشرح | الترتيب
+              </p>
+              <p className="text-[11px] text-muted-foreground/70">
+                💡 يمكنك رفع ملف يحتوي ورقة واحدة فقط (دروس فقط أو أسئلة فقط) — النظام يكتشف تلقائياً
+              </p>
+              <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={handleDownloadUnifiedTemplate}>
+                <Download className="w-3 h-3 ml-1" />تحميل القالب الموحد
               </Button>
             </div>
           </div>
