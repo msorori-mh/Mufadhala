@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { getContentFilter } from "@/lib/contentFilter";
 import { useAuth } from "@/hooks/useAuth";
+import { useContentFilter } from "@/hooks/useContentFilter";
+import { useQuery } from "@tanstack/react-query";
 import ThemeToggle from "@/components/ThemeToggle";
 import SubjectPerformanceDetail from "@/components/SubjectPerformanceDetail";
 import {
@@ -46,59 +47,52 @@ const tooltipStyle = {
 
 const StudentPerformance = () => {
   const { user, loading: authLoading } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [, setStudentId] = useState<string | null>(null);
-  const [filterId, setFilterId] = useState<string | null>(null);
-  const [filterType, setFilterType] = useState<"major" | "college">("major");
-  const [filterName, setFilterName] = useState("");
-  const [attempts, setAttempts] = useState<ExamRow[]>([]);
-  const [lessons, setLessons] = useState<LessonRow[]>([]);
-  const [questions, setQuestions] = useState<QuestionRow[]>([]);
-  const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
-  const [peerAttempts, setPeerAttempts] = useState<{ score: number; total: number }[]>([]);
-  
-  useEffect(() => {
-    if (authLoading || !user) return;
-    const fetchAll = async () => {
-      const { data: s } = await supabase.from("students").select("id, major_id, college_id").eq("user_id", user.id).maybeSingle();
-      const filter = getContentFilter(s);
-      if (!filter) { setLoading(false); return; }
-      setStudentId(s.id);
-      setFilterType(filter.type);
-      setFilterId(filter.value);
+  const { student, filter, filterName, isLoading: studentLoading } = useContentFilter(user?.id);
 
-      const [{ data: nameData }, { data: exams }, { data: les }, { data: prog }, { data: peers }] = await Promise.all([
-        filter.type === "major"
-          ? supabase.from("majors").select("name_ar").eq("id", filter.value).single()
-          : supabase.from("colleges").select("name_ar").eq("id", filter.value).single(),
+  // Fetch all performance data using React Query
+  const { data: perfData, isLoading: perfLoading } = useQuery({
+    queryKey: ["performance-data", student?.id, filter?.type, filter?.value],
+    queryFn: async () => {
+      if (!student || !filter) return null;
+
+      const [{ data: exams }, { data: les }, { data: prog }, { data: peers }] = await Promise.all([
         supabase.from("exam_attempts").select("id, score, total, completed_at, major_id")
-          .eq("student_id", s.id).not("completed_at", "is", null).order("completed_at", { ascending: true }),
+          .eq("student_id", student.id).not("completed_at", "is", null).order("completed_at", { ascending: true }),
         supabase.from("lessons").select("id, title, major_id").eq(filter.field, filter.value).eq("is_published", true).order("display_order"),
-        supabase.from("lesson_progress").select("lesson_id").eq("student_id", s.id).eq("is_completed", true),
-        // Peers: only compare when student has a major (exam_attempts.major_id is always a major ID)
+        supabase.from("lesson_progress").select("lesson_id").eq("student_id", student.id).eq("is_completed", true),
         filter.type === "major"
           ? supabase.from("exam_attempts").select("score, total, student_id")
               .eq("major_id", filter.value).not("completed_at", "is", null)
-          : Promise.resolve({ data: [] }),
+          : Promise.resolve({ data: [] as any[] }),
       ]);
 
-      if (nameData) setFilterName(nameData.name_ar);
-      if (exams) setAttempts(exams);
-      if (les) {
-        setLessons(les as LessonRow[]);
-        const lessonIds = les.map((l) => l.id);
-        if (lessonIds.length > 0) {
-          const { data: qs } = await supabase.from("questions").select("id, lesson_id, correct_option, subject").in("lesson_id", lessonIds);
-          if (qs) setQuestions(qs as QuestionRow[]);
-        }
+      const lessonIds = (les || []).map((l: any) => l.id);
+      let questions: QuestionRow[] = [];
+      if (lessonIds.length > 0) {
+        const { data: qs } = await supabase.from("questions").select("id, lesson_id, correct_option, subject").in("lesson_id", lessonIds);
+        if (qs) questions = qs as QuestionRow[];
       }
-      if (prog) setCompletedLessonIds(new Set(prog.map((p) => p.lesson_id)));
-      if (peers) setPeerAttempts(peers.filter((p) => (p as any).student_id !== s.id));
 
-      setLoading(false);
-    };
-    fetchAll();
-  }, [authLoading, user]);
+      return {
+        attempts: (exams || []) as ExamRow[],
+        lessons: (les || []) as LessonRow[],
+        questions,
+        completedLessonIds: new Set((prog || []).map((p: any) => p.lesson_id)),
+        peerAttempts: (peers || []).filter((p: any) => p.student_id !== student.id) as { score: number; total: number }[],
+      };
+    },
+    enabled: !!student && !!filter,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const loading = authLoading || studentLoading || perfLoading;
+  const attempts = perfData?.attempts ?? [];
+  const lessons = perfData?.lessons ?? [];
+  const questions = perfData?.questions ?? [];
+  const completedLessonIds = perfData?.completedLessonIds ?? new Set<string>();
+  const peerAttempts = perfData?.peerAttempts ?? [];
+  const filterId = filter?.value ?? null;
+  const filterType = filter?.type ?? "major";
 
   if (authLoading || loading) {
     return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;

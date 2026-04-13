@@ -1,37 +1,32 @@
-import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useContentFilter } from "@/hooks/useContentFilter";
+import { useQuery } from "@tanstack/react-query";
 import { achievements, type AchievementStats } from "@/data/achievements";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Award, Lock, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Award, Lock, CheckCircle2, Loader2 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const Achievements = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuthContext();
-  const [stats, setStats] = useState<AchievementStats>({
-    totalExams: 0, avgScore: 0, bestScore: 0, completedLessons: 0, totalLessons: 0,
-  });
-  const [loading, setLoading] = useState(true);
+  const { student, filter, isLoading: studentLoading } = useContentFilter(user?.id);
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) { navigate("/login"); return; }
-
-    const fetchData = async () => {
-      const { data: s } = await supabase.from("students").select("id, major_id").eq("user_id", user.id).maybeSingle();
-      if (!s) { setLoading(false); return; }
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ["achievement-stats", student?.id, filter?.value],
+    queryFn: async (): Promise<AchievementStats> => {
+      if (!student) return { totalExams: 0, avgScore: 0, bestScore: 0, completedLessons: 0, totalLessons: 0 };
 
       const [{ data: exams }, { data: lessons }, { data: progress }] = await Promise.all([
         supabase.from("exam_attempts").select("score, total")
-          .eq("student_id", s.id).not("completed_at", "is", null),
-        s.major_id
-          ? supabase.from("lessons").select("id").eq("major_id", s.major_id).eq("is_published", true)
-          : Promise.resolve({ data: [] }),
-        supabase.from("lesson_progress").select("id").eq("student_id", s.id).eq("is_completed", true),
+          .eq("student_id", student.id).not("completed_at", "is", null),
+        filter
+          ? supabase.from("lessons").select("id").eq(filter.field, filter.value).eq("is_published", true)
+          : Promise.resolve({ data: [] as any[] }),
+        supabase.from("lesson_progress").select("id").eq("student_id", student.id).eq("is_completed", true),
       ]);
 
       const totalExams = exams?.length ?? 0;
@@ -42,17 +37,20 @@ const Achievements = () => {
         ? Math.round(Math.max(...exams!.map(a => (a.score / a.total) * 100)))
         : 0;
 
-      setStats({
+      return {
         totalExams,
         avgScore,
         bestScore,
         completedLessons: progress?.length ?? 0,
         totalLessons: lessons?.length ?? 0,
-      });
-      setLoading(false);
-    };
-    fetchData();
-  }, [authLoading, user, navigate]);
+      };
+    },
+    enabled: !!student,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const loading = authLoading || studentLoading || statsLoading;
+  const safeStats = stats ?? { totalExams: 0, avgScore: 0, bestScore: 0, completedLessons: 0, totalLessons: 0 };
 
   const items = achievements.map((a) => ({ ...a, unlocked: a.check(stats) }));
   const unlockedCount = items.filter((i) => i.unlocked).length;
