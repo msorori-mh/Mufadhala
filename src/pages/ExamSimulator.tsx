@@ -78,7 +78,7 @@ const fetchExamData = async (userId: string) => {
 
   return {
     student: s,
-    majorName: major?.name_ar || "",
+    majorName: nameData?.name_ar || "",
     allQuestions,
     pastAttempts: (attempts || []) as ExamAttempt[],
     offlineInfo,
