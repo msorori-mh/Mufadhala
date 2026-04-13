@@ -183,19 +183,30 @@ const Subscription = () => {
   const handleFreePlan = async (plan: Plan) => {
     if (!user) return;
     setSubmitting(true);
-    const { error } = await supabase.from("subscriptions").insert({
-      user_id: user.id, status: "active", plan_id: plan.id,
-    });
-    if (error) {
-      const msg = error.message.includes("row-level security")
-        ? "ليس لديك صلاحية لتفعيل هذه الخطة. يرجى تسجيل الدخول مرة أخرى."
-        : error.message.includes("duplicate")
-        ? "لديك اشتراك مفعّل بالفعل في هذه الخطة."
-        : `فشل تفعيل الخطة: ${error.message}`;
-      toast({ variant: "destructive", title: "خطأ في الاشتراك", description: msg });
-    } else {
-      toast({ title: "تم تفعيل الخطة المجانية!" });
-      setSubscription({ id: "", status: "active", plan_id: plan.id, starts_at: null, expires_at: null, trial_ends_at: null });
+    try {
+      const { data, error } = await supabase.functions.invoke("activate-free-plan", {
+        body: { plan_id: plan.id },
+      });
+      if (error) {
+        toast({ variant: "destructive", title: "خطأ في الاشتراك", description: "فشل تفعيل الخطة المجانية. يرجى المحاولة لاحقاً." });
+      } else if (data?.error) {
+        const msg = data.error.includes("already have")
+          ? "لديك اشتراك مفعّل بالفعل."
+          : data.error.includes("not a free plan")
+          ? "هذه الخطة ليست مجانية."
+          : `فشل تفعيل الخطة: ${data.error}`;
+        toast({ variant: "destructive", title: "خطأ في الاشتراك", description: msg });
+      } else {
+        toast({ title: "تم تفعيل الخطة المجانية!" });
+        const sub = data?.subscription;
+        setSubscription({
+          id: sub?.id ?? "", status: "active", plan_id: plan.id,
+          starts_at: sub?.starts_at ?? null, expires_at: sub?.expires_at ?? null,
+          trial_ends_at: sub?.trial_ends_at ?? null,
+        });
+      }
+    } catch {
+      toast({ variant: "destructive", title: "خطأ في الاشتراك", description: "حدث خطأ غير متوقع." });
     }
     setSubmitting(false);
   };
