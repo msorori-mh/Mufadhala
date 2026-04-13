@@ -427,6 +427,21 @@ const Dashboard = () => {
               </Card>
             )}
 
+            {/* Smart Recommendations */}
+            {!isAdmin && (
+              <SmartRecommendations
+                attempts={attempts}
+                completedLessons={completedLessons}
+                totalLessons={lessonCount}
+                hasSubscription={hasActiveSubscription}
+              />
+            )}
+
+            {/* AI Practice Questions */}
+            {!isAdmin && (
+              <AIPracticeQuestions hasSubscription={hasActiveSubscription} />
+            )}
+
             {/* Achievements */}
             <AchievementsBadges stats={{ totalExams, avgScore, bestScore, completedLessons, totalLessons: lessonCount }} />
 
