@@ -1,17 +1,14 @@
 /**
  * Centralised content-filter logic.
  *
- * OFFICIAL content resolution path (v2 — track-based):
+ * OFFICIAL content resolution path:
  *   student → college → admission_track → track_subjects → subject_ids → lessons
- *
- * Fallback (temporary, for colleges without admission_track_id):
- *   student → college → college_subjects → subject_ids → lessons
  */
 
 export interface ContentFilter {
   /** Which relationship is being used */
   type: "major" | "college";
-  /** The Supabase column name to filter on (legacy — kept for backward compat) */
+  /** The Supabase column name to filter on */
   field: "major_id" | "college_id";
   /** The UUID value to match */
   value: string;
@@ -51,15 +48,13 @@ export async function fetchFilterName(
 }
 
 /**
- * OFFICIAL: Resolve subject IDs via the admission_tracks path.
+ * Resolve subject IDs via the admission_tracks path.
  * Path: college_id → colleges.admission_track_id → track_subjects → subject_ids
- *
- * Falls back to college_subjects if the college has no admission_track_id.
  */
 export async function resolveSubjectIds(
   supabase: { from: (table: string) => any },
   collegeId: string,
-): Promise<{ subjectIds: string[]; resolvedVia: "track" | "college_subjects" | "none" }> {
+): Promise<{ subjectIds: string[]; resolvedVia: "track" | "none" }> {
   // Step 1: Get admission_track_id from the college
   const { data: college } = await supabase
     .from("colleges")
@@ -69,7 +64,7 @@ export async function resolveSubjectIds(
 
   const trackId = college?.admission_track_id;
 
-  // Step 2: If track exists, use track_subjects (official path)
+  // Step 2: If track exists, use track_subjects
   if (trackId) {
     const { data } = await supabase
       .from("track_subjects")
@@ -79,30 +74,7 @@ export async function resolveSubjectIds(
     if (ids.length > 0) return { subjectIds: ids, resolvedVia: "track" };
   }
 
-  // Step 3: Fallback to college_subjects (temporary backward compat)
-  const { data: csData } = await supabase
-    .from("college_subjects")
-    .select("subject_id")
-    .eq("college_id", collegeId);
-  const fallbackIds = (csData || []).map((r: any) => r.subject_id as string);
-
-  if (fallbackIds.length > 0) {
-    console.warn(`[ContentFilter] College ${collegeId} resolved via college_subjects fallback (no track or empty track_subjects)`);
-    return { subjectIds: fallbackIds, resolvedVia: "college_subjects" };
-  }
-
   return { subjectIds: [], resolvedVia: "none" };
-}
-
-/**
- * @deprecated Use resolveSubjectIds instead. Kept for temporary backward compat.
- */
-export async function fetchSubjectIdsForCollege(
-  supabase: { from: (table: string) => any },
-  collegeId: string,
-): Promise<string[]> {
-  const { subjectIds } = await resolveSubjectIds(supabase, collegeId);
-  return subjectIds;
 }
 
 /**

@@ -25,7 +25,7 @@ export interface StudentAccessResult {
   /** Subject IDs derived from admission_tracks → track_subjects (official path) */
   subjectIds: string[];
   /** How subject IDs were resolved */
-  resolvedVia: "track" | "college_subjects" | "none" | "pending";
+  resolvedVia: "track" | "none" | "pending";
   isAdmin: boolean;
   isModerator: boolean;
   isStaff: boolean;
@@ -38,10 +38,8 @@ export interface StudentAccessResult {
 /**
  * Centralized student access resolver — SINGLE SOURCE OF TRUTH.
  *
- * OFFICIAL content resolution path (v2):
+ * OFFICIAL content resolution path:
  *   student.college_id → colleges.admission_track_id → track_subjects → subject_ids → lessons
- *
- * Fallback: college_subjects (temporary)
  */
 export function useStudentAccess(): StudentAccessResult {
   const { user, loading: authLoading, isAdmin, isModerator, isStaff } = useAuthContext();
