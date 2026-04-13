@@ -316,7 +316,7 @@ const Subscription = () => {
   }
 
   const zoneName = studentGovernorate
-    ? getZone(studentGovernorate) === "a" ? "المنطقة ب" : "المنطقة أ"
+    ? getZone(studentGovernorate) === "a" ? "المنطقة أ" : "المنطقة ب"
     : null;
 
   return (
@@ -574,14 +574,14 @@ const Subscription = () => {
                     <CardContent className="py-4 px-4 space-y-4">
                       <div className={`rounded-lg p-3 border ${getZone(studentGovernorate) === "a" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border"}`}>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-semibold text-sm">المنطقة ب</span>
+                          <span className="font-semibold text-sm">المنطقة أ</span>
                           {getZone(studentGovernorate) === "a" && <Badge variant="default">منطقتك</Badge>}
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">{ZONE_A_GOVERNORATES.join(" · ")}</p>
                       </div>
                       <div className={`rounded-lg p-3 border ${getZone(studentGovernorate) === "b" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border"}`}>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-semibold text-sm">المنطقة أ</span>
+                          <span className="font-semibold text-sm">المنطقة ب</span>
                           {getZone(studentGovernorate) === "b" && <Badge variant="default">منطقتك</Badge>}
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">{ZONE_B_GOVERNORATES.join(" · ")}</p>
