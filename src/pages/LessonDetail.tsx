@@ -45,6 +45,16 @@ interface Question {
   display_order: number;
 }
 
+/** Extract storage path from a presentation_url (handles both full URLs and plain filenames). */
+const getPresentationPath = (url: string): string => {
+  try {
+    const u = new URL(url);
+    const parts = u.pathname.split("/lesson-presentations/");
+    if (parts.length === 2) return parts[1];
+  } catch { /* not a URL — treat as plain filename */ }
+  return url;
+};
+
 const LessonDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading, isStaff } = useAuth();
