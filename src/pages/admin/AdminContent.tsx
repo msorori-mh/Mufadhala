@@ -1471,37 +1471,64 @@ const AdminContent = () => {
                   {/* Inline add question form */}
                   {showAddQuestionForm && (
                     <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
-                      <div className="space-y-2">
-                        <Label className="text-xs">المادة</Label>
-                        <select value={inlineSubject} onChange={(e) => setInlineSubject(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm">
-                          {SUBJECT_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                        </select>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-2">
+                          <Label className="text-xs">المادة</Label>
+                          <select value={inlineSubject} onChange={(e) => setInlineSubject(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm">
+                            {SUBJECT_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">نوع السؤال</Label>
+                          <select value={inlineQuestionType} onChange={(e) => { setInlineQuestionType(e.target.value); if (e.target.value === "true_false") { setInlineOptionA("صح"); setInlineOptionB("خطأ"); setInlineOptionC(""); setInlineOptionD(""); setInlineCorrectOption("a"); } }} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm">
+                            <option value="multiple_choice">اختيار من متعدد</option>
+                            <option value="true_false">صح / خطأ</option>
+                          </select>
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-xs">نص السؤال *</Label>
                         <Textarea value={inlineQuestionText} onChange={(e) => setInlineQuestionText(e.target.value)} rows={2} />
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1"><Label className="text-xs">الخيار أ *</Label><Input value={inlineOptionA} onChange={(e) => setInlineOptionA(e.target.value)} className="h-8 text-sm" /></div>
-                        <div className="space-y-1"><Label className="text-xs">الخيار ب *</Label><Input value={inlineOptionB} onChange={(e) => setInlineOptionB(e.target.value)} className="h-8 text-sm" /></div>
-                        <div className="space-y-1"><Label className="text-xs">الخيار ج *</Label><Input value={inlineOptionC} onChange={(e) => setInlineOptionC(e.target.value)} className="h-8 text-sm" /></div>
-                        <div className="space-y-1"><Label className="text-xs">الخيار د *</Label><Input value={inlineOptionD} onChange={(e) => setInlineOptionD(e.target.value)} className="h-8 text-sm" /></div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <Label className="text-xs">الإجابة الصحيحة *</Label>
-                          <select value={inlineCorrectOption} onChange={(e) => setInlineCorrectOption(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm">
-                            <option value="a">أ</option>
-                            <option value="b">ب</option>
-                            <option value="c">ج</option>
-                            <option value="d">د</option>
-                          </select>
+                      {inlineQuestionType === "true_false" ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <Label className="text-xs">الإجابة الصحيحة *</Label>
+                            <select value={inlineCorrectOption} onChange={(e) => setInlineCorrectOption(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm">
+                              <option value="a">صح</option>
+                              <option value="b">خطأ</option>
+                            </select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">الشرح</Label>
+                            <Input value={inlineExplanation} onChange={(e) => setInlineExplanation(e.target.value)} className="h-9 text-sm" />
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">الشرح</Label>
-                          <Input value={inlineExplanation} onChange={(e) => setInlineExplanation(e.target.value)} className="h-9 text-sm" />
-                        </div>
-                      </div>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1"><Label className="text-xs">الخيار أ *</Label><Input value={inlineOptionA} onChange={(e) => setInlineOptionA(e.target.value)} className="h-8 text-sm" /></div>
+                            <div className="space-y-1"><Label className="text-xs">الخيار ب *</Label><Input value={inlineOptionB} onChange={(e) => setInlineOptionB(e.target.value)} className="h-8 text-sm" /></div>
+                            <div className="space-y-1"><Label className="text-xs">الخيار ج *</Label><Input value={inlineOptionC} onChange={(e) => setInlineOptionC(e.target.value)} className="h-8 text-sm" /></div>
+                            <div className="space-y-1"><Label className="text-xs">الخيار د *</Label><Input value={inlineOptionD} onChange={(e) => setInlineOptionD(e.target.value)} className="h-8 text-sm" /></div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">الإجابة الصحيحة *</Label>
+                              <select value={inlineCorrectOption} onChange={(e) => setInlineCorrectOption(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm">
+                                <option value="a">أ</option>
+                                <option value="b">ب</option>
+                                <option value="c">ج</option>
+                                <option value="d">د</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">الشرح</Label>
+                              <Input value={inlineExplanation} onChange={(e) => setInlineExplanation(e.target.value)} className="h-9 text-sm" />
+                            </div>
+                          </div>
+                        </>
+                      )}
                       <Button type="button" size="sm" onClick={addPendingQuestion} className="w-full">إضافة السؤال</Button>
                     </div>
                   )}
@@ -1561,31 +1588,52 @@ const AdminContent = () => {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editingQuestion ? "تعديل سؤال" : "إضافة سؤال"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>المادة</Label>
-              <select value={questionSubject} onChange={(e) => setQuestionSubject(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                {SUBJECT_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>المادة</Label>
+                <select value={questionSubject} onChange={(e) => setQuestionSubject(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  {SUBJECT_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>نوع السؤال</Label>
+                <select value={questionType} onChange={(e) => { setQuestionType(e.target.value); if (e.target.value === "true_false") { setOptionA("صح"); setOptionB("خطأ"); setOptionC(""); setOptionD(""); setCorrectOption("a"); } }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  <option value="multiple_choice">اختيار من متعدد</option>
+                  <option value="true_false">صح / خطأ</option>
+                </select>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>نص السؤال *</Label>
               <Textarea value={questionText} onChange={(e) => setQuestionText(e.target.value)} rows={3} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2"><Label>الخيار أ *</Label><Input value={optionA} onChange={(e) => setOptionA(e.target.value)} /></div>
-              <div className="space-y-2"><Label>الخيار ب *</Label><Input value={optionB} onChange={(e) => setOptionB(e.target.value)} /></div>
-              <div className="space-y-2"><Label>الخيار ج *</Label><Input value={optionC} onChange={(e) => setOptionC(e.target.value)} /></div>
-              <div className="space-y-2"><Label>الخيار د *</Label><Input value={optionD} onChange={(e) => setOptionD(e.target.value)} /></div>
-            </div>
-            <div className="space-y-2">
-              <Label>الإجابة الصحيحة *</Label>
-              <select value={correctOption} onChange={(e) => setCorrectOption(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="a">أ</option>
-                <option value="b">ب</option>
-                <option value="c">ج</option>
-                <option value="d">د</option>
-              </select>
-            </div>
+            {questionType === "true_false" ? (
+              <div className="space-y-2">
+                <Label>الإجابة الصحيحة *</Label>
+                <select value={correctOption} onChange={(e) => setCorrectOption(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  <option value="a">صح</option>
+                  <option value="b">خطأ</option>
+                </select>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2"><Label>الخيار أ *</Label><Input value={optionA} onChange={(e) => setOptionA(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>الخيار ب *</Label><Input value={optionB} onChange={(e) => setOptionB(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>الخيار ج *</Label><Input value={optionC} onChange={(e) => setOptionC(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>الخيار د *</Label><Input value={optionD} onChange={(e) => setOptionD(e.target.value)} /></div>
+                </div>
+                <div className="space-y-2">
+                  <Label>الإجابة الصحيحة *</Label>
+                  <select value={correctOption} onChange={(e) => setCorrectOption(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                    <option value="a">أ</option>
+                    <option value="b">ب</option>
+                    <option value="c">ج</option>
+                    <option value="d">د</option>
+                  </select>
+                </div>
+              </>
+            )}
             <div className="space-y-2">
               <Label>الشرح</Label>
               <Textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={2} />
