@@ -11,7 +11,7 @@ import ReactMarkdown from "react-markdown";
 interface ExamQuestion {
   id: string;
   question_text: string;
-  subject: string;
+  subject?: string;
   correct_option: string;
 }
 
