@@ -102,18 +102,16 @@ const Subscription = () => {
   useEffect(() => {
     if (authLoading || !user) return;
     const fetchAll = async () => {
-      const [{ data: pl }, { data: m }, { data: sub }, { data: pr }, { data: student }] = await Promise.all([
+      const [{ data: pl }, { data: m }, { data: sub }, { data: pr }] = await Promise.all([
         supabase.from("subscription_plans").select("*").eq("is_active", true).order("display_order"),
         supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
         supabase.from("subscriptions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1),
         supabase.from("payment_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-        supabase.from("students").select("governorate").eq("user_id", user.id).limit(1),
       ]);
       if (pl) setPlans(pl as any as Plan[]);
       if (m) setMethods(m as any as PaymentMethod[]);
       if (sub && sub.length > 0) setSubscription(sub[0] as any as SubRecord);
       if (pr) setPaymentRequests(pr as any as PaymentRequest[]);
-      if (student && student.length > 0) setStudentGovernorate(student[0].governorate);
       setLoading(false);
     };
     fetchAll();
