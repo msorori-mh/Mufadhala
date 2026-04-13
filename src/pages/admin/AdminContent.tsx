@@ -728,8 +728,8 @@ const AdminContent = () => {
   const downloadQuestionsOnlyTemplate = () => {
     const wb = XLSX.utils.book_new();
     const data = [
-      ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`],
-      ["مقدمة في البرمجة", "ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب", "عام"],
+      ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`, "نوع السؤال (multiple_choice / true_false)"],
+      ["مقدمة في البرمجة", "ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب", "عام", "multiple_choice"],
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), "الأسئلة");
     XLSX.writeFile(wb, "قالب_استيراد_أسئلة_فقط.xlsx");
@@ -753,9 +753,14 @@ const AdminContent = () => {
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i] as any[];
         if (!row[0]) continue;
+        // Duplicate protection
+        const qText = String(row[0]).trim();
+        const existingQ = questions.find(q => q.lesson_id === selectedLesson && q.question_text.trim() === qText);
+        if (existingQ) continue;
+        const qType = row[8] ? String(row[8]).trim().toLowerCase() === "true_false" ? "true_false" : "multiple_choice" : "multiple_choice";
         const { error } = await supabase.from("questions").insert({
           lesson_id: selectedLesson,
-          question_text: String(row[0]),
+          question_text: qText,
           option_a: String(row[1] || ""),
           option_b: String(row[2] || ""),
           option_c: String(row[3] || ""),
@@ -763,6 +768,7 @@ const AdminContent = () => {
           correct_option: String(row[5] || "a").toLowerCase().trim(),
           explanation: row[6] ? String(row[6]) : "",
           subject: row[7] ? getSubjectValue(String(row[7])) : "general",
+          question_type: qType,
           display_order: existingCount + i,
         });
         if (error) {
