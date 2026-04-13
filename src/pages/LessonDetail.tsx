@@ -71,6 +71,7 @@ const LessonDetail = () => {
   const [isSavedOffline, setIsSavedOffline] = useState(false);
   const [savingOffline, setSavingOffline] = useState(false);
   const [isFromCache, setIsFromCache] = useState(false);
+  const [signedPresentationUrl, setSignedPresentationUrl] = useState<string | null>(null);
   const [prevLesson, setPrevLesson] = useState<{ id: string; title: string } | null>(null);
   const [nextLesson, setNextLesson] = useState<{ id: string; title: string } | null>(null);
 
