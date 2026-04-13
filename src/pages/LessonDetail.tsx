@@ -492,7 +492,7 @@ const LessonDetail = () => {
                         </div>
                         <div className={isTrueFalse ? "grid grid-cols-2 gap-2" : "space-y-2"}>
                           {options.map((opt) => {
-                            const optionText = isTrueFalse ? (opt === "a" ? "صح" : "خطأ") : (q[`option_${opt}` as keyof Question] as string);
+                            const optionText = isTrueFalse ? (opt === "a" ? "صح" : "خطأ") : ((q[`option_${opt}` as keyof Question] as string) || "");
                             const isCorrectOption = q.correct_option === opt;
 
                             let classes = "flex items-center gap-2 p-3 rounded-lg border text-sm transition-colors ";
