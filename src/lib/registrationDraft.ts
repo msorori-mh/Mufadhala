@@ -10,6 +10,7 @@ export interface RegistrationDraft {
   governorate: string;
   universityId: string;
   collegeId: string;
+  majorId: string;
   highSchoolGpa: string;
 }
 
@@ -20,6 +21,7 @@ export const emptyDraft: RegistrationDraft = {
   governorate: '',
   universityId: '',
   collegeId: '',
+  majorId: '',
   highSchoolGpa: '',
 };
 

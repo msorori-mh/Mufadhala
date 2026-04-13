@@ -40,6 +40,7 @@ const Register = () => {
   // Data
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
   const [colleges, setColleges] = useState<Tables<"colleges">[]>([]);
+  const [majors, setMajors] = useState<Tables<"majors">[]>([]);
 
   // Restore draft on mount — merge only empty fields if user already typed
   useEffect(() => {
