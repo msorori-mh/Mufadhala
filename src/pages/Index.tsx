@@ -62,11 +62,33 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
           <div className="inline-flex items-center justify-center w-24 h-24 mb-5 animate-float rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
             <img src={logoImg} alt="شعار مُفَاضَلَة" className="w-full h-full object-cover drop-shadow-lg" />
           </div>
-          <h1 className="text-2xl md:text-4xl font-bold text-primary-foreground mb-3 leading-tight">مُفَاضَلَة</h1>
-          <p className="text-base md:text-lg text-primary-foreground/85 mb-5 leading-relaxed">مُفَاضَلَة... هندسة النجاح في اختبارات القبول.</p>
-          <Button size="lg" onClick={() => navigate("/register")} className="bg-secondary text-secondary-foreground hover:bg-secondary/90 text-base font-bold px-8 py-5 rounded-xl shadow-lg">
-            ابدأ الآن
-          </Button>
+         <h1 className="text-2xl md:text-4xl font-bold text-primary-foreground mb-3 leading-tight">
+            تدرب على اختبار القبول الحقيقي
+            <br />
+            <span className="text-secondary">وضمن مقعدك الجامعي</span>
+          </h1>
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-5">
+            {[
+              { emoji: "📝", text: "محاكاة الاختبار الحقيقي" },
+              { emoji: "📚", text: "بنك أسئلة شامل" },
+              { emoji: "📊", text: "تحليل الأداء" },
+            ].map((b) => (
+              <span key={b.text} className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1.5 text-sm text-primary-foreground">
+                <span>{b.emoji}</span>{b.text}
+              </span>
+            ))}
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button size="lg" onClick={() => navigate("/register")} className="bg-secondary text-secondary-foreground hover:bg-secondary/90 text-base font-bold px-8 py-5 rounded-xl shadow-lg">
+              ابدأ الآن
+            </Button>
+            <Button size="lg" variant="outline" onClick={() => {
+              const el = document.getElementById("features-section");
+              el?.scrollIntoView({ behavior: "smooth" });
+            }} className="border-white/40 text-primary-foreground hover:bg-white/10 hover:text-primary-foreground text-sm px-6 py-4 rounded-xl">
+              استكشف التطبيق ↓
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -93,7 +115,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       </section>
 
       {/* Academic Core Pillars */}
-      <section className="bg-muted py-8 px-4">
+      <section id="features-section" className="bg-muted py-8 px-4">
         <div className="max-w-5xl mx-auto grid gap-4 md:grid-cols-3">
           {[
             { icon: BookOpen, emoji: "📚", title: "شمولية المنهج الوزاري", desc: "تغطية دقيقة لكافة المقررات الدراسية المطلوبة في اختبارات المفاضلة." },
