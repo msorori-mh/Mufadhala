@@ -67,12 +67,7 @@ export function parseWorkbook(data: ArrayBuffer, fileName: string) {
     } else if (nameLower.includes("دروس") || nameLower.includes("lesson")) {
       lessonsRows = rows;
     } else if (lessonsRows.length === 0) {
-      // First unnamed sheet → check column count to guess
-      if (rows[0] && (rows[0] as any[]).length >= 9) {
-        lessonsRows = rows;
-      } else {
-        lessonsRows = rows;
-      }
+      lessonsRows = rows;
     }
   });
 
@@ -182,7 +177,6 @@ export function validateQuestions(rows: any[][]): { questions: ImportQuestion[];
         continue;
       }
     } else {
-      // true_false
       const validTF = ["a", "b", "true", "false", "صح", "خطأ"];
       if (!validTF.includes(correctAnswer)) {
         errors.push({ row: i + 1, sheet: "الأسئلة", field: "correct_answer", message: "الإجابة يجب أن تكون a/b أو true/false أو صح/خطأ" });
@@ -190,7 +184,6 @@ export function validateQuestions(rows: any[][]): { questions: ImportQuestion[];
       }
     }
 
-    // Normalize correct_answer for true_false
     let normalizedAnswer = correctAnswer;
     if (questionType === "true_false") {
       if (correctAnswer === "true" || correctAnswer === "صح") normalizedAnswer = "a";
@@ -215,17 +208,16 @@ export function validateQuestions(rows: any[][]): { questions: ImportQuestion[];
   return { questions, errors };
 }
 
-// ─── Import Engine ───────────────────────────────────────────────────
+// ─── Import Engine (SUBJECT-BASED, NO COLLEGE DUPLICATION) ───────────
 export async function executeImport(opts: {
   lessonsRows: any[][];
   questionsRows: any[][];
-  collegeIds: string[];
   subjects: ImportSubject[];
-  existingLessons: { id: string; college_id: string | null; title: string; lesson_code: string | null }[];
+  existingLessons: { id: string; title: string; lesson_code: string | null; subject_id: string | null }[];
   existingQuestions: { id: string; lesson_id: string; question_text: string }[];
   fallbackSubjectId?: string;
 }): Promise<ImportReport> {
-  const { lessonsRows, questionsRows, collegeIds, subjects, existingLessons, existingQuestions, fallbackSubjectId } = opts;
+  const { lessonsRows, questionsRows, subjects, existingLessons, existingQuestions, fallbackSubjectId } = opts;
 
   const report: ImportReport = {
     lessonsCreated: 0,
@@ -251,84 +243,72 @@ export async function executeImport(opts: {
     report.errors.push(...errors);
   }
 
-  // Process per college
-  for (const collegeId of collegeIds) {
-    // lesson_code → lesson_id map for this college
-    const codeToId = new Map<string, string>();
+  // Global lesson_code → lesson_id map
+  const codeToId = new Map<string, string>();
+  existingLessons
+    .filter(l => l.lesson_code)
+    .forEach(l => codeToId.set(l.lesson_code!, l.id));
 
-    // Pre-populate from existing lessons
-    existingLessons
-      .filter(l => l.college_id === collegeId && l.lesson_code)
-      .forEach(l => codeToId.set(l.lesson_code!, l.id));
+  // Global title → lesson_id fallback map
+  const titleToId = new Map<string, string>();
+  existingLessons.forEach(l => titleToId.set(l.title.trim(), l.id));
 
-    // Also map by title as fallback
-    const titleToId = new Map<string, string>();
-    existingLessons
-      .filter(l => l.college_id === collegeId)
-      .forEach(l => titleToId.set(l.title.trim(), l.id));
-
-    // Import lessons
-    for (const lesson of validatedLessons) {
-      // Duplicate check by lesson_code
-      if (codeToId.has(lesson.lesson_code)) {
-        report.lessonsSkipped++;
-        continue;
-      }
-      // Duplicate check by title
-      if (titleToId.has(lesson.title)) {
-        // Update existing lesson's lesson_code
-        const existingId = titleToId.get(lesson.title)!;
-        await supabase.from("lessons").update({ lesson_code: lesson.lesson_code }).eq("id", existingId);
-        codeToId.set(lesson.lesson_code, existingId);
-        report.lessonsSkipped++;
-        continue;
-      }
-
-      // Resolve subject
-      const matchedSubject = lesson.subject_code
-        ? subjects.find(s => s.name_ar === lesson.subject_code || s.code === lesson.subject_code)
-        : null;
-      const subjectId = fallbackSubjectId || matchedSubject?.id || null;
-
-      const { data: inserted, error } = await supabase.from("lessons").insert({
-        college_id: collegeId,
-        lesson_code: lesson.lesson_code,
-        title: lesson.title,
-        content: lesson.content,
-        summary: lesson.summary,
-        display_order: lesson.display_order,
-        is_published: lesson.is_published,
-        is_free: lesson.is_free,
-        grade_level: lesson.grade_level,
-        subject_id: subjectId,
-      }).select("id").single();
-
-      if (error) {
-        report.errors.push({ row: 0, sheet: "الدروس", field: "insert", message: `خطأ في "${lesson.title}": ${error.message}` });
-      } else if (inserted) {
-        codeToId.set(lesson.lesson_code, inserted.id);
-        titleToId.set(lesson.title, inserted.id);
-        report.lessonsCreated++;
-      }
+  // Import lessons — ONE lesson per lesson_code, globally shared
+  for (const lesson of validatedLessons) {
+    // Duplicate check by lesson_code (GLOBAL, not per-college)
+    if (codeToId.has(lesson.lesson_code)) {
+      report.lessonsSkipped++;
+      continue;
+    }
+    // Duplicate check by title within same subject
+    const existingByTitle = existingLessons.find(l => 
+      l.title.trim() === lesson.title && 
+      !codeToId.has(lesson.lesson_code)
+    );
+    if (existingByTitle) {
+      // Update existing lesson's lesson_code
+      await supabase.from("lessons").update({ lesson_code: lesson.lesson_code }).eq("id", existingByTitle.id);
+      codeToId.set(lesson.lesson_code, existingByTitle.id);
+      report.lessonsSkipped++;
+      continue;
     }
 
-    // Import questions
-    for (const q of validatedQuestions) {
-      const lessonId = codeToId.get(q.lesson_code);
-      if (!lessonId) {
-        // Try title match as last resort (for backward compat with existing lessons without lesson_code)
-        const byTitle = titleToId.get(q.lesson_code);
-        if (!byTitle) {
-          report.errors.push({ row: 0, sheet: "الأسئلة", field: "lesson_code", message: `لم يتم العثور على درس بكود "${q.lesson_code}"` });
-          continue;
-        }
-        // Use title match
-        const resolvedId = byTitle;
-        await importQuestion(q, resolvedId, existingQuestions, report);
-        continue;
-      }
-      await importQuestion(q, lessonId, existingQuestions, report);
+    // Resolve subject
+    const matchedSubject = lesson.subject_code
+      ? subjects.find(s => s.name_ar === lesson.subject_code || s.code === lesson.subject_code)
+      : null;
+    const subjectId = matchedSubject?.id || fallbackSubjectId || null;
+
+    const { data: inserted, error } = await supabase.from("lessons").insert({
+      lesson_code: lesson.lesson_code,
+      title: lesson.title,
+      content: lesson.content,
+      summary: lesson.summary,
+      display_order: lesson.display_order,
+      is_published: lesson.is_published,
+      is_free: lesson.is_free,
+      grade_level: lesson.grade_level,
+      subject_id: subjectId,
+      // college_id and major_id intentionally left null — shared content
+    }).select("id").single();
+
+    if (error) {
+      report.errors.push({ row: 0, sheet: "الدروس", field: "insert", message: `خطأ في "${lesson.title}": ${error.message}` });
+    } else if (inserted) {
+      codeToId.set(lesson.lesson_code, inserted.id);
+      titleToId.set(lesson.title, inserted.id);
+      report.lessonsCreated++;
     }
+  }
+
+  // Import questions
+  for (const q of validatedQuestions) {
+    const lessonId = codeToId.get(q.lesson_code) || titleToId.get(q.lesson_code);
+    if (!lessonId) {
+      report.errors.push({ row: 0, sheet: "الأسئلة", field: "lesson_code", message: `لم يتم العثور على درس بكود "${q.lesson_code}"` });
+      continue;
+    }
+    await importQuestion(q, lessonId, existingQuestions, report);
   }
 
   return report;
@@ -340,7 +320,6 @@ async function importQuestion(
   existingQuestions: { id: string; lesson_id: string; question_text: string }[],
   report: ImportReport
 ) {
-  // Duplicate check
   const isDuplicate = existingQuestions.some(
     eq => eq.lesson_id === lessonId && eq.question_text.trim() === q.question_text
   );
@@ -367,7 +346,6 @@ async function importQuestion(
     report.errors.push({ row: 0, sheet: "الأسئلة", field: "insert", message: `خطأ في سؤال: ${error.message}` });
   } else {
     report.questionsCreated++;
-    // Add to existing to prevent within-batch duplicates
     existingQuestions.push({ id: "", lesson_id: lessonId, question_text: q.question_text });
   }
 }
