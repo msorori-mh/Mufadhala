@@ -292,6 +292,7 @@ const Register = () => {
                 onValueChange={(v) => {
                   updateField("universityId", v);
                   updateField("collegeId", "");
+                  updateField("majorId", "");
                 }}
                 placeholder="اختر الجامعة"
                 options={universities.map((u) => ({ value: u.id, label: u.name_ar }))}
@@ -323,10 +324,24 @@ const Register = () => {
               <Label>الكلية</Label>
               <NativeSelect
                 value={form.collegeId}
-                onValueChange={(v) => updateField("collegeId", v)}
+                onValueChange={(v) => {
+                  updateField("collegeId", v);
+                  updateField("majorId", "");
+                }}
                 placeholder={!form.universityId ? "اختر الجامعة أولاً" : "اختر الكلية"}
                 disabled={!form.universityId}
                 options={colleges.map((c) => ({ value: c.id, label: c.name_ar }))}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>التخصص</Label>
+              <NativeSelect
+                value={form.majorId}
+                onValueChange={(v) => updateField("majorId", v)}
+                placeholder={!form.collegeId ? "اختر الكلية أولاً" : "اختر التخصص"}
+                disabled={!form.collegeId}
+                options={majors.map((m) => ({ value: m.id, label: m.name_ar }))}
               />
             </div>
 
