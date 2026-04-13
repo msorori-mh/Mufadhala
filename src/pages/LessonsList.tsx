@@ -34,11 +34,7 @@ interface Lesson {
   grade_level?: number | null;
 }
 
-const GRADE_LABELS: Record<number, string> = {
-  1: "مقرر الصف الأول الثانوي",
-  2: "مقرر الصف الثاني الثانوي",
-  3: "مقرر الصف الثالث الثانوي",
-};
+import { GRADE_LABELS } from "@/domain/constants";
 
 const GradeLevelSection = ({ label, count, completedCount, questionCount, children }: { label: string; count: number; completedCount: number; questionCount: number; children: React.ReactNode }) => {
   const [open, setOpen] = useState(true);

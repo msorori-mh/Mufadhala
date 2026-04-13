@@ -27,11 +27,7 @@ interface Lesson {
   subject_id: string | null;
 }
 
-const GRADE_LABELS: Record<number, string> = {
-  1: "أول ثانوي",
-  2: "ثاني ثانوي",
-  3: "ثالث ثانوي",
-};
+import { GRADE_LABELS_SHORT as GRADE_LABELS } from "@/domain/constants";
 
 interface Question {
   id: string;
