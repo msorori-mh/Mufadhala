@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveSubjectIds } from "@/lib/contentFilter";
 import { useAuth } from "@/hooks/useAuth";
 import { useStudentAccess } from "@/hooks/useStudentAccess";
 import { useQuery } from "@tanstack/react-query";
@@ -55,12 +56,11 @@ const StudentPerformance = () => {
     queryFn: async () => {
       if (!student || !student.college_id) return null;
 
-      // Subject-based lesson resolution
-      const { data: csData } = await supabase
-        .from("college_subjects")
-        .select("subject_id")
-        .eq("college_id", student.college_id);
-      const subjectIds = (csData || []).map((c: any) => c.subject_id as string);
+      // Subject-based resolution via admission_tracks (official path)
+      const { subjectIds, resolvedVia } = await resolveSubjectIds(supabase, student.college_id);
+      if (resolvedVia === "college_subjects") {
+        console.warn("[Performance] Resolved via college_subjects fallback for college:", student.college_id);
+      }
       if (subjectIds.length === 0) return null;
 
       // Fetch deduplicated lessons + exams + progress in parallel
