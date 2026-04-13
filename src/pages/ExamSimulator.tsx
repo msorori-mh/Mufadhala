@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import PostExamUpgrade from "@/components/PostExamUpgrade";
+import AIPerformanceAnalysis from "@/components/AIPerformanceAnalysis";
 import {
   useExamEngine,
   formatTime,
@@ -322,6 +323,14 @@ const ExamSimulator = () => {
         </Card>
 
         <ShareResult percentage={engine.percentage} score={engine.resultScore} total={engine.resultTotal} toast={engine.toast} />
+
+        {/* AI Performance Analysis */}
+        <AIPerformanceAnalysis
+          questions={engine.examQuestions}
+          answers={engine.answers}
+          percentage={engine.percentage}
+          hasSubscription={engine.hasActiveSubscription}
+        />
 
         {/* Upgrade CTA for free users after exam */}
         {!engine.hasActiveSubscription && !engine.trialExpired && (

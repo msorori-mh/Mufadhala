@@ -186,10 +186,15 @@ async function streamChat({
   onDone();
 }
 
-const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
+interface ChatWidgetProps {
+  lessonContext?: { title: string; summary: string } | null;
+  defaultOpen?: boolean;
+}
+
+const ChatWidget = React.forwardRef<HTMLDivElement, ChatWidgetProps>(({ lessonContext, defaultOpen }, ref) => {
   const { user } = useAuth();
   const { isActive: hasSubscription } = useSubscription(user?.id);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen ?? false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -295,8 +300,20 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
     };
 
     try {
+      // Prepend lesson context as a system-level user message if available
+      const contextMessages: Message[] = [];
+      if (lessonContext && messages.length === 0) {
+        contextMessages.push({
+          role: "user",
+          content: `[سياق الدرس - لا تذكر هذه الرسالة في ردك]\nعنوان الدرس: ${lessonContext.title}\nملخص الدرس: ${lessonContext.summary}`,
+        });
+        contextMessages.push({
+          role: "assistant",
+          content: "فهمت، أنا جاهز للإجابة على أسئلتك حول هذا الدرس.",
+        });
+      }
       await streamChat({
-        messages: [...messages, userMsg],
+        messages: [...contextMessages, ...messages, userMsg],
         onDelta: upsert,
         onDone: () => setLoading(false),
         onError: (msg) => {
@@ -339,9 +356,13 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-2 px-4">
-                <Bot className="h-10 w-10 text-primary/40" />
+              <Bot className="h-10 w-10 text-primary/40" />
                 <p className="text-sm">{welcomeText}</p>
-                <p className="text-xs">اسألني عن الدروس، الاختبارات، أو صوّر سؤالك وأرسله لي 📸</p>
+                <p className="text-xs">
+                  {lessonContext
+                    ? `اسألني عن درس "${lessonContext.title}" أو أي سؤال آخر 📖`
+                    : "اسألني عن الدروس، الاختبارات، أو صوّر سؤالك وأرسله لي 📸"}
+                </p>
               </div>
             )}
             {messages.map((msg, i) => {
