@@ -26,6 +26,7 @@ const isValidYemeniPhone = (p: string) => !p || YEMEN_PHONE_REGEX.test(p);
 const StudentProfile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuthContext();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -232,6 +233,7 @@ const StudentProfile = () => {
       toast({ variant: "destructive", title: "خطأ في الحفظ", description: msg });
     } else {
       toast({ title: "تم حفظ البيانات بنجاح" });
+      queryClient.invalidateQueries({ queryKey: ["student"] });
       setOriginalPhone(phone);
       setPhoneEditing(false);
       setOtpSent(false);
