@@ -195,7 +195,7 @@ const Register = () => {
       await clearDraft();
       trackFunnelEvent("user_registered");
       toast({ title: "تم التسجيل بنجاح! 🎉" });
-      navigate("/dashboard", { replace: true });
+      navigate("/welcome", { replace: true });
     } catch {
       toast({ variant: "destructive", title: "خطأ", description: "حدث خطأ غير متوقع" });
     }

@@ -16,6 +16,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import Welcome from "./pages/Welcome";
 import LessonsList from "./pages/LessonsList";
 import LessonDetail from "./pages/LessonDetail";
 import ExamSimulator from "./pages/ExamSimulator";
