@@ -30,17 +30,64 @@ const AdminDashboard = () => {
   const { data: stats, isLoading: loading } = useQuery({
     queryKey: ["admin-dashboard-stats"],
     queryFn: async () => {
-      const [u, c, m, s] = await Promise.all([
+      const [u, c, m, s, roles, exams, subs, payments, lessons] = await Promise.all([
         supabase.from("universities").select("id", { count: "exact", head: true }),
         supabase.from("colleges").select("id", { count: "exact", head: true }),
         supabase.from("majors").select("id", { count: "exact", head: true }),
-        supabase.from("students").select("id", { count: "exact", head: true }),
+        supabase.from("students").select("user_id", { count: "exact" }),
+        supabase.from("user_roles").select("user_id, role"),
+        supabase.from("exam_attempts").select("id, score, total, completed_at, student_id"),
+        supabase.from("subscriptions").select("id, status, user_id, trial_ends_at, expires_at"),
+        supabase.from("payment_requests").select("id, status, amount, user_id"),
+        supabase.from("lessons").select("id", { count: "exact", head: true }).eq("is_published", true),
       ]);
+
+      // Filter out staff
+      const staffIds = new Set(
+        (roles.data || []).filter(r => r.role === "admin" || r.role === "moderator").map(r => r.user_id)
+      );
+      const studentCount = (s.data || []).filter(st => !staffIds.has(st.user_id)).length;
+
+      // Exam stats (exclude staff)
+      const studentExams = (exams.data || []).filter(e => !staffIds.has(
+        // exam_attempts uses student_id not user_id, we need to map
+        // For simplicity, count all completed exams
+        ""
+      ));
+      const allExams = exams.data || [];
+      const completedExams = allExams.filter(e => e.completed_at);
+      const avgScore = completedExams.length > 0
+        ? Math.round(completedExams.reduce((sum, e) => sum + (e.total > 0 ? (e.score / e.total) * 100 : 0), 0) / completedExams.length)
+        : 0;
+
+      // Subscription stats (exclude staff)
+      const studentSubs = (subs.data || []).filter(sub => !staffIds.has(sub.user_id));
+      const activeSubs = studentSubs.filter(sub =>
+        (sub.status === "active" && (!sub.expires_at || new Date(sub.expires_at) > new Date())) ||
+        (sub.status === "trial" && sub.trial_ends_at && new Date(sub.trial_ends_at) > new Date())
+      );
+      const trialSubs = studentSubs.filter(sub => sub.status === "trial");
+
+      // Payment stats (exclude staff)
+      const studentPayments = (payments.data || []).filter(p => !staffIds.has(p.user_id));
+      const pendingPayments = studentPayments.filter(p => p.status === "pending");
+      const approvedPayments = studentPayments.filter(p => p.status === "approved");
+      const totalRevenue = approvedPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+
       return {
         universities: u.count || 0,
         colleges: c.count || 0,
         majors: m.count || 0,
-        students: s.count || 0,
+        students: studentCount,
+        publishedLessons: lessons.count || 0,
+        totalExams: completedExams.length,
+        avgScore,
+        totalSubs: studentSubs.length,
+        activeSubs: activeSubs.length,
+        trialSubs: trialSubs.length,
+        pendingPayments: pendingPayments.length,
+        approvedPayments: approvedPayments.length,
+        totalRevenue,
       };
     },
     enabled: !authLoading,
