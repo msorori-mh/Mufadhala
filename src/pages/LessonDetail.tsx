@@ -41,6 +41,7 @@ interface Question {
   correct_option: string;
   explanation: string;
   display_order: number;
+  question_type?: string;
 }
 
 /** Extract storage path from a presentation_url (handles both full URLs and plain filenames). */
