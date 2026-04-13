@@ -51,22 +51,43 @@ const StudentPerformance = () => {
 
   // Fetch all performance data using React Query
   const { data: perfData, isLoading: perfLoading } = useQuery({
-    queryKey: ["performance-data", student?.id, filter?.type, filter?.value],
+    queryKey: ["performance-data", student?.id, student?.college_id],
     queryFn: async () => {
-      if (!student || !filter) return null;
+      if (!student || !student.college_id) return null;
 
-      const [{ data: exams }, { data: les }, { data: prog }, { data: peers }] = await Promise.all([
+      // Subject-based lesson resolution
+      const { data: csData } = await supabase
+        .from("college_subjects")
+        .select("subject_id")
+        .eq("college_id", student.college_id);
+      const subjectIds = (csData || []).map((c: any) => c.subject_id as string);
+      if (subjectIds.length === 0) return null;
+
+      // Fetch deduplicated lessons + exams + progress in parallel
+      const [{ data: exams }, lessonResult, { data: prog }, { data: peers }] = await Promise.all([
         supabase.from("exam_attempts").select("id, score, total, completed_at, major_id")
           .eq("student_id", student.id).not("completed_at", "is", null).order("completed_at", { ascending: true }),
-        supabase.from("lessons").select("id, title, major_id").eq(filter.field, filter.value).eq("is_published", true).order("display_order"),
+        supabase.from("lessons").select("id, title, major_id, subject_id")
+          .in("subject_id", subjectIds).eq("is_published", true).order("display_order"),
         supabase.from("lesson_progress").select("lesson_id").eq("student_id", student.id).eq("is_completed", true),
-        filter.type === "major"
+        filter?.type === "major"
           ? supabase.from("exam_attempts").select("score, total, student_id")
               .eq("major_id", filter.value).not("completed_at", "is", null)
           : Promise.resolve({ data: [] as any[] }),
       ]);
 
-      const lessonIds = (les || []).map((l: any) => l.id);
+      // Deduplicate lessons
+      const seenTitles = new Set<string>();
+      const uniqueLessons: LessonRow[] = [];
+      (lessonResult.data || []).forEach((l: any) => {
+        const key = `${l.title}::${l.subject_id}`;
+        if (!seenTitles.has(key)) {
+          seenTitles.add(key);
+          uniqueLessons.push({ id: l.id, title: l.title, major_id: l.major_id });
+        }
+      });
+
+      const lessonIds = uniqueLessons.map((l: any) => l.id);
       let questions: QuestionRow[] = [];
       if (lessonIds.length > 0) {
         const { data: qs } = await supabase.from("questions").select("id, lesson_id, correct_option, subject").in("lesson_id", lessonIds);
