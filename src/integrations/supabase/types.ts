@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admission_tracks: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          name_ar: string
+          name_en: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name_ar: string
+          name_en?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name_ar?: string
+          name_en?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_cache: {
         Row: {
           created_at: string
@@ -103,6 +136,7 @@ export type Database = {
       }
       colleges: {
         Row: {
+          admission_track_id: string | null
           capacity: number | null
           code: string
           created_at: string
@@ -119,6 +153,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admission_track_id?: string | null
           capacity?: number | null
           code: string
           created_at?: string
@@ -135,6 +170,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admission_track_id?: string | null
           capacity?: number | null
           code?: string
           created_at?: string
@@ -151,6 +187,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "colleges_admission_track_id_fkey"
+            columns: ["admission_track_id"]
+            isOneToOne: false
+            referencedRelation: "admission_tracks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "colleges_university_id_fkey"
             columns: ["university_id"]
@@ -1071,6 +1114,42 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      track_subjects: {
+        Row: {
+          created_at: string
+          id: string
+          subject_id: string
+          track_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          subject_id: string
+          track_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          subject_id?: string
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_subjects_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_subjects_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "admission_tracks"
             referencedColumns: ["id"]
           },
         ]
