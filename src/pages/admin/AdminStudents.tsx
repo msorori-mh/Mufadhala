@@ -49,14 +49,21 @@ const AdminStudents = () => {
   const [collegeId, setCollegeId] = useState("");
   const [majorId, setMajorId] = useState("");
 
+  const [staffUserIds, setStaffUserIds] = useState<Set<string>>(new Set());
+
   const fetchData = async () => {
-    const [{ data: s }, { data: u }, { data: c }, { data: m }] = await Promise.all([
+    const [{ data: s }, { data: u }, { data: c }, { data: m }, { data: roles }] = await Promise.all([
       supabase.from("students").select("*").order("created_at", { ascending: false }),
       supabase.from("universities").select("*").order("display_order"),
       supabase.from("colleges").select("*").order("display_order"),
       supabase.from("majors").select("*").order("display_order"),
+      supabase.from("user_roles").select("user_id, role"),
     ]);
-    if (s) setStudents(s);
+    const sIds = new Set(
+      (roles || []).filter((r) => r.role === "admin" || r.role === "moderator").map((r) => r.user_id)
+    );
+    setStaffUserIds(sIds);
+    if (s) setStudents(s.filter((st) => !sIds.has(st.user_id)));
     if (u) setUniversities(u);
     if (c) setColleges(c);
     if (m) setMajors(m);

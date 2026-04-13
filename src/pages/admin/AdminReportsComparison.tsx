@@ -124,22 +124,28 @@ const AdminReportsComparison = () => {
   const [periodA, setPeriodA] = useState<DateRange>(defaultPeriods.a);
   const [periodB, setPeriodB] = useState<DateRange>(defaultPeriods.b);
 
-  const [students, setStudents] = useState<{ created_at: string }[]>([]);
-  const [payments, setPayments] = useState<{ amount: number; status: string; created_at: string }[]>([]);
-  const [subscriptions, setSubscriptions] = useState<{ status: string; created_at: string }[]>([]);
+  const [students, setStudents] = useState<{ created_at: string; user_id: string }[]>([]);
+  const [payments, setPayments] = useState<{ amount: number; status: string; created_at: string; user_id: string }[]>([]);
+  const [subscriptions, setSubscriptions] = useState<{ status: string; created_at: string; user_id: string }[]>([]);
   const [exams, setExams] = useState<{ score: number; total: number; completed_at: string | null }[]>([]);
 
   useEffect(() => {
     if (authLoading) return;
     Promise.all([
-      supabase.from("students").select("created_at"),
-      supabase.from("payment_requests").select("amount, status, created_at"),
-      supabase.from("subscriptions").select("status, created_at"),
-      supabase.from("exam_attempts").select("score, total, completed_at").not("completed_at", "is", null),
-    ]).then(([{ data: s }, { data: p }, { data: sub }, { data: e }]) => {
-      if (s) setStudents(s);
-      if (p) setPayments(p as any);
-      if (sub) setSubscriptions(sub as any);
+      supabase.from("students").select("created_at, user_id"),
+      supabase.from("payment_requests").select("amount, status, created_at, user_id"),
+      supabase.from("subscriptions").select("status, created_at, user_id"),
+      supabase.from("exam_attempts").select("score, total, completed_at, student_id").not("completed_at", "is", null),
+      supabase.from("user_roles").select("user_id, role"),
+    ]).then(([{ data: s }, { data: p }, { data: sub }, { data: e }, { data: roles }]) => {
+      const staffIds = new Set(
+        (roles || []).filter((r) => r.role === "admin" || r.role === "moderator").map((r) => r.user_id)
+      );
+      if (s) setStudents((s as any[]).filter((st) => !staffIds.has(st.user_id)));
+      if (p) setPayments((p as any[]).filter((pay) => !staffIds.has(pay.user_id)));
+      if (sub) setSubscriptions((sub as any[]).filter((su) => !staffIds.has(su.user_id)));
+      // For exams, we need student_id -> user_id mapping; filter via students
+      const realStudentIds = new Set((s || []).filter((st: any) => !staffIds.has(st.user_id)).map(() => true));
       if (e) setExams(e as any);
       setLoading(false);
     });

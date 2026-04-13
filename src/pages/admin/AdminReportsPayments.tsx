@@ -40,9 +40,13 @@ const AdminReportsPayments = () => {
       supabase.from("payment_requests").select("id, amount, currency, status, created_at, user_id"),
       supabase.from("students").select("*"),
       supabase.from("universities").select("*").order("display_order"),
-    ]).then(([{ data: p }, { data: s }, { data: u }]) => {
-      if (p) setPayments(p as PaymentRow[]);
-      if (s) setStudents(s);
+      supabase.from("user_roles").select("user_id, role"),
+    ]).then(([{ data: p }, { data: s }, { data: u }, { data: roles }]) => {
+      const staffIds = new Set(
+        (roles || []).filter((r) => r.role === "admin" || r.role === "moderator").map((r) => r.user_id)
+      );
+      if (p) setPayments((p as PaymentRow[]).filter((pay) => !staffIds.has(pay.user_id)));
+      if (s) setStudents(s.filter((st) => !staffIds.has(st.user_id)));
       if (u) setUniversities(u);
       setLoading(false);
     });

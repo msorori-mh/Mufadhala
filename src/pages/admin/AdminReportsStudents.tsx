@@ -46,8 +46,13 @@ const AdminReportsStudents = () => {
       supabase.from("universities").select("*").order("display_order"),
       supabase.from("colleges").select("*").order("display_order"),
       supabase.from("majors").select("*").order("display_order"),
-    ]).then(([{ data: s }, { data: u }, { data: c }, { data: m }]) => {
-      if (s) setStudents(s); if (u) setUniversities(u);
+      supabase.from("user_roles").select("user_id, role"),
+    ]).then(([{ data: s }, { data: u }, { data: c }, { data: m }, { data: roles }]) => {
+      const staffIds = new Set(
+        (roles || []).filter((r) => r.role === "admin" || r.role === "moderator").map((r) => r.user_id)
+      );
+      if (s) setStudents(s.filter((st) => !staffIds.has(st.user_id)));
+      if (u) setUniversities(u);
       if (c) setColleges(c); if (m) setMajors(m);
       setLoading(false);
     });
