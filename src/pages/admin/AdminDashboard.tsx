@@ -27,6 +27,7 @@ const AdminDashboard = () => {
   const { loading: authLoading, isAdmin } = useAuth("moderator");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: stats, isLoading: loading } = useQuery({
     queryKey: ["admin-dashboard-stats"],
