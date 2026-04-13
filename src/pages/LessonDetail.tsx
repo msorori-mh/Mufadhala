@@ -45,6 +45,16 @@ interface Question {
   display_order: number;
 }
 
+/** Extract storage path from a presentation_url (handles both full URLs and plain filenames). */
+const getPresentationPath = (url: string): string => {
+  try {
+    const u = new URL(url);
+    const parts = u.pathname.split("/lesson-presentations/");
+    if (parts.length === 2) return parts[1];
+  } catch { /* not a URL — treat as plain filename */ }
+  return url;
+};
+
 const LessonDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading, isStaff } = useAuth();
@@ -61,6 +71,7 @@ const LessonDetail = () => {
   const [isSavedOffline, setIsSavedOffline] = useState(false);
   const [savingOffline, setSavingOffline] = useState(false);
   const [isFromCache, setIsFromCache] = useState(false);
+  const [signedPresentationUrl, setSignedPresentationUrl] = useState<string | null>(null);
   const [prevLesson, setPrevLesson] = useState<{ id: string; title: string } | null>(null);
   const [nextLesson, setNextLesson] = useState<{ id: string; title: string } | null>(null);
 
@@ -136,6 +147,17 @@ const LessonDetail = () => {
             const currentIdx = siblings.findIndex((s) => s.id === id);
             setPrevLesson(currentIdx > 0 ? { id: siblings[currentIdx - 1].id, title: siblings[currentIdx - 1].title } : null);
             setNextLesson(currentIdx < siblings.length - 1 ? { id: siblings[currentIdx + 1].id, title: siblings[currentIdx + 1].title } : null);
+          }
+        }
+
+        // Generate signed URL for presentation if present
+        if (l.presentation_url) {
+          const path = getPresentationPath(l.presentation_url);
+          const { data: signedData } = await supabase.storage
+            .from("lesson-presentations")
+            .createSignedUrl(path, 3600); // 1 hour
+          if (signedData?.signedUrl) {
+            setSignedPresentationUrl(signedData.signedUrl);
           }
         }
       }
@@ -325,10 +347,10 @@ const LessonDetail = () => {
         </div>
 
         <Tabs defaultValue="content" dir="rtl">
-          <TabsList className={`w-full grid h-auto ${isFromCache ? (lesson.presentation_url ? "grid-cols-4" : "grid-cols-3") : (lesson.presentation_url ? "grid-cols-5" : "grid-cols-4")}`}>
+          <TabsList className={`w-full grid h-auto ${isFromCache ? (signedPresentationUrl ? "grid-cols-4" : "grid-cols-3") : (signedPresentationUrl ? "grid-cols-5" : "grid-cols-4")}`}>
             <TabsTrigger value="content" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الشرح</TabsTrigger>
             <TabsTrigger value="summary" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><BookOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الملخص</TabsTrigger>
-            {lesson.presentation_url && (
+            {signedPresentationUrl && (
               <TabsTrigger value="presentation" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><Presentation className="w-3 h-3 sm:w-3.5 sm:h-3.5" />العرض</TabsTrigger>
             )}
             <TabsTrigger value="quiz" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><HelpCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الأسئلة</TabsTrigger>
@@ -365,13 +387,13 @@ const LessonDetail = () => {
             </Card>
           </TabsContent>
 
-          {lesson.presentation_url && (
+          {signedPresentationUrl && (
             <TabsContent value="presentation" className="mt-4 space-y-4">
               <Card>
                 <CardContent className="py-4 px-4">
                   <div className="aspect-[16/9] w-full rounded-lg overflow-hidden border bg-muted">
                     <iframe
-                      src={`https://docs.google.com/gview?url=${encodeURIComponent(lesson.presentation_url)}&embedded=true`}
+                      src={`https://docs.google.com/gview?url=${encodeURIComponent(signedPresentationUrl)}&embedded=true`}
                       className="w-full h-full"
                       frameBorder="0"
                       allowFullScreen
@@ -380,7 +402,7 @@ const LessonDetail = () => {
                   </div>
                   <div className="mt-3 flex justify-center">
                     <Button variant="outline" size="sm" className="gap-2" asChild>
-                      <a href={lesson.presentation_url} download target="_blank" rel="noopener noreferrer">
+                      <a href={signedPresentationUrl} download target="_blank" rel="noopener noreferrer">
                         <Download className="w-4 h-4" />
                         تحميل العرض التقديمي
                       </a>

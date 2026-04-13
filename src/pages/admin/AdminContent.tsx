@@ -448,8 +448,8 @@ const AdminContent = () => {
         setUploadingPresentation(false);
         return;
       }
-      const { data: urlData } = supabase.storage.from('lesson-presentations').getPublicUrl(fileName);
-      presentationUrl = urlData.publicUrl;
+      // Store only the file path — signed URLs are generated at display time
+      presentationUrl = fileName;
       setUploadingPresentation(false);
     }
 
