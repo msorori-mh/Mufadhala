@@ -8,6 +8,17 @@ const corsHeaders = {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+type RegistrationPayload = {
+  phone: string;
+  first_name: string;
+  fourth_name: string;
+  governorate: string;
+  university_id: string;
+  college_id: string;
+  major_id?: string | null;
+  high_school_gpa?: number | null;
+};
+
 function isValidUuid(v: unknown): v is string {
   return typeof v === "string" && UUID_RE.test(v);
 }
@@ -19,9 +30,11 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   });
 }
 
+type AdminClient = ReturnType<typeof createClient<any>>;
+
 /** Wait for the trigger-created student row (up to ~3s) */
 async function waitForStudentRow(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AdminClient,
   userId: string,
   maxMs = 3000,
 ): Promise<boolean> {
@@ -37,6 +50,63 @@ async function waitForStudentRow(
     await new Promise((r) => setTimeout(r, interval));
   }
   return false;
+}
+
+async function ensureStudentAccountData(
+  supabase: AdminClient,
+  userId: string,
+  payload: RegistrationPayload,
+) {
+  const normalizedStudentData = {
+    first_name: payload.first_name.trim(),
+    fourth_name: payload.fourth_name.trim(),
+    phone: payload.phone,
+    governorate: payload.governorate,
+    university_id: payload.university_id,
+    college_id: payload.college_id,
+    major_id: payload.major_id || null,
+    gpa: payload.high_school_gpa ?? null,
+  };
+
+  const { data: existingStudent, error: studentLookupError } = await supabase
+    .from("students")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (studentLookupError) throw studentLookupError;
+
+  if (existingStudent) {
+    const { error: updateStudentError } = await supabase
+      .from("students")
+      .update(normalizedStudentData)
+      .eq("user_id", userId);
+
+    if (updateStudentError) throw updateStudentError;
+  } else {
+    const { error: insertStudentError } = await supabase
+      .from("students")
+      .insert({ user_id: userId, ...normalizedStudentData });
+
+    if (insertStudentError) throw insertStudentError;
+  }
+
+  const { data: existingRole, error: roleLookupError } = await supabase
+    .from("user_roles")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("role", "student")
+    .maybeSingle();
+
+  if (roleLookupError) throw roleLookupError;
+
+  if (!existingRole) {
+    const { error: insertRoleError } = await supabase
+      .from("user_roles")
+      .insert({ user_id: userId, role: "student" });
+
+    if (insertRoleError) throw insertRoleError;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -55,6 +125,17 @@ Deno.serve(async (req) => {
       major_id,
       high_school_gpa,
     } = await req.json();
+
+    const registrationPayload: RegistrationPayload = {
+      phone,
+      first_name,
+      fourth_name,
+      governorate,
+      university_id,
+      college_id,
+      major_id: major_id || null,
+      high_school_gpa: high_school_gpa ?? null,
+    };
 
     // --- Validate required fields ---
     if (!phone || !first_name || !fourth_name || !governorate || !university_id || !college_id) {
@@ -143,17 +224,8 @@ Deno.serve(async (req) => {
         if (createError.message?.includes("already been registered")) {
           console.log("Auth user exists without student record — recovering");
 
-          // Sign in directly (email is deterministic from phone)
           const recoverPassword = `muf_${phone}_${Date.now()}`;
 
-          // We need the user ID — use getUserById alternative:
-          // Since email is deterministic, try sign-in after password reset via admin
-          // First, find user by listing with the specific email
-          const { data: userData } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1 });
-          // listUsers doesn't filter — use a targeted approach via the dummy email
-          // Actually, just reset password and sign in; if it fails, report error
-          
-          // Try to get user by iterating (bounded to avoid full scan)
           let orphanedUserId: string | null = null;
           for (let page = 1; page <= 5; page++) {
             const { data: pageData } = await supabase.auth.admin.listUsers({ page, perPage: 100 });
@@ -167,7 +239,31 @@ Deno.serve(async (req) => {
             return jsonResponse({ error: "حدث خطأ في البيانات. يرجى التواصل مع الدعم." }, 500);
           }
 
-          await supabase.auth.admin.updateUserById(orphanedUserId, { password: recoverPassword });
+          const { error: recoverUpdateError } = await supabase.auth.admin.updateUserById(orphanedUserId, {
+            password: recoverPassword,
+            user_metadata: {
+              first_name: first_name.trim(),
+              fourth_name: fourth_name.trim(),
+              phone,
+              governorate,
+              university_id,
+              college_id,
+              major_id: major_id || null,
+              high_school_gpa: high_school_gpa ?? null,
+            },
+          });
+
+          if (recoverUpdateError) {
+            console.error("recover updateUserById error:", recoverUpdateError);
+            return jsonResponse({ error: "فشل في استعادة الحساب. يرجى المحاولة مرة أخرى." }, 500);
+          }
+
+          try {
+            await ensureStudentAccountData(supabase, orphanedUserId, registrationPayload);
+          } catch (repairError) {
+            console.error("recover ensureStudentAccountData error:", repairError);
+            return jsonResponse({ error: "فشل في استكمال بيانات الطالب. يرجى المحاولة مرة أخرى." }, 500);
+          }
 
           const { data: signInData, error: signInError } =
             await supabase.auth.signInWithPassword({ email: dummyEmail, password: recoverPassword });
@@ -175,9 +271,6 @@ Deno.serve(async (req) => {
           if (signInError || !signInData.session) {
             return jsonResponse({ error: "فشل في استعادة الحساب. يرجى المحاولة مرة أخرى." }, 500);
           }
-
-          // Wait for trigger to create student row
-          await waitForStudentRow(supabase, orphanedUserId);
 
           return jsonResponse({
             success: true,
@@ -208,11 +301,16 @@ Deno.serve(async (req) => {
         refresh_token: signInData.session.refresh_token,
       };
 
-      // Wait for trigger to create the student row — no writes, just verify
+      // Wait for trigger to create the student row — fallback to explicit repair if needed
       const exists = await waitForStudentRow(supabase, userId);
       if (!exists) {
-        console.warn(`Student row not created by trigger within timeout for user ${userId}`);
-        // Non-fatal: the trigger may still fire, and the student can use the profile page
+        console.warn(`Student row not created by trigger within timeout for user ${userId} — repairing explicitly`);
+        try {
+          await ensureStudentAccountData(supabase, userId, registrationPayload);
+        } catch (repairError) {
+          console.error("post-create ensureStudentAccountData error:", repairError);
+          return jsonResponse({ error: "تم إنشاء الحساب لكن فشل حفظ البيانات الأكاديمية. يرجى المحاولة مرة أخرى." }, 500);
+        }
       }
     }
 
