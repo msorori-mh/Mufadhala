@@ -232,20 +232,42 @@ Deno.serve(async (req) => {
         refresh_token: signInData.session.refresh_token,
       };
 
-      // Update student with ALL registration fields (trigger creates the student row)
-      await supabase
-        .from("students")
-        .update({
-          first_name: first_name.trim(),
-          fourth_name: fourth_name.trim(),
-          phone,
-          governorate,
-          university_id,
-          college_id,
-          major_id: major_id || null,
-          gpa: high_school_gpa ?? null,
-        })
-        .eq("user_id", userId);
+      // Wait for trigger to create the student row, then update with full data
+      const studentPayload = {
+        first_name: first_name.trim(),
+        fourth_name: fourth_name.trim(),
+        phone,
+        governorate,
+        university_id,
+        college_id,
+        major_id: major_id || null,
+        gpa: high_school_gpa ?? null,
+      };
+
+      // Retry loop: trigger may not have created the row yet
+      let updated = false;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, 500));
+        const { data: upd, error: updErr } = await supabase
+          .from("students")
+          .update(studentPayload)
+          .eq("user_id", userId)
+          .select("id");
+        if (!updErr && upd && upd.length > 0) {
+          updated = true;
+          break;
+        }
+        console.log(`Student update attempt ${attempt + 1} — rows: ${upd?.length ?? 0}, err: ${updErr?.message ?? "none"}`);
+      }
+
+      // Fallback: if trigger never fired, insert directly
+      if (!updated) {
+        console.log("Trigger row not found after retries, inserting directly");
+        await supabase.from("students").upsert({
+          user_id: userId,
+          ...studentPayload,
+        }, { onConflict: "user_id" });
+      }
     }
 
     return jsonResponse({ success: true, session });
