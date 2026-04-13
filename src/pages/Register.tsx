@@ -18,6 +18,7 @@ import {
   clearDraft,
 } from "@/lib/registrationDraft";
 import { GOVERNORATES, YEMEN_PHONE_REGEX } from "@/domain/constants";
+import { trackFunnelEvent } from "@/lib/funnelTracking";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -192,6 +193,7 @@ const Register = () => {
 
       // Only clear draft after confirmed session
       await clearDraft();
+      trackFunnelEvent("user_registered");
       toast({ title: "تم التسجيل بنجاح! 🎉" });
       navigate("/dashboard", { replace: true });
     } catch {
