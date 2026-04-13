@@ -386,13 +386,26 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
 
           {/* Input */}
           <div className="border-t border-border p-3">
-            {remaining <= 0 ? (
-              <p className="text-xs text-center text-destructive py-2">
-                لقد وصلت للحد اليومي ({dailyLimit} رسالة). حاول مرة أخرى غداً!
-              </p>
+            {getRemainingMessages(effectiveLimit) <= 0 ? (
+              <div className="text-center py-2 space-y-2">
+                {!hasSubscription ? (
+                  <>
+                    <p className="text-xs text-muted-foreground">
+                      وصلت للحد المجاني ({FREE_DAILY_LIMIT} رسائل يومياً)
+                    </p>
+                    <a href="/subscription" className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+                      <Sparkles className="w-3 h-3" />
+                      فعّل الاشتراك للحصول على {dailyLimit} رسالة يومياً
+                    </a>
+                  </>
+                ) : (
+                  <p className="text-xs text-destructive">
+                    لقد وصلت للحد اليومي ({effectiveLimit} رسالة). حاول غداً!
+                  </p>
+                )}
+              </div>
             ) : (
               <>
-                {/* Pending images preview */}
                 {pendingImages.length > 0 && (
                   <div className="flex gap-2 mb-2 flex-wrap">
                     {pendingImages.map((src, i) => (
@@ -444,9 +457,17 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
                     <Send className="h-4 w-4" />
                   </Button>
                 </form>
-                <p className="text-[10px] text-muted-foreground text-center mt-1.5">
-                  {remaining} رسالة متبقية اليوم
-                </p>
+                <div className="flex items-center justify-between mt-1.5">
+                  <p className="text-[10px] text-muted-foreground">
+                    {getRemainingMessages(effectiveLimit)} رسالة متبقية اليوم
+                  </p>
+                  {!hasSubscription && (
+                    <a href="/subscription" className="text-[10px] text-primary hover:underline flex items-center gap-0.5">
+                      <Lock className="w-2.5 h-2.5" />
+                      {dailyLimit} رسالة للمشتركين
+                    </a>
+                  )}
+                </div>
               </>
             )}
           </div>
