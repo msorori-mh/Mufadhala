@@ -19,6 +19,26 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   });
 }
 
+/** Wait for the trigger-created student row (up to ~3s) */
+async function waitForStudentRow(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  maxMs = 3000,
+): Promise<boolean> {
+  const start = Date.now();
+  const interval = 400;
+  while (Date.now() - start < maxMs) {
+    const { data } = await supabase
+      .from("students")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (data) return true;
+    await new Promise((r) => setTimeout(r, interval));
+  }
+  return false;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -50,16 +70,16 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "قيمة التخصص غير صالحة" }, 400);
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
 
     const dummyEmail = `${phone}@mufadhala.app`;
 
     // ──────────────────────────────────────────────
-    // 1. Check if a student record already exists for this phone
+    // 1. Check if student already exists by phone
     // ──────────────────────────────────────────────
     const { data: existingStudent } = await supabase
       .from("students")
@@ -67,13 +87,12 @@ Deno.serve(async (req) => {
       .eq("phone", phone)
       .maybeSingle();
 
-    let userId: string;
     let session: { access_token: string; refresh_token: string };
 
     if (existingStudent) {
-      // ── RETURNING USER: use student.user_id directly ──
-      userId = existingStudent.user_id;
-      console.log(`Returning user found via students table: ${userId}`);
+      // ── RETURNING USER ──
+      const userId = existingStudent.user_id;
+      console.log(`Returning user: ${userId}`);
 
       const tempPassword = `muf_${phone}_${Date.now()}`;
       const { error: updateErr } = await supabase.auth.admin.updateUserById(userId, {
@@ -88,7 +107,7 @@ Deno.serve(async (req) => {
         await supabase.auth.signInWithPassword({ email: dummyEmail, password: tempPassword });
 
       if (signInError || !signInData.session) {
-        console.error("Sign-in error for returning user:", signInError);
+        console.error("Sign-in error:", signInError);
         return jsonResponse({ error: "فشل في تسجيل الدخول. يرجى المحاولة مرة أخرى." }, 500);
       }
 
@@ -96,26 +115,10 @@ Deno.serve(async (req) => {
         access_token: signInData.session.access_token,
         refresh_token: signInData.session.refresh_token,
       };
-
-      // Update student data
-      const { error: updErr } = await supabase
-        .from("students")
-        .update({
-          first_name: first_name.trim(),
-          fourth_name: fourth_name.trim(),
-          governorate,
-          university_id,
-          college_id,
-          major_id,
-          gpa: high_school_gpa ?? null,
-        })
-        .eq("user_id", userId);
-
-      if (updErr) console.error("Student update error (non-fatal):", updErr);
-
     } else {
       // ── NEW USER ──
-      console.log(`No existing student for phone ${phone}, creating new user`);
+      // Pass all data as metadata → trigger (handle_new_user) creates the student row
+      console.log(`New registration for phone ${phone}`);
 
       const tempPassword = `muf_${phone}_${Date.now()}`;
       const { data: newUser, error: createError } =
@@ -130,93 +133,66 @@ Deno.serve(async (req) => {
             governorate,
             university_id,
             college_id,
-            major_id,
+            major_id: major_id || null,
             high_school_gpa: high_school_gpa ?? null,
           },
         });
 
       if (createError) {
-        // If user already exists in auth but NOT in students table (orphaned auth account)
+        // Orphaned auth account (exists in auth but not in students)
         if (createError.message?.includes("already been registered")) {
-          console.log("Auth user exists but no student record — attempting recovery");
+          console.log("Auth user exists without student record — recovering");
 
-          // Look up the auth user by email
-          const { data: listData } = await supabase.auth.admin.listUsers({
-            page: 1,
-            perPage: 1,
-          });
+          // Sign in directly (email is deterministic from phone)
+          const recoverPassword = `muf_${phone}_${Date.now()}`;
 
-          // Use getUserByEmail-style lookup via admin API
-          // Since listUsers with filter isn't reliable, try signing in after password reset
-          // We need to find the user ID. Try creating with a slightly different approach:
-          // Actually, the admin API doesn't have getUserByEmail, so we query by the known email pattern.
-          // The safest approach: list users and filter, but only for this specific conflict case.
+          // We need the user ID — use getUserById alternative:
+          // Since email is deterministic, try sign-in after password reset via admin
+          // First, find user by listing with the specific email
+          const { data: userData } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1 });
+          // listUsers doesn't filter — use a targeted approach via the dummy email
+          // Actually, just reset password and sign in; if it fails, report error
+          
+          // Try to get user by iterating (bounded to avoid full scan)
           let orphanedUserId: string | null = null;
-
-          // Try paginated search — but since this is a conflict recovery, 
-          // we know the email exists, so let's use a targeted approach
-          let page = 1;
-          const perPage = 100;
-          while (!orphanedUserId) {
-            const { data: pageData, error: listErr } = await supabase.auth.admin.listUsers({
-              page,
-              perPage,
-            });
-            if (listErr || !pageData?.users?.length) break;
+          for (let page = 1; page <= 5; page++) {
+            const { data: pageData } = await supabase.auth.admin.listUsers({ page, perPage: 100 });
+            if (!pageData?.users?.length) break;
             const found = pageData.users.find((u) => u.email === dummyEmail);
-            if (found) {
-              orphanedUserId = found.id;
-              break;
-            }
-            if (pageData.users.length < perPage) break;
-            page++;
+            if (found) { orphanedUserId = found.id; break; }
+            if (pageData.users.length < 100) break;
           }
 
           if (!orphanedUserId) {
-            console.error("Could not find orphaned auth user for email:", dummyEmail);
             return jsonResponse({ error: "حدث خطأ في البيانات. يرجى التواصل مع الدعم." }, 500);
           }
 
-          userId = orphanedUserId;
-          const recoverPassword = `muf_${phone}_${Date.now()}`;
-          await supabase.auth.admin.updateUserById(userId, { password: recoverPassword });
+          await supabase.auth.admin.updateUserById(orphanedUserId, { password: recoverPassword });
 
           const { data: signInData, error: signInError } =
             await supabase.auth.signInWithPassword({ email: dummyEmail, password: recoverPassword });
 
           if (signInError || !signInData.session) {
-            console.error("Recovery sign-in error:", signInError);
             return jsonResponse({ error: "فشل في استعادة الحساب. يرجى المحاولة مرة أخرى." }, 500);
           }
 
-          session = {
-            access_token: signInData.session.access_token,
-            refresh_token: signInData.session.refresh_token,
-          };
+          // Wait for trigger to create student row
+          await waitForStudentRow(supabase, orphanedUserId);
 
-          // Update student record (trigger should have created it)
-          await supabase
-            .from("students")
-            .update({
-              phone,
-              first_name: first_name.trim(),
-              fourth_name: fourth_name.trim(),
-              governorate,
-              university_id,
-              college_id,
-              major_id,
-              gpa: high_school_gpa ?? null,
-            })
-            .eq("user_id", userId);
-
-          return jsonResponse({ success: true, session });
+          return jsonResponse({
+            success: true,
+            session: {
+              access_token: signInData.session.access_token,
+              refresh_token: signInData.session.refresh_token,
+            },
+          });
         }
 
         console.error("Create user error:", createError);
         return jsonResponse({ error: "فشل في إنشاء الحساب. يرجى المحاولة مرة أخرى." }, 500);
       }
 
-      userId = newUser.user!.id;
+      const userId = newUser.user!.id;
 
       // Sign in
       const { data: signInData, error: signInError } =
@@ -232,41 +208,11 @@ Deno.serve(async (req) => {
         refresh_token: signInData.session.refresh_token,
       };
 
-      // Wait for trigger to create the student row, then update with full data
-      const studentPayload = {
-        first_name: first_name.trim(),
-        fourth_name: fourth_name.trim(),
-        phone,
-        governorate,
-        university_id,
-        college_id,
-        major_id: major_id || null,
-        gpa: high_school_gpa ?? null,
-      };
-
-      // Retry loop: trigger may not have created the row yet
-      let updated = false;
-      for (let attempt = 0; attempt < 5; attempt++) {
-        if (attempt > 0) await new Promise((r) => setTimeout(r, 500));
-        const { data: upd, error: updErr } = await supabase
-          .from("students")
-          .update(studentPayload)
-          .eq("user_id", userId)
-          .select("id");
-        if (!updErr && upd && upd.length > 0) {
-          updated = true;
-          break;
-        }
-        console.log(`Student update attempt ${attempt + 1} — rows: ${upd?.length ?? 0}, err: ${updErr?.message ?? "none"}`);
-      }
-
-      // Fallback: if trigger never fired, insert directly
-      if (!updated) {
-        console.log("Trigger row not found after retries, inserting directly");
-        await supabase.from("students").upsert({
-          user_id: userId,
-          ...studentPayload,
-        }, { onConflict: "user_id" });
+      // Wait for trigger to create the student row — no writes, just verify
+      const exists = await waitForStudentRow(supabase, userId);
+      if (!exists) {
+        console.warn(`Student row not created by trigger within timeout for user ${userId}`);
+        // Non-fatal: the trigger may still fire, and the student can use the profile page
       }
     }
 
