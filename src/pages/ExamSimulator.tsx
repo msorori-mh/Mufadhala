@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import { getContentFilter } from "@/lib/contentFilter";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useOfflineStatus } from "@/hooks/useOfflineStatus";
@@ -23,18 +24,14 @@ import { useToast } from "@/hooks/use-toast";
 
 const fetchExamData = async (userId: string) => {
   const { data: s } = await supabase.from("students").select("id, major_id, college_id, user_id").eq("user_id", userId).maybeSingle();
-  if (!s?.major_id && !s?.college_id) return { student: s, majorName: "", allQuestions: [] as Question[], pastAttempts: [] as ExamAttempt[], offlineInfo: { has: false, count: 0 } };
-  
-  // Use major_id if available, otherwise fetch lessons by college
-  const hasMajor = !!s.major_id;
+  const filter = getContentFilter(s);
+  if (!filter) return { student: s, majorName: "", allQuestions: [] as Question[], pastAttempts: [] as ExamAttempt[], offlineInfo: { has: false, count: 0 } };
 
-  const [{ data: major }, { data: lessons }, { data: attempts }] = await Promise.all([
-    hasMajor
-      ? supabase.from("majors").select("name_ar").eq("id", s.major_id!).maybeSingle()
-      : supabase.from("colleges").select("name_ar").eq("id", s.college_id!).maybeSingle(),
-    hasMajor
-      ? supabase.from("lessons").select("id, subject_id").eq("major_id", s.major_id!).eq("is_published", true)
-      : supabase.from("lessons").select("id, subject_id").eq("college_id", s.college_id!).eq("is_published", true),
+  const [{ data: nameData }, { data: lessons }, { data: attempts }] = await Promise.all([
+    filter.type === "major"
+      ? supabase.from("majors").select("name_ar").eq("id", filter.value).maybeSingle()
+      : supabase.from("colleges").select("name_ar").eq("id", filter.value).maybeSingle(),
+    supabase.from("lessons").select("id, subject_id").eq(filter.field, filter.value).eq("is_published", true),
     supabase.from("exam_attempts").select("id, score, total, started_at, completed_at, answers, major_id").eq("student_id", s.id).order("created_at", { ascending: false }),
   ]);
 
@@ -81,7 +78,7 @@ const fetchExamData = async (userId: string) => {
 
   return {
     student: s,
-    majorName: major?.name_ar || "",
+    majorName: nameData?.name_ar || "",
     allQuestions,
     pastAttempts: (attempts || []) as ExamAttempt[],
     offlineInfo,
