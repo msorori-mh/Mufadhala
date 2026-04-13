@@ -187,6 +187,8 @@ async function streamChat({
 }
 
 const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
+  const { user } = useAuth();
+  const { isActive: hasSubscription } = useSubscription(user?.id);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -198,10 +200,12 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Determine effective limit based on subscription
+  const effectiveLimit = hasSubscription ? dailyLimit : Math.min(dailyLimit, FREE_DAILY_LIMIT);
+
   useEffect(() => {
     fetchChatSettings().then(({ limit, welcome }) => {
       setDailyLimit(limit);
-      setRemaining(getRemainingMessages(limit));
       setWelcomeText(welcome);
     });
   }, []);
