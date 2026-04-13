@@ -1,15 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import NativeSelect from "@/components/NativeSelect";
 import { Loader2, Rocket } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
+import {
+  RegistrationDraft,
+  emptyDraft,
+  saveDraft,
+  loadDraft,
+  clearDraft,
+} from "@/lib/registrationDraft";
 
 const GOVERNORATES = [
   "أمانة العاصمة", "عدن", "تعز", "الحديدة", "إب", "ذمار", "حجة",
@@ -25,18 +32,37 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
 
-  // Form fields
-  const [firstName, setFirstName] = useState("");
-  const [fourthName, setFourthName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [governorate, setGovernorate] = useState("");
-  const [universityId, setUniversityId] = useState("");
-  const [collegeId, setCollegeId] = useState("");
-  const [highSchoolGpa, setHighSchoolGpa] = useState("");
+  // Unified form state
+  const [form, setForm] = useState<RegistrationDraft>(emptyDraft);
+  const draftLoaded = useRef(false);
 
   // Data
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
   const [colleges, setColleges] = useState<Tables<"colleges">[]>([]);
+
+  // Restore draft on mount
+  useEffect(() => {
+    loadDraft().then((draft) => {
+      if (draft) {
+        setForm(draft);
+      }
+      draftLoaded.current = true;
+    });
+  }, []);
+
+  // Auto-save draft on every change (after initial load)
+  useEffect(() => {
+    if (!draftLoaded.current) return;
+    saveDraft(form);
+  }, [form]);
+
+  // Update a single field
+  const updateField = useCallback(
+    <K extends keyof RegistrationDraft>(key: K, value: RegistrationDraft[K]) => {
+      setForm((prev) => ({ ...prev, [key]: value }));
+    },
+    [],
+  );
 
   // Check session on mount
   useEffect(() => {
@@ -51,18 +77,47 @@ const Register = () => {
 
   // Fetch universities
   useEffect(() => {
-    supabase.from("universities").select("*").eq("is_active", true).order("display_order")
-      .then(({ data }) => { if (data) setUniversities(data); });
+    supabase
+      .from("universities")
+      .select("*")
+      .eq("is_active", true)
+      .order("display_order")
+      .then(({ data }) => {
+        if (data) setUniversities(data);
+      });
   }, []);
 
   // Fetch colleges when university changes
   useEffect(() => {
-    if (!universityId) { setColleges([]); setCollegeId(""); return; }
-    supabase.from("colleges").select("*").eq("university_id", universityId).eq("is_active", true).order("display_order")
-      .then(({ data }) => { setColleges(data || []); setCollegeId(""); });
-  }, [universityId]);
+    if (!form.universityId) {
+      setColleges([]);
+      return;
+    }
+    supabase
+      .from("colleges")
+      .select("*")
+      .eq("university_id", form.universityId)
+      .eq("is_active", true)
+      .order("display_order")
+      .then(({ data }) => {
+        setColleges(data || []);
+        // Only reset college if the current selection doesn't belong to new university
+        if (data && form.collegeId) {
+          const stillValid = data.some((c) => c.id === form.collegeId);
+          if (!stillValid) {
+            updateField("collegeId", "");
+          }
+        }
+      });
+  }, [form.universityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isFormValid = firstName.trim() && fourthName.trim() && YEMEN_PHONE_REGEX.test(phoneNumber) && governorate && universityId && collegeId;
+  const isFormValid =
+    form.firstName.trim() &&
+    form.fourthName.trim() &&
+    YEMEN_PHONE_REGEX.test(form.phoneNumber) &&
+    form.governorate &&
+    form.universityId &&
+    form.collegeId;
 
   const handleRegister = async () => {
     if (!isFormValid) {
@@ -73,22 +128,27 @@ const Register = () => {
     try {
       const res = await supabase.functions.invoke("register-student", {
         body: {
-          phone: phoneNumber,
-          first_name: firstName.trim(),
-          fourth_name: fourthName.trim(),
-          governorate,
-          university_id: universityId,
-          college_id: collegeId,
-          high_school_gpa: highSchoolGpa ? parseFloat(highSchoolGpa) : null,
+          phone: form.phoneNumber,
+          first_name: form.firstName.trim(),
+          fourth_name: form.fourthName.trim(),
+          governorate: form.governorate,
+          university_id: form.universityId,
+          college_id: form.collegeId,
+          high_school_gpa: form.highSchoolGpa ? parseFloat(form.highSchoolGpa) : null,
         },
       });
       if (res.error || res.data?.error) {
-        toast({ variant: "destructive", title: "خطأ", description: res.data?.error || "فشل في إنشاء الحساب" });
+        toast({
+          variant: "destructive",
+          title: "خطأ",
+          description: res.data?.error || "فشل في إنشاء الحساب",
+        });
         setLoading(false);
         return;
       }
       const { access_token, refresh_token } = res.data.session;
       await supabase.auth.setSession({ access_token, refresh_token });
+      await clearDraft();
       toast({ title: "تم التسجيل بنجاح! 🎉" });
       navigate("/dashboard", { replace: true });
     } catch {
@@ -127,11 +187,19 @@ const Register = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>الاسم الأول</Label>
-                <Input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="أحمد" />
+                <Input
+                  value={form.firstName}
+                  onChange={(e) => updateField("firstName", e.target.value)}
+                  placeholder="أحمد"
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>اللقب</Label>
-                <Input value={fourthName} onChange={e => setFourthName(e.target.value)} placeholder="العمري" />
+                <Input
+                  value={form.fourthName}
+                  onChange={(e) => updateField("fourthName", e.target.value)}
+                  placeholder="العمري"
+                />
               </div>
             </div>
 
@@ -142,62 +210,73 @@ const Register = () => {
                 <Input
                   type="tel"
                   placeholder="7XXXXXXXX"
-                  value={phoneNumber}
-                  onChange={e => setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 9))}
+                  value={form.phoneNumber}
+                  onChange={(e) =>
+                    updateField("phoneNumber", e.target.value.replace(/\D/g, "").slice(0, 9))
+                  }
                   className="text-left font-mono"
                   dir="ltr"
                   maxLength={9}
                 />
               </div>
-              {phoneNumber && !YEMEN_PHONE_REGEX.test(phoneNumber) && (
+              {form.phoneNumber && !YEMEN_PHONE_REGEX.test(form.phoneNumber) && (
                 <p className="text-xs text-destructive">يجب أن يبدأ بـ 7 ويتكون من 9 أرقام</p>
               )}
             </div>
 
             <div className="space-y-1.5">
               <Label>المحافظة</Label>
-              <Select value={governorate} onValueChange={setGovernorate}>
-                <SelectTrigger><SelectValue placeholder="اختر المحافظة" /></SelectTrigger>
-                <SelectContent>
-                  {GOVERNORATES.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <NativeSelect
+                value={form.governorate}
+                onValueChange={(v) => updateField("governorate", v)}
+                placeholder="اختر المحافظة"
+                options={GOVERNORATES.map((g) => ({ value: g, label: g }))}
+              />
             </div>
 
             <div className="space-y-1.5">
               <Label>الجامعة</Label>
-              <Select value={universityId} onValueChange={v => { setUniversityId(v); setCollegeId(""); }}>
-                <SelectTrigger><SelectValue placeholder="اختر الجامعة" /></SelectTrigger>
-                <SelectContent>
-                  {universities.map(u => <SelectItem key={u.id} value={u.id}>{u.name_ar}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <NativeSelect
+                value={form.universityId}
+                onValueChange={(v) => {
+                  updateField("universityId", v);
+                  updateField("collegeId", "");
+                }}
+                placeholder="اختر الجامعة"
+                options={universities.map((u) => ({ value: u.id, label: u.name_ar }))}
+              />
             </div>
 
             <div className="space-y-1.5">
-              <Label>معدل الثانوية (%) <span className="text-muted-foreground font-normal">اختياري</span></Label>
+              <Label>
+                معدل الثانوية (%) <span className="text-muted-foreground font-normal">اختياري</span>
+              </Label>
               <Input
                 type="number"
                 placeholder="مثال: 85.5"
-                value={highSchoolGpa}
-                onChange={e => setHighSchoolGpa(e.target.value)}
+                value={form.highSchoolGpa}
+                onChange={(e) => updateField("highSchoolGpa", e.target.value)}
                 dir="ltr"
                 className="text-left"
-                min="60" max="100" step="0.01"
+                min="60"
+                max="100"
+                step="0.01"
               />
-              {highSchoolGpa && (parseFloat(highSchoolGpa) < 60 || parseFloat(highSchoolGpa) > 100) && (
-                <p className="text-xs text-destructive">يجب أن يكون المعدل بين 60 و 100</p>
-              )}
+              {form.highSchoolGpa &&
+                (parseFloat(form.highSchoolGpa) < 60 || parseFloat(form.highSchoolGpa) > 100) && (
+                  <p className="text-xs text-destructive">يجب أن يكون المعدل بين 60 و 100</p>
+                )}
             </div>
 
             <div className="space-y-1.5">
               <Label>الكلية</Label>
-              <Select value={collegeId} onValueChange={setCollegeId} disabled={!universityId}>
-                <SelectTrigger><SelectValue placeholder={!universityId ? "اختر الجامعة أولاً" : "اختر الكلية"} /></SelectTrigger>
-                <SelectContent>
-                  {colleges.map(c => <SelectItem key={c.id} value={c.id}>{c.name_ar}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <NativeSelect
+                value={form.collegeId}
+                onValueChange={(v) => updateField("collegeId", v)}
+                placeholder={!form.universityId ? "اختر الجامعة أولاً" : "اختر الكلية"}
+                disabled={!form.universityId}
+                options={colleges.map((c) => ({ value: c.id, label: c.name_ar }))}
+              />
             </div>
 
             <Button
@@ -211,9 +290,13 @@ const Register = () => {
 
             <p className="mt-2 text-center text-xs text-muted-foreground">
               بتسجيلك فإنك توافق على{" "}
-              <Link to="/privacy-policy" className="text-primary hover:underline">سياسة الخصوصية</Link>
+              <Link to="/privacy-policy" className="text-primary hover:underline">
+                سياسة الخصوصية
+              </Link>
               {" "}و{" "}
-              <Link to="/terms-of-service" className="text-primary hover:underline">شروط الاستخدام</Link>
+              <Link to="/terms-of-service" className="text-primary hover:underline">
+                شروط الاستخدام
+              </Link>
             </p>
           </CardContent>
         </Card>
