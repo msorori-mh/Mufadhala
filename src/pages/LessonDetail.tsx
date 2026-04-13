@@ -329,7 +329,7 @@ const LessonDetail = () => {
                 <h2 className="text-lg font-bold text-foreground">أنت على بعد خطوة من الوصول الكامل</h2>
                 <p className="text-sm text-muted-foreground">
                   {hasActiveSubscription && !planCoversLesson
-                    ? "باقتك الحالية لا تغطي هذا التخصص. يمكنك ترقية اشتراكك للوصول لجميع التخصصات"
+                    ? "باقتك الحالية لا تغطي هذا التخصص. يمكنك ترقية اشتراكك"
                     : "يمكنك قراءة الملخص مجاناً. اشترك للوصول الكامل"}
                 </p>
                 <div className="grid grid-cols-2 gap-2 max-w-xs mx-auto text-right">
@@ -342,12 +342,16 @@ const LessonDetail = () => {
                     <p key={f} className="text-xs text-foreground font-medium">{f}</p>
                   ))}
                 </div>
-                <Button className="mt-2 px-8 py-5 text-base font-bold" onClick={() => {
-                  trackFunnelEvent("subscribe_clicked", { source: "lesson_paywall" });
-                  navigate("/subscription");
-                }}>
-                  اشترك الآن
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2 justify-center mt-2">
+                  <Button className="px-6 py-5 text-base font-bold gap-2" onClick={() => {
+                    trackFunnelEvent("subscribe_clicked", { source: "lesson_paywall" });
+                    navigate("/subscription");
+                  }}>
+                    <Sparkles className="w-4 h-4" />
+                    عرض الخطط والأسعار
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground">خطط تبدأ من خطة مجانية • الخطة التحضيرية الأكثر شعبية</p>
               </CardContent>
             </Card>
           </div>
