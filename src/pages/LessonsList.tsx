@@ -288,12 +288,12 @@ const LessonsList = () => {
       )}
 
       <main className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6">
-        {!isOffline && !student?.major_id ? (
+        {!isOffline && !student?.college_id ? (
           <div className="text-center py-12">
             <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-lg font-semibold text-foreground">لم يتم اختيار تخصص بعد</p>
-            <p className="text-sm text-muted-foreground mt-1">اختر تخصصك من الملف الشخصي للوصول إلى المحتوى التعليمي</p>
-            <Button asChild className="mt-4"><Link to="/profile">اختيار التخصص</Link></Button>
+            <p className="text-lg font-semibold text-foreground">لم يتم اختيار كلية بعد</p>
+            <p className="text-sm text-muted-foreground mt-1">اختر كليتك من الملف الشخصي للوصول إلى المحتوى التعليمي</p>
+            <Button asChild className="mt-4"><Link to="/profile">اختيار الكلية</Link></Button>
           </div>
         ) : (
           <>
