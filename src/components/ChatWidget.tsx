@@ -19,6 +19,7 @@ type Message = {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const DEFAULT_DAILY_LIMIT = 30;
+const FREE_DAILY_LIMIT = 5;
 const STORAGE_KEY = "mufadhala_chat_usage";
 const MAX_IMAGE_SIZE = 1024; // max dimension for resizing
 
