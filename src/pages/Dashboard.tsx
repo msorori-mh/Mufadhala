@@ -91,7 +91,7 @@ const Dashboard = () => {
         subjectIds.length > 0
           ? fetchLessonsBySubjects(supabase, subjectIds)
           : Promise.resolve([]),
-        supabase.from("lesson_progress").select("id").eq("student_id", student.id).eq("is_completed", true),
+        supabase.from("lesson_progress").select("id", { count: "exact", head: true }).eq("student_id", student.id).eq("is_completed", true),
         student.college_id
           ? supabase.from("colleges").select("name_ar").eq("id", student.college_id).maybeSingle()
           : Promise.resolve({ data: null }),
@@ -100,7 +100,7 @@ const Dashboard = () => {
       return {
         attempts: (attemptsRes.data || []) as ExamAttemptRow[],
         lessonCount: lessons.length,
-        completedLessons: progressRes.data?.length ?? 0,
+        completedLessons: progressRes.count ?? 0,
         collegeName: (collegeRes.data as any)?.name_ar ?? null,
       };
     },
