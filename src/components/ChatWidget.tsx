@@ -1,9 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Bot, User, Loader2, Camera, ImageIcon } from "lucide-react";
+import { MessageCircle, X, Send, Bot, User, Loader2, Camera, Lock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/hooks/useAuth";
 
 type ContentPart =
   | { type: "text"; text: string }
