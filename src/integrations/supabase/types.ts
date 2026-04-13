@@ -369,6 +369,7 @@ export type Database = {
           id: string
           is_free: boolean
           is_published: boolean
+          lesson_code: string | null
           major_id: string | null
           presentation_url: string | null
           subject_id: string | null
@@ -385,6 +386,7 @@ export type Database = {
           id?: string
           is_free?: boolean
           is_published?: boolean
+          lesson_code?: string | null
           major_id?: string | null
           presentation_url?: string | null
           subject_id?: string | null
@@ -401,6 +403,7 @@ export type Database = {
           id?: string
           is_free?: boolean
           is_published?: boolean
+          lesson_code?: string | null
           major_id?: string | null
           presentation_url?: string | null
           subject_id?: string | null
