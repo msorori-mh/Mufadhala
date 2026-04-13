@@ -12,7 +12,7 @@ export const useStudentData = (userId: string | undefined) => {
       if (!userId) return null;
       const { data } = await supabase
         .from("students")
-        .select("*")
+        .select("id, user_id, first_name, second_name, third_name, fourth_name, phone, governorate, gpa, coordination_number, university_id, college_id, major_id, created_at, updated_at")
         .eq("user_id", userId)
         .maybeSingle();
       return data as Tables<"students"> | null;
