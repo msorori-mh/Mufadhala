@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import {
   GraduationCap, LayoutDashboard, Building2, BookOpen, Users, UserCog,
   LogOut, ChevronDown, ChevronUp, BarChart3, FileText,
-  CreditCard, Wallet, ListChecks, DollarSign, ClipboardCheck, ArrowRight, ArrowLeft, Tag, FlaskConical, ScrollText, UserCircle,
+  CreditCard, Wallet, ListChecks, DollarSign, ClipboardCheck, ArrowRight, ArrowLeft, Tag, FlaskConical, ScrollText, UserCircle, Route,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,6 +33,7 @@ const mainNavItems: NavItem[] = [
   { path: "/admin/payment-methods", label: "طرق الدفع", icon: Wallet, permission: "payment_methods" },
   { path: "/admin/payments", label: "طلبات الدفع", icon: CreditCard, permission: "payments" },
   { path: "/admin/deletion-logs", label: "سجل الحذف", icon: ScrollText, permission: "admin_only" },
+  { path: "/admin/tracks", label: "المسارات الأكاديمية", icon: Route, permission: "admin_only" },
 ];
 
 const reportSubItems: NavItem[] = [
