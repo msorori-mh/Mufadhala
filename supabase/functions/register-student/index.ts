@@ -232,10 +232,19 @@ Deno.serve(async (req) => {
         refresh_token: signInData.session.refresh_token,
       };
 
-      // Update student phone and GPA (trigger creates the student row)
+      // Update student with ALL registration fields (trigger creates the student row)
       await supabase
         .from("students")
-        .update({ phone, major_id, gpa: high_school_gpa ?? null })
+        .update({
+          first_name: first_name.trim(),
+          fourth_name: fourth_name.trim(),
+          phone,
+          governorate,
+          university_id,
+          college_id,
+          major_id: major_id || null,
+          gpa: high_school_gpa ?? null,
+        })
         .eq("user_id", userId);
     }
 

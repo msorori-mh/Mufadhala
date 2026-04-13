@@ -294,14 +294,6 @@ const StudentProfile = () => {
                 <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">اسم الأب</Label>
-                <Input value={secondName} onChange={(e) => setSecondName(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">اسم الجد</Label>
-                <Input value={thirdName} onChange={(e) => setThirdName(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
                 <Label className="text-xs">اللقب</Label>
                 <Input value={fourthName} onChange={(e) => setFourthName(e.target.value)} />
               </div>
@@ -486,17 +478,19 @@ const StudentProfile = () => {
               </Select>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs">التخصص</Label>
-              <Select value={majorId} onValueChange={setMajorId} disabled={!collegeId}>
-                <SelectTrigger><SelectValue placeholder={!collegeId ? "اختر الكلية أولاً" : "اختر التخصص"} /></SelectTrigger>
-                <SelectContent>
-                  {majors.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>{m.name_ar}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {majors.length > 0 && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">التخصص <span className="text-muted-foreground">(اختياري)</span></Label>
+                <Select value={majorId} onValueChange={setMajorId} disabled={!collegeId}>
+                  <SelectTrigger><SelectValue placeholder="اختر التخصص" /></SelectTrigger>
+                  <SelectContent>
+                    {majors.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>{m.name_ar}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
           </CardContent>
         </Card>
