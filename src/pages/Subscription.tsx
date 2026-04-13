@@ -68,13 +68,13 @@ const getPlanPrice = (plan: Plan, gov: string | null): number => {
 
 const Subscription = () => {
   const { user, loading: authLoading } = useAuth();
+  const { data: studentData, isLoading: studentLoading } = useStudentData(user?.id);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [subscription, setSubscription] = useState<SubRecord | null>(null);
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
-  const [studentGovernorate, setStudentGovernorate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [step, setStep] = useState<"plans" | "method" | "upload">("plans");
