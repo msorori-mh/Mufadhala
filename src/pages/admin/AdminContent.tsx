@@ -323,23 +323,26 @@ const AdminContent = () => {
     setInlineCorrectOption("a");
     setInlineExplanation("");
     setInlineSubject("general");
+    setInlineQuestionType("multiple_choice");
   };
 
   const addPendingQuestion = () => {
-    if (!inlineQuestionText || !inlineOptionA || !inlineOptionB || !inlineOptionC || !inlineOptionD) {
+    const isTF = inlineQuestionType === "true_false";
+    if (!inlineQuestionText || !inlineOptionA || !inlineOptionB || (!isTF && (!inlineOptionC || !inlineOptionD))) {
       toast({ variant: "destructive", title: "يرجى ملء جميع حقول السؤال المطلوبة" });
       return;
     }
     setPendingQuestions(prev => [...prev, {
       tempId: crypto.randomUUID(),
       question_text: inlineQuestionText,
-      option_a: inlineOptionA,
-      option_b: inlineOptionB,
-      option_c: inlineOptionC,
-      option_d: inlineOptionD,
+      option_a: isTF ? "صح" : inlineOptionA,
+      option_b: isTF ? "خطأ" : inlineOptionB,
+      option_c: isTF ? "" : inlineOptionC,
+      option_d: isTF ? "" : inlineOptionD,
       correct_option: inlineCorrectOption,
       explanation: inlineExplanation,
       subject: inlineSubject,
+      question_type: inlineQuestionType,
     }]);
     resetInlineQuestionForm();
     setShowAddQuestionForm(false);
