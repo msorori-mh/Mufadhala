@@ -65,10 +65,9 @@ const AdminDashboard = () => {
       // Subscription stats (exclude staff)
       const studentSubs = (subs.data || []).filter(sub => !staffIds.has(sub.user_id));
       const activeSubs = studentSubs.filter(sub =>
-        (sub.status === "active" && (!sub.expires_at || new Date(sub.expires_at) > new Date())) ||
-        (sub.status === "trial" && sub.trial_ends_at && new Date(sub.trial_ends_at) > new Date())
+        sub.status === "active" && (!sub.expires_at || new Date(sub.expires_at) > new Date())
       );
-      const trialSubs = studentSubs.filter(sub => sub.status === "trial");
+      const trialSubs = studentSubs.filter(sub => sub.status === "trial" && sub.trial_ends_at && new Date(sub.trial_ends_at) > new Date());
 
       // Payment stats (exclude staff)
       const studentPayments = (payments.data || []).filter(p => !staffIds.has(p.user_id));
