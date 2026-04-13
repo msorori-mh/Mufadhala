@@ -26,6 +26,64 @@
 
   <body>
     <div id="root"></div>
+
+    <!-- Native app loading screen -->
+    <div id="app-loader" style="
+      position: fixed; inset: 0; z-index: 99999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #1A237E 0%, #283593 40%, #3949AB 100%);
+      transition: opacity 0.4s ease-out;
+    ">
+      <div style="
+        width: 96px; height: 96px; border-radius: 50%;
+        background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
+        display: flex; align-items: center; justify-content: center;
+        animation: loaderPulse 1.8s ease-in-out infinite;
+      ">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+          <path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5"/>
+        </svg>
+      </div>
+      <p style="color: white; font-size: 22px; font-weight: 700; margin-top: 20px; font-family: system-ui, sans-serif;">
+        مُفَاضَلَة
+      </p>
+      <div style="
+        width: 40px; height: 4px; border-radius: 4px; margin-top: 24px;
+        background: rgba(255,255,255,0.2); overflow: hidden;
+      ">
+        <div style="
+          width: 100%; height: 100%; border-radius: 4px;
+          background: rgba(255,255,255,0.7);
+          animation: loaderBar 1.2s ease-in-out infinite;
+        "></div>
+      </div>
+      <style>
+        @keyframes loaderPulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.08); opacity: 0.85; }
+        }
+        @keyframes loaderBar {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+      </style>
+    </div>
+
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Remove loader once React app renders
+      const observer = new MutationObserver(() => {
+        if (document.getElementById('root')?.children.length) {
+          const loader = document.getElementById('app-loader');
+          if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => loader.remove(), 400);
+          }
+          observer.disconnect();
+        }
+      });
+      observer.observe(document.getElementById('root'), { childList: true });
+    </script>
   </body>
 </html>
