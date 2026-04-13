@@ -802,6 +802,7 @@ export type Database = {
           option_c: string
           option_d: string
           question_text: string
+          question_type: string
           subject: string
           updated_at: string
         }
@@ -817,6 +818,7 @@ export type Database = {
           option_c: string
           option_d: string
           question_text: string
+          question_type?: string
           subject?: string
           updated_at?: string
         }
@@ -832,6 +834,7 @@ export type Database = {
           option_c?: string
           option_d?: string
           question_text?: string
+          question_type?: string
           subject?: string
           updated_at?: string
         }

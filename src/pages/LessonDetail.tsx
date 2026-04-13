@@ -41,6 +41,7 @@ interface Question {
   correct_option: string;
   explanation: string;
   display_order: number;
+  question_type?: string;
 }
 
 /** Extract storage path from a presentation_url (handles both full URLs and plain filenames). */
@@ -479,14 +480,19 @@ const LessonDetail = () => {
                 </Button>
                 {questions.map((q, i) => {
                   const isRevealed = revealedAnswers.has(q.id);
+                  const isTrueFalse = q.question_type === "true_false";
+                  const options = isTrueFalse ? (["a", "b"] as const) : (["a", "b", "c", "d"] as const);
 
                   return (
                     <Card key={q.id}>
                       <CardContent className="py-4 px-4">
-                        <p className="font-semibold text-sm mb-3">{i + 1}. {q.question_text}</p>
-                        <div className="space-y-2">
-                          {(["a", "b", "c", "d"] as const).map((opt) => {
-                            const optionText = q[`option_${opt}` as keyof Question] as string;
+                        <div className="flex items-start gap-2 mb-3">
+                          {isTrueFalse && <Badge variant="outline" className="text-[10px] shrink-0">صح/خطأ</Badge>}
+                          <p className="font-semibold text-sm">{i + 1}. {q.question_text}</p>
+                        </div>
+                        <div className={isTrueFalse ? "grid grid-cols-2 gap-2" : "space-y-2"}>
+                          {options.map((opt) => {
+                            const optionText = isTrueFalse ? (opt === "a" ? "صح" : "خطأ") : (q[`option_${opt}` as keyof Question] as string);
                             const isCorrectOption = q.correct_option === opt;
 
                             let classes = "flex items-center gap-2 p-3 rounded-lg border text-sm transition-colors ";
@@ -498,9 +504,11 @@ const LessonDetail = () => {
 
                             return (
                               <div key={opt} className={classes}>
-                                <span className="w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold shrink-0">
-                                  {opt.toUpperCase()}
-                                </span>
+                                {!isTrueFalse && (
+                                  <span className="w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold shrink-0">
+                                    {opt.toUpperCase()}
+                                  </span>
+                                )}
                                 <span className="flex-1">{optionText}</span>
                                 {isRevealed && isCorrectOption && <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />}
                               </div>

@@ -59,6 +59,7 @@ interface Question {
   explanation: string;
   display_order: number;
   subject: string;
+  question_type: string;
 }
 
 interface PendingQuestion {
@@ -71,6 +72,7 @@ interface PendingQuestion {
   correct_option: string;
   explanation: string;
   subject: string;
+  question_type: string;
 }
 
 const SUBJECT_OPTIONS = [
@@ -151,6 +153,7 @@ const AdminContent = () => {
   const [inlineCorrectOption, setInlineCorrectOption] = useState("a");
   const [inlineExplanation, setInlineExplanation] = useState("");
   const [inlineSubject, setInlineSubject] = useState("general");
+  const [inlineQuestionType, setInlineQuestionType] = useState("multiple_choice");
 
   // Question dialog (for editing from the questions panel)
   const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
@@ -165,6 +168,7 @@ const AdminContent = () => {
   const [explanation, setExplanation] = useState("");
   const [questionSubject, setQuestionSubject] = useState("general");
   const [questionOrder, setQuestionOrder] = useState(0);
+  const [questionType, setQuestionType] = useState("multiple_choice");
   const [questionSubjectFilter, setQuestionSubjectFilter] = useState("all");
   const [questionSearchQuery, setQuestionSearchQuery] = useState("");
 
@@ -319,23 +323,26 @@ const AdminContent = () => {
     setInlineCorrectOption("a");
     setInlineExplanation("");
     setInlineSubject("general");
+    setInlineQuestionType("multiple_choice");
   };
 
   const addPendingQuestion = () => {
-    if (!inlineQuestionText || !inlineOptionA || !inlineOptionB || !inlineOptionC || !inlineOptionD) {
+    const isTF = inlineQuestionType === "true_false";
+    if (!inlineQuestionText || !inlineOptionA || !inlineOptionB || (!isTF && (!inlineOptionC || !inlineOptionD))) {
       toast({ variant: "destructive", title: "يرجى ملء جميع حقول السؤال المطلوبة" });
       return;
     }
     setPendingQuestions(prev => [...prev, {
       tempId: crypto.randomUUID(),
       question_text: inlineQuestionText,
-      option_a: inlineOptionA,
-      option_b: inlineOptionB,
-      option_c: inlineOptionC,
-      option_d: inlineOptionD,
+      option_a: isTF ? "صح" : inlineOptionA,
+      option_b: isTF ? "خطأ" : inlineOptionB,
+      option_c: isTF ? "" : inlineOptionC,
+      option_d: isTF ? "" : inlineOptionD,
       correct_option: inlineCorrectOption,
       explanation: inlineExplanation,
       subject: inlineSubject,
+      question_type: inlineQuestionType,
     }]);
     resetInlineQuestionForm();
     setShowAddQuestionForm(false);
@@ -378,6 +385,7 @@ const AdminContent = () => {
           for (let i = 1; i < rows.length; i++) {
             const row = rows[i] as any[];
             if (!row[0]) continue;
+            const qType = row[8] ? String(row[8]).trim().toLowerCase() === "true_false" ? "true_false" : "multiple_choice" : "multiple_choice";
             const { error } = await supabase.from("questions").insert({
               lesson_id: editingLesson.id,
               question_text: String(row[0]),
@@ -388,6 +396,7 @@ const AdminContent = () => {
               correct_option: String(row[5] || "a").toLowerCase().trim(),
               explanation: row[6] ? String(row[6]) : "",
               subject: row[7] ? getSubjectValue(String(row[7])) : "general",
+              question_type: qType,
               display_order: existingCount + i,
             });
             if (!error) imported++;
@@ -413,6 +422,7 @@ const AdminContent = () => {
               correct_option: String(row[5] || "a").toLowerCase().trim(),
               explanation: row[6] ? String(row[6]) : "",
               subject: row[7] ? getSubjectValue(String(row[7])) : "general",
+              question_type: row[8] ? String(row[8]).trim().toLowerCase() === "true_false" ? "true_false" : "multiple_choice" : "multiple_choice",
             });
           }
           setPendingQuestions(prev => [...prev, ...newPending]);
@@ -485,6 +495,7 @@ const AdminContent = () => {
               correct_option: pq.correct_option,
               explanation: pq.explanation,
               subject: pq.subject,
+              question_type: pq.question_type,
               display_order: baseOrder + i,
             });
           }
@@ -526,6 +537,7 @@ const AdminContent = () => {
                 correct_option: pq.correct_option,
                 explanation: pq.explanation,
                 subject: pq.subject,
+                question_type: pq.question_type,
                 display_order: i,
               });
             }
@@ -632,6 +644,7 @@ const AdminContent = () => {
     setCorrectOption("a");
     setExplanation("");
     setQuestionSubject("general");
+    setQuestionType("multiple_choice");
     setQuestionOrder(questions.filter((q) => q.lesson_id === lessonId).length);
     setQuestionDialogOpen(true);
   };
@@ -647,12 +660,14 @@ const AdminContent = () => {
     setCorrectOption(q.correct_option);
     setExplanation(q.explanation);
     setQuestionSubject(q.subject || "general");
+    setQuestionType(q.question_type || "multiple_choice");
     setQuestionOrder(q.display_order);
     setQuestionDialogOpen(true);
   };
 
   const handleSaveQuestion = async () => {
-    if (!questionText || !optionA || !optionB || !optionC || !optionD) {
+    const isTF = questionType === "true_false";
+    if (!questionText || !optionA || !optionB || (!isTF && (!optionC || !optionD))) {
       toast({ variant: "destructive", title: "يرجى ملء جميع الحقول المطلوبة" });
       return;
     }
@@ -660,20 +675,28 @@ const AdminContent = () => {
     const payload = {
       lesson_id: questionLessonId,
       question_text: questionText,
-      option_a: optionA,
-      option_b: optionB,
-      option_c: optionC,
-      option_d: optionD,
+      option_a: isTF ? "صح" : optionA,
+      option_b: isTF ? "خطأ" : optionB,
+      option_c: isTF ? "" : optionC,
+      option_d: isTF ? "" : optionD,
       correct_option: correctOption,
       explanation,
       display_order: questionOrder,
       subject: questionSubject,
+      question_type: questionType,
     };
     if (editingQuestion) {
       const { error } = await supabase.from("questions").update(payload).eq("id", editingQuestion.id);
       if (error) toast({ variant: "destructive", title: error.message });
       else toast({ title: "تم تحديث السؤال" });
     } else {
+      // Duplicate protection
+      const existingQ = questions.find(q => q.lesson_id === questionLessonId && q.question_text.trim() === questionText.trim());
+      if (existingQ) {
+        toast({ variant: "destructive", title: "هذا السؤال موجود بالفعل في هذا الدرس" });
+        setSaving(false);
+        return;
+      }
       const { error } = await supabase.from("questions").insert(payload);
       if (error) toast({ variant: "destructive", title: error.message });
       else toast({ title: "تمت إضافة السؤال" });
@@ -694,8 +717,9 @@ const AdminContent = () => {
   const downloadQuestionsTemplate = () => {
     const wb = XLSX.utils.book_new();
     const data = [
-      ["نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`],
-      ["ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب", "عام"],
+      ["نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`, "نوع السؤال (multiple_choice / true_false)"],
+      ["ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب", "عام", "multiple_choice"],
+      ["الأرض مسطحة", "صح", "خطأ", "", "", "b", "الأرض كروية الشكل", "عام", "true_false"],
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), "الأسئلة");
     XLSX.writeFile(wb, "قالب_استيراد_أسئلة.xlsx");
@@ -704,8 +728,8 @@ const AdminContent = () => {
   const downloadQuestionsOnlyTemplate = () => {
     const wb = XLSX.utils.book_new();
     const data = [
-      ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`],
-      ["مقدمة في البرمجة", "ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب", "عام"],
+      ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`, "نوع السؤال (multiple_choice / true_false)"],
+      ["مقدمة في البرمجة", "ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب", "عام", "multiple_choice"],
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), "الأسئلة");
     XLSX.writeFile(wb, "قالب_استيراد_أسئلة_فقط.xlsx");
@@ -729,9 +753,14 @@ const AdminContent = () => {
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i] as any[];
         if (!row[0]) continue;
+        // Duplicate protection
+        const qText = String(row[0]).trim();
+        const existingQ = questions.find(q => q.lesson_id === selectedLesson && q.question_text.trim() === qText);
+        if (existingQ) continue;
+        const qType = row[8] ? String(row[8]).trim().toLowerCase() === "true_false" ? "true_false" : "multiple_choice" : "multiple_choice";
         const { error } = await supabase.from("questions").insert({
           lesson_id: selectedLesson,
-          question_text: String(row[0]),
+          question_text: qText,
           option_a: String(row[1] || ""),
           option_b: String(row[2] || ""),
           option_c: String(row[3] || ""),
@@ -739,6 +768,7 @@ const AdminContent = () => {
           correct_option: String(row[5] || "a").toLowerCase().trim(),
           explanation: row[6] ? String(row[6]) : "",
           subject: row[7] ? getSubjectValue(String(row[7])) : "general",
+          question_type: qType,
           display_order: existingCount + i,
         });
         if (error) {
@@ -810,8 +840,8 @@ const AdminContent = () => {
     const wb = XLSX.utils.book_new();
     const subjectNames = subjects.map(s => s.name_ar).join(" / ");
     const lessonsData = [
-      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`, "رابط العرض التقديمي"],
-      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || "", ""],
+      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`, "رابط العرض التقديمي", "الصف الدراسي (1/2/3)"],
+      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || "", "", ""],
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lessonsData), "الدروس");
     XLSX.writeFile(wb, "قالب_استيراد_الدروس.xlsx");
@@ -821,12 +851,12 @@ const AdminContent = () => {
     const wb = XLSX.utils.book_new();
     const subjectNames = subjects.map(s => s.name_ar).join(" / ");
     const lessonsData = [
-      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`, "رابط العرض التقديمي"],
-      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || "", ""],
+      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`, "رابط العرض التقديمي", "الصف الدراسي (1/2/3)"],
+      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || "", "", ""],
     ];
     const questionsData = [
-      ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`],
-      ["مقدمة في البرمجة", "ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب", "عام"],
+      ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`, "نوع السؤال (multiple_choice / true_false)"],
+      ["مقدمة في البرمجة", "ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب", "عام", "multiple_choice"],
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lessonsData), "الدروس");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(questionsData), "الأسئلة");
@@ -876,10 +906,17 @@ const AdminContent = () => {
             const row = lessonsSheet[i] as any[];
             if (!row[0]) continue;
             const title = String(row[0]).trim();
+            // Duplicate protection: skip if lesson with same title exists in this college
+            const existingLesson = lessons.find(l => l.college_id === collegeId && l.title.trim() === title);
+            if (existingLesson) {
+              lessonMap.set(title, existingLesson.id);
+              continue;
+            }
             const subjectName = row[5] ? String(row[5]).trim() : "";
             const matchedSubject = subjectName ? subjects.find(s => s.name_ar === subjectName || s.code === subjectName) : null;
             const resolvedSubjectId = importSubjectId || matchedSubject?.id || null;
             const presentationUrl = row[6] ? String(row[6]).trim() : "";
+            const gradeLevel = row[7] ? Number(row[7]) : null;
             const { data: inserted, error } = await supabase.from("lessons").insert({
               college_id: collegeId,
               title,
@@ -889,6 +926,7 @@ const AdminContent = () => {
               is_published: row[4] ? String(row[4]).includes("نعم") || String(row[4]).toLowerCase() === "true" : false,
               subject_id: resolvedSubjectId,
               presentation_url: presentationUrl || null,
+              grade_level: gradeLevel,
             }).select("id").single();
             if (error) {
               toast({ variant: "destructive", title: `خطأ في درس "${title}": ${error.message}` });
@@ -911,9 +949,14 @@ const AdminContent = () => {
             if (!lessonId) {
               continue;
             }
+            // Duplicate protection
+            const qText = String(row[1]).trim();
+            const existingQ = questions.find(q => q.lesson_id === lessonId && q.question_text.trim() === qText);
+            if (existingQ) continue;
+            const qType = row[9] ? String(row[9]).trim().toLowerCase() === "true_false" ? "true_false" : "multiple_choice" : "multiple_choice";
             const { error } = await supabase.from("questions").insert({
               lesson_id: lessonId,
-              question_text: String(row[1]),
+              question_text: qText,
               option_a: String(row[2] || ""),
               option_b: String(row[3] || ""),
               option_c: String(row[4] || ""),
@@ -921,6 +964,7 @@ const AdminContent = () => {
               correct_option: String(row[6] || "a").toLowerCase().trim(),
               explanation: row[7] ? String(row[7]) : "",
               subject: row[8] ? getSubjectValue(String(row[8])) : "general",
+              question_type: qType,
               display_order: i,
             });
             if (error) {
@@ -1427,37 +1471,64 @@ const AdminContent = () => {
                   {/* Inline add question form */}
                   {showAddQuestionForm && (
                     <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
-                      <div className="space-y-2">
-                        <Label className="text-xs">المادة</Label>
-                        <select value={inlineSubject} onChange={(e) => setInlineSubject(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm">
-                          {SUBJECT_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                        </select>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-2">
+                          <Label className="text-xs">المادة</Label>
+                          <select value={inlineSubject} onChange={(e) => setInlineSubject(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm">
+                            {SUBJECT_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">نوع السؤال</Label>
+                          <select value={inlineQuestionType} onChange={(e) => { setInlineQuestionType(e.target.value); if (e.target.value === "true_false") { setInlineOptionA("صح"); setInlineOptionB("خطأ"); setInlineOptionC(""); setInlineOptionD(""); setInlineCorrectOption("a"); } }} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm">
+                            <option value="multiple_choice">اختيار من متعدد</option>
+                            <option value="true_false">صح / خطأ</option>
+                          </select>
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-xs">نص السؤال *</Label>
                         <Textarea value={inlineQuestionText} onChange={(e) => setInlineQuestionText(e.target.value)} rows={2} />
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1"><Label className="text-xs">الخيار أ *</Label><Input value={inlineOptionA} onChange={(e) => setInlineOptionA(e.target.value)} className="h-8 text-sm" /></div>
-                        <div className="space-y-1"><Label className="text-xs">الخيار ب *</Label><Input value={inlineOptionB} onChange={(e) => setInlineOptionB(e.target.value)} className="h-8 text-sm" /></div>
-                        <div className="space-y-1"><Label className="text-xs">الخيار ج *</Label><Input value={inlineOptionC} onChange={(e) => setInlineOptionC(e.target.value)} className="h-8 text-sm" /></div>
-                        <div className="space-y-1"><Label className="text-xs">الخيار د *</Label><Input value={inlineOptionD} onChange={(e) => setInlineOptionD(e.target.value)} className="h-8 text-sm" /></div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <Label className="text-xs">الإجابة الصحيحة *</Label>
-                          <select value={inlineCorrectOption} onChange={(e) => setInlineCorrectOption(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm">
-                            <option value="a">أ</option>
-                            <option value="b">ب</option>
-                            <option value="c">ج</option>
-                            <option value="d">د</option>
-                          </select>
+                      {inlineQuestionType === "true_false" ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <Label className="text-xs">الإجابة الصحيحة *</Label>
+                            <select value={inlineCorrectOption} onChange={(e) => setInlineCorrectOption(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm">
+                              <option value="a">صح</option>
+                              <option value="b">خطأ</option>
+                            </select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">الشرح</Label>
+                            <Input value={inlineExplanation} onChange={(e) => setInlineExplanation(e.target.value)} className="h-9 text-sm" />
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">الشرح</Label>
-                          <Input value={inlineExplanation} onChange={(e) => setInlineExplanation(e.target.value)} className="h-9 text-sm" />
-                        </div>
-                      </div>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1"><Label className="text-xs">الخيار أ *</Label><Input value={inlineOptionA} onChange={(e) => setInlineOptionA(e.target.value)} className="h-8 text-sm" /></div>
+                            <div className="space-y-1"><Label className="text-xs">الخيار ب *</Label><Input value={inlineOptionB} onChange={(e) => setInlineOptionB(e.target.value)} className="h-8 text-sm" /></div>
+                            <div className="space-y-1"><Label className="text-xs">الخيار ج *</Label><Input value={inlineOptionC} onChange={(e) => setInlineOptionC(e.target.value)} className="h-8 text-sm" /></div>
+                            <div className="space-y-1"><Label className="text-xs">الخيار د *</Label><Input value={inlineOptionD} onChange={(e) => setInlineOptionD(e.target.value)} className="h-8 text-sm" /></div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">الإجابة الصحيحة *</Label>
+                              <select value={inlineCorrectOption} onChange={(e) => setInlineCorrectOption(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm">
+                                <option value="a">أ</option>
+                                <option value="b">ب</option>
+                                <option value="c">ج</option>
+                                <option value="d">د</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">الشرح</Label>
+                              <Input value={inlineExplanation} onChange={(e) => setInlineExplanation(e.target.value)} className="h-9 text-sm" />
+                            </div>
+                          </div>
+                        </>
+                      )}
                       <Button type="button" size="sm" onClick={addPendingQuestion} className="w-full">إضافة السؤال</Button>
                     </div>
                   )}
@@ -1517,31 +1588,52 @@ const AdminContent = () => {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editingQuestion ? "تعديل سؤال" : "إضافة سؤال"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>المادة</Label>
-              <select value={questionSubject} onChange={(e) => setQuestionSubject(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                {SUBJECT_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>المادة</Label>
+                <select value={questionSubject} onChange={(e) => setQuestionSubject(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  {SUBJECT_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>نوع السؤال</Label>
+                <select value={questionType} onChange={(e) => { setQuestionType(e.target.value); if (e.target.value === "true_false") { setOptionA("صح"); setOptionB("خطأ"); setOptionC(""); setOptionD(""); setCorrectOption("a"); } }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  <option value="multiple_choice">اختيار من متعدد</option>
+                  <option value="true_false">صح / خطأ</option>
+                </select>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>نص السؤال *</Label>
               <Textarea value={questionText} onChange={(e) => setQuestionText(e.target.value)} rows={3} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2"><Label>الخيار أ *</Label><Input value={optionA} onChange={(e) => setOptionA(e.target.value)} /></div>
-              <div className="space-y-2"><Label>الخيار ب *</Label><Input value={optionB} onChange={(e) => setOptionB(e.target.value)} /></div>
-              <div className="space-y-2"><Label>الخيار ج *</Label><Input value={optionC} onChange={(e) => setOptionC(e.target.value)} /></div>
-              <div className="space-y-2"><Label>الخيار د *</Label><Input value={optionD} onChange={(e) => setOptionD(e.target.value)} /></div>
-            </div>
-            <div className="space-y-2">
-              <Label>الإجابة الصحيحة *</Label>
-              <select value={correctOption} onChange={(e) => setCorrectOption(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="a">أ</option>
-                <option value="b">ب</option>
-                <option value="c">ج</option>
-                <option value="d">د</option>
-              </select>
-            </div>
+            {questionType === "true_false" ? (
+              <div className="space-y-2">
+                <Label>الإجابة الصحيحة *</Label>
+                <select value={correctOption} onChange={(e) => setCorrectOption(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  <option value="a">صح</option>
+                  <option value="b">خطأ</option>
+                </select>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2"><Label>الخيار أ *</Label><Input value={optionA} onChange={(e) => setOptionA(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>الخيار ب *</Label><Input value={optionB} onChange={(e) => setOptionB(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>الخيار ج *</Label><Input value={optionC} onChange={(e) => setOptionC(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>الخيار د *</Label><Input value={optionD} onChange={(e) => setOptionD(e.target.value)} /></div>
+                </div>
+                <div className="space-y-2">
+                  <Label>الإجابة الصحيحة *</Label>
+                  <select value={correctOption} onChange={(e) => setCorrectOption(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                    <option value="a">أ</option>
+                    <option value="b">ب</option>
+                    <option value="c">ج</option>
+                    <option value="d">د</option>
+                  </select>
+                </div>
+              </>
+            )}
             <div className="space-y-2">
               <Label>الشرح</Label>
               <Textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={2} />
