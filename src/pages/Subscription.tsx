@@ -373,7 +373,7 @@ const Subscription = () => {
                   <GraduationCap className="w-10 h-10 text-yellow-600 mx-auto" />
                   <h2 className="text-lg font-bold text-yellow-700 dark:text-yellow-400">يرجى إكمال بياناتك الشخصية أولاً</h2>
                   <p className="text-sm text-yellow-600 dark:text-yellow-500">نحتاج لمعرفة محافظتك لتحديد سعر الاشتراك المناسب</p>
-                  <Button onClick={() => navigate("/complete-profile")} className="mt-2">إكمال البيانات الشخصية</Button>
+                  <Button onClick={() => navigate("/profile")} className="mt-2">إكمال البيانات الشخصية</Button>
                 </CardContent>
               </Card>
             );

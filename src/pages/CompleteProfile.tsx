@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 const CompleteProfile = () => {
   const navigate = useNavigate();
   useEffect(() => {
-    navigate("/dashboard", { replace: true });
+    navigate("/profile", { replace: true });
   }, [navigate]);
   return null;
 };
