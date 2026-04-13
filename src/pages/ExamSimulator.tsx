@@ -324,7 +324,7 @@ const ExamSimulator = () => {
         <ShareResult percentage={engine.percentage} score={engine.resultScore} total={engine.resultTotal} toast={engine.toast} />
 
         {/* Upgrade CTA for free users after exam */}
-        {!engine.hasSubscription && !engine.trialExpired && (
+        {!engine.hasActiveSubscription && !engine.trialExpired && (
           <PostExamUpgrade percentage={engine.percentage} totalQuestions={engine.examQuestions.length} />
         )}
 
