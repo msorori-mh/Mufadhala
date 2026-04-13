@@ -465,13 +465,24 @@ const ExamSimulator = () => {
         <header className="gradient-primary text-white px-4 py-4">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2"><GraduationCap className="w-6 h-6" /><span className="font-bold text-lg">محاكاة الاختبار</span></div>
-            <div className="flex items-center gap-1"><ThemeToggle /><Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white"><Link to="/dashboard"><ChevronLeft className="w-4 h-4 ml-1" />الرئيسية</Link></Button></div>
+            <div className="flex items-center gap-1"><ThemeToggle /><Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white"><Link to={isStaff ? "/admin" : "/dashboard"}><ChevronLeft className="w-4 h-4 ml-1" />{isStaff ? "لوحة التحكم" : "الرئيسية"}</Link></Button></div>
           </div>
         </header>
         <main className="max-w-4xl mx-auto px-4 py-12 text-center">
-          <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-          <p className="font-semibold">اختر تخصصك أولاً من الملف الشخصي</p>
-          <Button asChild className="mt-4"><Link to="/profile">الملف الشخصي</Link></Button>
+          {isStaff ? (
+            <>
+              <GraduationCap className="w-12 h-12 text-primary mx-auto mb-3" />
+              <p className="font-semibold text-lg">محاكاة الاختبار مخصصة للطلاب المسجلين</p>
+              <p className="text-muted-foreground mt-2">كمسؤول، يمكنك متابعة أداء الطلاب من تقارير الاختبارات</p>
+              <Button asChild className="mt-4"><Link to="/admin/reports/exams">تقارير الاختبارات</Link></Button>
+            </>
+          ) : (
+            <>
+              <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+              <p className="font-semibold">اختر تخصصك أولاً من الملف الشخصي</p>
+              <Button asChild className="mt-4"><Link to="/profile">الملف الشخصي</Link></Button>
+            </>
+          )}
         </main>
       </div>
     );
