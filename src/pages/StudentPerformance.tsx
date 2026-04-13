@@ -56,11 +56,8 @@ const StudentPerformance = () => {
     queryFn: async () => {
       if (!student || !student.college_id) return null;
 
-      // Subject-based resolution via admission_tracks (official path)
-      const { subjectIds, resolvedVia } = await resolveSubjectIds(supabase, student.college_id);
-      if (resolvedVia === "college_subjects") {
-        console.warn("[Performance] Resolved via college_subjects fallback for college:", student.college_id);
-      }
+      // Subject-based resolution via admission_tracks
+      const { subjectIds } = await resolveSubjectIds(supabase, student.college_id);
       if (subjectIds.length === 0) return null;
 
       // Fetch deduplicated lessons + exams + progress in parallel

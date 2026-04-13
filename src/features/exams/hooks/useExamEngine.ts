@@ -58,11 +58,8 @@ const fetchExamData = async (userId: string) => {
       offlineInfo: { has: false, count: 0 },
     };
 
-  // ── Subject-based resolution via admission_tracks (official) ──
-  const { subjectIds, resolvedVia } = await resolveSubjectIds(supabase, s.college_id);
-  if (resolvedVia === "college_subjects") {
-    console.warn("[ExamEngine] Resolved via college_subjects fallback for college:", s.college_id);
-  }
+  // ── Subject-based resolution via admission_tracks ──
+  const { subjectIds } = await resolveSubjectIds(supabase, s.college_id);
 
   if (subjectIds.length === 0)
     return {
