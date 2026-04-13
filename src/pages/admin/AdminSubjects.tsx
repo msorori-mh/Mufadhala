@@ -190,11 +190,10 @@ const AdminSubjects = () => {
                           <Badge variant="outline" className="text-[10px]">
                             {linkedMajors.size} تخصص
                           </Badge>
-                          </Badge>
                         </div>
                       </div>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openLinkDialog(s)} title="ربط بالكليات والتخصصات">
+                        <Button variant="ghost" size="icon" onClick={() => openLinkDialog(s)} title="ربط بالتخصصات">
                           <Link2 className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => openEdit(s)}>
@@ -254,38 +253,37 @@ const AdminSubjects = () => {
             <DialogHeader>
               <DialogTitle>ربط "{linkSubject?.name_ar}" بالتخصصات</DialogTitle>
             </DialogHeader>
-              <TabsContent value="majors" className="space-y-3 mt-3">
-                <div className="flex gap-2">
-                  <select value={filterUni} onChange={(e) => { setFilterUni(e.target.value); setFilterCollege(""); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1">
-                    <option value="">جميع الجامعات</option>
-                    {universities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
-                  </select>
-                  <select value={filterCollege} onChange={(e) => setFilterCollege(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1">
-                    <option value="">جميع الكليات</option>
-                    {filteredColleges.map((c: any) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1 max-h-[50vh] overflow-y-auto">
-                  {filteredMajors.map((m: any) => {
-                    const isLinked = linkSubject ? linkedMajorIds(linkSubject.id).has(m.id) : false;
-                    const college = colleges.find((c: any) => c.id === m.college_id);
-                    return (
-                      <div
-                        key={m.id}
-                        className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${isLinked ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/50"}`}
-                        onClick={() => linkSubject && toggleMajorLink(m.id, linkSubject.id)}
-                      >
-                        <div>
-                          <p className="text-sm font-medium">{m.name_ar}</p>
-                          <p className="text-[10px] text-muted-foreground">{college?.name_ar}</p>
-                        </div>
-                        <Switch checked={isLinked} onChange={() => {}} />
+            <div className="space-y-3 mt-3">
+              <div className="flex gap-2">
+                <select value={filterUni} onChange={(e) => { setFilterUni(e.target.value); setFilterCollege(""); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1">
+                  <option value="">جميع الجامعات</option>
+                  {universities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
+                </select>
+                <select value={filterCollege} onChange={(e) => setFilterCollege(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1">
+                  <option value="">جميع الكليات</option>
+                  {filteredColleges.map((c: any) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1 max-h-[50vh] overflow-y-auto">
+                {filteredMajors.map((m: any) => {
+                  const isLinked = linkSubject ? linkedMajorIds(linkSubject.id).has(m.id) : false;
+                  const college = colleges.find((c: any) => c.id === m.college_id);
+                  return (
+                    <div
+                      key={m.id}
+                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${isLinked ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/50"}`}
+                      onClick={() => linkSubject && toggleMajorLink(m.id, linkSubject.id)}
+                    >
+                      <div>
+                        <p className="text-sm font-medium">{m.name_ar}</p>
+                        <p className="text-[10px] text-muted-foreground">{college?.name_ar}</p>
                       </div>
-                    );
-                  })}
-                </div>
-              </TabsContent>
-            </Tabs>
+                      <Switch checked={isLinked} onChange={() => {}} />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </PermissionGate>
