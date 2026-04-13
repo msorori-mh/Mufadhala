@@ -300,11 +300,7 @@ const LessonDetail = () => {
       )}
 
       <main className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6">
-        {!canAccess ? (() => {
-          // Track paywall view
-          trackFunnelEvent("paywall_viewed", { lesson_id: id || "" });
-          return null;
-        })() || (
+        {!canAccess ? (
           <div className="space-y-4">
             {lesson.summary && (
               <Card>
