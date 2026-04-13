@@ -4,18 +4,9 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useStudentAccess } from "@/hooks/useStudentAccess";
 import { fetchLessonsBySubjects } from "@/lib/contentFilter";
-import { Rocket, Clock, Users, AlertTriangle } from "lucide-react";
+import { Rocket, Users, AlertTriangle } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 
-// Configurable exam target date — update each season
-const EXAM_TARGET_DATE = new Date("2025-08-15");
-
-function getDaysUntilExam(): number | null {
-  const now = new Date();
-  const diff = EXAM_TARGET_DATE.getTime() - now.getTime();
-  if (diff <= 0) return null;
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
-}
 
 const Welcome = () => {
   const navigate = useNavigate();
@@ -23,7 +14,6 @@ const Welcome = () => {
   const [firstLessonId, setFirstLessonId] = useState<string | null>(null);
   const [resolving, setResolving] = useState(true);
 
-  const daysLeft = getDaysUntilExam();
   const studentName = student?.first_name || "";
   const [collegeName, setCollegeName] = useState("");
 
@@ -118,15 +108,13 @@ const Welcome = () => {
           <img src={logoImg} alt="مُفَاضَلَة" className="w-full h-full object-cover" />
         </div>
 
-        {/* Countdown urgency */}
-        {daysLeft && (
-          <div className="flex items-center gap-2 bg-destructive/10 text-destructive px-4 py-2 rounded-full mb-4">
-            <Clock className="w-4 h-4" />
-            <span className="text-sm font-bold">
-              المفاضلة بعد {daysLeft} يوم فقط
-            </span>
-          </div>
-        )}
+        {/* Urgency message */}
+        <div className="flex items-center gap-2 bg-destructive/10 text-destructive px-4 py-2 rounded-full mb-4">
+          <AlertTriangle className="w-4 h-4" />
+          <span className="text-sm font-bold">
+            موسم المفاضلات اقترب — لا تضيّع وقتك
+          </span>
+        </div>
 
         {/* Personalized heading */}
         <h1 className="text-2xl font-bold text-foreground text-center mb-2">
