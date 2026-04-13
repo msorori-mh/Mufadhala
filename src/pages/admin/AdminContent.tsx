@@ -15,7 +15,7 @@ import { useModeratorScope } from "@/hooks/useModeratorScope";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles, ChevronDown, ChevronUp, Search, Presentation, Copy, CheckSquare } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles, ChevronDown, ChevronUp, Search, Presentation, CheckSquare } from "lucide-react";
 import * as XLSX from "xlsx";
 import { parseWorkbook, executeImport, downloadUnifiedTemplate, type ImportReport, type ValidationError } from "@/services/importEngine";
 
@@ -39,6 +39,7 @@ interface Lesson {
   created_at: string;
   presentation_url: string | null;
   grade_level: number | null;
+  lesson_code: string | null;
 }
 
 const GRADE_LEVELS = [
@@ -105,16 +106,14 @@ const AdminContent = () => {
   const [colleges, setColleges] = useState<any[]>([]);
   const [universities, setUniversities] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [majorSubjectsMap, setMajorSubjectsMap] = useState<Record<string, string[]>>({});
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters
-  const [filterUni, setFilterUni] = useState("");
-  const [filterCollegeIds, setFilterCollegeIds] = useState<string[]>([]);
+  // Filters — subject-based
   const [filterSubject, setFilterSubject] = useState("");
   const [filterGradeLevel, setFilterGradeLevel] = useState("");
+  const [filterPublished, setFilterPublished] = useState("");
   const [bulkSelectMode, setBulkSelectMode] = useState(false);
   const [selectedLessonIds, setSelectedLessonIds] = useState<string[]>([]);
 
@@ -124,9 +123,6 @@ const AdminContent = () => {
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonContent, setLessonContent] = useState("");
   const [lessonSummary, setLessonSummary] = useState("");
-  
-  const [lessonUniId, setLessonUniId] = useState("");
-  const [lessonCollegeIds, setLessonCollegeIds] = useState<string[]>([]);
   const [lessonOrder, setLessonOrder] = useState(0);
   const [lessonPublished, setLessonPublished] = useState(false);
   const [lessonFree, setLessonFree] = useState(false);
@@ -179,30 +175,19 @@ const AdminContent = () => {
   // Import state (unified)
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [importUniId, setImportUniId] = useState("");
-  const [importCollegeIds, setImportCollegeIds] = useState<string[]>([]);
   const [importSubjectId, setImportSubjectId] = useState("");
   const [importReport, setImportReport] = useState<ImportReport | null>(null);
-  const [importPreviewErrors, setImportPreviewErrors] = useState<ValidationError[]>([]);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Copy lesson state
-  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
-  const [copyingLesson, setCopyingLesson] = useState<Lesson | null>(null);
-  const [copyUniId, setCopyUniId] = useState("");
-  const [copyCollegeIds, setCopyCollegeIds] = useState<string[]>([]);
-  const [copying, setCopying] = useState(false);
-
   const fetchData = async () => {
-    const [{ data: u }, { data: c }, { data: m }, { data: l }, { data: q }, { data: subs }, { data: ms }] = await Promise.all([
+    const [{ data: u }, { data: c }, { data: m }, { data: l }, { data: q }, { data: subs }] = await Promise.all([
       supabase.from("universities").select("*").order("display_order"),
       supabase.from("colleges").select("*").order("display_order"),
       supabase.from("majors").select("*").order("display_order"),
       supabase.from("lessons").select("*").order("display_order"),
       supabase.from("questions").select("*").order("display_order"),
       supabase.from("subjects").select("id, name_ar, code").eq("is_active", true).order("display_order"),
-      supabase.from("major_subjects").select("*"),
     ]);
     if (u) setUniversities(u);
     if (c) setColleges(c);
@@ -210,14 +195,6 @@ const AdminContent = () => {
     if (l) setLessons(l as Lesson[]);
     if (q) setQuestions(q as Question[]);
     if (subs) setSubjects(subs as Subject[]);
-    if (ms) {
-      const map: Record<string, string[]> = {};
-      (ms as any[]).forEach((r: any) => {
-        if (!map[r.major_id]) map[r.major_id] = [];
-        map[r.major_id].push(r.subject_id);
-      });
-      setMajorSubjectsMap(map);
-    }
     setLoading(false);
   };
 
@@ -227,29 +204,13 @@ const AdminContent = () => {
     user?.id, isAdmin, universities, colleges, majors
   );
 
-  // Apply scope filtering
+  // Apply scope filtering — now primarily by subject
   const allowedMajorIds = getAllowedMajorIds();
-  const scopedMajors = allowedMajorIds ? majors.filter((m: any) => allowedMajorIds.has(m.id)) : majors;
-  const scopedLessons = allowedMajorIds
-    ? lessons.filter((l) => (l.major_id && allowedMajorIds.has(l.major_id)) || !l.major_id)
-    : lessons;
-  const scopedCollegeIds = new Set(scopedMajors.map((m: any) => m.college_id));
-  const scopedColleges = allowedMajorIds ? colleges.filter((c: any) => scopedCollegeIds.has(c.id)) : colleges;
-  const scopedUniIds = new Set(scopedColleges.map((c: any) => c.university_id));
-  const scopedUniversities = allowedMajorIds ? universities.filter((u: any) => scopedUniIds.has(u.id)) : universities;
+  const scopedLessons = lessons; // All lessons are shared, no college-based scoping needed
 
-  const filteredColleges = filterUni ? scopedColleges.filter((c: any) => c.university_id === filterUni) : scopedColleges;
-  
-  const availableFilterSubjects = subjects;
-
+  // Filter lessons by subject, grade level, published state
   const filteredLessons = (() => {
     let result = scopedLessons;
-    if (filterCollegeIds.length > 0) {
-      result = result.filter((l) => l.college_id && filterCollegeIds.includes(l.college_id));
-    } else if (filterUni) {
-      const uniCollegeIds = scopedColleges.filter((c: any) => c.university_id === filterUni).map((c: any) => c.id);
-      result = result.filter((l) => l.college_id && uniCollegeIds.includes(l.college_id));
-    }
     if (filterSubject) {
       result = result.filter((l) => l.subject_id === filterSubject);
     }
@@ -257,10 +218,15 @@ const AdminContent = () => {
       const gl = Number(filterGradeLevel);
       result = result.filter((l) => l.grade_level === gl);
     }
+    if (filterPublished === "published") {
+      result = result.filter((l) => l.is_published);
+    } else if (filterPublished === "draft") {
+      result = result.filter((l) => !l.is_published);
+    }
     return result;
   })();
 
-  const getCollegeName = (id: string | null) => colleges.find((c: any) => c.id === id)?.name_ar || "";
+  const getSubjectName = (id: string | null) => subjects.find((s) => s.id === id)?.name_ar || "";
 
   // --- Lesson CRUD ---
   const openCreateLesson = () => {
@@ -268,13 +234,10 @@ const AdminContent = () => {
     setLessonTitle("");
     setLessonContent("");
     setLessonSummary("");
-    
-    setLessonUniId(filterUni);
-    setLessonCollegeIds(filterCollegeIds.length > 0 ? filterCollegeIds : []);
     setLessonOrder(filteredLessons.length);
     setLessonPublished(false);
     setLessonFree(false);
-    setLessonSubjectId("");
+    setLessonSubjectId(filterSubject || "");
     setLessonPresentationFile(null);
     setLessonPresentationUrl("");
     setLessonGradeLevel(null);
@@ -291,18 +254,13 @@ const AdminContent = () => {
     setLessonTitle(l.title);
     setLessonContent(l.content);
     setLessonSummary(l.summary);
-    
-    // Derive uni/college from the lesson
-    const lessonCollege = l.college_id ? colleges.find((c: any) => c.id === l.college_id) : null;
-    setLessonCollegeIds(l.college_id ? [l.college_id] : []);
-    setLessonUniId(lessonCollege?.university_id || "");
     setLessonOrder(l.display_order);
     setLessonPublished(l.is_published);
     setLessonFree(l.is_free);
     setLessonSubjectId(l.subject_id || "");
     setLessonPresentationFile(null);
     setLessonPresentationUrl(l.presentation_url || "");
-    setLessonGradeLevel((l as any).grade_level ?? null);
+    setLessonGradeLevel(l.grade_level ?? null);
     setPendingQuestions([]);
     setExistingLessonQuestions(questions.filter(q => q.lesson_id === l.id));
     setShowAddQuestionForm(false);
@@ -376,7 +334,6 @@ const AdminContent = () => {
         const rows = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
 
         if (editingLesson) {
-          // Editing: save directly to DB
           let imported = 0;
           const existingCount = existingLessonQuestions.length;
           for (let i = 1; i < rows.length; i++) {
@@ -399,12 +356,10 @@ const AdminContent = () => {
             if (!error) imported++;
           }
           toast({ title: `تم استيراد ${imported} سؤال بنجاح` });
-          // Refresh existing questions
           const { data: updatedQ } = await supabase.from("questions").select("*").eq("lesson_id", editingLesson.id).order("display_order");
           if (updatedQ) setExistingLessonQuestions(updatedQ as Question[]);
           fetchData();
         } else {
-          // Creating: add to pendingQuestions
           const newPending: PendingQuestion[] = [];
           for (let i = 1; i < rows.length; i++) {
             const row = rows[i] as any[];
@@ -434,8 +389,8 @@ const AdminContent = () => {
   };
 
   const handleSaveLesson = async () => {
-    if (!lessonTitle || lessonCollegeIds.length === 0) {
-      toast({ variant: "destructive", title: "يرجى ملء العنوان واختيار كلية واحدة على الأقل" });
+    if (!lessonTitle || !lessonSubjectId) {
+      toast({ variant: "destructive", title: "يرجى ملء العنوان واختيار المادة الدراسية" });
       return;
     }
     setSaving(true);
@@ -455,26 +410,26 @@ const AdminContent = () => {
         setUploadingPresentation(false);
         return;
       }
-      // Store only the file path — signed URLs are generated at display time
       presentationUrl = fileName;
       setUploadingPresentation(false);
     }
 
+    const payload: any = {
+      title: lessonTitle,
+      content: lessonContent,
+      summary: lessonSummary,
+      subject_id: lessonSubjectId,
+      display_order: lessonOrder,
+      is_published: lessonPublished,
+      is_free: lessonFree,
+      presentation_url: presentationUrl || null,
+      grade_level: lessonGradeLevel,
+      // Shared content — no college/major ownership
+      college_id: null,
+      major_id: null,
+    };
+
     if (editingLesson) {
-      // Edit mode: update single lesson
-      const payload: any = {
-        title: lessonTitle,
-        content: lessonContent,
-        summary: lessonSummary,
-        college_id: lessonCollegeIds[0],
-        major_id: null,
-        subject_id: lessonSubjectId || null,
-        display_order: lessonOrder,
-        is_published: lessonPublished,
-        is_free: lessonFree,
-        presentation_url: presentationUrl || null,
-        grade_level: lessonGradeLevel,
-      };
       const { error } = await supabase.from("lessons").update(payload).eq("id", editingLesson.id);
       if (error) toast({ variant: "destructive", title: error.message });
       else {
@@ -500,49 +455,32 @@ const AdminContent = () => {
         toast({ title: "تم تحديث الدرس" });
       }
     } else {
-      // Create mode: duplicate for each selected college
-      let totalCreated = 0;
-      for (const collegeId of lessonCollegeIds) {
-        const payload: any = {
-          title: lessonTitle,
-          content: lessonContent,
-          summary: lessonSummary,
-          college_id: collegeId,
-          major_id: null,
-          subject_id: lessonSubjectId || null,
-          display_order: lessonOrder,
-          is_published: lessonPublished,
-          is_free: lessonFree,
-          presentation_url: presentationUrl || null,
-          grade_level: lessonGradeLevel,
-        };
-        const { data: inserted, error } = await supabase.from("lessons").insert(payload).select("id").single();
-        if (error) {
-          toast({ variant: "destructive", title: error.message });
-        } else if (inserted) {
-          totalCreated++;
-          if (pendingQuestions.length > 0) {
-            for (let i = 0; i < pendingQuestions.length; i++) {
-              const pq = pendingQuestions[i];
-              await supabase.from("questions").insert({
-                lesson_id: inserted.id,
-                question_text: pq.question_text,
-                option_a: pq.option_a,
-                option_b: pq.option_b,
-                option_c: pq.option_c,
-                option_d: pq.option_d,
-                correct_option: pq.correct_option,
-                explanation: pq.explanation,
-                subject: pq.subject,
-                question_type: pq.question_type,
-                display_order: i,
-              });
-            }
+      // Create ONE shared lesson (no college duplication)
+      const { data: inserted, error } = await supabase.from("lessons").insert(payload).select("id").single();
+      if (error) {
+        toast({ variant: "destructive", title: error.message });
+      } else if (inserted) {
+        if (pendingQuestions.length > 0) {
+          for (let i = 0; i < pendingQuestions.length; i++) {
+            const pq = pendingQuestions[i];
+            await supabase.from("questions").insert({
+              lesson_id: inserted.id,
+              question_text: pq.question_text,
+              option_a: pq.option_a,
+              option_b: pq.option_b,
+              option_c: pq.option_c,
+              option_d: pq.option_d,
+              correct_option: pq.correct_option,
+              explanation: pq.explanation,
+              subject: pq.subject,
+              question_type: pq.question_type,
+              display_order: i,
+            });
           }
         }
+        const qMsg = pendingQuestions.length > 0 ? ` مع ${pendingQuestions.length} سؤال` : "";
+        toast({ title: `تمت إضافة الدرس${qMsg}` });
       }
-      const qMsg = pendingQuestions.length > 0 ? ` مع ${pendingQuestions.length} سؤال` : "";
-      toast({ title: `تمت إضافة الدرس في ${totalCreated} كلية${qMsg}` });
     }
     setSaving(false);
     setLessonDialogOpen(false);
@@ -572,61 +510,6 @@ const AdminContent = () => {
 
   const toggleLessonSelection = (id: string) => {
     setSelectedLessonIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  };
-
-  // --- Copy Lesson to other colleges ---
-  const openCopyLesson = (l: Lesson) => {
-    setCopyingLesson(l);
-    setCopyUniId("");
-    setCopyCollegeIds([]);
-    setCopyDialogOpen(true);
-  };
-
-  const handleCopyLesson = async () => {
-    if (!copyingLesson || copyCollegeIds.length === 0) return;
-    setCopying(true);
-    const lessonQuestions = questions.filter(q => q.lesson_id === copyingLesson.id);
-    let totalCreated = 0;
-    for (const collegeId of copyCollegeIds) {
-      const { data: inserted, error } = await supabase.from("lessons").insert({
-        title: copyingLesson.title,
-        content: copyingLesson.content,
-        summary: copyingLesson.summary,
-        college_id: collegeId,
-        major_id: copyingLesson.major_id,
-        subject_id: copyingLesson.subject_id,
-        display_order: copyingLesson.display_order,
-        is_published: copyingLesson.is_published,
-        is_free: copyingLesson.is_free,
-        presentation_url: copyingLesson.presentation_url,
-        grade_level: copyingLesson.grade_level,
-      }).select("id").single();
-      if (error) {
-        toast({ variant: "destructive", title: error.message });
-      } else if (inserted) {
-        totalCreated++;
-        for (let i = 0; i < lessonQuestions.length; i++) {
-          const q = lessonQuestions[i];
-          await supabase.from("questions").insert({
-            lesson_id: inserted.id,
-            question_text: q.question_text,
-            option_a: q.option_a,
-            option_b: q.option_b,
-            option_c: q.option_c,
-            option_d: q.option_d,
-            correct_option: q.correct_option,
-            explanation: q.explanation,
-            subject: q.subject,
-            display_order: q.display_order,
-          });
-        }
-      }
-    }
-    const qMsg = lessonQuestions.length > 0 ? ` مع ${lessonQuestions.length} سؤال` : "";
-    toast({ title: `تم نسخ الدرس إلى ${totalCreated} كلية${qMsg}` });
-    setCopying(false);
-    setCopyDialogOpen(false);
-    fetchData();
   };
 
   // --- Question CRUD (from questions panel) ---
@@ -687,7 +570,6 @@ const AdminContent = () => {
       if (error) toast({ variant: "destructive", title: error.message });
       else toast({ title: "تم تحديث السؤال" });
     } else {
-      // Duplicate protection
       const existingQ = questions.find(q => q.lesson_id === questionLessonId && q.question_text.trim() === questionText.trim());
       if (existingQ) {
         toast({ variant: "destructive", title: "هذا السؤال موجود بالفعل في هذا الدرس" });
@@ -775,32 +657,36 @@ const AdminContent = () => {
 
   // --- Export existing lessons ---
   const exportLessons = () => {
-    const collegeLessons = filteredLessons;
-    if (collegeLessons.length === 0) {
+    const exportData = filteredLessons;
+    if (exportData.length === 0) {
       toast({ variant: "destructive", title: "لا توجد دروس للتصدير" });
       return;
     }
     const wb = XLSX.utils.book_new();
-    const header = ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", "المادة", "رابط العرض التقديمي"];
-    const rows = collegeLessons.map(l => [
+    const header = ["كود الدرس", "المادة", "عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", "مجاني (نعم/لا)", "الصف الدراسي", "رابط العرض التقديمي"];
+    const rows = exportData.map(l => [
+      l.lesson_code || "",
+      l.subject_id ? (subjects.find(s => s.id === l.subject_id)?.name_ar || "") : "",
       l.title,
       l.content,
       l.summary,
       l.display_order,
       l.is_published ? "نعم" : "لا",
-      l.subject_id ? (subjects.find(s => s.id === l.subject_id)?.name_ar || "") : "",
+      l.is_free ? "نعم" : "لا",
+      l.grade_level || "",
       l.presentation_url || "",
     ]);
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows]), "الدروس");
 
     // Export questions sheet
-    const qHeader = ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة", "الشرح", "ترتيب العرض", "المادة"];
+    const qHeader = ["كود الدرس", "نوع السؤال", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة", "الشرح", "ترتيب العرض"];
     const qRows: (string | number)[][] = [];
-    collegeLessons.forEach(l => {
+    exportData.forEach(l => {
       const lessonQs = questions.filter(q => q.lesson_id === l.id);
       lessonQs.forEach(q => {
         qRows.push([
-          l.title,
+          l.lesson_code || l.title,
+          q.question_type || "multiple_choice",
           q.question_text,
           q.option_a,
           q.option_b,
@@ -809,7 +695,6 @@ const AdminContent = () => {
           q.correct_option,
           q.explanation,
           q.display_order,
-          q.subject || "general",
         ]);
       });
     });
@@ -820,17 +705,16 @@ const AdminContent = () => {
     XLSX.writeFile(wb, "تصدير_الدروس_والأسئلة.xlsx");
   };
 
-  // --- Bulk Import (Unified Engine) ---
+  // --- Bulk Import (Unified Engine — Subject-Based) ---
   const handleDownloadUnifiedTemplate = () => {
     downloadUnifiedTemplate(subjects);
   };
 
   const handleUnifiedImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || importCollegeIds.length === 0) return;
+    if (!file) return;
     setImporting(true);
     setImportReport(null);
-    setImportPreviewErrors([]);
 
     try {
       const data = await file.arrayBuffer();
@@ -839,9 +723,8 @@ const AdminContent = () => {
       const report = await executeImport({
         lessonsRows,
         questionsRows,
-        collegeIds: importCollegeIds,
         subjects,
-        existingLessons: lessons.map(l => ({ id: l.id, college_id: l.college_id, title: l.title, lesson_code: (l as any).lesson_code || null })),
+        existingLessons: lessons.map(l => ({ id: l.id, title: l.title, lesson_code: l.lesson_code || null, subject_id: l.subject_id || null })),
         existingQuestions: questions.map(q => ({ id: q.id, lesson_id: q.lesson_id, question_text: q.question_text })),
         fallbackSubjectId: importSubjectId || undefined,
       });
@@ -880,100 +763,25 @@ const AdminContent = () => {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h1 className="text-2xl font-bold">المحتوى التعليمي</h1>
-            <p className="text-sm text-muted-foreground">{filteredLessons.length} درس</p>
+            <p className="text-sm text-muted-foreground">{filteredLessons.length} درس مشترك</p>
           </div>
           <div className="flex gap-2">
             <Button onClick={exportLessons} size="sm" variant="outline">
               <Download className="w-4 h-4 ml-1" />تصدير
             </Button>
-            <Button onClick={() => { setImportUniId(filterUni); setImportCollegeIds(filterCollegeIds.length > 0 ? filterCollegeIds : []); setImportSubjectId(filterSubject); setImportReport(null); setImportPreviewErrors([]); setImportDialogOpen(true); }} size="sm" variant="outline">
+            <Button onClick={() => { setImportSubjectId(filterSubject); setImportReport(null); setImportDialogOpen(true); }} size="sm" variant="outline">
               <Upload className="w-4 h-4 ml-1" />استيراد
             </Button>
             <Button onClick={openCreateLesson} size="sm"><Plus className="w-4 h-4 ml-1" />إضافة درس</Button>
           </div>
         </div>
 
-        {/* Filters */}
+        {/* Filters — Subject-based */}
         <div className="flex gap-2 flex-wrap">
-          <select value={filterUni} onChange={(e) => { setFilterUni(e.target.value); setFilterCollegeIds([]); setFilterSubject(""); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
-            <option value="">جميع الجامعات</option>
-            {scopedUniversities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
-          </select>
-
-          {/* Multi-select college filter */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="flex h-9 items-center justify-between rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
-                <span className="truncate">
-                  {filterCollegeIds.length === 0
-                    ? "جميع الكليات"
-                    : filterCollegeIds.length === 1
-                      ? (colleges.find((c: any) => c.id === filterCollegeIds[0])?.name_ar || "1 كلية")
-                      : `${filterCollegeIds.length} كلية محددة`}
-                </span>
-                <ChevronDown className="w-3.5 h-3.5 opacity-50 shrink-0 mr-1" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64 p-0 max-h-64 overflow-y-auto" align="start">
-              {/* Clear filter */}
-              <button
-                type="button"
-                onClick={() => { setFilterCollegeIds([]); setFilterSubject(""); }}
-                className="w-full text-sm p-2 text-right border-b hover:bg-muted/50 font-medium text-primary"
-              >
-                جميع الكليات (مسح الفلتر)
-              </button>
-              {/* Select All */}
-              {(() => {
-                const availableFilterColleges = filterUni ? scopedColleges.filter((c: any) => c.university_id === filterUni) : scopedColleges;
-                const allSelected = availableFilterColleges.length > 0 && availableFilterColleges.every((c: any) => filterCollegeIds.includes(c.id));
-                return (
-                  <>
-                    <label className="flex items-center gap-2 p-2 border-b bg-muted/30 cursor-pointer hover:bg-muted/50">
-                      <Checkbox
-                        checked={allSelected}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFilterCollegeIds(availableFilterColleges.map((c: any) => c.id));
-                          } else {
-                            setFilterCollegeIds([]);
-                          }
-                          setFilterSubject("");
-                        }}
-                      />
-                      <span className="text-sm font-medium">تحديد الكل ({availableFilterColleges.length})</span>
-                    </label>
-                    {availableFilterColleges.map((c: any) => {
-                      const uniName = !filterUni ? universities.find((u: any) => u.id === c.university_id)?.name_ar : "";
-                      const lessonCount = scopedLessons.filter((l) => l.college_id === c.id).length;
-                      return (
-                        <label key={c.id} className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted/30">
-                          <Checkbox
-                            checked={filterCollegeIds.includes(c.id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setFilterCollegeIds(prev => [...prev, c.id]);
-                              } else {
-                                setFilterCollegeIds(prev => prev.filter(id => id !== c.id));
-                              }
-                              setFilterSubject("");
-                            }}
-                          />
-                          <span className="text-xs flex-1">{c.name_ar}{uniName ? ` — ${uniName}` : ""}</span>
-                          <span className="text-[10px] text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 min-w-[20px] text-center">{lessonCount}</span>
-                        </label>
-                      );
-                    })}
-                  </>
-                );
-              })()}
-            </PopoverContent>
-          </Popover>
-
           <select value={filterSubject} onChange={(e) => setFilterSubject(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
             <option value="">جميع المواد</option>
-            {availableFilterSubjects.map((s) => {
-              const subjectLessons = scopedLessons.filter((l) => l.subject_id === s.id && (filterCollegeIds.length > 0 ? l.college_id && filterCollegeIds.includes(l.college_id) : filterUni ? scopedColleges.filter((c: any) => c.university_id === filterUni).map((c: any) => c.id).includes(l.college_id || "") : true));
+            {subjects.map((s) => {
+              const subjectLessons = scopedLessons.filter((l) => l.subject_id === s.id);
               const questionCount = questions.filter((q) => subjectLessons.some((l) => l.id === q.lesson_id)).length;
               return <option key={s.id} value={s.id}>{s.name_ar} ({subjectLessons.length} درس، {questionCount} سؤال)</option>;
             })}
@@ -982,6 +790,12 @@ const AdminContent = () => {
           <select value={filterGradeLevel} onChange={(e) => setFilterGradeLevel(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[120px]">
             <option value="">جميع الصفوف</option>
             {GRADE_LEVELS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+          </select>
+
+          <select value={filterPublished} onChange={(e) => setFilterPublished(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[120px]">
+            <option value="">الكل</option>
+            <option value="published">منشور</option>
+            <option value="draft">مسودة</option>
           </select>
         </div>
 
@@ -1035,11 +849,8 @@ const AdminContent = () => {
                       <div>
                         <p className="font-semibold text-sm">{l.title}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {getCollegeName(l.college_id)}
-                          {l.subject_id && (() => {
-                            const subj = subjects.find(s => s.id === l.subject_id);
-                            return subj ? ` • ${subj.name_ar}` : "";
-                          })()}
+                          {getSubjectName(l.subject_id)}
+                          {l.lesson_code && <span className="text-muted-foreground/60"> • {l.lesson_code}</span>}
                         </p>
                         <div className="flex gap-1 mt-1 flex-wrap">
                           <Badge variant={l.is_published ? "default" : "secondary"} className="text-[10px]">
@@ -1068,7 +879,6 @@ const AdminContent = () => {
                     </div>
                     {!bulkSelectMode && (
                       <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="icon" onClick={() => openCopyLesson(l)} title="نسخ إلى كليات أخرى"><Copy className="w-4 h-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => openEditLesson(l)}><Pencil className="w-4 h-4" /></Button>
                         {isAdmin && <Button variant="ghost" size="icon" onClick={() => handleDeleteLesson(l.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                       </div>
@@ -1166,87 +976,18 @@ const AdminContent = () => {
         </div>
       </div>
 
-      {/* Lesson Dialog - with integrated questions section */}
+      {/* Lesson Dialog — Subject-based, no college selection */}
       <Dialog open={lessonDialogOpen} onOpenChange={setLessonDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader><DialogTitle>{editingLesson ? "تعديل درس" : "إضافة درس"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>الجامعة *</Label>
-              <select value={lessonUniId} onChange={(e) => { setLessonUniId(e.target.value); setLessonCollegeIds([]); }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="">اختر الجامعة</option>
-                {!editingLesson && <option value="all">📌 جميع الجامعات</option>}
-                {scopedUniversities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
-              </select>
-            </div>
-            {editingLesson ? (
-              <div className="space-y-2">
-                <Label>الكلية *</Label>
-                <select value={lessonCollegeIds[0] || ""} onChange={(e) => setLessonCollegeIds(e.target.value ? [e.target.value] : [])} disabled={!lessonUniId} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50">
-                  <option value="">اختر الكلية</option>
-                  {scopedColleges.filter((c: any) => lessonUniId === "all" || c.university_id === lessonUniId).map((c: any) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
-                </select>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label>الكليات * ({lessonCollegeIds.length} محددة)</Label>
-                {(() => {
-                  const availableLessonColleges = lessonUniId === "all"
-                    ? scopedColleges
-                    : lessonUniId
-                      ? scopedColleges.filter((c: any) => c.university_id === lessonUniId)
-                      : [];
-                  const allSelected = availableLessonColleges.length > 0 && availableLessonColleges.every((c: any) => lessonCollegeIds.includes(c.id));
-                  return (
-                    <div className="border rounded-md max-h-48 overflow-y-auto">
-                      {availableLessonColleges.length === 0 ? (
-                        <p className="text-xs text-muted-foreground p-3 text-center">اختر جامعة أولاً</p>
-                      ) : (
-                        <>
-                          <label className="flex items-center gap-2 p-2 border-b bg-muted/30 cursor-pointer hover:bg-muted/50">
-                            <Checkbox
-                              checked={allSelected}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setLessonCollegeIds(availableLessonColleges.map((c: any) => c.id));
-                                } else {
-                                  setLessonCollegeIds([]);
-                                }
-                              }}
-                            />
-                            <span className="text-sm font-medium">تحديد الكل ({availableLessonColleges.length})</span>
-                          </label>
-                          {availableLessonColleges.map((c: any) => {
-                            const uniName = lessonUniId === "all" ? universities.find((u: any) => u.id === c.university_id)?.name_ar : "";
-                            return (
-                              <label key={c.id} className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted/30">
-                                <Checkbox
-                                  checked={lessonCollegeIds.includes(c.id)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setLessonCollegeIds(prev => [...prev, c.id]);
-                                    } else {
-                                      setLessonCollegeIds(prev => prev.filter(id => id !== c.id));
-                                    }
-                                  }}
-                                />
-                                <span className="text-sm">{c.name_ar}{uniName ? ` — ${uniName}` : ""}</span>
-                              </label>
-                            );
-                          })}
-                        </>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label>المادة الدراسية</Label>
+              <Label>المادة الدراسية *</Label>
               <select value={lessonSubjectId} onChange={(e) => setLessonSubjectId(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="">بدون تصنيف</option>
+                <option value="">اختر المادة</option>
                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
               </select>
+              <p className="text-[11px] text-muted-foreground">الدرس مشترك — يظهر لجميع الكليات التي يشمل مسارها هذه المادة</p>
             </div>
             <div className="space-y-2">
               <Label>الصف الدراسي</Label>
@@ -1322,7 +1063,6 @@ const AdminContent = () => {
 
               {questionsExpanded && (
                 <div className="p-3 pt-0 space-y-3">
-                  {/* Action buttons */}
                   <div className="flex gap-2 flex-wrap">
                     <Button type="button" size="sm" variant="outline" onClick={() => setShowAddQuestionForm(!showAddQuestionForm)}>
                       <Plus className="w-3 h-3 ml-1" />{showAddQuestionForm ? "إلغاء" : "إضافة سؤال"}
@@ -1342,7 +1082,6 @@ const AdminContent = () => {
                     </Button>
                   </div>
 
-                  {/* Inline add question form */}
                   {showAddQuestionForm && (
                     <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
                       <div className="grid grid-cols-2 gap-2">
@@ -1407,7 +1146,6 @@ const AdminContent = () => {
                     </div>
                   )}
 
-                  {/* Existing questions (edit mode) */}
                   {existingLessonQuestions.length > 0 && (
                     <div className="space-y-1">
                       <p className="text-xs font-medium text-muted-foreground">الأسئلة المحفوظة ({existingLessonQuestions.length})</p>
@@ -1425,7 +1163,6 @@ const AdminContent = () => {
                     </div>
                   )}
 
-                  {/* Pending questions */}
                   {pendingQuestions.length > 0 && (
                     <div className="space-y-1">
                       <p className="text-xs font-medium text-muted-foreground">أسئلة جديدة ({pendingQuestions.length})</p>
@@ -1479,15 +1216,21 @@ const AdminContent = () => {
             </div>
             <div className="space-y-2">
               <Label>نص السؤال *</Label>
-              <Textarea value={questionText} onChange={(e) => setQuestionText(e.target.value)} rows={3} />
+              <Textarea value={questionText} onChange={(e) => setQuestionText(e.target.value)} rows={2} />
             </div>
             {questionType === "true_false" ? (
-              <div className="space-y-2">
-                <Label>الإجابة الصحيحة *</Label>
-                <select value={correctOption} onChange={(e) => setCorrectOption(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                  <option value="a">صح</option>
-                  <option value="b">خطأ</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>الإجابة الصحيحة *</Label>
+                  <select value={correctOption} onChange={(e) => setCorrectOption(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                    <option value="a">صح</option>
+                    <option value="b">خطأ</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>الشرح</Label>
+                  <Textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={2} />
+                </div>
               </div>
             ) : (
               <>
@@ -1517,92 +1260,31 @@ const AdminContent = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Unified Import Dialog */}
+      {/* Unified Import Dialog — Subject-Based */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Upload className="w-5 h-5" />
-              استيراد موحد للمحتوى
+              استيراد المحتوى التعليمي
             </DialogTitle>
             <DialogDescription>
-              ارفع ملف Excel يحتوي على ورقة "الدروس" و/أو ورقة "الأسئلة". النظام يكتشف المحتوى تلقائياً.
+              ارفع ملف Excel يحتوي على ورقة "الدروس" و/أو ورقة "الأسئلة". الدروس مشتركة وتظهر تلقائياً لجميع الكليات حسب المسار.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>الجامعة *</Label>
-              <select value={importUniId} onChange={(e) => { setImportUniId(e.target.value); setImportCollegeIds([]); }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="">اختر الجامعة</option>
-                <option value="all">📌 جميع الجامعات</option>
-                {scopedUniversities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>الكليات المستهدفة * ({importCollegeIds.length} محددة)</Label>
-              {(() => {
-                const availableImportColleges = importUniId === "all"
-                  ? scopedColleges
-                  : importUniId
-                    ? scopedColleges.filter((c: any) => c.university_id === importUniId)
-                    : [];
-                const allSelected = availableImportColleges.length > 0 && availableImportColleges.every((c: any) => importCollegeIds.includes(c.id));
-                return (
-                  <div className="border rounded-md max-h-48 overflow-y-auto">
-                    {availableImportColleges.length === 0 ? (
-                      <p className="text-xs text-muted-foreground p-3 text-center">اختر جامعة أولاً</p>
-                    ) : (
-                      <>
-                        <label className="flex items-center gap-2 p-2 border-b bg-muted/30 cursor-pointer hover:bg-muted/50">
-                          <Checkbox
-                            checked={allSelected}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setImportCollegeIds(availableImportColleges.map((c: any) => c.id));
-                              } else {
-                                setImportCollegeIds([]);
-                              }
-                            }}
-                          />
-                          <span className="text-sm font-medium">تحديد الكل ({availableImportColleges.length})</span>
-                        </label>
-                        {availableImportColleges.map((c: any) => {
-                          const uniName = importUniId === "all" ? universities.find((u: any) => u.id === c.university_id)?.name_ar : "";
-                          return (
-                            <label key={c.id} className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted/30">
-                              <Checkbox
-                                checked={importCollegeIds.includes(c.id)}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    setImportCollegeIds(prev => [...prev, c.id]);
-                                  } else {
-                                    setImportCollegeIds(prev => prev.filter(id => id !== c.id));
-                                  }
-                                }}
-                              />
-                              <span className="text-sm">{c.name_ar}{uniName ? ` — ${uniName}` : ""}</span>
-                            </label>
-                          );
-                        })}
-                      </>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-
-            <div className="space-y-2">
-              <Label>المادة الدراسية (اختياري)</Label>
-              <select value={importSubjectId} onChange={(e) => setImportSubjectId(e.target.value)} disabled={importCollegeIds.length === 0} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50">
+              <Label>المادة الدراسية الافتراضية (اختياري)</Label>
+              <select value={importSubjectId} onChange={(e) => setImportSubjectId(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                 <option value="">تحديد من الملف</option>
                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
               </select>
+              <p className="text-[11px] text-muted-foreground">تُستخدم إذا لم يتم تحديد المادة في الملف</p>
             </div>
 
             <div className="space-y-2">
               <Label>اختر ملف (Excel)</Label>
-              <Input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleUnifiedImportFile} disabled={importCollegeIds.length === 0 || importing} />
+              <Input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleUnifiedImportFile} disabled={importing} />
             </div>
             {importing && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -1610,7 +1292,6 @@ const AdminContent = () => {
               </div>
             )}
 
-            {/* Import Report */}
             {importReport && (
               <div className="bg-muted rounded-lg p-3 space-y-2">
                 <p className="text-xs font-semibold">📊 تقرير الاستيراد ({importReport.mode === "combined" ? "دروس + أسئلة" : importReport.mode === "lessons_only" ? "دروس فقط" : "أسئلة فقط"}):</p>
@@ -1647,95 +1328,12 @@ const AdminContent = () => {
                 <strong>ورقة "الأسئلة":</strong> كود الدرس | نوع السؤال | نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة | الشرح | الترتيب
               </p>
               <p className="text-[11px] text-muted-foreground/70">
-                💡 يمكنك رفع ملف يحتوي ورقة واحدة فقط (دروس فقط أو أسئلة فقط) — النظام يكتشف تلقائياً
+                💡 الدروس مشتركة — كل درس يُنشأ مرة واحدة ويظهر لجميع الكليات حسب المسار والمادة
               </p>
               <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={handleDownloadUnifiedTemplate}>
                 <Download className="w-3 h-3 ml-1" />تحميل القالب الموحد
               </Button>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Copy Lesson Dialog */}
-      <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Copy className="w-5 h-5" />
-              نسخ درس إلى كليات أخرى
-            </DialogTitle>
-            <DialogDescription>
-              {copyingLesson ? `نسخ "${copyingLesson.title}" مع ${questions.filter(q => q.lesson_id === copyingLesson.id).length} سؤال` : ""}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>الجامعة *</Label>
-              <select value={copyUniId} onChange={(e) => { setCopyUniId(e.target.value); setCopyCollegeIds([]); }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="">اختر الجامعة</option>
-                <option value="all">📌 جميع الجامعات</option>
-                {scopedUniversities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>الكليات المستهدفة * ({copyCollegeIds.length} محددة)</Label>
-              {(() => {
-                const availableCopyColleges = (copyUniId === "all"
-                  ? scopedColleges
-                  : copyUniId
-                    ? scopedColleges.filter((c: any) => c.university_id === copyUniId)
-                    : []
-                ).filter((c: any) => c.id !== copyingLesson?.college_id);
-                const allSelected = availableCopyColleges.length > 0 && availableCopyColleges.every((c: any) => copyCollegeIds.includes(c.id));
-                return (
-                  <div className="border rounded-md max-h-48 overflow-y-auto">
-                    {availableCopyColleges.length === 0 ? (
-                      <p className="text-xs text-muted-foreground p-3 text-center">اختر جامعة أولاً</p>
-                    ) : (
-                      <>
-                        <label className="flex items-center gap-2 p-2 border-b bg-muted/30 cursor-pointer hover:bg-muted/50">
-                          <Checkbox
-                            checked={allSelected}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setCopyCollegeIds(availableCopyColleges.map((c: any) => c.id));
-                              } else {
-                                setCopyCollegeIds([]);
-                              }
-                            }}
-                          />
-                          <span className="text-sm font-medium">تحديد الكل ({availableCopyColleges.length})</span>
-                        </label>
-                        {availableCopyColleges.map((c: any) => {
-                          const uniName = copyUniId === "all" ? universities.find((u: any) => u.id === c.university_id)?.name_ar : "";
-                          return (
-                            <label key={c.id} className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted/30">
-                              <Checkbox
-                                checked={copyCollegeIds.includes(c.id)}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    setCopyCollegeIds(prev => [...prev, c.id]);
-                                  } else {
-                                    setCopyCollegeIds(prev => prev.filter(id => id !== c.id));
-                                  }
-                                }}
-                              />
-                              <span className="text-sm">{c.name_ar}{uniName ? ` — ${uniName}` : ""}</span>
-                            </label>
-                          );
-                        })}
-                      </>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-
-            <Button onClick={handleCopyLesson} disabled={copying || copyCollegeIds.length === 0} className="w-full">
-              {copying ? <><Loader2 className="w-4 h-4 animate-spin ml-2" />جاري النسخ...</> : `نسخ إلى ${copyCollegeIds.length} كلية`}
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
