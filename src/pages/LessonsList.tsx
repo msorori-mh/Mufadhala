@@ -289,12 +289,7 @@ const LessonsList = () => {
 
       <main className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6">
         {!isOffline && !student?.college_id ? (
-          <div className="text-center py-12">
-            <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-lg font-semibold text-foreground">لا توجد بيانات أكاديمية بعد</p>
-            <p className="text-sm text-muted-foreground mt-1">يرجى التأكد من اختيار الكلية عند التسجيل للوصول إلى المحتوى</p>
-            <Button asChild className="mt-4"><Link to="/dashboard">العودة للرئيسية</Link></Button>
-          </div>
+          <NoCollegeView refetch={refetchStudent} />
         ) : (
           <>
             <div className="mb-4">
