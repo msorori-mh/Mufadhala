@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   User, Shield, Calendar, Clock, FileText, CreditCard,
-  Users, BookOpen, Bell, Activity, Pencil, Save, X, Mail,
+  Users, BookOpen, Bell, Activity, Pencil, Save, X, Mail, Lock, Eye, EyeOff,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -22,7 +22,15 @@ const AdminProfile = () => {
   const queryClient = useQueryClient();
   const [editingName, setEditingName] = useState(false);
   const [editingEmail, setEditingEmail] = useState(false);
+  const [editingPassword, setEditingPassword] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [passwordFields, setPasswordFields] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
   const [nameFields, setNameFields] = useState({
     first_name: "",
@@ -166,6 +174,29 @@ const AdminProfile = () => {
       setEditingEmail(false);
     } catch (err: any) {
       toast.error(err.message || "حدث خطأ أثناء تحديث البريد الإلكتروني");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSavePassword = async () => {
+    if (!passwordFields.newPassword || passwordFields.newPassword.length < 8) {
+      toast.error("كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل");
+      return;
+    }
+    if (passwordFields.newPassword !== passwordFields.confirmPassword) {
+      toast.error("كلمة المرور الجديدة وتأكيدها غير متطابقتين");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: passwordFields.newPassword });
+      if (error) throw error;
+      toast.success("تم تغيير كلمة المرور بنجاح");
+      setEditingPassword(false);
+      setPasswordFields({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (err: any) {
+      toast.error(err.message || "حدث خطأ أثناء تغيير كلمة المرور");
     } finally {
       setSaving(false);
     }
@@ -330,6 +361,66 @@ const AdminProfile = () => {
                         <p className="text-muted-foreground text-sm">{profile?.email}</p>
                         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={startEditingEmail}>
                           <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Password section */}
+                    {editingPassword ? (
+                      <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
+                        <p className="text-sm font-medium">تغيير كلمة المرور</p>
+                        <div className="space-y-2 max-w-sm">
+                          <div>
+                            <Label className="text-xs">كلمة المرور الجديدة *</Label>
+                            <div className="relative">
+                              <Input
+                                type={showNewPassword ? "text" : "password"}
+                                value={passwordFields.newPassword}
+                                onChange={(e) => setPasswordFields({ ...passwordFields, newPassword: e.target.value })}
+                                className="h-8 text-sm pr-9"
+                                dir="ltr"
+                                minLength={8}
+                              />
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="absolute left-0 top-0 h-8 w-8"
+                                onClick={() => setShowNewPassword(!showNewPassword)}
+                              >
+                                {showNewPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              </Button>
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-xs">تأكيد كلمة المرور *</Label>
+                            <Input
+                              type="password"
+                              value={passwordFields.confirmPassword}
+                              onChange={(e) => setPasswordFields({ ...passwordFields, confirmPassword: e.target.value })}
+                              className="h-8 text-sm"
+                              dir="ltr"
+                            />
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">يجب أن تكون 8 أحرف على الأقل</p>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={handleSavePassword} disabled={saving}>
+                            <Save className="w-3.5 h-3.5 ml-1" />
+                            حفظ
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => { setEditingPassword(false); setPasswordFields({ currentPassword: "", newPassword: "", confirmPassword: "" }); }} disabled={saving}>
+                            <X className="w-3.5 h-3.5 ml-1" />
+                            إلغاء
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Lock className="w-4 h-4 text-muted-foreground" />
+                        <p className="text-muted-foreground text-sm">كلمة المرور</p>
+                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditingPassword(true)}>
+                          تغيير
                         </Button>
                       </div>
                     )}
