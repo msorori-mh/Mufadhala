@@ -6,6 +6,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUuid(v: unknown): v is string {
+  return typeof v === "string" && UUID_RE.test(v);
+}
+
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -35,6 +41,9 @@ Deno.serve(async (req) => {
     }
     if (!/^7[0-9]{8}$/.test(phone)) {
       return jsonResponse({ error: "رقم الجوال غير صحيح" }, 400);
+    }
+    if (!isValidUuid(university_id) || !isValidUuid(college_id)) {
+      return jsonResponse({ error: "قيم الجامعة أو الكلية غير صالحة" }, 400);
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
