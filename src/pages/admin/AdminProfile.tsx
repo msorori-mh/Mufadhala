@@ -179,6 +179,29 @@ const AdminProfile = () => {
     }
   };
 
+  const handleSavePassword = async () => {
+    if (!passwordFields.newPassword || passwordFields.newPassword.length < 8) {
+      toast.error("كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل");
+      return;
+    }
+    if (passwordFields.newPassword !== passwordFields.confirmPassword) {
+      toast.error("كلمة المرور الجديدة وتأكيدها غير متطابقتين");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: passwordFields.newPassword });
+      if (error) throw error;
+      toast.success("تم تغيير كلمة المرور بنجاح");
+      setEditingPassword(false);
+      setPasswordFields({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (err: any) {
+      toast.error(err.message || "حدث خطأ أثناء تغيير كلمة المرور");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const isLoading = profileLoading || statsLoading;
 
   const roleLabel = (role: string) => {
