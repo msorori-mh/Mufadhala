@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { getContentFilter } from "@/lib/contentFilter";
+import { fetchLessonsBySubjects } from "@/lib/contentFilter";
 import { useStudentAccess } from "@/hooks/useStudentAccess";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -70,29 +70,27 @@ const DailyTipCard = () => {
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, student, isStaff, isAdmin, loading: accessLoading } = useStudentAccess();
+  const { user, student, isStaff, isAdmin, loading: accessLoading, subjectIds } = useStudentAccess();
 
   const authLoading = accessLoading;
   const { data: unreadCount = 0 } = useUnreadCount(user?.id);
 
   // Fetch all dashboard-specific data in ONE parallel batch
   const { data: dashData, isLoading: dashLoading } = useQuery({
-    queryKey: ["dashboard-data", student?.id, student?.major_id, student?.college_id],
+    queryKey: ["dashboard-data", student?.id, subjectIds],
     queryFn: async () => {
       if (!student) return { attempts: [], lessonCount: 0, completedLessons: 0, collegeName: null };
 
-      // ALL queries in parallel — no waterfall
-      const [attemptsRes, lessonsRes, progressRes, collegeRes] = await Promise.all([
+      // Use subject-based lesson count (deduplicated)
+      const [attemptsRes, lessons, progressRes, collegeRes] = await Promise.all([
         supabase.from("exam_attempts")
           .select("id, score, total, completed_at, major_id")
           .eq("student_id", student.id)
           .not("completed_at", "is", null)
           .order("completed_at", { ascending: true }),
-        (() => {
-          const filter = getContentFilter(student);
-          if (!filter) return Promise.resolve({ data: [] });
-          return supabase.from("lessons").select("id").eq("is_published", true).eq(filter.field, filter.value);
-        })(),
+        subjectIds.length > 0
+          ? fetchLessonsBySubjects(supabase, subjectIds)
+          : Promise.resolve([]),
         supabase.from("lesson_progress").select("id").eq("student_id", student.id).eq("is_completed", true),
         student.college_id
           ? supabase.from("colleges").select("name_ar").eq("id", student.college_id).maybeSingle()
@@ -101,7 +99,7 @@ const Dashboard = () => {
 
       return {
         attempts: (attemptsRes.data || []) as ExamAttemptRow[],
-        lessonCount: lessonsRes.data?.length ?? 0,
+        lessonCount: lessons.length,
         completedLessons: progressRes.data?.length ?? 0,
         collegeName: (collegeRes.data as any)?.name_ar ?? null,
       };

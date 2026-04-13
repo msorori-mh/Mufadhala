@@ -49,8 +49,7 @@ const fetchExamData = async (userId: string) => {
     .select("id, major_id, college_id, user_id")
     .eq("user_id", userId)
     .maybeSingle();
-  const filter = getContentFilter(s);
-  if (!filter)
+  if (!s || !s.college_id)
     return {
       student: s,
       majorName: "",
@@ -59,15 +58,31 @@ const fetchExamData = async (userId: string) => {
       offlineInfo: { has: false, count: 0 },
     };
 
-  const [{ data: nameData }, { data: lessons }, { data: attempts }] =
+  // ── Subject-based resolution ──────────────────────────
+  // 1) Get subject IDs from college_subjects
+  const { data: csData } = await supabase
+    .from("college_subjects")
+    .select("subject_id")
+    .eq("college_id", s.college_id);
+  const subjectIds = (csData || []).map((c: any) => c.subject_id as string);
+
+  if (subjectIds.length === 0)
+    return {
+      student: s,
+      majorName: "",
+      allQuestions: [] as Question[],
+      pastAttempts: [] as ExamAttempt[],
+      offlineInfo: { has: false, count: 0 },
+    };
+
+  // 2) Fetch college name, deduplicated lessons, and past attempts in parallel
+  const [{ data: nameData }, { data: rawLessons }, { data: attempts }] =
     await Promise.all([
-      filter.type === "major"
-        ? supabase.from("majors").select("name_ar").eq("id", filter.value).maybeSingle()
-        : supabase.from("colleges").select("name_ar").eq("id", filter.value).maybeSingle(),
+      supabase.from("colleges").select("name_ar").eq("id", s.college_id).maybeSingle(),
       supabase
         .from("lessons")
         .select("id, subject_id")
-        .eq(filter.field, filter.value)
+        .in("subject_id", subjectIds)
         .eq("is_published", true),
       supabase
         .from("exam_attempts")
@@ -76,52 +91,52 @@ const fetchExamData = async (userId: string) => {
         .order("created_at", { ascending: false }),
     ]);
 
-  const lessonIds = (lessons || []).map((l: any) => l.id);
+  // Deduplicate lessons by title (fetch titles for dedup)
+  const { data: lessonsWithTitles } = await supabase
+    .from("lessons")
+    .select("id, title, subject_id")
+    .in("subject_id", subjectIds)
+    .eq("is_published", true);
+
+  const seenTitles = new Set<string>();
+  const uniqueLessonIds: string[] = [];
+  const lessonSubjectMap = new Map<string, string>();
+  (lessonsWithTitles || []).forEach((l: any) => {
+    const key = `${l.title}::${l.subject_id}`;
+    if (!seenTitles.has(key)) {
+      seenTitles.add(key);
+      uniqueLessonIds.push(l.id);
+    }
+    if (l.subject_id) lessonSubjectMap.set(l.id, l.subject_id);
+  });
+
+  // 3) Fetch subject names
+  let subjectNameMap = new Map<string, string>();
+  const { data: subjectNames } = await supabase
+    .from("subjects")
+    .select("id, name_ar")
+    .in("id", subjectIds);
+  if (subjectNames) {
+    subjectNames.forEach((sn: any) => subjectNameMap.set(sn.id, sn.name_ar));
+  }
+
+  // 4) Fetch questions for unique lessons only
   const { data: qs } =
-    lessonIds.length > 0
+    uniqueLessonIds.length > 0
       ? await supabase
           .from("questions")
           .select(
             "id, question_text, option_a, option_b, option_c, option_d, correct_option, explanation, lesson_id, subject"
           )
-          .in("lesson_id", lessonIds)
+          .in("lesson_id", uniqueLessonIds)
           .order("display_order")
       : { data: [] };
 
-  const lessonSubjectMap = new Map<string, string>();
-  (lessons || []).forEach((l: any) => {
-    if (l.subject_id) lessonSubjectMap.set(l.id, l.subject_id);
-  });
-
-  let subjectNameMap = new Map<string, string>();
-  if (s.college_id) {
-    const { data: cs } = await supabase
-      .from("college_subjects")
-      .select("subject_id, subjects(id, name_ar)")
-      .eq("college_id", s.college_id);
-    if (cs && cs.length > 0) {
-      cs.forEach((c: any) => {
-        if (c.subjects) subjectNameMap.set(c.subjects.id, c.subjects.name_ar);
-      });
-    }
-  }
-  if (subjectNameMap.size === 0 && s.major_id) {
-    const { data: ms } = await supabase
-      .from("major_subjects")
-      .select("subject_id, subjects(id, name_ar)")
-      .eq("major_id", s.major_id);
-    if (ms && ms.length > 0) {
-      ms.forEach((m: any) => {
-        if (m.subjects) subjectNameMap.set(m.subjects.id, m.subjects.name_ar);
-      });
-    }
-  }
-
   let allQuestions: Question[] = [];
-  if (qs && lessons) {
-    const lessonIdSet = new Set(lessons.map((l: any) => l.id));
+  if (qs) {
+    const uniqueSet = new Set(uniqueLessonIds);
     allQuestions = (qs as any[])
-      .filter((q) => lessonIdSet.has(q.lesson_id))
+      .filter((q) => uniqueSet.has(q.lesson_id))
       .map((q) => ({
         ...q,
         subject: q.subject || lessonSubjectMap.get(q.lesson_id) || undefined,
