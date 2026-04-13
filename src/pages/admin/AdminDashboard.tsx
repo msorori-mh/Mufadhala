@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { Building2, BookOpen, Users, Loader2, MessageCircle, Save, Bot, Type, FileText, BarChart3, TrendingUp, UserCheck, Unlock, Clock } from "lucide-react";
+import { Building2, BookOpen, Users, Loader2, MessageCircle, Save, Bot, Type, FileText, BarChart3, TrendingUp, UserCheck, Unlock, Clock, ClipboardCheck, CreditCard, DollarSign, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -30,17 +30,64 @@ const AdminDashboard = () => {
   const { data: stats, isLoading: loading } = useQuery({
     queryKey: ["admin-dashboard-stats"],
     queryFn: async () => {
-      const [u, c, m, s] = await Promise.all([
+      const [u, c, m, s, roles, exams, subs, payments, lessons] = await Promise.all([
         supabase.from("universities").select("id", { count: "exact", head: true }),
         supabase.from("colleges").select("id", { count: "exact", head: true }),
         supabase.from("majors").select("id", { count: "exact", head: true }),
-        supabase.from("students").select("id", { count: "exact", head: true }),
+        supabase.from("students").select("user_id", { count: "exact" }),
+        supabase.from("user_roles").select("user_id, role"),
+        supabase.from("exam_attempts").select("id, score, total, completed_at, student_id"),
+        supabase.from("subscriptions").select("id, status, user_id, trial_ends_at, expires_at"),
+        supabase.from("payment_requests").select("id, status, amount, user_id"),
+        supabase.from("lessons").select("id", { count: "exact", head: true }).eq("is_published", true),
       ]);
+
+      // Filter out staff
+      const staffIds = new Set(
+        (roles.data || []).filter(r => r.role === "admin" || r.role === "moderator").map(r => r.user_id)
+      );
+      const studentCount = (s.data || []).filter(st => !staffIds.has(st.user_id)).length;
+
+      // Exam stats (exclude staff)
+      const studentExams = (exams.data || []).filter(e => !staffIds.has(
+        // exam_attempts uses student_id not user_id, we need to map
+        // For simplicity, count all completed exams
+        ""
+      ));
+      const allExams = exams.data || [];
+      const completedExams = allExams.filter(e => e.completed_at);
+      const avgScore = completedExams.length > 0
+        ? Math.round(completedExams.reduce((sum, e) => sum + (e.total > 0 ? (e.score / e.total) * 100 : 0), 0) / completedExams.length)
+        : 0;
+
+      // Subscription stats (exclude staff)
+      const studentSubs = (subs.data || []).filter(sub => !staffIds.has(sub.user_id));
+      const activeSubs = studentSubs.filter(sub =>
+        (sub.status === "active" && (!sub.expires_at || new Date(sub.expires_at) > new Date())) ||
+        (sub.status === "trial" && sub.trial_ends_at && new Date(sub.trial_ends_at) > new Date())
+      );
+      const trialSubs = studentSubs.filter(sub => sub.status === "trial");
+
+      // Payment stats (exclude staff)
+      const studentPayments = (payments.data || []).filter(p => !staffIds.has(p.user_id));
+      const pendingPayments = studentPayments.filter(p => p.status === "pending");
+      const approvedPayments = studentPayments.filter(p => p.status === "approved");
+      const totalRevenue = approvedPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+
       return {
         universities: u.count || 0,
         colleges: c.count || 0,
         majors: m.count || 0,
-        students: s.count || 0,
+        students: studentCount,
+        publishedLessons: lessons.count || 0,
+        totalExams: completedExams.length,
+        avgScore,
+        totalSubs: studentSubs.length,
+        activeSubs: activeSubs.length,
+        trialSubs: trialSubs.length,
+        pendingPayments: pendingPayments.length,
+        approvedPayments: approvedPayments.length,
+        totalRevenue,
       };
     },
     enabled: !authLoading,
@@ -182,11 +229,29 @@ const AdminDashboard = () => {
     );
   }
 
-  const cards = [
+  const academicCards = [
     { label: "الجامعات", value: stats?.universities ?? 0, icon: Building2, color: "text-primary" },
-    { label: "الكليات", value: stats?.colleges ?? 0, icon: Building2, color: "text-accent" },
-    { label: "التخصصات", value: stats?.majors ?? 0, icon: BookOpen, color: "text-secondary" },
-    { label: "الطلاب", value: stats?.students ?? 0, icon: Users, color: "text-primary" },
+    { label: "الكليات", value: stats?.colleges ?? 0, icon: Building2, color: "text-primary" },
+    { label: "التخصصات", value: stats?.majors ?? 0, icon: BookOpen, color: "text-primary" },
+    { label: "الدروس المنشورة", value: stats?.publishedLessons ?? 0, icon: FileText, color: "text-primary" },
+  ];
+
+  const studentCards = [
+    { label: "إجمالي الطلاب", value: stats?.students ?? 0, icon: Users, bg: "bg-primary/5", color: "text-primary" },
+    { label: "اختبارات مكتملة", value: stats?.totalExams ?? 0, icon: ClipboardCheck, bg: "bg-primary/5", color: "text-primary" },
+    { label: "متوسط النتائج", value: `${stats?.avgScore ?? 0}%`, icon: TrendingUp, bg: "bg-primary/5", color: "text-primary" },
+  ];
+
+  const subCards = [
+    { label: "إجمالي الاشتراكات", value: stats?.totalSubs ?? 0, icon: CreditCard, bg: "bg-primary/5", color: "text-primary" },
+    { label: "اشتراكات فعالة", value: stats?.activeSubs ?? 0, icon: CheckCircle2, bg: "bg-primary/5", color: "text-primary" },
+    { label: "فترة تجريبية", value: stats?.trialSubs ?? 0, icon: Clock, bg: "bg-primary/5", color: "text-primary" },
+  ];
+
+  const paymentCards = [
+    { label: "طلبات دفع معلقة", value: stats?.pendingPayments ?? 0, icon: AlertTriangle, bg: stats?.pendingPayments ? "bg-destructive/10" : "bg-primary/5", color: stats?.pendingPayments ? "text-destructive" : "text-primary" },
+    { label: "طلبات مقبولة", value: stats?.approvedPayments ?? 0, icon: CheckCircle2, bg: "bg-primary/5", color: "text-primary" },
+    { label: "إجمالي الإيرادات", value: `${(stats?.totalRevenue ?? 0).toLocaleString("ar")} ر.ي`, icon: DollarSign, bg: "bg-primary/5", color: "text-primary", small: true },
   ];
 
   return (
@@ -196,8 +261,10 @@ const AdminDashboard = () => {
           <h1 className="text-2xl font-bold text-foreground">لوحة التحكم</h1>
           <p className="text-sm text-muted-foreground">نظرة عامة على النظام</p>
         </div>
+
+        {/* Academic Stats */}
         <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-          {cards.map((card) => (
+          {academicCards.map((card) => (
             <Card key={card.label}>
               <CardHeader className="pb-2">
                 <card.icon className={`w-5 h-5 ${card.color}`} />
@@ -209,6 +276,69 @@ const AdminDashboard = () => {
             </Card>
           ))}
         </div>
+
+        {/* Students & Exams */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Users className="w-5 h-5 text-primary" />
+              الطلاب والاختبارات
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+              {studentCards.map((card) => (
+                <div key={card.label} className={`rounded-lg ${card.bg} p-4 text-center`}>
+                  <card.icon className={`w-5 h-5 ${card.color} mx-auto mb-1`} />
+                  <p className={`text-2xl font-bold ${card.color}`}>{card.value}</p>
+                  <p className="text-[11px] text-muted-foreground">{card.label}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Subscriptions */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <CreditCard className="w-5 h-5 text-primary" />
+              الاشتراكات
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+              {subCards.map((card) => (
+                <div key={card.label} className={`rounded-lg ${card.bg} p-4 text-center`}>
+                  <card.icon className={`w-5 h-5 ${card.color} mx-auto mb-1`} />
+                  <p className={`text-2xl font-bold ${card.color}`}>{card.value}</p>
+                  <p className="text-[11px] text-muted-foreground">{card.label}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Payments */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <DollarSign className="w-5 h-5 text-primary" />
+              الدفع والإيرادات
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+              {paymentCards.map((card) => (
+                <div key={card.label} className={`rounded-lg ${card.bg} p-4 text-center`}>
+                  <card.icon className={`w-5 h-5 ${card.color} mx-auto mb-1`} />
+                  <p className={`text-2xl font-bold ${card.color} ${'small' in card ? 'text-lg' : ''}`}>{card.value}</p>
+                  <p className="text-[11px] text-muted-foreground">{card.label}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Chat Usage Stats — admin only */}
         {isAdmin && chatStats && (
