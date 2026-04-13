@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { getContentFilter } from "@/lib/contentFilter";
+import { fetchLessonsBySubjects } from "@/lib/contentFilter";
 import { useStudentAccess } from "@/hooks/useStudentAccess";
 import { useSubscription } from "@/hooks/useSubscription";
 import { GraduationCap, BookOpen, ArrowRight, ChevronLeft, ChevronDown, ChevronUp, Loader2, CheckCircle2, Search, X, Lock, Sparkles, Download, WifiOff, Rocket } from "lucide-react";
@@ -99,7 +99,7 @@ const NoCollegeView = ({ refetch }: { refetch: () => void }) => {
 };
 
 const LessonsList = () => {
-  const { user, student, isAdmin, isModerator, canAccessContent, isLegacyCorrupted, loading: accessLoading, refetchStudent } = useStudentAccess();
+  const { user, student, isAdmin, isModerator, canAccessContent, isLegacyCorrupted, loading: accessLoading, refetchStudent, subjectIds, filterName } = useStudentAccess();
   const { isActive: hasSubscription, loading: subLoading, planId, allowedMajorIds } = useSubscription(user?.id);
   const navigate = useNavigate();
   const isOffline = useOfflineStatus();
@@ -135,80 +135,54 @@ const LessonsList = () => {
     staleTime: Infinity,
   });
 
-  // Online lessons data — all in one parallel query
-  const majorId = student?.major_id;
+  // ── NEW: Subject-based lesson fetching ────────────────
   const collegeId = student?.college_id;
   const studentId = student?.id;
 
   const { data: lessonsData, isLoading: lessonsLoading } = useQuery({
-    queryKey: ["lessons-list", majorId, collegeId],
+    queryKey: ["lessons-list-subjects", subjectIds],
     queryFn: async () => {
-      const filter = getContentFilter(student);
-      if (!filter) return { majorName: "", lessons: [] as Lesson[], subjects: [] as SubjectInfo[], questionCounts: {} as Record<string, number> };
+      if (subjectIds.length === 0) return { majorName: "", lessons: [] as Lesson[], subjects: [] as SubjectInfo[], questionCounts: {} as Record<string, number>, completedLessons: new Set<string>() };
 
-      const [nameResult, lessonsResult, lessonsFullResult] = await Promise.all([
-        filter.type === "major"
-          ? supabase.from("majors").select("name_ar").eq("id", filter.value).maybeSingle()
-          : supabase.from("colleges").select("name_ar").eq("id", filter.value).maybeSingle(),
-        filter.type === "major"
-          ? supabase.rpc("get_published_lessons_list", { _major_id: filter.value })
-          : supabase.rpc("get_published_lessons_by_college", { _college_id: filter.value }),
-        supabase.from("lessons").select("id, subject_id, grade_level").eq(filter.field, filter.value).eq("is_published", true),
+      // Fetch deduplicated lessons by subjects + subject info in parallel
+      const [lessons, subsResult] = await Promise.all([
+        fetchLessonsBySubjects(supabase, subjectIds),
+        supabase.from("subjects").select("id, name_ar, code").in("id", subjectIds).order("display_order"),
       ]);
 
-      const { data: nameData } = nameResult;
-      const { data: ls } = lessonsResult;
-      const { data: lessonsFull } = lessonsFullResult;
-
-      const subjectGradeMap = new Map<string, { subject_id: string | null; grade_level: number | null }>();
-      (lessonsFull || []).forEach((lf: any) => subjectGradeMap.set(lf.id, { subject_id: lf.subject_id, grade_level: lf.grade_level }));
-      const enrichedLessons = ((ls || []) as Lesson[]).map(l => {
-        const extra = subjectGradeMap.get(l.id);
-        return { ...l, subject_id: extra?.subject_id || null, grade_level: extra?.grade_level || null };
-      });
-
-      // Fetch subjects: prioritize college_subjects, fallback to major_subjects
-      let subjects: SubjectInfo[] = [];
-      if (collegeId) {
-        const { data: cs } = await supabase.from("college_subjects").select("subject_id").eq("college_id", collegeId);
-        if (cs && cs.length > 0) {
-          const subjectIds = cs.map((c: any) => c.subject_id);
-          const { data: subs } = await supabase.from("subjects").select("id, name_ar, code").in("id", subjectIds).order("display_order");
-          if (subs) subjects = subs as SubjectInfo[];
-        }
-      }
-      if (subjects.length === 0 && majorId) {
-        const { data: ms } = await supabase.from("major_subjects").select("subject_id").eq("major_id", majorId!);
-        if (ms && ms.length > 0) {
-          const subjectIds = ms.map((m: any) => m.subject_id);
-          const { data: subs } = await supabase.from("subjects").select("id, name_ar, code").in("id", subjectIds).order("display_order");
-          if (subs) subjects = subs as SubjectInfo[];
-        }
-      }
+      const subjects: SubjectInfo[] = (subsResult.data || []) as SubjectInfo[];
+      const enrichedLessons = (lessons || []).map((l: any) => ({
+        id: l.id, major_id: l.major_id || "", title: l.title, summary: l.summary,
+        display_order: l.display_order, is_free: l.is_free,
+        subject_id: l.subject_id || null, grade_level: l.grade_level || null,
+      })) as Lesson[];
 
       // Fetch question counts and progress in parallel
       const lessonIds = enrichedLessons.map(l => l.id);
+      if (lessonIds.length === 0) return { lessons: enrichedLessons, majorName: filterName, subjects, questionCounts: {}, completedLessons: new Set<string>() };
+
       const [{ data: qs }, { data: progress }] = await Promise.all([
         supabase.from("questions").select("lesson_id").in("lesson_id", lessonIds),
-        supabase.from("lesson_progress").select("lesson_id")
-          .eq("student_id", studentId!).eq("is_completed", true)
-          .in("lesson_id", lessonIds),
+        studentId
+          ? supabase.from("lesson_progress").select("lesson_id")
+              .eq("student_id", studentId).eq("is_completed", true)
+              .in("lesson_id", lessonIds)
+          : Promise.resolve({ data: [] }),
       ]);
 
       const questionCounts: Record<string, number> = {};
       (qs || []).forEach((q: any) => { questionCounts[q.lesson_id] = (questionCounts[q.lesson_id] || 0) + 1; });
-
       const completedSet = new Set((progress || []).map((p: any) => p.lesson_id));
 
       return {
         lessons: enrichedLessons,
-        majorName: nameData?.name_ar || "",
+        majorName: filterName,
         subjects,
         questionCounts,
         completedLessons: completedSet,
       };
     },
-    enabled: !!(majorId || collegeId) && !!studentId && !isOffline,
+    enabled: subjectIds.length > 0 && !isOffline,
     staleTime: 2 * 60 * 1000,
   });
 

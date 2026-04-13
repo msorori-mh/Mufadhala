@@ -16,52 +16,28 @@ export type StudentAccessStatus =
   | "ready_with_major";
 
 export interface StudentAccessResult {
-  /** Current decision status */
   status: StudentAccessStatus;
-
-  /** True while any upstream data is still loading */
   loading: boolean;
-
-  /** Authenticated user (null when no session) */
   user: ReturnType<typeof useAuthContext>["user"];
-
-  /** Full student row (null when missing) */
   student: ReturnType<typeof useStudentData>["data"];
-
-  /** Derived content filter (null when academic data incomplete) */
   filter: ContentFilter | null;
-
-  /** Human-readable name for the current filter target */
   filterName: string;
-
-  /** Role flags from AuthContext */
+  /** Subject IDs derived from college_subjects — the PRIMARY content key */
+  subjectIds: string[];
   isAdmin: boolean;
   isModerator: boolean;
   isStaff: boolean;
-
-  /** Convenience: student has enough data to access content */
   canAccessContent: boolean;
-
-  /** Convenience: student has governorate set (needed for subscription pricing) */
   canSubscribe: boolean;
-
-  /** Student record exists but critical academic fields are missing */
   isLegacyCorrupted: boolean;
-
-  /** Refetch student data (useful after profile edits or retries) */
   refetchStudent: () => void;
 }
 
 /**
- * Centralized student access resolver.
+ * Centralized student access resolver — SINGLE SOURCE OF TRUTH.
  *
- * This is the SINGLE SOURCE OF TRUTH for every page that needs to know:
- * - whether the user can see content
- * - which content filter to use
- * - whether subscription pricing is available
- * - whether the student has corrupted legacy data
- *
- * All pages MUST use this hook instead of scattered student/filter checks.
+ * Content resolution path:
+ *   student.college_id → college_subjects → subject_ids → lessons
  */
 export function useStudentAccess(): StudentAccessResult {
   const { user, loading: authLoading, isAdmin, isModerator, isStaff } = useAuthContext();
@@ -71,13 +47,29 @@ export function useStudentAccess(): StudentAccessResult {
     refetch: refetchStudent,
   } = useStudentData(user?.id);
 
-  // Derive content filter from student record
+  // Derive legacy content filter (kept for backward compat)
   const filter = useMemo<ContentFilter | null>(
     () => getContentFilter(student),
     [student?.major_id, student?.college_id],
   );
 
-  // Fetch filter name (college or major display name)
+  // ── NEW: Fetch subject IDs from college_subjects ──────────
+  const collegeId = student?.college_id;
+  const { data: subjectIds = [] } = useQuery({
+    queryKey: ["college-subject-ids", collegeId],
+    queryFn: async () => {
+      if (!collegeId) return [];
+      const { data } = await supabase
+        .from("college_subjects")
+        .select("subject_id")
+        .eq("college_id", collegeId);
+      return (data || []).map((r: any) => r.subject_id as string);
+    },
+    enabled: !!collegeId,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // Fetch filter name (college display name)
   const { data: filterName = "" } = useQuery({
     queryKey: ["filter-name", filter?.type, filter?.value],
     queryFn: async () => {
@@ -102,7 +94,6 @@ export function useStudentAccess(): StudentAccessResult {
     if (!user) return "no_session";
     if (isStaff) return "staff_user";
     if (!student) return "no_student_record";
-    // Student record exists — check completeness
     if (!student.college_id) return "incomplete_academic_data";
     if (student.major_id) return "ready_with_major";
     return "ready_with_college";
@@ -117,7 +108,6 @@ export function useStudentAccess(): StudentAccessResult {
     (status === "ready_with_major" || status === "ready_with_college") &&
     !!student?.governorate;
 
-  // Legacy corrupted = has a student record but missing college_id
   const isLegacyCorrupted =
     status === "incomplete_academic_data" && !!student;
 
@@ -128,6 +118,7 @@ export function useStudentAccess(): StudentAccessResult {
     student,
     filter,
     filterName,
+    subjectIds,
     isAdmin,
     isModerator,
     isStaff,
