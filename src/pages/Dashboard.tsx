@@ -90,10 +90,9 @@ const Dashboard = () => {
           .not("completed_at", "is", null)
           .order("completed_at", { ascending: true }),
         (() => {
-          const q = supabase.from("lessons").select("id").eq("is_published", true);
-          if (student.major_id) return q.eq("major_id", student.major_id);
-          if (student.college_id) return q.eq("college_id", student.college_id);
-          return Promise.resolve({ data: [] });
+          const filter = getContentFilter(student);
+          if (!filter) return Promise.resolve({ data: [] });
+          return supabase.from("lessons").select("id").eq("is_published", true).eq(filter.field, filter.value);
         })(),
         supabase.from("lesson_progress").select("id").eq("student_id", student.id).eq("is_completed", true),
         student.college_id

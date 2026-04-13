@@ -60,20 +60,16 @@ const StudentPerformance = () => {
     if (authLoading || !user) return;
     const fetchAll = async () => {
       const { data: s } = await supabase.from("students").select("id, major_id, college_id").eq("user_id", user.id).maybeSingle();
-      if (!s || (!s.major_id && !s.college_id)) { setLoading(false); return; }
+      const filter = getContentFilter(s);
+      if (!filter) { setLoading(false); return; }
       setStudentId(s.id);
+      setFilterType(filter.type);
+      setFilterId(filter.value);
 
-      const hasMajor = !!s.major_id;
-      const currentFilterType = hasMajor ? "major" as const : "college" as const;
-      const currentFilterId = hasMajor ? s.major_id! : s.college_id!;
-      const filterCol = hasMajor ? "major_id" : "college_id";
-      setFilterType(currentFilterType);
-      setFilterId(currentFilterId);
-      
-      const [{ data: major }, { data: exams }, { data: les }, { data: prog }, { data: peers }] = await Promise.all([
-        hasMajor
-          ? supabase.from("majors").select("name_ar").eq("id", currentFilterId).single()
-          : supabase.from("colleges").select("name_ar").eq("id", currentFilterId).single(),
+      const [{ data: nameData }, { data: exams }, { data: les }, { data: prog }, { data: peers }] = await Promise.all([
+        filter.type === "major"
+          ? supabase.from("majors").select("name_ar").eq("id", filter.value).single()
+          : supabase.from("colleges").select("name_ar").eq("id", filter.value).single(),
         supabase.from("exam_attempts").select("id, score, total, completed_at, major_id")
           .eq("student_id", s.id).not("completed_at", "is", null).order("completed_at", { ascending: true }),
         supabase.from("lessons").select("id, title, major_id").eq(filterCol, currentFilterId).eq("is_published", true).order("display_order"),
