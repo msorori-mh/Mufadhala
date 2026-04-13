@@ -121,6 +121,7 @@ function App() {
                   <Route path="/complete-profile" element={<Navigate to="/profile" replace />} />
                   <Route path="/admin-login" element={<AdminLogin />} />
                   <Route path="/admin-reset-password" element={<AdminResetPassword />} />
+                  <Route path="/welcome" element={<Welcome />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/profile" element={<StudentProfile />} />
                   <Route path="/notifications" element={<Notifications />} />
