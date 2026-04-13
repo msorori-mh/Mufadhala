@@ -9,6 +9,7 @@ import {
   Share2, Copy, MessageCircle,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import PostExamUpgrade from "@/components/PostExamUpgrade";
 import {
   useExamEngine,
   formatTime,
@@ -321,6 +322,11 @@ const ExamSimulator = () => {
         </Card>
 
         <ShareResult percentage={engine.percentage} score={engine.resultScore} total={engine.resultTotal} toast={engine.toast} />
+
+        {/* Upgrade CTA for free users after exam */}
+        {!engine.hasSubscription && !engine.trialExpired && (
+          <PostExamUpgrade percentage={engine.percentage} totalQuestions={engine.examQuestions.length} />
+        )}
 
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-muted-foreground">مراجعة الإجابات</h3>
