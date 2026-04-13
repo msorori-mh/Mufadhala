@@ -14,6 +14,7 @@ import { initializeCapacitor } from "./lib/capacitor";
 // Eager imports — critical student pages (no spinner on navigation)
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import LessonsList from "./pages/LessonsList";
 import LessonDetail from "./pages/LessonDetail";
@@ -24,7 +25,7 @@ import Notifications from "./pages/Notifications";
 import MobileBottomNav from "./components/MobileBottomNav";
 
 // Lazy imports — secondary pages
-const Register = lazy(() => import("./pages/Register"));
+
 const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminResetPassword = lazy(() => import("./pages/AdminResetPassword"));
