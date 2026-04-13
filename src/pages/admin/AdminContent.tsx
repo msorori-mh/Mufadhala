@@ -1297,10 +1297,24 @@ const AdminContent = () => {
                 <p className="text-xs font-semibold">📊 تقرير الاستيراد ({importReport.mode === "combined" ? "دروس + أسئلة" : importReport.mode === "lessons_only" ? "دروس فقط" : "أسئلة فقط"}):</p>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <span>✅ دروس جديدة: {importReport.lessonsCreated}</span>
+                  <span>🔄 دروس مُحدَّثة: {importReport.lessonsUpdated ?? 0}</span>
                   <span>⏭️ دروس متكررة: {importReport.lessonsSkipped}</span>
                   <span>✅ أسئلة جديدة: {importReport.questionsCreated}</span>
                   <span>⏭️ أسئلة متكررة: {importReport.questionsSkipped}</span>
+                  <span>❌ أسئلة فاشلة: {importReport.questionsFailed ?? 0}</span>
                 </div>
+                {(importReport.warnings?.length ?? 0) > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs font-medium text-yellow-600">⚠️ تحذيرات ({importReport.warnings.length}):</p>
+                    <div className="max-h-24 overflow-y-auto space-y-1">
+                      {importReport.warnings.slice(0, 10).map((w, i) => (
+                        <p key={i} className="text-[11px] text-yellow-700 bg-yellow-50 dark:bg-yellow-950/20 dark:text-yellow-400 rounded px-2 py-1">
+                          {w.sheet} - صف {w.row}: {w.message}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {importReport.errors.length > 0 && (
                   <div className="mt-2 space-y-1">
                     <p className="text-xs font-medium text-destructive">❌ أخطاء ({importReport.errors.length}):</p>
