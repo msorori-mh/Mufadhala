@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getContentFilter } from "@/lib/contentFilter";
+// Content resolution now uses college_subjects → subject_ids (no getContentFilter needed)
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useOfflineStatus } from "@/hooks/useOfflineStatus";
