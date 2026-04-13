@@ -12,12 +12,14 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, CreditCard, Upload, CheckCircle, Clock,
   Building, ArrowLeftRight, ChevronRight, GraduationCap, Smartphone, Globe,
-  Star, Sparkles, Tag, Timer, Info, ChevronDown, ZoomIn, Download, Copy, Check
+  Star, Sparkles, Tag, Timer, Info, ChevronDown, ZoomIn, Download, Copy, Check,
+  Crown, Zap, Brain, BarChart3, BookOpen, ClipboardCheck, Lock, Bot
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import ConversionBoosters from "@/components/ConversionBoosters";
 import { getZone, getPlanPrice } from "@/domain/pricing";
 import { ZONE_A_GOVERNORATES, ZONE_B_GOVERNORATES } from "@/domain/constants";
+import { trackFunnelEvent } from "@/lib/funnelTracking";
 
 interface Plan {
   id: string; name: string; slug: string; description: string;
