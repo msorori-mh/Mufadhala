@@ -107,6 +107,7 @@ const Register = () => {
   useEffect(() => {
     if (!form.universityId) {
       setColleges([]);
+      setMajors([]);
       return;
     }
     supabase
@@ -117,15 +118,38 @@ const Register = () => {
       .order("display_order")
       .then(({ data }) => {
         setColleges(data || []);
-        // Only reset college if the current selection doesn't belong to new university
         if (data && form.collegeId) {
           const stillValid = data.some((c) => c.id === form.collegeId);
           if (!stillValid) {
             updateField("collegeId", "");
+            updateField("majorId", "");
           }
         }
       });
   }, [form.universityId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch majors when college changes
+  useEffect(() => {
+    if (!form.collegeId) {
+      setMajors([]);
+      return;
+    }
+    supabase
+      .from("majors")
+      .select("*")
+      .eq("college_id", form.collegeId)
+      .eq("is_active", true)
+      .order("display_order")
+      .then(({ data }) => {
+        setMajors(data || []);
+        if (data && form.majorId) {
+          const stillValid = data.some((m) => m.id === form.majorId);
+          if (!stillValid) {
+            updateField("majorId", "");
+          }
+        }
+      });
+  }, [form.collegeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isFormValid =
     form.firstName.trim() &&
@@ -133,7 +157,8 @@ const Register = () => {
     YEMEN_PHONE_REGEX.test(form.phoneNumber) &&
     form.governorate &&
     form.universityId &&
-    form.collegeId;
+    form.collegeId &&
+    form.majorId;
 
   const handleRegister = async () => {
     if (!isFormValid) {
@@ -150,6 +175,7 @@ const Register = () => {
           governorate: form.governorate,
           university_id: form.universityId,
           college_id: form.collegeId,
+          major_id: form.majorId,
           high_school_gpa: form.highSchoolGpa ? parseFloat(form.highSchoolGpa) : null,
         },
       });
