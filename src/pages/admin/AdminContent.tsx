@@ -644,6 +644,7 @@ const AdminContent = () => {
     setCorrectOption("a");
     setExplanation("");
     setQuestionSubject("general");
+    setQuestionType("multiple_choice");
     setQuestionOrder(questions.filter((q) => q.lesson_id === lessonId).length);
     setQuestionDialogOpen(true);
   };
@@ -659,12 +660,14 @@ const AdminContent = () => {
     setCorrectOption(q.correct_option);
     setExplanation(q.explanation);
     setQuestionSubject(q.subject || "general");
+    setQuestionType(q.question_type || "multiple_choice");
     setQuestionOrder(q.display_order);
     setQuestionDialogOpen(true);
   };
 
   const handleSaveQuestion = async () => {
-    if (!questionText || !optionA || !optionB || !optionC || !optionD) {
+    const isTF = questionType === "true_false";
+    if (!questionText || !optionA || !optionB || (!isTF && (!optionC || !optionD))) {
       toast({ variant: "destructive", title: "يرجى ملء جميع الحقول المطلوبة" });
       return;
     }
@@ -672,20 +675,28 @@ const AdminContent = () => {
     const payload = {
       lesson_id: questionLessonId,
       question_text: questionText,
-      option_a: optionA,
-      option_b: optionB,
-      option_c: optionC,
-      option_d: optionD,
+      option_a: isTF ? "صح" : optionA,
+      option_b: isTF ? "خطأ" : optionB,
+      option_c: isTF ? "" : optionC,
+      option_d: isTF ? "" : optionD,
       correct_option: correctOption,
       explanation,
       display_order: questionOrder,
       subject: questionSubject,
+      question_type: questionType,
     };
     if (editingQuestion) {
       const { error } = await supabase.from("questions").update(payload).eq("id", editingQuestion.id);
       if (error) toast({ variant: "destructive", title: error.message });
       else toast({ title: "تم تحديث السؤال" });
     } else {
+      // Duplicate protection
+      const existingQ = questions.find(q => q.lesson_id === questionLessonId && q.question_text.trim() === questionText.trim());
+      if (existingQ) {
+        toast({ variant: "destructive", title: "هذا السؤال موجود بالفعل في هذا الدرس" });
+        setSaving(false);
+        return;
+      }
       const { error } = await supabase.from("questions").insert(payload);
       if (error) toast({ variant: "destructive", title: error.message });
       else toast({ title: "تمت إضافة السؤال" });
