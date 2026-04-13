@@ -47,39 +47,45 @@ const StudentPerformance = () => {
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [, setStudentId] = useState<string | null>(null);
-  const [majorId, setMajorId] = useState<string | null>(null);
-  const [majorName, setMajorName] = useState("");
+  const [filterId, setFilterId] = useState<string | null>(null);
+  const [filterType, setFilterType] = useState<"major" | "college">("major");
+  const [filterName, setFilterName] = useState("");
   const [attempts, setAttempts] = useState<ExamRow[]>([]);
   const [lessons, setLessons] = useState<LessonRow[]>([]);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
   const [peerAttempts, setPeerAttempts] = useState<{ score: number; total: number }[]>([]);
-
+  
   useEffect(() => {
     if (authLoading || !user) return;
     const fetchAll = async () => {
       const { data: s } = await supabase.from("students").select("id, major_id, college_id").eq("user_id", user.id).maybeSingle();
       if (!s || (!s.major_id && !s.college_id)) { setLoading(false); return; }
       setStudentId(s.id);
-      setMajorId(s.major_id || s.college_id);
 
       const hasMajor = !!s.major_id;
+      const currentFilterType = hasMajor ? "major" as const : "college" as const;
+      const currentFilterId = hasMajor ? s.major_id! : s.college_id!;
       const filterCol = hasMajor ? "major_id" : "college_id";
-      const filterId = hasMajor ? s.major_id! : s.college_id!;
+      setFilterType(currentFilterType);
+      setFilterId(currentFilterId);
       
       const [{ data: major }, { data: exams }, { data: les }, { data: prog }, { data: peers }] = await Promise.all([
         hasMajor
-          ? supabase.from("majors").select("name_ar").eq("id", filterId).single()
-          : supabase.from("colleges").select("name_ar").eq("id", filterId).single(),
+          ? supabase.from("majors").select("name_ar").eq("id", currentFilterId).single()
+          : supabase.from("colleges").select("name_ar").eq("id", currentFilterId).single(),
         supabase.from("exam_attempts").select("id, score, total, completed_at, major_id")
           .eq("student_id", s.id).not("completed_at", "is", null).order("completed_at", { ascending: true }),
-        supabase.from("lessons").select("id, title, major_id").eq(filterCol, filterId).eq("is_published", true).order("display_order"),
+        supabase.from("lessons").select("id, title, major_id").eq(filterCol, currentFilterId).eq("is_published", true).order("display_order"),
         supabase.from("lesson_progress").select("lesson_id").eq("student_id", s.id).eq("is_completed", true),
-        supabase.from("exam_attempts").select("score, total, student_id")
-          .eq("major_id", s.major_id).not("completed_at", "is", null),
+        // Peers: only compare when student has a major (exam_attempts.major_id is always a major ID)
+        hasMajor
+          ? supabase.from("exam_attempts").select("score, total, student_id")
+              .eq("major_id", s.major_id!).not("completed_at", "is", null)
+          : Promise.resolve({ data: [] }),
       ]);
 
-      if (major) setMajorName(major.name_ar);
+      if (major) setFilterName(major.name_ar);
       if (exams) setAttempts(exams);
       if (les) {
         setLessons(les as LessonRow[]);
@@ -101,7 +107,7 @@ const StudentPerformance = () => {
     return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
-  if (!majorId) {
+  if (!filterId) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center flex-col gap-4 p-4">
         <p className="text-muted-foreground">لا توجد بيانات أداء بعد</p>
@@ -110,7 +116,8 @@ const StudentPerformance = () => {
     );
   }
 
-  const myExams = attempts.filter((a) => a.major_id === majorId);
+  // Filter exams: only by major_id when filterType is "major"; otherwise show all student's exams
+  const myExams = filterType === "major" ? attempts.filter((a) => a.major_id === filterId) : attempts;
   const myAvg = myExams.length > 0 ? Math.round(myExams.reduce((s, e) => s + (e.score / e.total) * 100, 0) / myExams.length) : 0;
   const myBest = myExams.length > 0 ? Math.round(Math.max(...myExams.map((e) => (e.score / e.total) * 100))) : 0;
   const myWorst = myExams.length > 0 ? Math.round(Math.min(...myExams.map((e) => (e.score / e.total) * 100))) : 0;
@@ -214,7 +221,7 @@ const StudentPerformance = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-foreground">تحليل أدائك</h1>
-            <p className="text-sm text-muted-foreground">{majorName} • {myExams.length} اختبار</p>
+            <p className="text-sm text-muted-foreground">{filterName} • {myExams.length} اختبار</p>
           </div>
           {myExams.length > 0 && (
             <div className="flex items-center gap-1.5">
