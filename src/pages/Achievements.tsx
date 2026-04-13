@@ -52,7 +52,7 @@ const Achievements = () => {
   const loading = authLoading || studentLoading || statsLoading;
   const safeStats = stats ?? { totalExams: 0, avgScore: 0, bestScore: 0, completedLessons: 0, totalLessons: 0 };
 
-  const items = achievements.map((a) => ({ ...a, unlocked: a.check(stats) }));
+  const items = achievements.map((a) => ({ ...a, unlocked: a.check(safeStats) }));
   const unlockedCount = items.filter((i) => i.unlocked).length;
   const percentage = Math.round((unlockedCount / items.length) * 100);
 
