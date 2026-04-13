@@ -137,17 +137,26 @@ const Register = () => {
           high_school_gpa: form.highSchoolGpa ? parseFloat(form.highSchoolGpa) : null,
         },
       });
-      if (res.error || res.data?.error) {
-        toast({
-          variant: "destructive",
-          title: "خطأ",
-          description: res.data?.error || "فشل في إنشاء الحساب",
-        });
+
+      // Handle edge function or backend errors
+      const errorMsg = res.data?.error || (res.error ? "فشل في الاتصال بالخادم" : null);
+      if (errorMsg) {
+        toast({ variant: "destructive", title: "خطأ", description: errorMsg });
         setLoading(false);
         return;
       }
+
+      // Set session and verify it was established
       const { access_token, refresh_token } = res.data.session;
-      await supabase.auth.setSession({ access_token, refresh_token });
+      const { error: sessionError } = await supabase.auth.setSession({ access_token, refresh_token });
+      if (sessionError) {
+        console.error("setSession error:", sessionError);
+        toast({ variant: "destructive", title: "خطأ", description: "فشل في تثبيت الجلسة. يرجى المحاولة مرة أخرى." });
+        setLoading(false);
+        return;
+      }
+
+      // Only clear draft after confirmed session
       await clearDraft();
       toast({ title: "تم التسجيل بنجاح! 🎉" });
       navigate("/dashboard", { replace: true });
