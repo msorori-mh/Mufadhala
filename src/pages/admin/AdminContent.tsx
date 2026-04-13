@@ -906,10 +906,17 @@ const AdminContent = () => {
             const row = lessonsSheet[i] as any[];
             if (!row[0]) continue;
             const title = String(row[0]).trim();
+            // Duplicate protection: skip if lesson with same title exists in this college
+            const existingLesson = lessons.find(l => l.college_id === collegeId && l.title.trim() === title);
+            if (existingLesson) {
+              lessonMap.set(title, existingLesson.id);
+              continue;
+            }
             const subjectName = row[5] ? String(row[5]).trim() : "";
             const matchedSubject = subjectName ? subjects.find(s => s.name_ar === subjectName || s.code === subjectName) : null;
             const resolvedSubjectId = importSubjectId || matchedSubject?.id || null;
             const presentationUrl = row[6] ? String(row[6]).trim() : "";
+            const gradeLevel = row[7] ? Number(row[7]) : null;
             const { data: inserted, error } = await supabase.from("lessons").insert({
               college_id: collegeId,
               title,
@@ -919,6 +926,7 @@ const AdminContent = () => {
               is_published: row[4] ? String(row[4]).includes("نعم") || String(row[4]).toLowerCase() === "true" : false,
               subject_id: resolvedSubjectId,
               presentation_url: presentationUrl || null,
+              grade_level: gradeLevel,
             }).select("id").single();
             if (error) {
               toast({ variant: "destructive", title: `خطأ في درس "${title}": ${error.message}` });
