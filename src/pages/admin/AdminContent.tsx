@@ -1517,39 +1517,19 @@ const AdminContent = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Import Dialog */}
+      {/* Unified Import Dialog */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Upload className="w-5 h-5" />
-              {importMode === "questions_only" ? "استيراد أسئلة فقط" : "استيراد دروس وأسئلة"}
+              استيراد موحد للمحتوى
             </DialogTitle>
             <DialogDescription>
-              {importMode === "questions_only"
-                ? "استورد أسئلة وربطها بالدروس الموجودة في الكلية المختارة"
-                : "استورد الدروس والأسئلة من ملف Excel أو CSV"}
+              ارفع ملف Excel يحتوي على ورقة "الدروس" و/أو ورقة "الأسئلة". النظام يكتشف المحتوى تلقائياً.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {/* Import Mode Toggle */}
-            <div className="flex gap-2 p-1 bg-muted rounded-lg">
-              <button
-                type="button"
-                onClick={() => setImportMode("full")}
-                className={`flex-1 text-sm py-1.5 px-3 rounded-md transition-colors ${importMode === "full" ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                دروس وأسئلة
-              </button>
-              <button
-                type="button"
-                onClick={() => setImportMode("questions_only")}
-                className={`flex-1 text-sm py-1.5 px-3 rounded-md transition-colors ${importMode === "questions_only" ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                أسئلة فقط
-              </button>
-            </div>
-
             <div className="space-y-2">
               <Label>الجامعة *</Label>
               <select value={importUniId} onChange={(e) => { setImportUniId(e.target.value); setImportCollegeIds([]); }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
@@ -1559,9 +1539,8 @@ const AdminContent = () => {
               </select>
             </div>
 
-            {/* Multi-select Colleges */}
             <div className="space-y-2">
-              <Label>الكليات * ({importCollegeIds.length} محددة)</Label>
+              <Label>الكليات المستهدفة * ({importCollegeIds.length} محددة)</Label>
               {(() => {
                 const availableImportColleges = importUniId === "all"
                   ? scopedColleges
@@ -1619,87 +1598,59 @@ const AdminContent = () => {
                 <option value="">تحديد من الملف</option>
                 {subjects.map((s) => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
               </select>
-              <p className="text-[11px] text-muted-foreground">إذا تم تحديد مادة هنا، ستُطبق على جميع الدروس المستوردة. وإلا سيتم قراءتها من الملف.</p>
             </div>
 
-            {importMode === "questions_only" && importCollegeIds.length > 0 && (
-              <div className="text-xs text-muted-foreground bg-accent/50 rounded-md p-2">
-                سيتم ربط الأسئلة بالدروس الموجودة في {importCollegeIds.length} كلية عبر تطابق عنوان الدرس
-              </div>
-            )}
-
             <div className="space-y-2">
-              <Label>اختر ملف (Excel أو CSV)</Label>
-              <Input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImportFile} disabled={importCollegeIds.length === 0 || importing} />
+              <Label>اختر ملف (Excel)</Label>
+              <Input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleUnifiedImportFile} disabled={importCollegeIds.length === 0 || importing} />
             </div>
             {importing && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />جاري الاستيراد...
               </div>
             )}
-            <div className="bg-muted rounded-lg p-3 space-y-2">
-              <p className="text-xs font-semibold">تنسيق الملف المطلوب:</p>
-              {importMode === "questions_only" ? (
-                <p className="text-xs text-muted-foreground">
-                  <strong>ورقة "الأسئلة":</strong> عنوان الدرس | نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة (a/b/c/d) | الشرح | المادة
-                </p>
-              ) : (
-                <>
-                  <p className="text-xs text-muted-foreground">
-                    <strong>ورقة "الدروس":</strong> عنوان الدرس | المحتوى | الملخص | ترتيب العرض | منشور
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    <strong>ورقة "الأسئلة":</strong> عنوان الدرس | نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة (a/b/c/d) | الشرح | المادة
-                  </p>
-                </>
-              )}
-              <div className="flex gap-3 flex-wrap">
-                {importMode === "questions_only" ? (
-                  <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadQuestionsOnlyTemplate}>
-                    <Download className="w-3 h-3 ml-1" />تحميل قالب الأسئلة
-                  </Button>
-                ) : (
-                  <>
-                    <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadFullTemplate}>
-                      <Download className="w-3 h-3 ml-1" />قالب دروس + أسئلة
-                    </Button>
-                    <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadTemplate}>
-                      <Download className="w-3 h-3 ml-1" />قالب دروس فقط
-                    </Button>
-                  </>
+
+            {/* Import Report */}
+            {importReport && (
+              <div className="bg-muted rounded-lg p-3 space-y-2">
+                <p className="text-xs font-semibold">📊 تقرير الاستيراد ({importReport.mode === "combined" ? "دروس + أسئلة" : importReport.mode === "lessons_only" ? "دروس فقط" : "أسئلة فقط"}):</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <span>✅ دروس جديدة: {importReport.lessonsCreated}</span>
+                  <span>⏭️ دروس متكررة: {importReport.lessonsSkipped}</span>
+                  <span>✅ أسئلة جديدة: {importReport.questionsCreated}</span>
+                  <span>⏭️ أسئلة متكررة: {importReport.questionsSkipped}</span>
+                </div>
+                {importReport.errors.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs font-medium text-destructive">❌ أخطاء ({importReport.errors.length}):</p>
+                    <div className="max-h-32 overflow-y-auto space-y-1">
+                      {importReport.errors.slice(0, 20).map((err, i) => (
+                        <p key={i} className="text-[11px] text-destructive bg-destructive/10 rounded px-2 py-1">
+                          {err.sheet} - صف {err.row}: {err.message}
+                        </p>
+                      ))}
+                      {importReport.errors.length > 20 && (
+                        <p className="text-[11px] text-muted-foreground">... و {importReport.errors.length - 20} خطأ آخر</p>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Import Questions Dialog (from panel) */}
-      <Dialog open={importQuestionsDialogOpen} onOpenChange={setImportQuestionsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Upload className="w-5 h-5" />استيراد أسئلة للدرس</DialogTitle>
-            <DialogDescription>
-              {selectedLessonData ? `استيراد أسئلة لدرس: ${selectedLessonData.title}` : "اختر درساً أولاً"}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>اختر ملف (Excel أو CSV)</Label>
-              <Input ref={questionFileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImportQuestions} disabled={!selectedLesson || importingQuestions} />
-            </div>
-            {importingQuestions && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />جاري الاستيراد...
-              </div>
             )}
+
             <div className="bg-muted rounded-lg p-3 space-y-2">
-              <p className="text-xs font-semibold">تنسيق الملف المطلوب:</p>
+              <p className="text-xs font-semibold">📋 تنسيق الملف الموحد:</p>
               <p className="text-xs text-muted-foreground">
-                نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة (a/b/c/d) | الشرح
+                <strong>ورقة "الدروس":</strong> كود الدرس | المادة | العنوان | المحتوى | الملخص | الترتيب | منشور | مجاني | الصف
               </p>
-              <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={downloadQuestionsTemplate}>
-                <Download className="w-3 h-3 ml-1" />تحميل قالب فارغ
+              <p className="text-xs text-muted-foreground">
+                <strong>ورقة "الأسئلة":</strong> كود الدرس | نوع السؤال | نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة | الشرح | الترتيب
+              </p>
+              <p className="text-[11px] text-muted-foreground/70">
+                💡 يمكنك رفع ملف يحتوي ورقة واحدة فقط (دروس فقط أو أسئلة فقط) — النظام يكتشف تلقائياً
+              </p>
+              <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={handleDownloadUnifiedTemplate}>
+                <Download className="w-3 h-3 ml-1" />تحميل القالب الموحد
               </Button>
             </div>
           </div>
