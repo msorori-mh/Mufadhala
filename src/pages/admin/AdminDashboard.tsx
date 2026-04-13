@@ -96,6 +96,56 @@ const AdminDashboard = () => {
     staleTime: 2 * 60 * 1000,
   });
 
+  // Daily trends: registrations & subscriptions over last 30 days
+  const { data: trendsData } = useQuery({
+    queryKey: ["admin-daily-trends"],
+    queryFn: async () => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const since = thirtyDaysAgo.toISOString();
+
+      const [studentsRes, rolesRes, subsRes] = await Promise.all([
+        supabase.from("students").select("user_id, created_at").gte("created_at", since),
+        supabase.from("user_roles").select("user_id, role"),
+        supabase.from("subscriptions").select("user_id, created_at, status").gte("created_at", since),
+      ]);
+
+      const staffIds = new Set(
+        (rolesRes.data || []).filter(r => r.role === "admin" || r.role === "moderator").map(r => r.user_id)
+      );
+
+      // Build daily map
+      const dayMap = new Map<string, { registrations: number; subscriptions: number }>();
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        dayMap.set(key, { registrations: 0, subscriptions: 0 });
+      }
+
+      (studentsRes.data || []).forEach(s => {
+        if (staffIds.has(s.user_id)) return;
+        const day = s.created_at.slice(0, 10);
+        const entry = dayMap.get(day);
+        if (entry) entry.registrations++;
+      });
+
+      (subsRes.data || []).forEach(sub => {
+        if (staffIds.has(sub.user_id)) return;
+        const day = sub.created_at.slice(0, 10);
+        const entry = dayMap.get(day);
+        if (entry) entry.subscriptions++;
+      });
+
+      return Array.from(dayMap.entries()).map(([date, counts]) => ({
+        date: new Date(date).toLocaleDateString("ar-EG", { month: "short", day: "numeric" }),
+        ...counts,
+      }));
+    },
+    enabled: !authLoading && isAdmin,
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Chat usage stats
   const { data: chatStats } = useQuery({
     queryKey: ["chat-usage-stats"],
