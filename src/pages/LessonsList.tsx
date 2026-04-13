@@ -434,7 +434,7 @@ const LessonsList = () => {
                 ) : (
                   <>
                     <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">لا توجد دروس متاحة لتخصصك حالياً</p>
+                    <p className="text-muted-foreground">لا توجد دروس متاحة لكليتك حالياً</p>
                   </>
                 )}
               </div>
