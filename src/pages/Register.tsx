@@ -17,14 +17,7 @@ import {
   loadDraft,
   clearDraft,
 } from "@/lib/registrationDraft";
-
-const GOVERNORATES = [
-  "أمانة العاصمة", "عدن", "تعز", "الحديدة", "إب", "ذمار", "حجة",
-  "صعدة", "عمران", "صنعاء", "المحويت", "ريمة", "البيضاء", "مأرب",
-  "الجوف", "شبوة", "حضرموت", "المهرة", "أبين", "لحج", "الضالع", "سقطرى",
-];
-
-const YEMEN_PHONE_REGEX = /^7[0-9]{8}$/;
+import { GOVERNORATES, YEMEN_PHONE_REGEX } from "@/domain/constants";
 
 const Register = () => {
   const navigate = useNavigate();

@@ -13,15 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
-
-const GOVERNORATES = [
-  "أمانة العاصمة", "عدن", "تعز", "الحديدة", "إب", "ذمار", "حجة",
-  "صعدة", "عمران", "صنعاء", "المحويت", "ريمة", "البيضاء", "مأرب",
-  "الجوف", "شبوة", "حضرموت", "المهرة", "أبين", "لحج", "الضالع", "سقطرى",
-];
-
-const YEMEN_PHONE_REGEX = /^7[0-9]{8}$/;
-const isValidYemeniPhone = (p: string) => !p || YEMEN_PHONE_REGEX.test(p);
+import { GOVERNORATES, YEMEN_PHONE_REGEX, isValidYemeniPhone } from "@/domain/constants";
 
 const StudentProfile = () => {
   const navigate = useNavigate();
