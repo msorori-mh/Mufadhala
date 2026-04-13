@@ -22,8 +22,9 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
 import {
   Plus, Pencil, Loader2, Route, FlaskConical,
-  Building2, AlertTriangle, Check, X, ChevronDown,
+  Building2, AlertTriangle, Check,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import {
   getTracks, createTrack, updateTrack,
   getTrackSubjects, addSubjectToTrack, removeSubjectFromTrack,
