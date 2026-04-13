@@ -237,6 +237,15 @@ const LessonDetail = () => {
     }
   }, [lesson, id, authLoading, loading]);
 
+  // Track paywall view
+  useEffect(() => {
+    if (!lesson || loading || subLoading || authLoading) return;
+    const access = isStaff || (hasActiveSubscription && planCoversLesson) || isDynamicallyFree || lesson.is_free || isFromCache;
+    if (!access && id) {
+      trackFunnelEvent("paywall_viewed", { lesson_id: id });
+    }
+  }, [lesson, loading, subLoading, authLoading, isStaff, hasActiveSubscription, planCoversLesson, isDynamicallyFree, isFromCache, id]);
+
   if (authLoading || loading || subLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
