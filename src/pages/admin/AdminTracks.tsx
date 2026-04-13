@@ -48,9 +48,9 @@ interface University {
 
 // ── Main Component ─────────────────────────────────────────
 const AdminTracks = () => {
+  const { loading: authLoading, isAdmin } = useAuth("admin");
   const { toast } = useToast();
   const qc = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"tracks" | "colleges">("tracks");
 
   // ── Data queries ──
   const { data: tracks = [], isLoading: tracksLoading } = useQuery({
@@ -104,7 +104,7 @@ const AdminTracks = () => {
 
   return (
     <AdminLayout>
-      <PermissionGate permission="admin_only">
+      {isAdmin ? (
         <div className="space-y-4">
           <div>
             <h1 className="text-2xl font-bold">إدارة المسارات الأكاديمية</h1>
@@ -558,7 +558,7 @@ function CollegesTab({
                 <strong>{getTrackName(confirmDialog?.college.admission_track_id ?? null)}</strong>{" "}
                 إلى <strong>{confirmDialog?.newTrackId ? getTrackName(confirmDialog.newTrackId) : "بدون مسار"}</strong>؟
               </p>
-              <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 p-3 rounded-lg text-xs">
+              <div className="flex items-start gap-2 bg-destructive/5 text-destructive p-3 rounded-lg text-xs">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>سيؤدي هذا إلى تغيير المحتوى التعليمي المرئي لطلاب هذه الكلية</span>
               </div>
