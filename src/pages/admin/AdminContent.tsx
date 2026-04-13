@@ -722,20 +722,10 @@ const AdminContent = () => {
     XLSX.writeFile(wb, "قالب_استيراد_أسئلة.xlsx");
   };
 
-  const downloadQuestionsOnlyTemplate = () => {
-    const wb = XLSX.utils.book_new();
-    const data = [
-      ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`, "نوع السؤال (multiple_choice / true_false)"],
-      ["مقدمة في البرمجة", "ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب", "عام", "multiple_choice"],
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), "الأسئلة");
-    XLSX.writeFile(wb, "قالب_استيراد_أسئلة_فقط.xlsx");
-  };
-
   const handleImportQuestions = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selectedLesson) return;
-    setImportingQuestions(true);
+    setImporting(true);
 
     try {
       const data = await file.arrayBuffer();
@@ -750,7 +740,6 @@ const AdminContent = () => {
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i] as any[];
         if (!row[0]) continue;
-        // Duplicate protection
         const qText = String(row[0]).trim();
         const existingQ = questions.find(q => q.lesson_id === selectedLesson && q.question_text.trim() === qText);
         if (existingQ) continue;
@@ -780,9 +769,8 @@ const AdminContent = () => {
     } catch (err: any) {
       toast({ variant: "destructive", title: `خطأ في قراءة الملف: ${err.message}` });
     }
-    setImportingQuestions(false);
-    setImportQuestionsDialogOpen(false);
-    if (questionFileInputRef.current) questionFileInputRef.current.value = "";
+    setImporting(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   // --- Export existing lessons ---
