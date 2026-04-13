@@ -16,6 +16,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import Welcome from "./pages/Welcome";
 import LessonsList from "./pages/LessonsList";
 import LessonDetail from "./pages/LessonDetail";
 import ExamSimulator from "./pages/ExamSimulator";
@@ -120,6 +121,7 @@ function App() {
                   <Route path="/complete-profile" element={<Navigate to="/profile" replace />} />
                   <Route path="/admin-login" element={<AdminLogin />} />
                   <Route path="/admin-reset-password" element={<AdminResetPassword />} />
+                  <Route path="/welcome" element={<Welcome />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/profile" element={<StudentProfile />} />
                   <Route path="/notifications" element={<Notifications />} />
