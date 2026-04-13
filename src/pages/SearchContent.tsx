@@ -20,7 +20,8 @@ interface College { id: string; name_ar: string; university_id: string; }
 interface Major { id: string; name_ar: string; college_id: string; }
 interface LessonResult {
   id: string; title: string; summary: string;
-  major_id: string; major_name: string;
+  major_id: string | null; college_id: string | null;
+  major_name: string; college_name: string;
 }
 interface QuestionResult {
   id: string; question_text: string; lesson_id: string;
@@ -44,7 +45,7 @@ const fetchReferenceData = async () => {
 const fetchSearchContent = async () => {
   const { data: lessons } = await supabase
     .from("lessons")
-    .select("id, title, summary, major_id, majors(name_ar)")
+    .select("id, title, summary, major_id, college_id, majors(name_ar), colleges(name_ar)")
     .eq("is_published", true)
     .order("display_order");
 
@@ -52,7 +53,8 @@ const fetchSearchContent = async () => {
 
   const mappedLessons: LessonResult[] = lessons.map((l: any) => ({
     id: l.id, title: l.title, summary: l.summary,
-    major_id: l.major_id, major_name: l.majors?.name_ar || "",
+    major_id: l.major_id, college_id: l.college_id,
+    major_name: l.majors?.name_ar || "", college_name: l.colleges?.name_ar || "",
   }));
 
   const lessonIds = lessons.map((l: any) => l.id);
@@ -117,15 +119,19 @@ const SearchContent = () => {
     [majors, selectedCollege]
   );
 
-  // Get major IDs matching filters
-  const allowedMajorIds = useMemo(() => {
-    if (selectedMajor !== "all") return new Set([selectedMajor]);
-    if (selectedCollege !== "all") return new Set(majors.filter(m => m.college_id === selectedCollege).map(m => m.id));
+  // Build allowed IDs for filtering — supports both major and college
+  const filterCriteria = useMemo(() => {
+    if (selectedMajor !== "all") return { majorIds: new Set([selectedMajor]), collegeIds: null as Set<string> | null };
+    if (selectedCollege !== "all") {
+      const majorIds = new Set(majors.filter(m => m.college_id === selectedCollege).map(m => m.id));
+      return { majorIds, collegeIds: new Set([selectedCollege]) };
+    }
     if (selectedUni !== "all") {
       const collegeIds = new Set(colleges.filter(c => c.university_id === selectedUni).map(c => c.id));
-      return new Set(majors.filter(m => collegeIds.has(m.college_id)).map(m => m.id));
+      const majorIds = new Set(majors.filter(m => collegeIds.has(m.college_id)).map(m => m.id));
+      return { majorIds, collegeIds };
     }
-    return null;
+    return null; // no filter
   }, [selectedUni, selectedCollege, selectedMajor, colleges, majors]);
 
   const matchesQuery = useCallback((text: string) => {
@@ -135,21 +141,30 @@ const SearchContent = () => {
 
   const filteredLessons = useMemo(() => {
     return allLessons.filter(l => {
-      if (allowedMajorIds && !allowedMajorIds.has(l.major_id)) return false;
+      if (filterCriteria) {
+        const matchesMajor = l.major_id && filterCriteria.majorIds.has(l.major_id);
+        const matchesCollege = l.college_id && filterCriteria.collegeIds?.has(l.college_id);
+        if (!matchesMajor && !matchesCollege) return false;
+      }
       if (!query.trim()) return true;
       return matchesQuery(l.title) || matchesQuery(l.summary);
     });
-  }, [allLessons, allowedMajorIds, query, matchesQuery]);
+  }, [allLessons, filterCriteria, query, matchesQuery]);
 
   const filteredQuestions = useMemo(() => {
-    const lessonMajorMap = new Map(allLessons.map(l => [l.id, l.major_id]));
+    const lessonLookup = new Map(allLessons.map(l => [l.id, l]));
     return allQuestions.filter(q => {
-      const majorId = lessonMajorMap.get(q.lesson_id);
-      if (allowedMajorIds && majorId && !allowedMajorIds.has(majorId)) return false;
+      if (filterCriteria) {
+        const lesson = lessonLookup.get(q.lesson_id);
+        if (!lesson) return false;
+        const matchesMajor = lesson.major_id && filterCriteria.majorIds.has(lesson.major_id);
+        const matchesCollege = lesson.college_id && filterCriteria.collegeIds?.has(lesson.college_id);
+        if (!matchesMajor && !matchesCollege) return false;
+      }
       if (!query.trim()) return true;
       return matchesQuery(q.question_text) || matchesQuery(q.option_a) || matchesQuery(q.option_b) || matchesQuery(q.option_c) || matchesQuery(q.option_d);
     });
-  }, [allQuestions, allLessons, allowedMajorIds, query, matchesQuery]);
+  }, [allQuestions, allLessons, filterCriteria, query, matchesQuery]);
 
   const handleResetFilters = () => {
     setSelectedUni("all");
@@ -300,7 +315,7 @@ const SearchContent = () => {
                     <CardContent className="p-3">
                       <p className="font-semibold text-sm text-foreground">{highlightText(l.title)}</p>
                       {l.summary && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{highlightText(l.summary)}</p>}
-                      <Badge variant="outline" className="text-xs mt-2">{l.major_name}</Badge>
+                      <Badge variant="outline" className="text-xs mt-2">{l.major_name || l.college_name}</Badge>
                     </CardContent>
                   </Card>
                 </Link>
