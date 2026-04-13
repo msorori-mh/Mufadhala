@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
-import { ChevronLeft, ChevronRight, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check, Lock, Star, Download, Trash2, WifiOff, Eye, EyeOff, Presentation, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check, Lock, Star, Download, Trash2, WifiOff, Eye, EyeOff, Presentation, Sparkles, Brain } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import LessonReviews from "@/components/LessonReviews";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { useOfflineStatus } from "@/hooks/useOfflineStatus";
 import { saveLesson as saveLessonOffline, getLesson as getOfflineLesson, removeLesson as removeOfflineLesson, type OfflineLesson } from "@/lib/offlineStorage";
 import { trackFunnelEvent, hasTrackedEvent } from "@/lib/funnelTracking";
+import ChatWidget from "@/components/ChatWidget";
 
 interface Lesson {
   id: string;
@@ -567,6 +568,12 @@ const LessonDetail = () => {
               </Button>
             ) : <div className="flex-1" />}
           </div>
+        )}
+        {/* Floating AI Tutor for lesson context */}
+        {canAccess && !isFromCache && lesson && (
+          <ChatWidget
+            lessonContext={{ title: lesson.title, summary: lesson.summary }}
+          />
         )}
         </>
         )}
