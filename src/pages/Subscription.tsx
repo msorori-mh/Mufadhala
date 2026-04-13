@@ -16,16 +16,8 @@ import {
   Star, Sparkles, Tag, Timer, Info, ChevronDown, ZoomIn, Download, Copy, Check
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
-
-const ZONE_A_GOVERNORATES = [
-  "صنعاء", "أمانة العاصمة", "عمران", "ذمار", "إب", "الحديدة",
-  "صعدة", "حجة", "المحويت", "ريمة",
-];
-
-const ZONE_B_GOVERNORATES = [
-  "عدن", "تعز", "لحج", "أبين", "الضالع", "شبوة",
-  "حضرموت", "المهرة", "مأرب", "الجوف", "البيضاء", "سقطرى",
-];
+import { getZone, getPlanPrice } from "@/domain/pricing";
+import { ZONE_A_GOVERNORATES, ZONE_B_GOVERNORATES } from "@/domain/constants";
 
 interface Plan {
   id: string; name: string; slug: string; description: string;
@@ -53,18 +45,6 @@ interface PaymentRequest {
   id: string; status: string; amount: number;
   currency: string; created_at: string; admin_notes: string | null;
 }
-
-const getZone = (gov: string | null): "a" | "b" | null => {
-  if (!gov) return null;
-  return ZONE_A_GOVERNORATES.some((g) => gov.includes(g)) ? "a" : "b";
-};
-
-const getPlanPrice = (plan: Plan, gov: string | null): number => {
-  const zone = getZone(gov);
-  if (zone === "a") return plan.price_zone_a;
-  if (zone === "b") return plan.price_zone_b;
-  return plan.price_default;
-};
 
 const Subscription = () => {
   const { user, loading: authLoading } = useAuth();

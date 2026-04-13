@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useStudentData } from "@/hooks/useStudentData";
+import { useQuery } from "@tanstack/react-query";
 import { GraduationCap, ChevronLeft, Loader2, Trophy, Clock, CalendarDays } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -20,34 +21,31 @@ interface AttemptWithMajor {
 
 const ExamHistory = () => {
   const { user, loading: authLoading } = useAuth();
-  const [attempts, setAttempts] = useState<AttemptWithMajor[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: student, isLoading: studentLoading } = useStudentData(user?.id);
 
-  useEffect(() => {
-    if (authLoading || !user) return;
-    const fetchData = async () => {
-      const { data: s } = await supabase.from("students").select("id").eq("user_id", user.id).maybeSingle();
-      if (!s) { setLoading(false); return; }
-
+  const { data: attempts = [], isLoading: attemptsLoading } = useQuery({
+    queryKey: ["exam-history", student?.id],
+    queryFn: async () => {
       const { data: exams } = await supabase
         .from("exam_attempts")
         .select("id, score, total, started_at, completed_at, major_id")
-        .eq("student_id", s.id)
+        .eq("student_id", student!.id)
         .not("completed_at", "is", null)
         .order("completed_at", { ascending: false });
 
-      if (exams && exams.length > 0) {
-        // Get major names
-        const majorIds = [...new Set(exams.map(e => e.major_id))];
-        const { data: majors } = await supabase.from("majors").select("id, name_ar").in("id", majorIds);
-        const majorMap = new Map(majors?.map(m => [m.id, m.name_ar]) ?? []);
+      if (!exams || exams.length === 0) return [] as AttemptWithMajor[];
 
-        setAttempts(exams.map(e => ({ ...e, major_name: majorMap.get(e.major_id) || "غير محدد" })));
-      }
-      setLoading(false);
-    };
-    fetchData();
-  }, [authLoading, user]);
+      const majorIds = [...new Set(exams.map(e => e.major_id))];
+      const { data: majors } = await supabase.from("majors").select("id, name_ar").in("id", majorIds);
+      const majorMap = new Map(majors?.map(m => [m.id, m.name_ar]) ?? []);
+
+      return exams.map(e => ({ ...e, major_name: majorMap.get(e.major_id) || "غير محدد" })) as AttemptWithMajor[];
+    },
+    enabled: !!student?.id,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const loading = authLoading || studentLoading || attemptsLoading;
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
