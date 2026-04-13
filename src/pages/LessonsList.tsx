@@ -66,6 +66,32 @@ const GradeLevelSection = ({ label, count, completedCount, questionCount, childr
   );
 };
 
+/** Auto-refetch view when college_id is missing (race condition recovery) */
+const NoCollegeView = ({ refetch }: { refetch: () => void }) => {
+  const [retried, setRetried] = useState(false);
+  useEffect(() => {
+    if (!retried) {
+      const timer = setTimeout(() => { refetch(); setRetried(true); }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [retried, refetch]);
+
+  return (
+    <div className="text-center py-12">
+      {!retried ? (
+        <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+      ) : (
+        <>
+          <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-lg font-semibold text-foreground">لا توجد بيانات أكاديمية بعد</p>
+          <p className="text-sm text-muted-foreground mt-1">يرجى التأكد من اختيار الكلية عند التسجيل للوصول إلى المحتوى</p>
+          <Button asChild className="mt-4"><Link to="/dashboard">العودة للرئيسية</Link></Button>
+        </>
+      )}
+    </div>
+  );
+};
+
 const LessonsList = () => {
   const { user, loading: authLoading, isAdmin, isModerator } = useAuth();
   const { isActive: hasSubscription, loading: subLoading, planId, allowedMajorIds } = useSubscription(user?.id);
