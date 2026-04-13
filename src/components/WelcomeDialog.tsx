@@ -7,7 +7,9 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { BookOpen, ClipboardCheck, Trophy, Building2, Sparkles } from "lucide-react";
+import { BookOpen, ClipboardCheck, Trophy, Building2, Sparkles, Rocket } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const features = [
   {
@@ -38,11 +40,31 @@ interface WelcomeDialogProps {
 
 const WelcomeDialog = ({ userId }: WelcomeDialogProps) => {
   const [open, setOpen] = useState(false);
+  const [studentName, setStudentName] = useState("");
+  const [collegeName, setCollegeName] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const key = `welcome_seen_${userId}`;
     if (!localStorage.getItem(key)) {
       setOpen(true);
+      // Fetch student name and college
+      supabase
+        .from("students")
+        .select("first_name, college_id")
+        .eq("user_id", userId)
+        .maybeSingle()
+        .then(async ({ data }) => {
+          if (data?.first_name) setStudentName(data.first_name);
+          if (data?.college_id) {
+            const { data: college } = await supabase
+              .from("colleges")
+              .select("name_ar")
+              .eq("id", data.college_id)
+              .maybeSingle();
+            if (college?.name_ar) setCollegeName(college.name_ar);
+          }
+        });
     }
   }, [userId]);
 
@@ -51,18 +73,27 @@ const WelcomeDialog = ({ userId }: WelcomeDialogProps) => {
     setOpen(false);
   };
 
+  const handleStartLearning = () => {
+    handleClose();
+    navigate("/lessons");
+  };
+
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
       <DialogContent className="max-w-md" dir="rtl">
         <DialogHeader className="text-center">
           <div className="flex justify-center mb-2">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-              <Sparkles className="w-7 h-7 text-primary" />
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <Sparkles className="w-8 h-8 text-primary" />
             </div>
           </div>
-          <DialogTitle className="text-xl">أهلاً بك في مُفَاضَلَة! 🎉</DialogTitle>
+          <DialogTitle className="text-xl">
+            {studentName ? `مرحباً ${studentName}! 🎉` : "أهلاً بك في مُفَاضَلَة! 🎉"}
+          </DialogTitle>
           <DialogDescription className="text-base">
-            منصتك الذكية للتحضير لاختبارات المفاضلة الجامعية
+            {collegeName
+              ? `تم تجهيز محتوى خاص بك حسب كلية ${collegeName}`
+              : "منصتك الذكية للتحضير لاختبارات المفاضلة الجامعية"}
           </DialogDescription>
         </DialogHeader>
 
@@ -83,9 +114,15 @@ const WelcomeDialog = ({ userId }: WelcomeDialogProps) => {
           ))}
         </div>
 
-        <Button onClick={handleClose} className="w-full py-5 text-base font-bold">
-          ابدأ الآن
-        </Button>
+        <div className="space-y-2">
+          <Button onClick={handleStartLearning} className="w-full py-5 text-base font-bold gap-2">
+            <Rocket className="w-5 h-5" />
+            ابدأ التعلم الآن
+          </Button>
+          <Button variant="ghost" onClick={handleClose} className="w-full text-sm text-muted-foreground">
+            تخطي
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
