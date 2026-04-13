@@ -59,6 +59,7 @@ interface Question {
   explanation: string;
   display_order: number;
   subject: string;
+  question_type: string;
 }
 
 interface PendingQuestion {
@@ -71,6 +72,7 @@ interface PendingQuestion {
   correct_option: string;
   explanation: string;
   subject: string;
+  question_type: string;
 }
 
 const SUBJECT_OPTIONS = [
@@ -151,6 +153,7 @@ const AdminContent = () => {
   const [inlineCorrectOption, setInlineCorrectOption] = useState("a");
   const [inlineExplanation, setInlineExplanation] = useState("");
   const [inlineSubject, setInlineSubject] = useState("general");
+  const [inlineQuestionType, setInlineQuestionType] = useState("multiple_choice");
 
   // Question dialog (for editing from the questions panel)
   const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
@@ -165,6 +168,7 @@ const AdminContent = () => {
   const [explanation, setExplanation] = useState("");
   const [questionSubject, setQuestionSubject] = useState("general");
   const [questionOrder, setQuestionOrder] = useState(0);
+  const [questionType, setQuestionType] = useState("multiple_choice");
   const [questionSubjectFilter, setQuestionSubjectFilter] = useState("all");
   const [questionSearchQuery, setQuestionSearchQuery] = useState("");
 
