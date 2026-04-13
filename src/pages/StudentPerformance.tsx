@@ -47,25 +47,28 @@ const StudentPerformance = () => {
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [, setStudentId] = useState<string | null>(null);
-  const [majorId, setMajorId] = useState<string | null>(null);
-  const [majorName, setMajorName] = useState("");
+  const [filterId, setFilterId] = useState<string | null>(null);
+  const [filterType, setFilterType] = useState<"major" | "college">("major");
+  const [filterName, setFilterName] = useState("");
   const [attempts, setAttempts] = useState<ExamRow[]>([]);
   const [lessons, setLessons] = useState<LessonRow[]>([]);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
   const [peerAttempts, setPeerAttempts] = useState<{ score: number; total: number }[]>([]);
-
+  
   useEffect(() => {
     if (authLoading || !user) return;
     const fetchAll = async () => {
       const { data: s } = await supabase.from("students").select("id, major_id, college_id").eq("user_id", user.id).maybeSingle();
       if (!s || (!s.major_id && !s.college_id)) { setLoading(false); return; }
       setStudentId(s.id);
-      setMajorId(s.major_id || s.college_id);
 
       const hasMajor = !!s.major_id;
+      const currentFilterType = hasMajor ? "major" as const : "college" as const;
+      const currentFilterId = hasMajor ? s.major_id! : s.college_id!;
       const filterCol = hasMajor ? "major_id" : "college_id";
-      const filterId = hasMajor ? s.major_id! : s.college_id!;
+      setFilterType(currentFilterType);
+      setFilterId(currentFilterId);
       
       const [{ data: major }, { data: exams }, { data: les }, { data: prog }, { data: peers }] = await Promise.all([
         hasMajor
