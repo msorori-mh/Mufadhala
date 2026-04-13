@@ -344,7 +344,6 @@ const Register = () => {
                 />
               </div>
             )}
-            </div>
 
             <Button
               onClick={handleRegister}
