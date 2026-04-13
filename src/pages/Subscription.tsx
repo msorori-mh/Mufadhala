@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useStudentData } from "@/hooks/useStudentData";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, CreditCard, Upload, CheckCircle, Clock,
@@ -67,14 +68,15 @@ const getPlanPrice = (plan: Plan, gov: string | null): number => {
 
 const Subscription = () => {
   const { user, loading: authLoading } = useAuth();
+  const { data: studentData, isLoading: studentLoading } = useStudentData(user?.id);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [subscription, setSubscription] = useState<SubRecord | null>(null);
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
-  const [studentGovernorate, setStudentGovernorate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const studentGovernorate = studentData?.governorate ?? null;
 
   const [step, setStep] = useState<"plans" | "method" | "upload">("plans");
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
@@ -100,18 +102,16 @@ const Subscription = () => {
   useEffect(() => {
     if (authLoading || !user) return;
     const fetchAll = async () => {
-      const [{ data: pl }, { data: m }, { data: sub }, { data: pr }, { data: student }] = await Promise.all([
+      const [{ data: pl }, { data: m }, { data: sub }, { data: pr }] = await Promise.all([
         supabase.from("subscription_plans").select("*").eq("is_active", true).order("display_order"),
         supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
         supabase.from("subscriptions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1),
         supabase.from("payment_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-        supabase.from("students").select("governorate").eq("user_id", user.id).limit(1),
       ]);
       if (pl) setPlans(pl as any as Plan[]);
       if (m) setMethods(m as any as PaymentMethod[]);
       if (sub && sub.length > 0) setSubscription(sub[0] as any as SubRecord);
       if (pr) setPaymentRequests(pr as any as PaymentRequest[]);
-      if (student && student.length > 0) setStudentGovernorate(student[0].governorate);
       setLoading(false);
     };
     fetchAll();
@@ -278,7 +278,7 @@ const Subscription = () => {
     setSubmitting(false);
   };
 
-  if (authLoading || loading) {
+  if (authLoading || loading || studentLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
