@@ -110,11 +110,24 @@ const LessonsList = () => {
   const { data: lessonsData, isLoading: lessonsLoading } = useQuery({
     queryKey: ["lessons-list", majorId, collegeId],
     queryFn: async () => {
-      const [{ data: major }, { data: ls }, { data: lessonsFull }] = await Promise.all([
-        supabase.from("majors").select("name_ar").eq("id", majorId!).maybeSingle(),
-        supabase.rpc("get_published_lessons_list", { _major_id: majorId! }),
-        supabase.from("lessons").select("id, subject_id, grade_level").eq("major_id", majorId!).eq("is_published", true),
+      // Determine how to fetch lessons: by major if available, otherwise by college
+      const hasMajor = !!majorId;
+
+      const [majorResult, lessonsResult, lessonsFullResult] = await Promise.all([
+        hasMajor
+          ? supabase.from("majors").select("name_ar").eq("id", majorId!).maybeSingle()
+          : supabase.from("colleges").select("name_ar").eq("id", collegeId!).maybeSingle(),
+        hasMajor
+          ? supabase.rpc("get_published_lessons_list", { _major_id: majorId! })
+          : supabase.rpc("get_published_lessons_by_college", { _college_id: collegeId! }),
+        hasMajor
+          ? supabase.from("lessons").select("id, subject_id, grade_level").eq("major_id", majorId!).eq("is_published", true)
+          : supabase.from("lessons").select("id, subject_id, grade_level").eq("college_id", collegeId!).eq("is_published", true),
       ]);
+
+      const { data: nameData } = majorResult;
+      const { data: ls } = lessonsResult;
+      const { data: lessonsFull } = lessonsFullResult;
 
       const subjectGradeMap = new Map<string, { subject_id: string | null; grade_level: number | null }>();
       (lessonsFull || []).forEach((lf: any) => subjectGradeMap.set(lf.id, { subject_id: lf.subject_id, grade_level: lf.grade_level }));
@@ -158,13 +171,13 @@ const LessonsList = () => {
 
       return {
         lessons: enrichedLessons,
-        majorName: major?.name_ar || "",
+        majorName: nameData?.name_ar || "",
         subjects,
         questionCounts,
         completedLessons: completedSet,
       };
     },
-    enabled: !!majorId && !!studentId && !isOffline,
+    enabled: !!(majorId || collegeId) && !!studentId && !isOffline,
     staleTime: 2 * 60 * 1000,
   });
 
@@ -275,12 +288,12 @@ const LessonsList = () => {
       )}
 
       <main className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6">
-        {!isOffline && !student?.major_id ? (
+        {!isOffline && !student?.college_id ? (
           <div className="text-center py-12">
             <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-lg font-semibold text-foreground">لم يتم اختيار تخصص بعد</p>
-            <p className="text-sm text-muted-foreground mt-1">اختر تخصصك من الملف الشخصي للوصول إلى المحتوى التعليمي</p>
-            <Button asChild className="mt-4"><Link to="/profile">اختيار التخصص</Link></Button>
+            <p className="text-lg font-semibold text-foreground">لم يتم اختيار كلية بعد</p>
+            <p className="text-sm text-muted-foreground mt-1">اختر كليتك من الملف الشخصي للوصول إلى المحتوى التعليمي</p>
+            <Button asChild className="mt-4"><Link to="/profile">اختيار الكلية</Link></Button>
           </div>
         ) : (
           <>
@@ -421,7 +434,7 @@ const LessonsList = () => {
                 ) : (
                   <>
                     <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">لا توجد دروس متاحة لتخصصك حالياً</p>
+                    <p className="text-muted-foreground">لا توجد دروس متاحة لكليتك حالياً</p>
                   </>
                 )}
               </div>

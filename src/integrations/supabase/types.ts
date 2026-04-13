@@ -1196,6 +1196,17 @@ export type Database = {
           total_exams: number
         }[]
       }
+      get_published_lessons_by_college: {
+        Args: { _college_id: string }
+        Returns: {
+          display_order: number
+          id: string
+          is_free: boolean
+          major_id: string
+          summary: string
+          title: string
+        }[]
+      }
       get_published_lessons_list: {
         Args: { _major_id: string }
         Returns: {
