@@ -35,16 +35,30 @@ const Register = () => {
   // Unified form state
   const [form, setForm] = useState<RegistrationDraft>(emptyDraft);
   const draftLoaded = useRef(false);
+  const formTouched = useRef(false);
 
   // Data
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
   const [colleges, setColleges] = useState<Tables<"colleges">[]>([]);
 
-  // Restore draft on mount
+  // Restore draft on mount — merge only empty fields if user already typed
   useEffect(() => {
     loadDraft().then((draft) => {
       if (draft) {
-        setForm(draft);
+        if (!formTouched.current) {
+          setForm(draft);
+        } else {
+          // User already started typing — only fill fields that are still empty
+          setForm((prev) => {
+            const merged = { ...prev };
+            (Object.keys(draft) as (keyof RegistrationDraft)[]).forEach((key) => {
+              if (!merged[key] && draft[key]) {
+                merged[key] = draft[key];
+              }
+            });
+            return merged;
+          });
+        }
       }
       draftLoaded.current = true;
     });
@@ -59,6 +73,7 @@ const Register = () => {
   // Update a single field
   const updateField = useCallback(
     <K extends keyof RegistrationDraft>(key: K, value: RegistrationDraft[K]) => {
+      formTouched.current = true;
       setForm((prev) => ({ ...prev, [key]: value }));
     },
     [],
@@ -307,6 +322,7 @@ const Register = () => {
                 شروط الاستخدام
               </Link>
             </p>
+            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v2.1</p>
           </CardContent>
         </Card>
       </div>
