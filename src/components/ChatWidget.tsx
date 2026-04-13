@@ -247,13 +247,17 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
     const images = [...pendingImages];
     if ((!text && images.length === 0) || loading) return;
 
-    if (getRemainingMessages(dailyLimit) <= 0) {
-      toast.error(`لقد وصلت للحد اليومي من الرسائل (${dailyLimit} رسالة). حاول مرة أخرى غداً!`);
+    if (getRemainingMessages(effectiveLimit) <= 0) {
+      if (!hasSubscription) {
+        toast.error(`وصلت للحد المجاني (${FREE_DAILY_LIMIT} رسائل). فعّل اشتراكك للحصول على ${dailyLimit} رسالة يومياً!`);
+      } else {
+        toast.error(`لقد وصلت للحد اليومي من الرسائل (${effectiveLimit} رسالة). حاول مرة أخرى غداً!`);
+      }
       return;
     }
 
     incrementUsage();
-    setRemaining(getRemainingMessages(dailyLimit));
+    setRemaining(getRemainingMessages(effectiveLimit));
 
     // Build multimodal content if images exist
     let userContent: string | ContentPart[];
