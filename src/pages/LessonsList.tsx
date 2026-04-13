@@ -279,8 +279,8 @@ const LessonsList = () => {
           <div className="text-center py-12">
             <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
             <p className="text-lg font-semibold text-foreground">لم يتم اختيار تخصص بعد</p>
-            <p className="text-sm text-muted-foreground mt-1">أكمل ملفك الشخصي واختر تخصصك للوصول للمحتوى</p>
-            <Button asChild className="mt-4"><Link to="/profile">الملف الشخصي</Link></Button>
+            <p className="text-sm text-muted-foreground mt-1">اختر تخصصك من الملف الشخصي للوصول إلى المحتوى التعليمي</p>
+            <Button asChild className="mt-4"><Link to="/profile">اختيار التخصص</Link></Button>
           </div>
         ) : (
           <>

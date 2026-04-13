@@ -37,14 +37,17 @@ Deno.serve(async (req) => {
     } = await req.json();
 
     // --- Validate required fields ---
-    if (!phone || !first_name || !fourth_name || !governorate || !university_id || !college_id || !major_id) {
+    if (!phone || !first_name || !fourth_name || !governorate || !university_id || !college_id) {
       return jsonResponse({ error: "جميع الحقول مطلوبة" }, 400);
     }
     if (!/^7[0-9]{8}$/.test(phone)) {
       return jsonResponse({ error: "رقم الجوال غير صحيح" }, 400);
     }
-    if (!isValidUuid(university_id) || !isValidUuid(college_id) || !isValidUuid(major_id)) {
-      return jsonResponse({ error: "قيم الجامعة أو الكلية أو التخصص غير صالحة" }, 400);
+    if (!isValidUuid(university_id) || !isValidUuid(college_id)) {
+      return jsonResponse({ error: "قيم الجامعة أو الكلية غير صالحة" }, 400);
+    }
+    if (major_id && !isValidUuid(major_id)) {
+      return jsonResponse({ error: "قيمة التخصص غير صالحة" }, 400);
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
