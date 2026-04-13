@@ -146,7 +146,9 @@ const AdminTracks = () => {
             </TabsContent>
           </Tabs>
         </div>
-      </PermissionGate>
+      ) : (
+        <div className="text-center py-12 text-muted-foreground">غير مصرح لك بالوصول</div>
+      )}
     </AdminLayout>
   );
 };
