@@ -820,152 +820,44 @@ const AdminContent = () => {
     XLSX.writeFile(wb, "تصدير_الدروس_والأسئلة.xlsx");
   };
 
-  // --- Bulk Import ---
-  const downloadTemplate = () => {
-    const wb = XLSX.utils.book_new();
-    const subjectNames = subjects.map(s => s.name_ar).join(" / ");
-    const lessonsData = [
-      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`, "رابط العرض التقديمي", "الصف الدراسي (1/2/3)"],
-      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || "", "", ""],
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lessonsData), "الدروس");
-    XLSX.writeFile(wb, "قالب_استيراد_الدروس.xlsx");
+  // --- Bulk Import (Unified Engine) ---
+  const handleDownloadUnifiedTemplate = () => {
+    downloadUnifiedTemplate(subjects);
   };
 
-  const downloadFullTemplate = () => {
-    const wb = XLSX.utils.book_new();
-    const subjectNames = subjects.map(s => s.name_ar).join(" / ");
-    const lessonsData = [
-      ["عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", `المادة (${subjectNames || "اختياري"})`, "رابط العرض التقديمي", "الصف الدراسي (1/2/3)"],
-      ["مثال: مقدمة في البرمجة", "محتوى الدرس هنا...", "ملخص قصير", 1, "نعم", subjects[0]?.name_ar || "", "", ""],
-    ];
-    const questionsData = [
-      ["عنوان الدرس", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة (a/b/c/d)", "الشرح", `المادة (${SUBJECT_LABELS_HINT})`, "نوع السؤال (multiple_choice / true_false)"],
-      ["مقدمة في البرمجة", "ما هي لغة البرمجة؟", "أداة تصميم", "لغة حاسوب", "جهاز", "شبكة", "b", "لغة البرمجة هي لغة يفهمها الحاسوب", "عام", "multiple_choice"],
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lessonsData), "الدروس");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(questionsData), "الأسئلة");
-    XLSX.writeFile(wb, "قالب_استيراد_المحتوى.xlsx");
-  };
-
-  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUnifiedImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || importCollegeIds.length === 0) return;
     setImporting(true);
+    setImportReport(null);
+    setImportPreviewErrors([]);
 
     try {
       const data = await file.arrayBuffer();
-      let lessonsSheet: any[][] = [];
-      let questionsSheet: any[][] = [];
+      const { lessonsRows, questionsRows } = parseWorkbook(data, file.name);
 
-      if (file.name.endsWith(".csv")) {
-        const text = new TextDecoder("utf-8").decode(data);
-        const wb = XLSX.read(text, { type: "string" });
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
-        if (rows[0] && (rows[0] as any[]).length >= 7) {
-          questionsSheet = rows;
-        } else {
-          lessonsSheet = rows;
-        }
+      const report = await executeImport({
+        lessonsRows,
+        questionsRows,
+        collegeIds: importCollegeIds,
+        subjects,
+        existingLessons: lessons.map(l => ({ id: l.id, college_id: l.college_id, title: l.title, lesson_code: (l as any).lesson_code || null })),
+        existingQuestions: questions.map(q => ({ id: q.id, lesson_id: q.lesson_id, question_text: q.question_text })),
+        fallbackSubjectId: importSubjectId || undefined,
+      });
+
+      setImportReport(report);
+
+      if (report.errors.length === 0) {
+        toast({ title: `تم الاستيراد: ${report.lessonsCreated} درس، ${report.questionsCreated} سؤال` });
       } else {
-        const wb = XLSX.read(data, { type: "array" });
-        wb.SheetNames.forEach((name) => {
-          const sheet = wb.Sheets[name];
-          const rows = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
-          if (name.includes("سئلة") || name.includes("question")) {
-            questionsSheet = rows;
-          } else {
-            lessonsSheet = rows;
-          }
-        });
+        toast({ variant: "destructive", title: `تم مع ${report.errors.length} خطأ — تحقق من التقرير` });
       }
-
-      // Loop through each selected college
-      for (const collegeId of importCollegeIds) {
-        const lessonMap = new Map<string, string>();
-        if (importMode === "questions_only") {
-          lessons.filter(l => l.college_id === collegeId).forEach(l => lessonMap.set(l.title, l.id));
-        } else if (lessonsSheet.length > 1) {
-          for (let i = 1; i < lessonsSheet.length; i++) {
-            const row = lessonsSheet[i] as any[];
-            if (!row[0]) continue;
-            const title = String(row[0]).trim();
-            // Duplicate protection: skip if lesson with same title exists in this college
-            const existingLesson = lessons.find(l => l.college_id === collegeId && l.title.trim() === title);
-            if (existingLesson) {
-              lessonMap.set(title, existingLesson.id);
-              continue;
-            }
-            const subjectName = row[5] ? String(row[5]).trim() : "";
-            const matchedSubject = subjectName ? subjects.find(s => s.name_ar === subjectName || s.code === subjectName) : null;
-            const resolvedSubjectId = importSubjectId || matchedSubject?.id || null;
-            const presentationUrl = row[6] ? String(row[6]).trim() : "";
-            const gradeLevel = row[7] ? Number(row[7]) : null;
-            const { data: inserted, error } = await supabase.from("lessons").insert({
-              college_id: collegeId,
-              title,
-              content: row[1] ? String(row[1]) : "",
-              summary: row[2] ? String(row[2]) : "",
-              display_order: row[3] ? Number(row[3]) : i,
-              is_published: row[4] ? String(row[4]).includes("نعم") || String(row[4]).toLowerCase() === "true" : false,
-              subject_id: resolvedSubjectId,
-              presentation_url: presentationUrl || null,
-              grade_level: gradeLevel,
-            }).select("id").single();
-            if (error) {
-              toast({ variant: "destructive", title: `خطأ في درس "${title}": ${error.message}` });
-            } else if (inserted) {
-              lessonMap.set(title, inserted.id);
-            }
-          }
-        }
-
-        if (questionsSheet.length > 1) {
-          if (lessonMap.size === 0) {
-            lessons.filter(l => l.college_id === collegeId).forEach(l => lessonMap.set(l.title, l.id));
-          }
-
-          for (let i = 1; i < questionsSheet.length; i++) {
-            const row = questionsSheet[i] as any[];
-            if (!row[0] || !row[1]) continue;
-            const lessonTitle = String(row[0]).trim();
-            const lessonId = lessonMap.get(lessonTitle);
-            if (!lessonId) {
-              continue;
-            }
-            // Duplicate protection
-            const qText = String(row[1]).trim();
-            const existingQ = questions.find(q => q.lesson_id === lessonId && q.question_text.trim() === qText);
-            if (existingQ) continue;
-            const qType = row[9] ? String(row[9]).trim().toLowerCase() === "true_false" ? "true_false" : "multiple_choice" : "multiple_choice";
-            const { error } = await supabase.from("questions").insert({
-              lesson_id: lessonId,
-              question_text: qText,
-              option_a: String(row[2] || ""),
-              option_b: String(row[3] || ""),
-              option_c: String(row[4] || ""),
-              option_d: String(row[5] || ""),
-              correct_option: String(row[6] || "a").toLowerCase().trim(),
-              explanation: row[7] ? String(row[7]) : "",
-              subject: row[8] ? getSubjectValue(String(row[8])) : "general",
-              question_type: qType,
-              display_order: i,
-            });
-            if (error) {
-              toast({ variant: "destructive", title: `خطأ في سؤال ${i}: ${error.message}` });
-            }
-          }
-        }
-      }
-
-      toast({ title: `تم الاستيراد بنجاح في ${importCollegeIds.length} كلية` });
       fetchData();
     } catch (err: any) {
       toast({ variant: "destructive", title: `خطأ في قراءة الملف: ${err.message}` });
     }
     setImporting(false);
-    setImportDialogOpen(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
