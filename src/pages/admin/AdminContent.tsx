@@ -176,20 +176,16 @@ const AdminContent = () => {
   // Selected lesson for questions panel
   const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
 
-  // Import state
+  // Import state (unified)
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importUniId, setImportUniId] = useState("");
   const [importCollegeIds, setImportCollegeIds] = useState<string[]>([]);
   const [importSubjectId, setImportSubjectId] = useState("");
-  const [importMode, setImportMode] = useState<"full" | "questions_only">("full");
+  const [importReport, setImportReport] = useState<ImportReport | null>(null);
+  const [importPreviewErrors, setImportPreviewErrors] = useState<ValidationError[]>([]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Import questions for specific lesson (from questions panel)
-  const [importQuestionsDialogOpen, setImportQuestionsDialogOpen] = useState(false);
-  const [importingQuestions, setImportingQuestions] = useState(false);
-  const questionFileInputRef = useRef<HTMLInputElement>(null);
 
   // Copy lesson state
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
