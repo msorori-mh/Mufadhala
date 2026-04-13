@@ -40,6 +40,7 @@ const Register = () => {
   // Data
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
   const [colleges, setColleges] = useState<Tables<"colleges">[]>([]);
+  const [majors, setMajors] = useState<Tables<"majors">[]>([]);
 
   // Restore draft on mount — merge only empty fields if user already typed
   useEffect(() => {
@@ -106,6 +107,7 @@ const Register = () => {
   useEffect(() => {
     if (!form.universityId) {
       setColleges([]);
+      setMajors([]);
       return;
     }
     supabase
@@ -116,15 +118,38 @@ const Register = () => {
       .order("display_order")
       .then(({ data }) => {
         setColleges(data || []);
-        // Only reset college if the current selection doesn't belong to new university
         if (data && form.collegeId) {
           const stillValid = data.some((c) => c.id === form.collegeId);
           if (!stillValid) {
             updateField("collegeId", "");
+            updateField("majorId", "");
           }
         }
       });
   }, [form.universityId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch majors when college changes
+  useEffect(() => {
+    if (!form.collegeId) {
+      setMajors([]);
+      return;
+    }
+    supabase
+      .from("majors")
+      .select("*")
+      .eq("college_id", form.collegeId)
+      .eq("is_active", true)
+      .order("display_order")
+      .then(({ data }) => {
+        setMajors(data || []);
+        if (data && form.majorId) {
+          const stillValid = data.some((m) => m.id === form.majorId);
+          if (!stillValid) {
+            updateField("majorId", "");
+          }
+        }
+      });
+  }, [form.collegeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isFormValid =
     form.firstName.trim() &&
@@ -132,7 +157,8 @@ const Register = () => {
     YEMEN_PHONE_REGEX.test(form.phoneNumber) &&
     form.governorate &&
     form.universityId &&
-    form.collegeId;
+    form.collegeId &&
+    form.majorId;
 
   const handleRegister = async () => {
     if (!isFormValid) {
@@ -149,6 +175,7 @@ const Register = () => {
           governorate: form.governorate,
           university_id: form.universityId,
           college_id: form.collegeId,
+          major_id: form.majorId,
           high_school_gpa: form.highSchoolGpa ? parseFloat(form.highSchoolGpa) : null,
         },
       });
@@ -265,6 +292,7 @@ const Register = () => {
                 onValueChange={(v) => {
                   updateField("universityId", v);
                   updateField("collegeId", "");
+                  updateField("majorId", "");
                 }}
                 placeholder="اختر الجامعة"
                 options={universities.map((u) => ({ value: u.id, label: u.name_ar }))}
@@ -296,10 +324,24 @@ const Register = () => {
               <Label>الكلية</Label>
               <NativeSelect
                 value={form.collegeId}
-                onValueChange={(v) => updateField("collegeId", v)}
+                onValueChange={(v) => {
+                  updateField("collegeId", v);
+                  updateField("majorId", "");
+                }}
                 placeholder={!form.universityId ? "اختر الجامعة أولاً" : "اختر الكلية"}
                 disabled={!form.universityId}
                 options={colleges.map((c) => ({ value: c.id, label: c.name_ar }))}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>التخصص</Label>
+              <NativeSelect
+                value={form.majorId}
+                onValueChange={(v) => updateField("majorId", v)}
+                placeholder={!form.collegeId ? "اختر الكلية أولاً" : "اختر التخصص"}
+                disabled={!form.collegeId}
+                options={majors.map((m) => ({ value: m.id, label: m.name_ar }))}
               />
             </div>
 
