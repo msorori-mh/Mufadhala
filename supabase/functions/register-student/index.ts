@@ -30,9 +30,11 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   });
 }
 
+type AdminClient = ReturnType<typeof createClient<any>>;
+
 /** Wait for the trigger-created student row (up to ~3s) */
 async function waitForStudentRow(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AdminClient,
   userId: string,
   maxMs = 3000,
 ): Promise<boolean> {
@@ -51,7 +53,7 @@ async function waitForStudentRow(
 }
 
 async function ensureStudentAccountData(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AdminClient,
   userId: string,
   payload: RegistrationPayload,
 ) {
