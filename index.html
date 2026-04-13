@@ -45,10 +45,11 @@
           <path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5"/>
         </svg>
       </div>
-      <p style="color: white; font-size: 22px; font-weight: 700; margin-top: 20px; font-family: system-ui, sans-serif;">
+      <p id="loader-title" style="color: white; font-size: 22px; font-weight: 700; margin-top: 20px; font-family: system-ui, sans-serif;">
         مُفَاضَلَة
       </p>
-      <div style="
+      <!-- Loading bar (visible by default) -->
+      <div id="loader-bar" style="
         width: 40px; height: 4px; border-radius: 4px; margin-top: 24px;
         background: rgba(255,255,255,0.2); overflow: hidden;
       ">
@@ -57,6 +58,30 @@
           background: rgba(255,255,255,0.7);
           animation: loaderBar 1.2s ease-in-out infinite;
         "></div>
+      </div>
+      <!-- Offline message (hidden by default) -->
+      <div id="loader-offline" style="display: none; text-align: center; margin-top: 20px;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 12px;">
+          <line x1="1" y1="1" x2="23" y2="23"/>
+          <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+          <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+          <path d="M10.71 5.05A16 16 0 0 1 22.56 9"/>
+          <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+          <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+          <line x1="12" y1="20" x2="12.01" y2="20"/>
+        </svg>
+        <p style="color: rgba(255,255,255,0.85); font-size: 15px; font-family: system-ui, sans-serif; margin: 0 0 6px;">
+          لا يوجد اتصال بالإنترنت
+        </p>
+        <p style="color: rgba(255,255,255,0.5); font-size: 13px; font-family: system-ui, sans-serif; margin: 0 0 20px;">
+          تحقق من اتصالك وحاول مرة أخرى
+        </p>
+        <button onclick="location.reload()" style="
+          background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+          color: white; padding: 10px 32px; border-radius: 24px;
+          font-size: 15px; font-weight: 600; font-family: system-ui, sans-serif;
+          cursor: pointer; backdrop-filter: blur(4px);
+        ">إعادة المحاولة</button>
       </div>
       <style>
         @keyframes loaderPulse {
@@ -73,17 +98,41 @@
     <script type="module" src="/src/main.tsx"></script>
     <script>
       // Remove loader once React app renders
-      const observer = new MutationObserver(() => {
-        if (document.getElementById('root')?.children.length) {
-          const loader = document.getElementById('app-loader');
+      var loaderTimeout;
+      var observer = new MutationObserver(function() {
+        if (document.getElementById('root') && document.getElementById('root').children.length) {
+          clearTimeout(loaderTimeout);
+          var loader = document.getElementById('app-loader');
           if (loader) {
             loader.style.opacity = '0';
-            setTimeout(() => loader.remove(), 400);
+            setTimeout(function() { loader.remove(); }, 400);
           }
           observer.disconnect();
         }
       });
       observer.observe(document.getElementById('root'), { childList: true });
+
+      // If app doesn't load within 8s, check connectivity
+      loaderTimeout = setTimeout(function() {
+        if (!navigator.onLine || (document.getElementById('root') && !document.getElementById('root').children.length)) {
+          var bar = document.getElementById('loader-bar');
+          var offline = document.getElementById('loader-offline');
+          var icon = document.querySelector('#app-loader > div:first-child');
+          if (bar) bar.style.display = 'none';
+          if (offline) offline.style.display = 'block';
+          if (icon) icon.style.animation = 'none';
+        }
+      }, 8000);
+
+      // Also listen for online/offline events
+      window.addEventListener('offline', function() {
+        var bar = document.getElementById('loader-bar');
+        var offline = document.getElementById('loader-offline');
+        if (bar && offline && document.getElementById('app-loader')) {
+          bar.style.display = 'none';
+          offline.style.display = 'block';
+        }
+      });
     </script>
   </body>
 </html>
