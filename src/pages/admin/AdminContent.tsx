@@ -385,6 +385,7 @@ const AdminContent = () => {
           for (let i = 1; i < rows.length; i++) {
             const row = rows[i] as any[];
             if (!row[0]) continue;
+            const qType = row[8] ? String(row[8]).trim().toLowerCase() === "true_false" ? "true_false" : "multiple_choice" : "multiple_choice";
             const { error } = await supabase.from("questions").insert({
               lesson_id: editingLesson.id,
               question_text: String(row[0]),
@@ -395,6 +396,7 @@ const AdminContent = () => {
               correct_option: String(row[5] || "a").toLowerCase().trim(),
               explanation: row[6] ? String(row[6]) : "",
               subject: row[7] ? getSubjectValue(String(row[7])) : "general",
+              question_type: qType,
               display_order: existingCount + i,
             });
             if (!error) imported++;
@@ -420,6 +422,7 @@ const AdminContent = () => {
               correct_option: String(row[5] || "a").toLowerCase().trim(),
               explanation: row[6] ? String(row[6]) : "",
               subject: row[7] ? getSubjectValue(String(row[7])) : "general",
+              question_type: row[8] ? String(row[8]).trim().toLowerCase() === "true_false" ? "true_false" : "multiple_choice" : "multiple_choice",
             });
           }
           setPendingQuestions(prev => [...prev, ...newPending]);
@@ -492,6 +495,7 @@ const AdminContent = () => {
               correct_option: pq.correct_option,
               explanation: pq.explanation,
               subject: pq.subject,
+              question_type: pq.question_type,
               display_order: baseOrder + i,
             });
           }
@@ -533,6 +537,7 @@ const AdminContent = () => {
                 correct_option: pq.correct_option,
                 explanation: pq.explanation,
                 subject: pq.subject,
+                question_type: pq.question_type,
                 display_order: i,
               });
             }
