@@ -41,13 +41,10 @@ const StudentProfile = () => {
 
   // Student data
   const [firstName, setFirstName] = useState("");
-  const [secondName, setSecondName] = useState("");
-  const [thirdName, setThirdName] = useState("");
   const [fourthName, setFourthName] = useState("");
   const [phone, setPhone] = useState("");
   const [governorate, setGovernorate] = useState("");
   const [gpa, setGpa] = useState("");
-  const [coordinationNumber, setCoordinationNumber] = useState("");
 
   // Academic
   const [universityId, setUniversityId] = useState("");
@@ -72,14 +69,12 @@ const StudentProfile = () => {
 
       if (studentData) {
         setFirstName(studentData.first_name || "");
-        setSecondName(studentData.second_name || "");
-        setThirdName(studentData.third_name || "");
         setFourthName(studentData.fourth_name || "");
         setPhone(studentData.phone || "");
         setOriginalPhone(studentData.phone || "");
         setGovernorate(studentData.governorate || "");
         setGpa(studentData.gpa?.toString() || "");
-        setCoordinationNumber(studentData.coordination_number || "");
+        
         setUniversityId(studentData.university_id || "");
         setCollegeId(studentData.college_id || "");
         setMajorId(studentData.major_id || "");
@@ -213,13 +208,10 @@ const StudentProfile = () => {
       .from("students")
       .update({
         first_name: firstName,
-        second_name: secondName || null,
-        third_name: thirdName || null,
         fourth_name: fourthName,
         phone: phone || null,
         governorate: governorate || null,
         gpa: gpaNum,
-        coordination_number: coordinationNumber || null,
         university_id: universityId || null,
         college_id: collegeId || null,
         major_id: majorId || null,
@@ -431,15 +423,6 @@ const StudentProfile = () => {
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs">رقم التنسيق <span className="text-muted-foreground">(اختياري)</span></Label>
-              <Input
-                value={coordinationNumber}
-                onChange={(e) => setCoordinationNumber(e.target.value)}
-                dir="ltr"
-                className="text-left"
-              />
-            </div>
           </CardContent>
         </Card>
 
