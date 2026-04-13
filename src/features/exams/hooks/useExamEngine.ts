@@ -235,21 +235,22 @@ export function useExamEngine() {
   const questionTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Data loading ─────────────────────────────────────────
-  const { isLoading: dataLoading } = useQuery({
+  const { data: examData, isLoading: dataLoading } = useQuery({
     queryKey: ["exam-data", user?.id],
     queryFn: () => fetchExamData(user!.id),
     enabled: !!user && !isOffline,
     staleTime: 2 * 60 * 1000,
-    select: (data) => {
-      if (data.student) setStudent(data.student);
-      setMajorName(data.majorName);
-      setAllQuestions(data.allQuestions);
-      setPastAttempts(data.pastAttempts);
-      setHasOfflineQuestions(data.offlineInfo.has);
-      setOfflineQuestionCount(data.offlineInfo.count);
-      return data;
-    },
   });
+
+  useEffect(() => {
+    if (!examData) return;
+    if (examData.student) setStudent(examData.student);
+    setMajorName(examData.majorName);
+    setAllQuestions(examData.allQuestions);
+    setPastAttempts(examData.pastAttempts);
+    setHasOfflineQuestions(examData.offlineInfo.has);
+    setOfflineQuestionCount(examData.offlineInfo.count);
+  }, [examData]);
 
   const { data: freeExamMinutes } = useQuery({
     queryKey: ["free-exam-minutes"],
