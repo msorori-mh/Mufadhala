@@ -56,6 +56,10 @@ const Achievements = () => {
   const unlockedCount = items.filter((i) => i.unlocked).length;
   const percentage = Math.round((unlockedCount / items.length) * 100);
 
+  if (loading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+  }
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="gradient-primary text-white px-4 py-3">
