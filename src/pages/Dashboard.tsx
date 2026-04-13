@@ -114,7 +114,7 @@ const Dashboard = () => {
   const lessonCount = dashData?.lessonCount ?? 0;
   const completedLessons = dashData?.completedLessons ?? 0;
   const collegeName = dashData?.collegeName ?? null;
-  const loading = studentLoading || dashLoading;
+  const loading = accessLoading || dashLoading;
 
   useEffect(() => {
     if (authLoading) return;
