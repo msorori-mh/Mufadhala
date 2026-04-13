@@ -96,13 +96,13 @@ const StudentPerformance = () => {
 
       return {
         attempts: (exams || []) as ExamRow[],
-        lessons: (les || []) as LessonRow[],
+        lessons: uniqueLessons,
         questions,
         completedLessonIds: new Set((prog || []).map((p: any) => p.lesson_id)),
         peerAttempts: (peers || []).filter((p: any) => p.student_id !== student.id) as { score: number; total: number }[],
       };
     },
-    enabled: !!student && !!filter,
+    enabled: !!student && !!student.college_id,
     staleTime: 2 * 60 * 1000,
   });
 
