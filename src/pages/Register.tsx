@@ -157,8 +157,7 @@ const Register = () => {
     YEMEN_PHONE_REGEX.test(form.phoneNumber) &&
     form.governorate &&
     form.universityId &&
-    form.collegeId &&
-    form.majorId;
+    form.collegeId;
 
   const handleRegister = async () => {
     if (!isFormValid) {
