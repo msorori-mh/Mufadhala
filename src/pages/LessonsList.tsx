@@ -69,7 +69,7 @@ const GradeLevelSection = ({ label, count, completedCount, questionCount, childr
 const LessonsList = () => {
   const { user, loading: authLoading, isAdmin, isModerator } = useAuth();
   const { isActive: hasSubscription, loading: subLoading, planId, allowedMajorIds } = useSubscription(user?.id);
-  const { data: student, isLoading: studentLoading } = useStudentData(user?.id);
+  const { data: student, isLoading: studentLoading, refetch: refetchStudent } = useStudentData(user?.id);
   const navigate = useNavigate();
   const isOffline = useOfflineStatus();
   const [savedOfflineIds, setSavedOfflineIds] = useState<Set<string>>(new Set());
