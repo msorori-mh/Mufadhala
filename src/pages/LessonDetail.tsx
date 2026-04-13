@@ -350,7 +350,7 @@ const LessonDetail = () => {
           <TabsList className={`w-full grid h-auto ${isFromCache ? (signedPresentationUrl ? "grid-cols-4" : "grid-cols-3") : (signedPresentationUrl ? "grid-cols-5" : "grid-cols-4")}`}>
             <TabsTrigger value="content" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الشرح</TabsTrigger>
             <TabsTrigger value="summary" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><BookOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الملخص</TabsTrigger>
-            {lesson.presentation_url && (
+            {signedPresentationUrl && (
               <TabsTrigger value="presentation" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><Presentation className="w-3 h-3 sm:w-3.5 sm:h-3.5" />العرض</TabsTrigger>
             )}
             <TabsTrigger value="quiz" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><HelpCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الأسئلة</TabsTrigger>
