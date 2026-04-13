@@ -354,10 +354,9 @@ const Subscription = () => {
           </Card>
         )}
 
-        {/* Single plan subscription */}
+        {/* Multi-tier pricing */}
         {step === "plans" && !isActive && !isPending && (() => {
-          const plan = plans[0];
-          if (!plan) return <p className="text-center text-muted-foreground py-8">لا توجد خطط اشتراك متاحة حالياً</p>;
+          if (plans.length === 0) return <p className="text-center text-muted-foreground py-8">لا توجد خطط اشتراك متاحة حالياً</p>;
           
           if (!studentGovernorate) {
             return (
@@ -372,59 +371,169 @@ const Subscription = () => {
             );
           }
 
-          const price = getPlanPrice(plan, studentGovernorate);
-          const finalPrice = promoDiscount > 0 ? Math.round(price * (1 - promoDiscount / 100)) : price;
+          // Determine popular plan (slug-based or middle plan by display_order)
+          const paidPlans = plans.filter(p => !p.is_free);
+          const popularSlug = "preparation";
+          const popularPlan = paidPlans.find(p => p.slug === popularSlug) || (paidPlans.length >= 2 ? paidPlans[Math.floor(paidPlans.length / 2)] : paidPlans[0]);
+
+          // Plan icons & styling
+          const getPlanStyle = (slug: string) => {
+            if (slug === "free" || slug.includes("free")) return { icon: BookOpen, accent: "text-muted-foreground", border: "border-border", bg: "" };
+            if (slug === "preparation" || slug.includes("prep")) return { icon: Zap, accent: "text-primary", border: "border-primary ring-2 ring-primary/20", bg: "bg-primary/5" };
+            if (slug === "premium" || slug.includes("premium")) return { icon: Crown, accent: "text-accent", border: "border-accent ring-2 ring-accent/20", bg: "bg-accent/5" };
+            return { icon: Star, accent: "text-secondary", border: "border-secondary", bg: "" };
+          };
+
+          // Feature comparison data
+          const featureRows = [
+            { label: "الدروس المجانية", free: "محدودة", basic: "✓ جميع الدروس", premium: "✓ جميع الدروس" },
+            { label: "بنك الأسئلة", free: "محدود", basic: "✓ كامل", premium: "✓ كامل" },
+            { label: "محاكاة الاختبار", free: "1 محاولة", basic: "✓ غير محدود", premium: "✓ غير محدود" },
+            { label: "تحليل الأداء", free: "—", basic: "أساسي", premium: "✓ متقدم + AI" },
+            { label: "المعلم الذكي (AI)", free: "—", basic: "—", premium: "✓ مساعد شخصي" },
+            { label: "توصيات مخصصة", free: "—", basic: "—", premium: "✓ تكيّفية" },
+          ];
 
           return (
-            <div className="space-y-4">
+            <div className="space-y-5">
               {/* Conversion boosters */}
               <ConversionBoosters />
 
               <div className="text-center">
-                <h2 className="text-xl font-bold">الاشتراك في المنصة</h2>
-                {zoneName && <p className="text-xs text-muted-foreground mt-1">{zoneName} — {studentGovernorate}</p>}
+                <h2 className="text-xl font-bold text-foreground">اختر خطتك المناسبة</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {zoneName && <>{zoneName} — {studentGovernorate}</>}
+                </p>
               </div>
 
-              <Card className="border-primary ring-2 ring-primary/20">
-                <CardContent className="py-5 px-4">
-                  <div className="text-center space-y-3">
-                    <h3 className="font-bold text-lg">{plan.name}</h3>
-                    <p className="text-sm text-muted-foreground">{plan.description}</p>
-                    <div>
-                      {(() => {
-                        const zone = getZone(studentGovernorate);
-                        const zoneDiscount = zone === "a" ? plan.discount_zone_a : zone === "b" ? plan.discount_zone_b : 0;
-                        return (
-                          <>
-                            {zoneDiscount > 0 && (
-                              <div className="mb-1">
-                                <Badge variant="outline" className="text-xs border-green-500 text-green-600">خصم {zoneDiscount}% لمنطقتك</Badge>
+              {/* Plan cards */}
+              <div className="space-y-3">
+                {plans.map((plan) => {
+                  const isPopular = popularPlan?.id === plan.id && !plan.is_free;
+                  const style = getPlanStyle(plan.slug);
+                  const PlanIcon = style.icon;
+                  const price = getPlanPrice(plan, studentGovernorate);
+                  const finalPrice = promoDiscount > 0 ? Math.round(price * (1 - promoDiscount / 100)) : price;
+                  const zone = getZone(studentGovernorate);
+                  const zoneDiscount = zone === "a" ? plan.discount_zone_a : zone === "b" ? plan.discount_zone_b : 0;
+
+                  return (
+                    <Card key={plan.id} className={`relative overflow-hidden transition-all ${style.border} ${style.bg}`}>
+                      {isPopular && (
+                        <div className="absolute top-0 left-0 right-0 bg-primary text-primary-foreground text-center text-xs font-bold py-1">
+                          ⭐ الأكثر شعبية
+                        </div>
+                      )}
+                      <CardContent className={`py-5 px-4 ${isPopular ? "pt-8" : ""}`}>
+                        <div className="flex items-start gap-3">
+                          {/* Icon */}
+                          <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${plan.is_free ? "bg-muted" : isPopular ? "bg-primary/10" : "bg-accent/10"}`}>
+                            <PlanIcon className={`w-5 h-5 ${style.accent}`} />
+                          </div>
+                          
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-bold text-base text-foreground">{plan.name}</h3>
+                              {plan.is_free && <Badge variant="secondary" className="text-[10px]">مجاني</Badge>}
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-2">{plan.description}</p>
+                            
+                            {/* Features */}
+                            <div className="flex flex-wrap gap-1.5 mb-3">
+                              {(plan.features || []).slice(0, 4).map((f, i) => (
+                                <span key={i} className="inline-flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/50 rounded-full px-2 py-0.5">
+                                  <CheckCircle className="w-2.5 h-2.5 text-green-500" />{f}
+                                </span>
+                              ))}
+                            </div>
+                            
+                            {/* Price */}
+                            {!plan.is_free && (
+                              <div className="flex items-baseline gap-2">
+                                {(zoneDiscount > 0 || promoDiscount > 0) && (
+                                  <span className="text-sm text-muted-foreground line-through">
+                                    {promoDiscount > 0 ? price.toLocaleString() : (zone === "a" ? plan.default_price_zone_a : plan.default_price_zone_b).toLocaleString()}
+                                  </span>
+                                )}
+                                <span className={`text-xl font-black ${isPopular ? "text-primary" : "text-foreground"}`}>
+                                  {finalPrice.toLocaleString()}
+                                </span>
+                                <span className="text-xs text-muted-foreground">{plan.currency}</span>
+                                {zoneDiscount > 0 && (
+                                  <Badge variant="outline" className="text-[10px] border-green-500 text-green-600 py-0 h-4">خصم {zoneDiscount}%</Badge>
+                                )}
                               </div>
                             )}
-                            {(zoneDiscount > 0 || promoDiscount > 0) && (
-                              <span className="text-sm text-muted-foreground line-through ml-2">
-                                {promoDiscount > 0 ? price.toLocaleString() : (zone === "a" ? plan.default_price_zone_a : plan.default_price_zone_b).toLocaleString()}
-                              </span>
-                            )}
-                          </>
-                        );
-                      })()}
-                      <span className="text-2xl font-bold text-primary">{finalPrice.toLocaleString()}</span>
-                      <span className="text-sm text-muted-foreground mr-1">{plan.currency}</span>
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-2 mt-2">
-                      {(plan.features || []).map((f, i) => (
-                        <span key={i} className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                          <Star className="w-3 h-3 text-primary" />{f}
-                        </span>
-                      ))}
-                    </div>
-                    <Button className="w-full mt-3" onClick={() => handleSelectPlan(plan)}>
-                      <Sparkles className="w-4 h-4 ml-1" /> اشترك الآن
+                          </div>
+
+                          {/* CTA */}
+                          <Button
+                            size="sm"
+                            variant={isPopular ? "default" : plan.is_free ? "outline" : "secondary"}
+                            className={`shrink-0 self-center ${isPopular ? "px-5" : "px-3"}`}
+                            onClick={() => {
+                              trackFunnelEvent("subscribe_clicked", { plan: plan.slug });
+                              handleSelectPlan(plan);
+                            }}
+                          >
+                            {plan.is_free ? "تفعيل" : isPopular ? "اشترك الآن" : "اختيار"}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {/* Comparison table */}
+              {paidPlans.length >= 2 && (
+                <Collapsible>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="w-full flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground">
+                      <BarChart3 className="w-4 h-4" />
+                      <span>مقارنة الخطط</span>
+                      <ChevronDown className="w-4 h-4 transition-transform [[data-state=open]_&]:rotate-180" />
                     </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <Card className="mt-2 overflow-hidden">
+                      <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm" dir="rtl">
+                            <thead>
+                              <tr className="border-b bg-muted/50">
+                                <th className="text-right p-2.5 text-xs font-semibold text-muted-foreground w-1/4">الميزة</th>
+                                <th className="text-center p-2.5 text-xs font-semibold text-muted-foreground">مجاني</th>
+                                <th className="text-center p-2.5 text-xs font-semibold text-primary bg-primary/5">
+                                  <span className="flex items-center justify-center gap-1">
+                                    <Zap className="w-3 h-3" /> التحضيري
+                                  </span>
+                                </th>
+                                <th className="text-center p-2.5 text-xs font-semibold text-accent">
+                                  <span className="flex items-center justify-center gap-1">
+                                    <Crown className="w-3 h-3" /> بريميوم+
+                                  </span>
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {featureRows.map((row, i) => (
+                                <tr key={i} className={i % 2 === 0 ? "" : "bg-muted/30"}>
+                                  <td className="p-2.5 text-xs font-medium text-foreground">{row.label}</td>
+                                  <td className="p-2.5 text-center text-xs text-muted-foreground">{row.free}</td>
+                                  <td className="p-2.5 text-center text-xs text-foreground bg-primary/5 font-medium">{row.basic}</td>
+                                  <td className="p-2.5 text-center text-xs text-foreground font-medium">{row.premium}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
 
               {/* Zone info */}
               <Collapsible>
@@ -441,46 +550,16 @@ const Subscription = () => {
                       <div className={`rounded-lg p-3 border ${getZone(studentGovernorate) === "a" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border"}`}>
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-semibold text-sm">المنطقة ب</span>
-                          <div className="flex items-center gap-2">
-                            {plan.discount_zone_a > 0 && (
-                              <Badge variant="outline" className="text-xs border-green-500 text-green-600">خصم {plan.discount_zone_a}%</Badge>
-                            )}
-                            <Badge variant={getZone(studentGovernorate) === "a" ? "default" : "secondary"}>
-                              {plan.price_zone_a.toLocaleString()} ريال
-                            </Badge>
-                          </div>
+                          {getZone(studentGovernorate) === "a" && <Badge variant="default">منطقتك</Badge>}
                         </div>
-                        {plan.discount_zone_a > 0 && (
-                          <p className="text-[10px] text-muted-foreground mb-1">
-                            السعر الأصلي: <span className="line-through">{plan.default_price_zone_a.toLocaleString()}</span> ريال
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          {ZONE_A_GOVERNORATES.join(" · ")}
-                        </p>
-                        {getZone(studentGovernorate) === "a" && <p className="text-xs text-primary font-medium mt-1">← منطقتك</p>}
+                        <p className="text-xs text-muted-foreground leading-relaxed">{ZONE_A_GOVERNORATES.join(" · ")}</p>
                       </div>
                       <div className={`rounded-lg p-3 border ${getZone(studentGovernorate) === "b" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border"}`}>
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-semibold text-sm">المنطقة أ</span>
-                          <div className="flex items-center gap-2">
-                            {plan.discount_zone_b > 0 && (
-                              <Badge variant="outline" className="text-xs border-green-500 text-green-600">خصم {plan.discount_zone_b}%</Badge>
-                            )}
-                            <Badge variant={getZone(studentGovernorate) === "b" ? "default" : "secondary"}>
-                              {plan.price_zone_b.toLocaleString()} ريال
-                            </Badge>
-                          </div>
+                          {getZone(studentGovernorate) === "b" && <Badge variant="default">منطقتك</Badge>}
                         </div>
-                        {plan.discount_zone_b > 0 && (
-                          <p className="text-[10px] text-muted-foreground mb-1">
-                            السعر الأصلي: <span className="line-through">{plan.default_price_zone_b.toLocaleString()}</span> ريال
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          {ZONE_B_GOVERNORATES.join(" · ")}
-                        </p>
-                        {getZone(studentGovernorate) === "b" && <p className="text-xs text-primary font-medium mt-1">← منطقتك</p>}
+                        <p className="text-xs text-muted-foreground leading-relaxed">{ZONE_B_GOVERNORATES.join(" · ")}</p>
                       </div>
                     </CardContent>
                   </Card>
