@@ -71,12 +71,12 @@ const fetchExamData = async (userId: string) => {
     };
 
   // 2) Fetch college name, deduplicated lessons, and past attempts in parallel
-  const [{ data: nameData }, { data: rawLessons }, { data: attempts }] =
+  const [{ data: nameData }, { data: lessonsWithTitles }, { data: attempts }] =
     await Promise.all([
       supabase.from("colleges").select("name_ar").eq("id", s.college_id).maybeSingle(),
       supabase
         .from("lessons")
-        .select("id, subject_id")
+        .select("id, title, subject_id")
         .in("subject_id", subjectIds)
         .eq("is_published", true),
       supabase
@@ -85,13 +85,6 @@ const fetchExamData = async (userId: string) => {
         .eq("student_id", s.id)
         .order("created_at", { ascending: false }),
     ]);
-
-  // Deduplicate lessons by title (fetch titles for dedup)
-  const { data: lessonsWithTitles } = await supabase
-    .from("lessons")
-    .select("id, title, subject_id")
-    .in("subject_id", subjectIds)
-    .eq("is_published", true);
 
   const seenTitles = new Set<string>();
   const uniqueLessonIds: string[] = [];
@@ -353,7 +346,7 @@ export function useExamEngine() {
       if (student) {
         const { data } = await supabase
           .from("exam_attempts")
-          .select("*")
+          .select("id, score, total, started_at, completed_at, answers, major_id")
           .eq("student_id", student.id)
           .order("created_at", { ascending: false });
         if (data) setPastAttempts(data as ExamAttempt[]);
