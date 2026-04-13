@@ -89,9 +89,12 @@ const Dashboard = () => {
           .eq("student_id", student.id)
           .not("completed_at", "is", null)
           .order("completed_at", { ascending: true }),
-        student.major_id
-          ? supabase.from("lessons").select("id").eq("major_id", student.major_id).eq("is_published", true)
-          : Promise.resolve({ data: [] }),
+        (() => {
+          const q = supabase.from("lessons").select("id").eq("is_published", true);
+          if (student.major_id) return q.eq("major_id", student.major_id);
+          if (student.college_id) return q.eq("college_id", student.college_id);
+          return Promise.resolve({ data: [] });
+        })(),
         supabase.from("lesson_progress").select("id").eq("student_id", student.id).eq("is_completed", true),
         student.college_id
           ? supabase.from("colleges").select("name_ar").eq("id", student.college_id).maybeSingle()
