@@ -176,7 +176,6 @@ const AdminSubjects = () => {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {subjects.map((s) => {
               const linkedMajors = linkedMajorIds(s.id);
-              const linkedColleges = linkedCollegeIds(s.id);
               return (
                 <Card key={s.id} className={!s.is_active ? "opacity-60" : ""}>
                   <CardContent className="py-4 px-4">
@@ -189,11 +188,8 @@ const AdminSubjects = () => {
                             {s.is_active ? "نشطة" : "غير نشطة"}
                           </Badge>
                           <Badge variant="outline" className="text-[10px]">
-                            <Building2 className="w-3 h-3 ml-0.5" />
-                            {linkedColleges.size} كلية
-                          </Badge>
-                          <Badge variant="outline" className="text-[10px]">
                             {linkedMajors.size} تخصص
+                          </Badge>
                           </Badge>
                         </div>
                       </div>
@@ -252,55 +248,12 @@ const AdminSubjects = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Link to Colleges & Majors Dialog */}
+        {/* Link to Majors Dialog */}
         <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
           <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>ربط "{linkSubject?.name_ar}"</DialogTitle>
+              <DialogTitle>ربط "{linkSubject?.name_ar}" بالتخصصات</DialogTitle>
             </DialogHeader>
-
-            <Tabs value={linkTab} onValueChange={(v) => setLinkTab(v as any)} dir="rtl">
-              <TabsList className="w-full">
-                <TabsTrigger value="colleges" className="flex-1 gap-1">
-                  <Building2 className="w-4 h-4" /> الكليات
-                </TabsTrigger>
-                <TabsTrigger value="majors" className="flex-1 gap-1">
-                  <Link2 className="w-4 h-4" /> التخصصات
-                </TabsTrigger>
-              </TabsList>
-
-              {/* Colleges Tab */}
-              <TabsContent value="colleges" className="space-y-3 mt-3">
-                <select
-                  value={filterUni}
-                  onChange={(e) => setFilterUni(e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-                >
-                  <option value="">جميع الجامعات</option>
-                  {universities.map((u: any) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
-                </select>
-                <div className="space-y-1 max-h-[50vh] overflow-y-auto">
-                  {filteredColleges.map((c: any) => {
-                    const isLinked = linkSubject ? linkedCollegeIds(linkSubject.id).has(c.id) : false;
-                    const uni = universities.find((u: any) => u.id === c.university_id);
-                    return (
-                      <div
-                        key={c.id}
-                        className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${isLinked ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/50"}`}
-                        onClick={() => linkSubject && toggleCollegeLink(c.id, linkSubject.id)}
-                      >
-                        <div>
-                          <p className="text-sm font-medium">{c.name_ar}</p>
-                          <p className="text-[10px] text-muted-foreground">{uni?.name_ar}</p>
-                        </div>
-                        <Switch checked={isLinked} onChange={() => {}} />
-                      </div>
-                    );
-                  })}
-                </div>
-              </TabsContent>
-
-              {/* Majors Tab */}
               <TabsContent value="majors" className="space-y-3 mt-3">
                 <div className="flex gap-2">
                   <select value={filterUni} onChange={(e) => { setFilterUni(e.target.value); setFilterCollege(""); }} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1">
