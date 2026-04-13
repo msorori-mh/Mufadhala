@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ const AdminDashboard = () => {
   const { loading: authLoading, isAdmin } = useAuth("moderator");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: stats, isLoading: loading } = useQuery({
     queryKey: ["admin-dashboard-stats"],
@@ -230,29 +232,42 @@ const AdminDashboard = () => {
   }
 
   const academicCards = [
-    { label: "الجامعات", value: stats?.universities ?? 0, icon: Building2, color: "text-primary" },
-    { label: "الكليات", value: stats?.colleges ?? 0, icon: Building2, color: "text-primary" },
-    { label: "التخصصات", value: stats?.majors ?? 0, icon: BookOpen, color: "text-primary" },
-    { label: "الدروس المنشورة", value: stats?.publishedLessons ?? 0, icon: FileText, color: "text-primary" },
+    { label: "الجامعات", value: stats?.universities ?? 0, icon: Building2, color: "text-primary", path: "/admin/universities" },
+    { label: "الكليات", value: stats?.colleges ?? 0, icon: Building2, color: "text-primary", path: "/admin/colleges" },
+    { label: "التخصصات", value: stats?.majors ?? 0, icon: BookOpen, color: "text-primary", path: "/admin/majors" },
+    { label: "الدروس المنشورة", value: stats?.publishedLessons ?? 0, icon: FileText, color: "text-primary", path: "/admin/content" },
   ];
 
   const studentCards = [
-    { label: "إجمالي الطلاب", value: stats?.students ?? 0, icon: Users, bg: "bg-primary/5", color: "text-primary" },
-    { label: "اختبارات مكتملة", value: stats?.totalExams ?? 0, icon: ClipboardCheck, bg: "bg-primary/5", color: "text-primary" },
-    { label: "متوسط النتائج", value: `${stats?.avgScore ?? 0}%`, icon: TrendingUp, bg: "bg-primary/5", color: "text-primary" },
+    { label: "إجمالي الطلاب", value: stats?.students ?? 0, icon: Users, bg: "bg-primary/5", color: "text-primary", path: "/admin/students" },
+    { label: "اختبارات مكتملة", value: stats?.totalExams ?? 0, icon: ClipboardCheck, bg: "bg-primary/5", color: "text-primary", path: "/admin/reports/exams" },
+    { label: "متوسط النتائج", value: `${stats?.avgScore ?? 0}%`, icon: TrendingUp, bg: "bg-primary/5", color: "text-primary", path: "/admin/reports/exams" },
   ];
 
   const subCards = [
-    { label: "إجمالي الاشتراكات", value: stats?.totalSubs ?? 0, icon: CreditCard, bg: "bg-primary/5", color: "text-primary" },
-    { label: "اشتراكات فعالة", value: stats?.activeSubs ?? 0, icon: CheckCircle2, bg: "bg-primary/5", color: "text-primary" },
-    { label: "فترة تجريبية", value: stats?.trialSubs ?? 0, icon: Clock, bg: "bg-primary/5", color: "text-primary" },
+    { label: "إجمالي الاشتراكات", value: stats?.totalSubs ?? 0, icon: CreditCard, bg: "bg-primary/5", color: "text-primary", path: "/admin/reports/subscriptions" },
+    { label: "اشتراكات فعالة", value: stats?.activeSubs ?? 0, icon: CheckCircle2, bg: "bg-primary/5", color: "text-primary", path: "/admin/reports/subscriptions" },
+    { label: "فترة تجريبية", value: stats?.trialSubs ?? 0, icon: Clock, bg: "bg-primary/5", color: "text-primary", path: "/admin/reports/subscriptions" },
   ];
 
   const paymentCards = [
-    { label: "طلبات دفع معلقة", value: stats?.pendingPayments ?? 0, icon: AlertTriangle, bg: stats?.pendingPayments ? "bg-destructive/10" : "bg-primary/5", color: stats?.pendingPayments ? "text-destructive" : "text-primary" },
-    { label: "طلبات مقبولة", value: stats?.approvedPayments ?? 0, icon: CheckCircle2, bg: "bg-primary/5", color: "text-primary" },
-    { label: "إجمالي الإيرادات", value: `${(stats?.totalRevenue ?? 0).toLocaleString("ar")} ر.ي`, icon: DollarSign, bg: "bg-primary/5", color: "text-primary", small: true },
+    { label: "طلبات دفع معلقة", value: stats?.pendingPayments ?? 0, icon: AlertTriangle, bg: stats?.pendingPayments ? "bg-destructive/10" : "bg-primary/5", color: stats?.pendingPayments ? "text-destructive" : "text-primary", path: "/admin/payments" },
+    { label: "طلبات مقبولة", value: stats?.approvedPayments ?? 0, icon: CheckCircle2, bg: "bg-primary/5", color: "text-primary", path: "/admin/payments" },
+    { label: "إجمالي الإيرادات", value: `${(stats?.totalRevenue ?? 0).toLocaleString("ar")} ر.ي`, icon: DollarSign, bg: "bg-primary/5", color: "text-primary", small: true, path: "/admin/reports/payments" },
   ];
+
+  
+
+  const ClickableStat = ({ card }: { card: { label: string; value: string | number; icon: any; bg: string; color: string; path: string; small?: boolean } }) => (
+    <div
+      onClick={() => navigate(card.path)}
+      className={`rounded-lg ${card.bg} p-4 text-center cursor-pointer transition-all hover:scale-[1.03] hover:shadow-md`}
+    >
+      <card.icon className={`w-5 h-5 ${card.color} mx-auto mb-1`} />
+      <p className={`text-2xl font-bold ${card.color} ${'small' in card && card.small ? 'text-lg' : ''}`}>{card.value}</p>
+      <p className="text-[11px] text-muted-foreground">{card.label}</p>
+    </div>
+  );
 
   return (
     <AdminLayout>
@@ -265,7 +280,7 @@ const AdminDashboard = () => {
         {/* Academic Stats */}
         <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
           {academicCards.map((card) => (
-            <Card key={card.label}>
+            <Card key={card.label} className="cursor-pointer transition-all hover:scale-[1.02] hover:shadow-md" onClick={() => navigate(card.path)}>
               <CardHeader className="pb-2">
                 <card.icon className={`w-5 h-5 ${card.color}`} />
               </CardHeader>
@@ -287,13 +302,7 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-              {studentCards.map((card) => (
-                <div key={card.label} className={`rounded-lg ${card.bg} p-4 text-center`}>
-                  <card.icon className={`w-5 h-5 ${card.color} mx-auto mb-1`} />
-                  <p className={`text-2xl font-bold ${card.color}`}>{card.value}</p>
-                  <p className="text-[11px] text-muted-foreground">{card.label}</p>
-                </div>
-              ))}
+              {studentCards.map((card) => <ClickableStat key={card.label} card={card} />)}
             </div>
           </CardContent>
         </Card>
@@ -308,13 +317,7 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-              {subCards.map((card) => (
-                <div key={card.label} className={`rounded-lg ${card.bg} p-4 text-center`}>
-                  <card.icon className={`w-5 h-5 ${card.color} mx-auto mb-1`} />
-                  <p className={`text-2xl font-bold ${card.color}`}>{card.value}</p>
-                  <p className="text-[11px] text-muted-foreground">{card.label}</p>
-                </div>
-              ))}
+              {subCards.map((card) => <ClickableStat key={card.label} card={card} />)}
             </div>
           </CardContent>
         </Card>
@@ -329,13 +332,7 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-              {paymentCards.map((card) => (
-                <div key={card.label} className={`rounded-lg ${card.bg} p-4 text-center`}>
-                  <card.icon className={`w-5 h-5 ${card.color} mx-auto mb-1`} />
-                  <p className={`text-2xl font-bold ${card.color} ${'small' in card ? 'text-lg' : ''}`}>{card.value}</p>
-                  <p className="text-[11px] text-muted-foreground">{card.label}</p>
-                </div>
-              ))}
+              {paymentCards.map((card) => <ClickableStat key={card.label} card={card} />)}
             </div>
           </CardContent>
         </Card>
