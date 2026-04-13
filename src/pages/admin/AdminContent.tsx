@@ -17,6 +17,7 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles, ChevronDown, ChevronUp, Search, Presentation, Copy, CheckSquare } from "lucide-react";
 import * as XLSX from "xlsx";
+import { parseWorkbook, executeImport, downloadUnifiedTemplate, type ImportReport, type ValidationError } from "@/services/importEngine";
 
 interface Subject {
   id: string;
