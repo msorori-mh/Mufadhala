@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   User, Shield, Calendar, Clock, FileText, CreditCard,
-  Users, BookOpen, Bell, Activity, Pencil, Save, X, Mail,
+  Users, BookOpen, Bell, Activity, Pencil, Save, X, Mail, Lock, Eye, EyeOff,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
