@@ -55,6 +55,7 @@ const AdminPayments = lazy(() => import("./pages/admin/AdminPayments"));
 const AdminPromoCodes = lazy(() => import("./pages/admin/AdminPromoCodes"));
 const AdminSubjects = lazy(() => import("./pages/admin/AdminSubjects"));
 const AdminDeletionLogs = lazy(() => import("./pages/admin/AdminDeletionLogs"));
+const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
 const Settings = lazy(() => import("./pages/Settings"));
 const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
@@ -153,6 +154,7 @@ function App() {
                   <Route path="/admin/payments" element={<AdminPayments />} />
                   <Route path="/admin/subjects" element={<AdminSubjects />} />
                   <Route path="/admin/deletion-logs" element={<AdminDeletionLogs />} />
+                  <Route path="/admin/profile" element={<AdminProfile />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
