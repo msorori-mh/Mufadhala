@@ -76,6 +76,7 @@ const Subscription = () => {
   const [subscription, setSubscription] = useState<SubRecord | null>(null);
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const studentGovernorate = studentData?.governorate ?? null;
 
   const [step, setStep] = useState<"plans" | "method" | "upload">("plans");
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
