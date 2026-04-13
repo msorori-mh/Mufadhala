@@ -76,6 +76,7 @@ const Dashboard = () => {
 
   const authLoading = accessLoading;
   const { data: unreadCount = 0 } = useUnreadCount(user?.id);
+  const { isActive: hasActiveSubscription } = useSubscription(user?.id);
 
   // Fetch all dashboard-specific data in ONE parallel batch
   const { data: dashData, isLoading: dashLoading } = useQuery({
