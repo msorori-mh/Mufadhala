@@ -149,6 +149,17 @@ const LessonDetail = () => {
             setNextLesson(currentIdx < siblings.length - 1 ? { id: siblings[currentIdx + 1].id, title: siblings[currentIdx + 1].title } : null);
           }
         }
+
+        // Generate signed URL for presentation if present
+        if (l.presentation_url) {
+          const path = getPresentationPath(l.presentation_url);
+          const { data: signedData } = await supabase.storage
+            .from("lesson-presentations")
+            .createSignedUrl(path, 3600); // 1 hour
+          if (signedData?.signedUrl) {
+            setSignedPresentationUrl(signedData.signedUrl);
+          }
+        }
       }
       if (q) setQuestions(q as Question[]);
       if (s) {
