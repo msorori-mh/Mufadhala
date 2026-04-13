@@ -354,6 +354,11 @@ const Dashboard = () => {
               <DailyTipCard />
             )}
 
+            {/* Upgrade CTA for free users who engaged */}
+            {!isAdmin && !hasActiveSubscription && (
+              <UpgradeCTABanner completedLessons={completedLessons} totalLessons={lessonCount} />
+            )}
+
 
             {totalExams > 0 && (
               <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
