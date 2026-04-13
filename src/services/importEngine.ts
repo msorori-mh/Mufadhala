@@ -241,9 +241,9 @@ export function validateQuestions(rows: any[][]): { questions: ImportQuestion[];
 
     // Normalize question_type (handle common variants)
     let questionType = rawType;
-    if (["tf", "true_false", "truefalse", "صح_خطأ", "صح/خطأ"].includes(rawType)) {
+    if (["tf", "true_false", "truefalse", "صح_خطأ", "صح/خطأ", "صح وخطأ", "صح و خطأ"].includes(rawType)) {
       questionType = "true_false";
-    } else if (["mc", "multiple_choice", "multiplechoice", "اختيار", "اختيار_متعدد"].includes(rawType)) {
+    } else if (["mc", "multiple_choice", "multiplechoice", "اختيار", "اختيار_متعدد", "اختيار متعدد"].includes(rawType)) {
       questionType = "multiple_choice";
     }
 
