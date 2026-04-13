@@ -8,8 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { getContentFilter } from "@/lib/contentFilter";
-import { useAuthContext } from "@/contexts/AuthContext";
-import { useStudentData } from "@/hooks/useStudentData";
+import { useStudentAccess } from "@/hooks/useStudentAccess";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import ThemeToggle from "@/components/ThemeToggle";
 import MotivationalBanner from "@/components/MotivationalBanner";
@@ -71,10 +70,9 @@ const DailyTipCard = () => {
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loading: authLoading, isStaff, isAdmin } = useAuthContext();
+  const { user, student, isStaff, isAdmin, loading: accessLoading } = useStudentAccess();
 
-  // Cached shared hooks — no duplicate fetches across pages
-  const { data: student, isLoading: studentLoading } = useStudentData(user?.id);
+  const authLoading = accessLoading;
   const { data: unreadCount = 0 } = useUnreadCount(user?.id);
 
   // Fetch all dashboard-specific data in ONE parallel batch
@@ -116,7 +114,7 @@ const Dashboard = () => {
   const lessonCount = dashData?.lessonCount ?? 0;
   const completedLessons = dashData?.completedLessons ?? 0;
   const collegeName = dashData?.collegeName ?? null;
-  const loading = studentLoading || dashLoading;
+  const loading = accessLoading || dashLoading;
 
   useEffect(() => {
     if (authLoading) return;

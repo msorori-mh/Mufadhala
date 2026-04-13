@@ -9,9 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { getContentFilter } from "@/lib/contentFilter";
-import { useAuth } from "@/hooks/useAuth";
+import { useStudentAccess } from "@/hooks/useStudentAccess";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useStudentData } from "@/hooks/useStudentData";
 import { GraduationCap, BookOpen, ArrowRight, ChevronLeft, ChevronDown, ChevronUp, Loader2, CheckCircle2, Search, X, Lock, Sparkles, Download, WifiOff, Rocket } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useOfflineStatus } from "@/hooks/useOfflineStatus";
@@ -100,9 +99,8 @@ const NoCollegeView = ({ refetch }: { refetch: () => void }) => {
 };
 
 const LessonsList = () => {
-  const { user, loading: authLoading, isAdmin, isModerator } = useAuth();
+  const { user, student, isAdmin, isModerator, canAccessContent, isLegacyCorrupted, loading: accessLoading, refetchStudent } = useStudentAccess();
   const { isActive: hasSubscription, loading: subLoading, planId, allowedMajorIds } = useSubscription(user?.id);
-  const { data: student, isLoading: studentLoading, refetch: refetchStudent } = useStudentData(user?.id);
   const navigate = useNavigate();
   const isOffline = useOfflineStatus();
   const [savedOfflineIds, setSavedOfflineIds] = useState<Set<string>>(new Set());
@@ -110,11 +108,13 @@ const LessonsList = () => {
   const [activeSubjectFilter, setActiveSubjectFilter] = useState<string>("all");
   const [lockedLesson, setLockedLesson] = useState<Lesson | null>(null);
 
+  const authLoading = accessLoading;
+
   useEffect(() => {
-    if (!authLoading && (isAdmin || isModerator)) {
+    if (!accessLoading && (isAdmin || isModerator)) {
       navigate("/admin/content", { replace: true });
     }
-  }, [authLoading, isAdmin, isModerator, navigate]);
+  }, [accessLoading, isAdmin, isModerator, navigate]);
 
   // Load saved offline IDs
   useEffect(() => {
@@ -267,7 +267,7 @@ const LessonsList = () => {
     return result;
   }, [lessons, FREE_COUNT]);
 
-  const loading = authLoading || studentLoading || (!isOffline && lessonsLoading) || subLoading;
+  const loading = accessLoading || (!isOffline && lessonsLoading) || subLoading;
 
   const filteredLessons = useMemo(() => {
     let result = lessons;
@@ -319,7 +319,7 @@ const LessonsList = () => {
       )}
 
       <main className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6">
-        {!isOffline && !student?.college_id ? (
+        {!isOffline && !canAccessContent ? (
           <NoCollegeView refetch={refetchStudent} />
         ) : (
           <>

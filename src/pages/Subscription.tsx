@@ -7,8 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useStudentData } from "@/hooks/useStudentData";
+import { useStudentAccess } from "@/hooks/useStudentAccess";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, CreditCard, Upload, CheckCircle, Clock,
@@ -47,8 +46,8 @@ interface PaymentRequest {
 }
 
 const Subscription = () => {
-  const { user, loading: authLoading } = useAuth();
-  const { data: studentData, isLoading: studentLoading } = useStudentData(user?.id);
+  const { user, student: studentData, loading: accessLoading, canSubscribe } = useStudentAccess();
+  const authLoading = accessLoading;
   const navigate = useNavigate();
   const { toast } = useToast();
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -258,7 +257,7 @@ const Subscription = () => {
     setSubmitting(false);
   };
 
-  if (authLoading || loading || studentLoading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />

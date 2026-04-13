@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useContentFilter } from "@/hooks/useContentFilter";
+import { useStudentAccess } from "@/hooks/useStudentAccess";
 import { useQuery } from "@tanstack/react-query";
 import ThemeToggle from "@/components/ThemeToggle";
 import SubjectPerformanceDetail from "@/components/SubjectPerformanceDetail";
@@ -47,7 +47,7 @@ const tooltipStyle = {
 
 const StudentPerformance = () => {
   const { user, loading: authLoading } = useAuth();
-  const { student, filter, filterName, isLoading: studentLoading } = useContentFilter(user?.id);
+  const { student, filter, filterName, loading: studentLoading } = useStudentAccess();
 
   // Fetch all performance data using React Query
   const { data: perfData, isLoading: perfLoading } = useQuery({
