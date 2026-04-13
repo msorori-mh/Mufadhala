@@ -256,7 +256,7 @@ const ChatWidget = React.forwardRef<HTMLDivElement>((_, ref) => {
     }
 
     incrementUsage();
-    setRemaining(getRemainingMessages(effectiveLimit));
+    // usage tracked in localStorage
 
     // Build multimodal content if images exist
     let userContent: string | ContentPart[];
