@@ -333,15 +333,17 @@ const Register = () => {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label>التخصص</Label>
-              <NativeSelect
-                value={form.majorId}
-                onValueChange={(v) => updateField("majorId", v)}
-                placeholder={!form.collegeId ? "اختر الكلية أولاً" : "اختر التخصص"}
-                disabled={!form.collegeId}
-                options={majors.map((m) => ({ value: m.id, label: m.name_ar }))}
-              />
+            {majors.length > 0 && (
+              <div className="space-y-1.5">
+                <Label>التخصص <span className="text-muted-foreground font-normal">اختياري</span></Label>
+                <NativeSelect
+                  value={form.majorId}
+                  onValueChange={(v) => updateField("majorId", v)}
+                  placeholder="اختر التخصص"
+                  options={majors.map((m) => ({ value: m.id, label: m.name_ar }))}
+                />
+              </div>
+            )}
             </div>
 
             <Button
