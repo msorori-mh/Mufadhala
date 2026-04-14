@@ -43,7 +43,7 @@ export default function RegisterDebugPanel({
   kbVisible,
   traceLog,
 }: Props) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
 
   return (
     <div className="mt-4" dir="ltr">
