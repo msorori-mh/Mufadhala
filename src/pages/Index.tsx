@@ -78,15 +78,9 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
               </span>
             ))}
           </div>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <div className="flex items-center justify-center">
             <Button size="lg" onClick={() => navigate("/register")} className="bg-secondary text-secondary-foreground hover:bg-secondary/90 text-base font-bold px-8 py-5 rounded-xl shadow-lg">
               ابدأ الآن
-            </Button>
-            <Button size="lg" variant="outline" onClick={() => {
-              const el = document.getElementById("features-section");
-              el?.scrollIntoView({ behavior: "smooth" });
-            }} className="border-white/40 text-primary-foreground hover:bg-white/10 hover:text-primary-foreground text-sm px-6 py-4 rounded-xl">
-              استكشف التطبيق ↓
             </Button>
           </div>
         </div>
