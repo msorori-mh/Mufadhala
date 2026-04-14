@@ -356,6 +356,12 @@ const Register = () => {
               </div>
             )}
 
+            {formTouched.current && !isFormValid && missingFields.length > 0 && (
+              <p className="text-xs text-destructive text-center">
+                أكمل: {missingFields.join("، ")}
+              </p>
+            )}
+
             <Button
               onClick={handleRegister}
               disabled={loading || !isFormValid}
@@ -364,10 +370,6 @@ const Register = () => {
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
               {loading ? "جاري التسجيل..." : "ابدأ الآن"}
             </Button>
-
-
-
-
             <p className="mt-2 text-center text-xs text-muted-foreground">
               بتسجيلك فإنك توافق على{" "}
               <Link to="/privacy-policy" className="text-primary hover:underline">
