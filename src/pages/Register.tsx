@@ -642,6 +642,8 @@ const Register = () => {
         logs={debugLogs}
         mountCount={mountCount.current}
         submitPhase={submitPhase}
+        kbState={kbState}
+        activeField={activeField}
       />
     </div>
   );
