@@ -351,6 +351,44 @@ const Register = () => {
               {loading ? "جاري التسجيل..." : "ابدأ الآن"}
             </Button>
 
+            {/* DEV-ONLY: Demo login button — remove before production */}
+            {import.meta.env.DEV && (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-dashed border-orange-400 text-orange-600 text-sm"
+                disabled={loading}
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    const res = await supabase.functions.invoke("register-student", {
+                      body: {
+                        phone: "711111111",
+                        first_name: "اختبار",
+                        fourth_name: "تجريبي",
+                        governorate: "عدن",
+                        university_id: "00000000-0000-0000-0000-000000000000",
+                        college_id: "00000000-0000-0000-0000-000000000000",
+                      },
+                    });
+                    if (res.data?.session) {
+                      const { access_token, refresh_token } = res.data.session;
+                      await supabase.auth.setSession({ access_token, refresh_token });
+                      await clearDraft();
+                      navigate("/dashboard", { replace: true });
+                    } else {
+                      toast({ variant: "destructive", title: "فشل الدخول التجريبي", description: res.data?.error || "خطأ غير متوقع" });
+                    }
+                  } catch {
+                    toast({ variant: "destructive", title: "خطأ", description: "فشل الاتصال" });
+                  }
+                  setLoading(false);
+                }}
+              >
+                🧪 دخول تجريبي (Dev Only)
+              </Button>
+            )}
+
             <p className="mt-2 text-center text-xs text-muted-foreground">
               بتسجيلك فإنك توافق على{" "}
               <Link to="/privacy-policy" className="text-primary hover:underline">
