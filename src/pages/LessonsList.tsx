@@ -108,8 +108,8 @@ const LessonsList = () => {
   const [savedOfflineIds, setSavedOfflineIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSubjectFilter, setActiveSubjectFilter] = useState<string>("all");
-  const [lockedLesson, setLockedLesson] = useState<Lesson | null>(null);
-
+  const { paywallProps, showPaywall } = usePaywall();
+  const [questionInteractions] = useState(0); // placeholder for future tracking
   const authLoading = accessLoading;
 
   useEffect(() => {
