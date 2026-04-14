@@ -10,6 +10,7 @@ import { isNativePlatform } from "@/lib/capacitor";
 import { useOfflineExamSync } from "./hooks/useOfflineExamSync";
 import { useEffect } from "react";
 import { initializeCapacitor } from "./lib/capacitor";
+import { useBottomNavVisible } from "./hooks/useBottomNavVisible";
 
 // Eager imports — critical student pages (no spinner on navigation)
 import Index from "./pages/Index";
@@ -96,6 +97,16 @@ function PageLoader() {
 function OfflineExamSyncProvider({ children }: { children: React.ReactNode }) {
   useOfflineExamSync();
   return <>{children}</>;
+}
+
+/** Wraps page routes — adds bottom spacing when MobileBottomNav is visible */
+function PageShell({ children }: { children: React.ReactNode }) {
+  const hasBottomNav = useBottomNavVisible();
+  return (
+    <div className={hasBottomNav ? "pb-bottom-nav" : ""}>
+      {children}
+    </div>
+  );
 }
 
 const isNative = isNativePlatform();
