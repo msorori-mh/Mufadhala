@@ -255,7 +255,7 @@ const StudentProfile = () => {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6 pb-20 md:pb-6 space-y-6">
+      <main className="max-w-2xl mx-auto px-4 py-6 pb-28 md:pb-6 space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">الملف الشخصي</h1>
           <p className="text-muted-foreground text-sm">عرض وتعديل بياناتك الشخصية والأكاديمية</p>
