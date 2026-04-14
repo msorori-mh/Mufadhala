@@ -20,7 +20,7 @@ const RegDebugPanel = ({ form, events, mountCount, viewportH }: Props) => {
   // Only show in dev
   if (import.meta.env.PROD) return null;
 
-  const ts = () => new Date().toLocaleTimeString("en", { hour12: false, fractionalSecondDigits: 3 });
+  // ts helper removed — timestamps come from parent
 
   return (
     <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 99999, fontSize: 10, direction: "ltr", textAlign: "left" }}>
