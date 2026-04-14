@@ -194,6 +194,14 @@ const LessonsList = () => {
   const questionCounts = lessonsData?.questionCounts || {};
   const completedLessons = lessonsData?.completedLessons || new Set<string>();
 
+  // Auto-trigger paywall after engagement thresholds
+  usePaywallTrigger({
+    completedLessons: completedLessons.size,
+    questionInteractions,
+    hasSubscription: !!hasSubscription,
+    onTrigger: (reason) => showPaywall(reason),
+  });
+
   // Fetch free lessons count setting from cache
   const { data: freeLessonsCount } = useQuery({
     queryKey: ["free-lessons-count"],
