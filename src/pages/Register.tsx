@@ -165,7 +165,11 @@ const Register = () => {
   const updateField = useCallback(
     <K extends keyof RegistrationDraft>(key: K, value: RegistrationDraft[K]) => {
       log(`FORM:updateField:${key}`, `"${value}"`);
-      setForm((prev) => ({ ...prev, [key]: value }));
+      setForm((prev) => {
+        const next = { ...prev, [key]: value };
+        log(`FORM:stateAfterUpdate:${key}`, `fn="${next.firstName}" ln="${next.fourthName}" ph="${next.phoneNumber}"`);
+        return next;
+      });
     },
     [log],
   );
