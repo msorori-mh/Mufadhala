@@ -147,13 +147,27 @@ const Register = () => {
       });
   }, [form.collegeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isFormValid =
-    form.firstName.trim() &&
-    form.fourthName.trim() &&
-    YEMEN_PHONE_REGEX.test(form.phoneNumber) &&
-    form.governorate &&
-    form.universityId &&
-    form.collegeId;
+  const validationChecks = {
+    firstName: !!form.firstName.trim(),
+    fourthName: !!form.fourthName.trim(),
+    phoneNumber: YEMEN_PHONE_REGEX.test(form.phoneNumber),
+    governorate: !!form.governorate,
+    universityId: !!form.universityId,
+    collegeId: !!form.collegeId,
+  };
+  const isFormValid = Object.values(validationChecks).every(Boolean);
+
+  const fieldLabels: Record<string, string> = {
+    firstName: "الاسم الأول",
+    fourthName: "اللقب",
+    phoneNumber: "رقم الجوال",
+    governorate: "المحافظة",
+    universityId: "الجامعة",
+    collegeId: "الكلية",
+  };
+  const missingFields = Object.entries(validationChecks)
+    .filter(([, ok]) => !ok)
+    .map(([key]) => fieldLabels[key]);
 
   const handleRegister = async () => {
     if (!isFormValid) {
