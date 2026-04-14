@@ -147,13 +147,27 @@ const Register = () => {
       });
   }, [form.collegeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isFormValid =
-    form.firstName.trim() &&
-    form.fourthName.trim() &&
-    YEMEN_PHONE_REGEX.test(form.phoneNumber) &&
-    form.governorate &&
-    form.universityId &&
-    form.collegeId;
+  const validationChecks = {
+    firstName: !!form.firstName.trim(),
+    fourthName: !!form.fourthName.trim(),
+    phoneNumber: YEMEN_PHONE_REGEX.test(form.phoneNumber),
+    governorate: !!form.governorate,
+    universityId: !!form.universityId,
+    collegeId: !!form.collegeId,
+  };
+  const isFormValid = Object.values(validationChecks).every(Boolean);
+
+  const fieldLabels: Record<string, string> = {
+    firstName: "الاسم الأول",
+    fourthName: "اللقب",
+    phoneNumber: "رقم الجوال",
+    governorate: "المحافظة",
+    universityId: "الجامعة",
+    collegeId: "الكلية",
+  };
+  const missingFields = Object.entries(validationChecks)
+    .filter(([, ok]) => !ok)
+    .map(([key]) => fieldLabels[key]);
 
   const handleRegister = async () => {
     if (!isFormValid) {
@@ -342,6 +356,12 @@ const Register = () => {
               </div>
             )}
 
+            {formTouched.current && !isFormValid && missingFields.length > 0 && (
+              <p className="text-xs text-destructive text-center">
+                أكمل: {missingFields.join("، ")}
+              </p>
+            )}
+
             <Button
               onClick={handleRegister}
               disabled={loading || !isFormValid}
@@ -350,10 +370,6 @@ const Register = () => {
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
               {loading ? "جاري التسجيل..." : "ابدأ الآن"}
             </Button>
-
-
-
-
             <p className="mt-2 text-center text-xs text-muted-foreground">
               بتسجيلك فإنك توافق على{" "}
               <Link to="/privacy-policy" className="text-primary hover:underline">
