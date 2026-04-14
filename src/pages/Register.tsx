@@ -22,11 +22,12 @@ import { isNativePlatform } from "@/lib/capacitor";
 import { GOVERNORATES, YEMEN_PHONE_REGEX } from "@/domain/constants";
 import { trackFunnelEvent } from "@/lib/funnelTracking";
 
-/* ─── APK Debug Panel ─── */
+/* ─── APK Debug Panel v4 — keyboard/viewport/focus tracing ─── */
 interface DebugLog {
   ts: number;
   tag: string;
   msg: string;
+  critical?: boolean;
 }
 
 function RegDebugPanel({
@@ -34,15 +35,20 @@ function RegDebugPanel({
   logs,
   mountCount,
   submitPhase,
+  kbState,
+  activeField,
 }: {
   form: RegistrationDraft;
   logs: DebugLog[];
   mountCount: number;
   submitPhase: string;
+  kbState: string;
+  activeField: string;
 }) {
   const [open, setOpen] = useState(false);
   const isNative = isNativePlatform();
   const [vh, setVh] = useState(window.innerHeight);
+  const vvh = (window.visualViewport?.height ?? window.innerHeight).toFixed(0);
 
   useEffect(() => {
     const h = () => setVh(window.innerHeight);
@@ -59,17 +65,17 @@ function RegDebugPanel({
         onClick={() => setOpen(!open)}
         className="w-full flex justify-between items-center px-2 py-1 bg-amber-600 text-black font-bold text-xs"
       >
-        <span>🐛 REG DEBUG {isNative ? "[NATIVE APK]" : "[WEB]"} | mounts:{mountCount} | submit:{submitPhase} | vh:{vh}</span>
+        <span>🐛 v4 {isNative ? "[APK]" : "[WEB]"} m:{mountCount} s:{submitPhase} vh:{vh} vv:{vvh} kb:{kbState} f:{activeField}</span>
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
       </button>
       {open && (
         <div className="max-h-48 overflow-y-auto p-1 space-y-0.5">
           <div className="text-yellow-300">
-            FORM: fn="{form.firstName}" ln="{form.fourthName}" ph="{form.phoneNumber}" gov="{form.governorate}" uni="{form.universityId?.slice(0,8)}" col="{form.collegeId?.slice(0,8)}" maj="{form.majorId?.slice(0,8)}" gpa="{form.highSchoolGpa}"
+            FORM: fn="{form.firstName}" ln="{form.fourthName}" ph="{form.phoneNumber}" gov="{form.governorate}"
           </div>
           <div className="border-t border-green-800 mt-1 pt-1 text-green-300">
-            {logs.slice(-30).map((l, i) => (
-              <div key={i}>
+            {logs.slice(-40).map((l, i) => (
+              <div key={i} className={l.critical ? "text-red-400 font-bold" : ""}>
                 <span className="text-gray-500">{new Date(l.ts).toLocaleTimeString()}</span>{" "}
                 <span className="text-cyan-400">[{l.tag}]</span> {l.msg}
               </div>
