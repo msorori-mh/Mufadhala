@@ -119,6 +119,7 @@ const Dashboard = () => {
   const attempts = dashData?.attempts ?? [];
   const lessonCount = dashData?.lessonCount ?? 0;
   const completedLessons = dashData?.completedLessons ?? 0;
+  const lessonsStarted = dashData?.lessonsStarted ?? 0;
   const collegeName = dashData?.collegeName ?? null;
   const loading = accessLoading || dashLoading;
 
