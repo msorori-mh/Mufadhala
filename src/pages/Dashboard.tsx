@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchLessonsBySubjects } from "@/lib/contentFilter";
 import { useStudentAccess } from "@/hooks/useStudentAccess";
@@ -192,6 +193,39 @@ const Dashboard = () => {
     { path: "/leaderboard", title: "لوحة المتصدرين", desc: "ترتيب الأوائل على مستوى الجمهورية", icon: Trophy, color: "border-r-secondary", iconColor: "text-secondary", bgColor: "bg-secondary/10" },
     { path: "/notifications", title: "الإشعارات", desc: "آخر التحديثات", icon: Bell, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10", badge: unreadCount },
   ];
+
+  // Show skeleton layout immediately while loading — never blank screen
+  if (accessLoading && !student) {
+    return (
+      <div className="min-h-screen bg-background" dir="rtl">
+        <header className="gradient-primary text-white px-4 py-3 md:py-4">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <GraduationCap className="w-6 h-6" />
+              <span className="text-lg font-bold hidden sm:inline">مُفَاضَلَة</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
+            </div>
+          </div>
+        </header>
+        <main className="max-w-6xl mx-auto px-4 py-6">
+          <Skeleton className="h-7 w-40 mb-2" />
+          <Skeleton className="h-4 w-56 mb-6" />
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 md:hidden mb-4">
+            {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-20 rounded-lg" />)}
+          </div>
+          <div className="space-y-3">
+            <Skeleton className="h-16 w-full rounded-lg" />
+            <Skeleton className="h-24 w-full rounded-lg" />
+            <div className="grid grid-cols-2 gap-2">
+              {[1,2,3,4].map(i => <Skeleton key={i} className="h-20 rounded-lg" />)}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">

@@ -97,11 +97,16 @@ const LessonDetail = () => {
         return;
       }
 
-      const [{ data: l }, { data: q }, { data: s }] = await Promise.all([
+      // Phase 1: Fetch lesson, questions, student, and free-count in parallel
+      const [{ data: l }, { data: q }, { data: s }, { data: freeCountData }] = await Promise.all([
         supabase.from("lessons").select("id, title, content, summary, is_free, major_id, presentation_url, grade_level, subject_id").eq("id", id).maybeSingle(),
         supabase.from("questions").select("*").eq("lesson_id", id).order("display_order"),
         supabase.from("students").select("id").eq("user_id", user.id).maybeSingle(),
+        supabase.rpc("get_cache", { _key: "free_lessons_count" }),
       ]);
+
+      if (q) setQuestions(q as Question[]);
+
       if (l) {
         setLesson(l as Lesson);
         // Check if the subscription plan covers this lesson's major
@@ -113,65 +118,65 @@ const LessonDetail = () => {
           }
         }
 
-        // Check if this lesson is among first N in its subject (dynamically free)
-        if (l.major_id && l.subject_id) {
-          // Read free lessons count from cache
-          const { data: freeCountData } = await supabase.rpc("get_cache", { _key: "free_lessons_count" });
-          const freeCount = freeCountData != null ? Number(freeCountData) : 3;
+        // Phase 2: Fire all secondary requests in parallel
+        const freeCount = freeCountData != null ? Number(freeCountData) : 3;
+        const secondaryPromises: Promise<any>[] = [];
 
-          const { data: siblingsInSubject } = await supabase
-            .from("lessons")
-            .select("id, display_order")
-            .eq("major_id", l.major_id)
-            .eq("subject_id", l.subject_id)
-            .eq("is_published", true)
-            .order("display_order")
-            .limit(freeCount);
-          if (siblingsInSubject && siblingsInSubject.some((s: any) => s.id === id)) {
-            setIsDynamicallyFree(true);
-          }
+        // Free check
+        if (l.major_id && l.subject_id) {
+          secondaryPromises.push(
+            Promise.resolve(supabase.from("lessons").select("id").eq("major_id", l.major_id).eq("subject_id", l.subject_id).eq("is_published", true).order("display_order").limit(freeCount))
+              .then(({ data: sibs }) => {
+                if (sibs && sibs.some((sb: any) => sb.id === id)) setIsDynamicallyFree(true);
+              })
+          );
         } else if (l.is_free) {
           setIsDynamicallyFree(true);
         }
 
-        // Fetch sibling lessons for prev/next navigation
+        // Siblings for prev/next
         if (l.major_id) {
-          const { data: siblings } = await supabase
-            .from("lessons")
-            .select("id, title, display_order")
-            .eq("major_id", l.major_id)
-            .eq("is_published", true)
-            .order("display_order");
-          if (siblings && siblings.length > 0) {
-            const currentIdx = siblings.findIndex((s) => s.id === id);
-            setPrevLesson(currentIdx > 0 ? { id: siblings[currentIdx - 1].id, title: siblings[currentIdx - 1].title } : null);
-            setNextLesson(currentIdx < siblings.length - 1 ? { id: siblings[currentIdx + 1].id, title: siblings[currentIdx + 1].title } : null);
-          }
+          secondaryPromises.push(
+            Promise.resolve(supabase.from("lessons").select("id, title, display_order").eq("major_id", l.major_id).eq("is_published", true).order("display_order"))
+              .then(({ data: siblings }) => {
+                if (siblings && siblings.length > 0) {
+                  const currentIdx = siblings.findIndex((sb) => sb.id === id);
+                  setPrevLesson(currentIdx > 0 ? { id: siblings[currentIdx - 1].id, title: siblings[currentIdx - 1].title } : null);
+                  setNextLesson(currentIdx < siblings.length - 1 ? { id: siblings[currentIdx + 1].id, title: siblings[currentIdx + 1].title } : null);
+                }
+              })
+          );
         }
 
-        // Generate signed URL for presentation if present
+        // Signed URL for presentation
         if (l.presentation_url) {
           const path = getPresentationPath(l.presentation_url);
-          const { data: signedData } = await supabase.storage
-            .from("lesson-presentations")
-            .createSignedUrl(path, 3600); // 1 hour
-          if (signedData?.signedUrl) {
-            setSignedPresentationUrl(signedData.signedUrl);
-          }
+          secondaryPromises.push(
+            supabase.storage.from("lesson-presentations").createSignedUrl(path, 3600)
+              .then(({ data: signedData }) => {
+                if (signedData?.signedUrl) setSignedPresentationUrl(signedData.signedUrl);
+              })
+          );
         }
+
+        // Progress check
+        if (s) {
+          setStudentId(s.id);
+          secondaryPromises.push(
+            Promise.resolve(supabase.from("lesson_progress").select("is_completed").eq("student_id", s.id).eq("lesson_id", id).maybeSingle())
+              .then(({ data: progress }) => {
+                if (progress?.is_completed) setIsCompleted(true);
+              })
+          );
+        }
+
+        // Show lesson content immediately, secondary data loads in background
+        setLoading(false);
+        await Promise.all(secondaryPromises);
+      } else {
+        if (s) setStudentId(s.id);
+        setLoading(false);
       }
-      if (q) setQuestions(q as Question[]);
-      if (s) {
-        setStudentId(s.id);
-        const { data: progress } = await supabase
-          .from("lesson_progress")
-          .select("is_completed")
-          .eq("student_id", s.id)
-          .eq("lesson_id", id)
-          .maybeSingle();
-        if (progress?.is_completed) setIsCompleted(true);
-      }
-      setLoading(false);
     };
     fetchData();
   }, [authLoading, id, user, isOffline, planId, allowedMajorIds]);
