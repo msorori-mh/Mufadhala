@@ -125,7 +125,7 @@ const LessonDetail = () => {
         // Free check
         if (l.major_id && l.subject_id) {
           secondaryPromises.push(
-            supabase.from("lessons").select("id").eq("major_id", l.major_id).eq("subject_id", l.subject_id).eq("is_published", true).order("display_order").limit(freeCount)
+            Promise.resolve(supabase.from("lessons").select("id").eq("major_id", l.major_id).eq("subject_id", l.subject_id).eq("is_published", true).order("display_order").limit(freeCount))
               .then(({ data: sibs }) => {
                 if (sibs && sibs.some((sb: any) => sb.id === id)) setIsDynamicallyFree(true);
               })
@@ -137,7 +137,7 @@ const LessonDetail = () => {
         // Siblings for prev/next
         if (l.major_id) {
           secondaryPromises.push(
-            supabase.from("lessons").select("id, title, display_order").eq("major_id", l.major_id).eq("is_published", true).order("display_order")
+            Promise.resolve(supabase.from("lessons").select("id, title, display_order").eq("major_id", l.major_id).eq("is_published", true).order("display_order"))
               .then(({ data: siblings }) => {
                 if (siblings && siblings.length > 0) {
                   const currentIdx = siblings.findIndex((sb) => sb.id === id);
@@ -163,7 +163,7 @@ const LessonDetail = () => {
         if (s) {
           setStudentId(s.id);
           secondaryPromises.push(
-            supabase.from("lesson_progress").select("is_completed").eq("student_id", s.id).eq("lesson_id", id).maybeSingle()
+            Promise.resolve(supabase.from("lesson_progress").select("is_completed").eq("student_id", s.id).eq("lesson_id", id).maybeSingle())
               .then(({ data: progress }) => {
                 if (progress?.is_completed) setIsCompleted(true);
               })
