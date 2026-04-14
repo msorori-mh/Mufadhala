@@ -77,7 +77,7 @@ const Achievements = () => {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6 pb-28 md:pb-6 space-y-5">
+      <main className="max-w-4xl mx-auto px-4 py-6 md:pb-6 space-y-5">
         {/* Overall Progress */}
         <Card>
           <CardContent className="p-4 space-y-3">

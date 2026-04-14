@@ -72,7 +72,7 @@ const Notifications = () => {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6 pb-28 md:pb-6 space-y-4">
+      <main className="max-w-2xl mx-auto px-4 py-6 md:pb-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">الإشعارات</h1>

@@ -158,7 +158,7 @@ const CollegeGuide = () => {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6 pb-28 md:pb-6 space-y-4">
+      <main className="max-w-4xl mx-auto px-4 py-6 md:pb-6 space-y-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">دليل الكليات والمتطلبات</h1>
           <p className="text-sm text-muted-foreground mt-1">تعرّف على متطلبات القبول ونسب القبول لكل كلية</p>

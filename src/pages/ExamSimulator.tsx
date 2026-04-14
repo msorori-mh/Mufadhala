@@ -64,7 +64,7 @@ const ExamSimulator = () => {
     return (
       <div className="min-h-screen bg-background">
         <PageHeader title="محاكاة الاختبار" backTo="/dashboard" backLabel="الرئيسية" />
-        <main className="max-w-2xl mx-auto px-4 py-6 pb-28 md:pb-6 space-y-6">
+        <main className="max-w-2xl mx-auto px-4 py-6 md:pb-6 space-y-6">
           {engine.isOffline && <OfflineBanner />}
           {engine.pendingResultsCount > 0 && <PendingSyncBanner count={engine.pendingResultsCount} />}
 

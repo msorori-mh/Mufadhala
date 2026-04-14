@@ -116,10 +116,15 @@
   html {
     direction: rtl;
     font-family: 'Cairo', sans-serif;
+    /* Fix mobile viewport height — use dvh when available */
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
   }
 
   body {
     @apply bg-background text-foreground;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
   }
 }
 
@@ -132,10 +137,11 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .mb-bottom-nav {
-    margin-bottom: 7rem;
+    margin-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px) + 1rem);
   }
+  /* Applied globally by PageShell when bottom nav is visible */
   .pb-bottom-nav {
-    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px) + 1.5rem);
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px) + 1rem);
   }
 
   .gradient-primary {

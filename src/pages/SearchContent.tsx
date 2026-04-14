@@ -209,7 +209,7 @@ const SearchContent = () => {
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto p-4 pb-28 md:pb-4 space-y-4">
+      <div className="max-w-lg mx-auto p-4 md:pb-4 space-y-4">
         {/* Search Input */}
         <div className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

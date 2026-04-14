@@ -10,6 +10,7 @@ import { isNativePlatform } from "@/lib/capacitor";
 import { useOfflineExamSync } from "./hooks/useOfflineExamSync";
 import { useEffect } from "react";
 import { initializeCapacitor } from "./lib/capacitor";
+import { useBottomNavVisible } from "./hooks/useBottomNavVisible";
 
 // Eager imports — critical student pages (no spinner on navigation)
 import Index from "./pages/Index";
@@ -98,6 +99,16 @@ function OfflineExamSyncProvider({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/** Wraps page routes — adds bottom spacing when MobileBottomNav is visible */
+function PageShell({ children }: { children: React.ReactNode }) {
+  const hasBottomNav = useBottomNavVisible();
+  return (
+    <div className={hasBottomNav ? "pb-bottom-nav" : ""}>
+      {children}
+    </div>
+  );
+}
+
 const isNative = isNativePlatform();
 
 function App() {
@@ -114,6 +125,7 @@ function App() {
           <AuthProvider>
             <OfflineExamSyncProvider>
               <Suspense fallback={<PageLoader />}>
+                <PageShell>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
@@ -162,6 +174,7 @@ function App() {
                   <Route path="/admin/profile" element={<AdminProfile />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
+                </PageShell>
               </Suspense>
               <MobileBottomNav />
               <Suspense fallback={null}>
