@@ -99,51 +99,60 @@ const Register = () => {
 
   // Fetch colleges when university changes
   useEffect(() => {
-    if (!form.universityId) {
+    let cancelled = false;
+    const uniId = form.universityId;
+    if (!uniId) {
       setColleges([]);
       setMajors([]);
       return;
     }
-    const currentCollegeId = form.collegeId;
     supabase
       .from("colleges")
       .select("*")
-      .eq("university_id", form.universityId)
+      .eq("university_id", uniId)
       .eq("is_active", true)
       .order("display_order")
       .then(({ data }) => {
+        if (cancelled) return;
         setColleges(data || []);
-        if (data && currentCollegeId) {
-          const stillValid = data.some((c) => c.id === currentCollegeId);
-          if (!stillValid) {
-            updateField("collegeId", "");
-            updateField("majorId", "");
-          }
-        }
+        // Use functional updater to check CURRENT state, not stale closure
+        setForm((prev) => {
+          if (prev.universityId !== uniId) return prev; // university already changed
+          if (!prev.collegeId) return prev;
+          const stillValid = data?.some((c) => c.id === prev.collegeId);
+          if (stillValid) return prev;
+          return { ...prev, collegeId: "", majorId: "" };
+        });
       });
+    return () => { cancelled = true; };
   }, [form.universityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch majors when college changes
   useEffect(() => {
-    if (!form.collegeId) {
+    let cancelled = false;
+    const colId = form.collegeId;
+    if (!colId) {
       setMajors([]);
       return;
     }
     supabase
       .from("majors")
       .select("*")
-      .eq("college_id", form.collegeId)
+      .eq("college_id", colId)
       .eq("is_active", true)
       .order("display_order")
       .then(({ data }) => {
+        if (cancelled) return;
         setMajors(data || []);
-        if (data && form.majorId) {
-          const stillValid = data.some((m) => m.id === form.majorId);
-          if (!stillValid) {
-            updateField("majorId", "");
-          }
-        }
+        setForm((prev) => {
+          if (prev.collegeId !== colId) return prev; // college already changed
+          if (!prev.majorId) return prev;
+          const stillValid = data?.some((m) => m.id === prev.majorId);
+          if (stillValid) return prev;
+          return { ...prev, majorId: "" };
+        });
       });
+    return () => { cancelled = true; };
   }, [form.collegeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const validationChecks = {
