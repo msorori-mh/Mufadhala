@@ -37,26 +37,27 @@ const Register = () => {
   const [majors, setMajors] = useState<Tables<"majors">[]>([]);
 
   // Restore draft on mount — merge only empty fields if user already typed
+  // Restore draft on mount — always merge to avoid overwriting user input
   useEffect(() => {
+    let cancelled = false;
     loadDraft().then((draft) => {
+      if (cancelled) return;
       if (draft) {
-        if (!formTouched.current) {
-          setForm(draft);
-        } else {
-          // User already started typing — only fill fields that are still empty
-          setForm((prev) => {
-            const merged = { ...prev };
-            (Object.keys(draft) as (keyof RegistrationDraft)[]).forEach((key) => {
-              if (!merged[key] && draft[key]) {
-                merged[key] = draft[key];
-              }
-            });
-            return merged;
+        // Always use functional updater + merge to prevent race conditions
+        // where a stale promise overwrites freshly typed input
+        setForm((prev) => {
+          const merged = { ...prev };
+          (Object.keys(draft) as (keyof RegistrationDraft)[]).forEach((key) => {
+            if (!merged[key] && draft[key]) {
+              merged[key] = draft[key];
+            }
           });
-        }
+          return merged;
+        });
       }
       draftLoaded.current = true;
     });
+    return () => { cancelled = true; };
   }, []);
 
   // Auto-save draft on every change (after initial load)
