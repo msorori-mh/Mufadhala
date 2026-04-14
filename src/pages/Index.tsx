@@ -65,7 +65,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
          <h1 className="text-xl md:text-3xl font-bold text-primary-foreground mb-3 leading-tight">
             مِنَصَّتُكَ الأكاديمية لتبسيط المناهج ومُحاكاة الاختبارات
             <br />
-            <span className="text-secondary">مع رفيقك الذكي 'مُفاضِل'</span>
+            <span className="text-secondary">مع رفيقك الذكي <span className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-md font-extrabold tracking-wide">مُفاضِل</span></span>
           </h1>
           <div className="flex flex-wrap items-center justify-center gap-3 mb-5">
             {[
