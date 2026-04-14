@@ -225,7 +225,7 @@ const StudentPerformance = () => {
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto p-4 pb-28 md:pb-4 space-y-4">
+      <div className="max-w-lg mx-auto p-4 md:pb-4 space-y-4">
         {/* Header Info */}
         <div className="flex items-center justify-between">
           <div>

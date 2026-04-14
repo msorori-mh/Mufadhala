@@ -57,7 +57,7 @@ const DeleteAccount = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-28" dir="rtl">
+    <div className="min-h-screen bg-background" dir="rtl">
       {/* Header */}
       <div className="bg-destructive text-destructive-foreground p-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="p-1">
