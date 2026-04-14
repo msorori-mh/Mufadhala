@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -241,7 +242,7 @@ const LessonsList = () => {
     return result;
   }, [lessons, FREE_COUNT]);
 
-  const loading = accessLoading || (!isOffline && lessonsLoading) || subLoading;
+  const lessonsStillLoading = !isOffline && lessonsLoading;
 
   const filteredLessons = useMemo(() => {
     let result = lessons;
@@ -259,10 +260,24 @@ const LessonsList = () => {
 
   const progressPct = lessons.length > 0 ? Math.round((completedLessons.size / lessons.length) * 100) : 0;
 
-  if (loading) {
+  if (accessLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-background" dir="rtl">
+        <header className="gradient-primary text-white px-4 py-4">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <GraduationCap className="w-6 h-6" />
+              <span className="text-lg font-bold">المحتوى التعليمي</span>
+            </div>
+          </div>
+        </header>
+        <main className="max-w-4xl mx-auto px-4 py-6">
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-4 w-32 mb-6" />
+          <div className="space-y-3">
+            {[1,2,3,4].map(i => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}
+          </div>
+        </main>
       </div>
     );
   }
@@ -299,12 +314,19 @@ const LessonsList = () => {
           <>
             <div className="mb-4">
               <h1 className="text-2xl font-bold text-foreground">
-                {isOffline ? "الدروس المحفوظة" : `دروس ${majorName}`}
+                {isOffline ? "الدروس المحفوظة" : majorName ? `دروس ${majorName}` : <Skeleton className="h-7 w-40 inline-block" />}
               </h1>
               <p className="text-sm text-muted-foreground">
-                {isOffline ? `${lessons.length} درس محفوظ للقراءة أوفلاين` : `${lessons.length} درس متاح للتدريب`}
+                {lessonsStillLoading ? <Skeleton className="h-4 w-28 inline-block mt-1" /> : isOffline ? `${lessons.length} درس محفوظ للقراءة أوفلاين` : `${lessons.length} درس متاح للتدريب`}
               </p>
             </div>
+
+            {/* Inline skeleton while lessons load */}
+            {lessonsStillLoading && lessons.length === 0 && (
+              <div className="space-y-3">
+                {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}
+              </div>
+            )}
 
             {/* Search */}
             {lessons.length > 0 && (
