@@ -125,6 +125,7 @@ function App() {
           <AuthProvider>
             <OfflineExamSyncProvider>
               <Suspense fallback={<PageLoader />}>
+                <PageShell>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
@@ -172,6 +173,8 @@ function App() {
                   <Route path="/admin/tracks" element={<AdminTracks />} />
                   <Route path="/admin/profile" element={<AdminProfile />} />
                   <Route path="*" element={<NotFound />} />
+                </Routes>
+                </PageShell>
                 </Routes>
               </Suspense>
               <MobileBottomNav />
