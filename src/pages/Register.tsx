@@ -22,6 +22,8 @@ import { GOVERNORATES, YEMEN_PHONE_REGEX } from "@/domain/constants";
 import { trackFunnelEvent } from "@/lib/funnelTracking";
 
 const Register = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const { user: authUser, loading: authLoading } = useAuthContext();
   const [loading, setLoading] = useState(false);
 
