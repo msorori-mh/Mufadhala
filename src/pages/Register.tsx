@@ -397,7 +397,7 @@ const Register = () => {
                 value={form.collegeId}
                 onValueChange={(v) => {
                   userHasTyped.current = true;
-                  setFormTouched(true;
+                  setFormTouched(true);
                   setForm(prev => ({ ...prev, collegeId: v, majorId: "" }));
                 }}
                 placeholder={!form.universityId ? "اختر الجامعة أولاً" : "اختر الكلية"}
