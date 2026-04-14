@@ -6,22 +6,23 @@ import { Progress } from "@/components/ui/progress";
 import {
   GraduationCap, ChevronLeft, Clock, AlertTriangle, CheckCircle2,
   XCircle, Loader2, Play, Trophy, RotateCcw, Download, WifiOff, CloudUpload,
-  Share2, Copy, MessageCircle,
+  Share2, Copy, MessageCircle, ShieldCheck, SkipForward, Flag,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import PostExamUpgrade from "@/components/PostExamUpgrade";
 import AIPerformanceAnalysis from "@/components/AIPerformanceAnalysis";
 import {
-  useExamEngine,
+  useTrueExamEngine,
   formatTime,
   MAX_ATTEMPTS,
-  PER_QUESTION_TIME,
+  EXAM_TOTAL_QUESTIONS,
+  EXAM_PER_QUESTION_TIME,
   type Question,
-} from "@/features/exams/hooks/useExamEngine";
+} from "@/features/exams/hooks/useTrueExamEngine";
 
 const ExamSimulator = () => {
   const navigate = useNavigate();
-  const engine = useExamEngine();
+  const engine = useTrueExamEngine();
 
   // ── Loading ──────────────────────────────────────────────
   if (engine.loading) {
@@ -69,35 +70,36 @@ const ExamSimulator = () => {
 
           <div>
             <h1 className="text-2xl font-bold text-foreground">محاكاة اختبار {engine.majorName || "التخصص"}</h1>
-            <p className="text-sm text-muted-foreground mt-1">تدرب بذكاء.. لتضمن القبول.</p>
+            <p className="text-sm text-muted-foreground mt-1">اختبار حقيقي بزمن محدد — بدون أي مساعدات</p>
           </div>
 
-          {!engine.isOffline && engine.isTrial && engine.allQuestions.length > 0 && (
-            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900">
-              <CardContent className="py-4 px-4 flex items-start gap-3">
-                <Clock className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">تجربة مجانية — {engine.trialMinutesLabel} دقائق فقط</p>
-                  <p className="text-xs text-blue-600 dark:text-blue-500 mt-1">
-                    يمكنك تجربة محاكي الاختبار لمدة {engine.trialMinutesLabel} دقائق. لفتح الاختبار الكامل (90 دقيقة)، فعّل اشتراكك.
-                  </p>
-                  <Button size="sm" variant="outline" className="mt-2 text-xs" onClick={() => navigate("/subscription")}>
-                    تفعيل الاشتراك
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <Card>
+          <Card className="border-primary/30 bg-primary/5">
             <CardContent className="py-5 space-y-4">
-              <h2 className="font-semibold text-foreground">تعليمات الاختبار</h2>
+              <div className="flex items-center gap-2 mb-1">
+                <ShieldCheck className="w-5 h-5 text-primary" />
+                <h2 className="font-semibold text-foreground">وضع الاختبار الحقيقي</h2>
+              </div>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2"><Clock className="w-4 h-4 mt-0.5 text-primary shrink-0" /><span><strong>{engine.questionsAvailable} سؤال</strong> في <strong>{engine.isTrial ? `${engine.trialMinutesLabel} دقائق` : "90 دقيقة"}</strong> كحد أقصى</span></li>
-                <li className="flex items-start gap-2"><AlertTriangle className="w-4 h-4 mt-0.5 text-orange-500 shrink-0" /><span>حد أقصى <strong>دقيقتين</strong> لكل سؤال — ينتقل تلقائياً عند انتهاء الوقت</span></li>
-                {!engine.isTrial && (
-                  <li className="flex items-start gap-2"><RotateCcw className="w-4 h-4 mt-0.5 text-secondary shrink-0" /><span>مسموح بـ <strong>{MAX_ATTEMPTS} محاولات</strong> فقط {!engine.isOffline && `(استخدمت ${engine.attemptsUsed})`}</span></li>
-                )}
+                <li className="flex items-start gap-2">
+                  <Clock className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+                  <span><strong>{EXAM_TOTAL_QUESTIONS} سؤال</strong> في <strong>50 دقيقة</strong></span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Flag className="w-4 h-4 mt-0.5 text-orange-500 shrink-0" />
+                  <span><strong>20 صح/خطأ</strong> + <strong>30 اختيار متعدد</strong></span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 mt-0.5 text-orange-500 shrink-0" />
+                  <span>دقيقة واحدة لكل سؤال — ينتقل تلقائياً عند انتهاء الوقت</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <XCircle className="w-4 h-4 mt-0.5 text-destructive shrink-0" />
+                  <span><strong>لا تصحيح فوري</strong> — النتيجة والتفسير بعد الانتهاء فقط</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 text-green-500 shrink-0" />
+                  <span>يجب الضغط على <strong>"تأكيد الإجابة"</strong> لتثبيت كل إجابة</span>
+                </li>
               </ul>
             </CardContent>
           </Card>
@@ -107,7 +109,7 @@ const ExamSimulator = () => {
               {engine.downloadingOffline ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Download className="w-4 h-4 ml-2" />}
               {engine.hasOfflineQuestions
                 ? `تحديث الأسئلة المحفوظة (${engine.offlineQuestionCount} سؤال)`
-                : `تحميل ${engine.allQuestions.length} سؤال للأوفلاين`}
+                : `تحميل الأسئلة للأوفلاين`}
             </Button>
           )}
 
@@ -138,7 +140,7 @@ const ExamSimulator = () => {
             <Play className="w-5 h-5 ml-2" />
             {engine.isOffline
               ? (engine.hasOfflineQuestions ? "ابدأ اختبار أوفلاين" : "لا توجد أسئلة محفوظة")
-              : (engine.attemptsUsed >= MAX_ATTEMPTS && engine.canAccessFull ? "استنفذت جميع المحاولات" : engine.isTrial ? `ابدأ التجربة المجانية (${engine.trialMinutesLabel} دقائق)` : "ابدأ الاختبار")}
+              : "ابدأ الاختبار الحقيقي"}
           </Button>
 
           {engine.pastAttempts.length > 0 && (
@@ -167,6 +169,9 @@ const ExamSimulator = () => {
   // ── EXAM PHASE ───────────────────────────────────────────
   if (engine.phase === "exam" && engine.currentQuestion) {
     const q = engine.currentQuestion;
+    const isTrueFalse = q.question_type === "true_false";
+    const options = isTrueFalse ? (["a", "b"] as const) : (["a", "b", "c", "d"] as const);
+
     return (
       <div className="min-h-screen bg-background flex flex-col">
         {(engine.isOffline || engine.isOfflineExam) && (
@@ -176,18 +181,21 @@ const ExamSimulator = () => {
           </div>
         )}
 
-        <div className="bg-card border-b px-4 py-2">
+        {/* Top bar */}
+        <div className="bg-card border-b px-4 py-2 sticky top-0 z-10">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
-                <Badge variant="outline" className="text-xs">{engine.currentIndex + 1} / {engine.examQuestions.length}</Badge>
+                <Badge variant="outline" className="text-xs font-mono">
+                  {engine.currentIndex + 1} / {engine.examQuestions.length}
+                </Badge>
                 <span className="text-xs text-muted-foreground">أُجيب: {engine.answeredCount}</span>
               </div>
               <div className="flex items-center gap-3">
-                <div className={`flex items-center gap-1 text-xs font-mono ${engine.timeWarning ? "text-red-500 animate-pulse" : "text-muted-foreground"}`}>
+                <div className={`flex items-center gap-1 text-xs font-mono ${engine.timeWarning ? "text-destructive animate-pulse font-bold" : "text-muted-foreground"}`}>
                   <Clock className="w-3 h-3" />{formatTime(engine.questionTimeLeft)}
                 </div>
-                <div className={`flex items-center gap-1 text-xs font-mono ${engine.totalWarning ? "text-red-500" : "text-foreground"}`}>
+                <div className={`flex items-center gap-1 text-xs font-mono ${engine.totalWarning ? "text-destructive" : "text-foreground"}`}>
                   <Clock className="w-3 h-3" />{formatTime(engine.totalTimeLeft)}
                 </div>
               </div>
@@ -195,13 +203,14 @@ const ExamSimulator = () => {
             <Progress value={engine.progress} className="h-1.5" />
             <div className="mt-1 h-1 bg-muted rounded-full overflow-hidden">
               <div
-                className={`h-full transition-all duration-1000 rounded-full ${engine.timeWarning ? "bg-red-500" : "bg-primary/50"}`}
-                style={{ width: `${(engine.questionTimeLeft / PER_QUESTION_TIME) * 100}%` }}
+                className={`h-full transition-all duration-1000 rounded-full ${engine.timeWarning ? "bg-destructive" : "bg-primary/50"}`}
+                style={{ width: `${(engine.questionTimeLeft / EXAM_PER_QUESTION_TIME) * 100}%` }}
               />
             </div>
           </div>
         </div>
 
+        {/* Question */}
         <main className="flex-1 max-w-2xl mx-auto px-4 py-6 w-full">
           <Card>
             <CardContent className="py-6 px-5">
@@ -210,41 +219,34 @@ const ExamSimulator = () => {
                   {q.subject === "biology" ? "أحياء" : q.subject === "chemistry" ? "كيمياء" : q.subject === "physics" ? "فيزياء" : q.subject === "math" ? "رياضيات" : q.subject === "english" ? "إنجليزي" : q.subject === "iq" ? "ذكاء" : q.subject}
                 </Badge>
               )}
-              <p className="font-semibold text-foreground text-base mb-5">{engine.currentIndex + 1}. {q.question_text}</p>
-              <div className="space-y-3">
-                {(["a", "b", "c", "d"] as const).map((opt) => {
-                  const text = q[`option_${opt}` as keyof Question] as string;
-                  const userAnswer = engine.answers[q.id];
-                  const isSelected = userAnswer === opt;
-                  const isCorrectOpt = q.correct_option === opt;
-                  const answered = !!userAnswer;
+              {isTrueFalse && (
+                <Badge variant="secondary" className="mb-2 text-xs mr-1">صح / خطأ</Badge>
+              )}
+              <p className="font-semibold text-foreground text-base mb-5">
+                {engine.currentIndex + 1}. {q.question_text}
+              </p>
 
-                  let optClass = "border-border hover:border-primary/50 hover:bg-muted";
-                  if (answered && engine.showExplanation) {
-                    if (isCorrectOpt) optClass = "border-green-500 bg-green-50 dark:bg-green-950/30";
-                    else if (isSelected) optClass = "border-destructive bg-destructive/10";
-                    else optClass = "border-border opacity-50";
-                  } else if (answered && isSelected && !engine.showExplanation) {
-                    optClass = "border-green-500 bg-green-50 dark:bg-green-950/30";
-                  } else if (isSelected) {
-                    optClass = "border-primary bg-primary/10 shadow-sm";
-                  }
+              {/* Options — neutral selection only, NO green/red feedback */}
+              <div className="space-y-3">
+                {options.map((opt) => {
+                  const text = q[`option_${opt}` as keyof Question] as string;
+                  if (!text) return null;
+                  const isSelected = engine.selectedOption === opt;
 
                   return (
                     <button
                       key={opt}
-                      onClick={() => engine.selectAnswer(opt)}
-                      disabled={!!userAnswer}
-                      className={`flex items-center gap-2 sm:gap-3 w-full text-right p-3 sm:p-4 rounded-xl border-2 transition-all text-sm ${optClass}`}
+                      onClick={() => engine.selectOption(opt)}
+                      className={`flex items-center gap-2 sm:gap-3 w-full text-right p-3 sm:p-4 rounded-xl border-2 transition-all text-sm ${
+                        isSelected
+                          ? "border-primary bg-primary/10 shadow-sm"
+                          : "border-border hover:border-primary/50 hover:bg-muted"
+                      }`}
                     >
                       <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
-                        answered && engine.showExplanation && isCorrectOpt ? "bg-green-500 text-white" :
-                        answered && engine.showExplanation && isSelected ? "bg-destructive text-destructive-foreground" :
                         isSelected ? "bg-primary text-primary-foreground" : "bg-muted"
                       }`}>
-                        {answered && engine.showExplanation && isCorrectOpt ? <CheckCircle2 className="w-4 h-4" /> :
-                         answered && engine.showExplanation && isSelected ? <XCircle className="w-4 h-4" /> :
-                         opt.toUpperCase()}
+                        {opt.toUpperCase()}
                       </span>
                       <span className="flex-1">{text}</span>
                     </button>
@@ -252,29 +254,26 @@ const ExamSimulator = () => {
                 })}
               </div>
 
-              {engine.showExplanation && (
-                <div className="mt-4 p-4 rounded-lg bg-destructive/5 border border-destructive/20 space-y-2">
-                  <p className="text-sm font-semibold text-destructive flex items-center gap-1">
-                    <XCircle className="w-4 h-4" /> إجابة خاطئة
-                  </p>
-                  <p className="text-sm text-foreground">
-                    الإجابة الصحيحة: <strong className="text-green-600">{(q as any)[`option_${q.correct_option}`]}</strong>
-                  </p>
-                  {q.explanation && <p className="text-sm text-muted-foreground">{q.explanation}</p>}
-                  <Button size="sm" onClick={engine.dismissExplanation} className="mt-2">التالي ←</Button>
-                </div>
-              )}
-
-              {!engine.showExplanation && (
-                <div className="flex items-center justify-between mt-6">
-                  <Button variant="ghost" size="sm" onClick={() => engine.moveToNext(engine.answers, engine.examQuestions, engine.currentIndex)}>
-                    تخطي →
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={() => engine.finishExam(engine.answers, engine.examQuestions)}>
-                    إنهاء الاختبار
-                  </Button>
-                </div>
-              )}
+              {/* Action buttons */}
+              <div className="flex items-center justify-between mt-6 gap-2">
+                <Button
+                  onClick={engine.confirmAnswer}
+                  disabled={!engine.selectedOption}
+                  className="flex-1"
+                  size="lg"
+                >
+                  <CheckCircle2 className="w-4 h-4 ml-2" />
+                  تأكيد الإجابة
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={engine.finishExam}
+                  className="shrink-0"
+                >
+                  إنهاء الاختبار
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </main>
@@ -283,6 +282,10 @@ const ExamSimulator = () => {
   }
 
   // ── RESULT PHASE ─────────────────────────────────────────
+  const unansweredFinal = engine.examQuestions.length - Object.keys(engine.answers).length;
+  const correctFinal = engine.examQuestions.filter(q => engine.answers[q.id] === q.correct_option).length;
+  const wrongFinal = engine.examQuestions.filter(q => engine.answers[q.id] && engine.answers[q.id] !== q.correct_option).length;
+
   return (
     <div className="min-h-screen bg-background">
       <PageHeader title="نتيجة الاختبار" backTo="/dashboard" backLabel="الرئيسية" />
@@ -298,33 +301,55 @@ const ExamSimulator = () => {
           </Card>
         )}
 
-        {engine.trialExpired && (
-          <Card className="border-primary bg-primary/5">
-            <CardContent className="py-5 text-center space-y-3">
-              <Clock className="w-10 h-10 text-primary mx-auto" />
-              <p className="font-semibold text-foreground">انتهت التجربة المجانية ({engine.trialMinutesLabel} دقائق)</p>
-              <p className="text-sm text-muted-foreground">
-                فعّل اشتراكك لفتح الاختبار الكامل (90 دقيقة) مع {MAX_ATTEMPTS} محاولات وتحليل أداء مفصّل
-              </p>
-              <Button onClick={() => navigate("/subscription")}>تفعيل الاشتراك الآن</Button>
+        {engine.examStatus === "expired" && (
+          <Card className="border-orange-300 bg-orange-50 dark:bg-orange-950/20">
+            <CardContent className="py-4 text-center">
+              <Clock className="w-8 h-8 text-orange-500 mx-auto mb-2" />
+              <p className="font-semibold text-foreground">انتهى الوقت!</p>
+              <p className="text-sm text-muted-foreground mt-1">تم تسليم الاختبار تلقائياً لأن الوقت انتهى</p>
             </CardContent>
           </Card>
         )}
 
+        {/* Score Card */}
         <Card className={engine.passed ? "border-green-500" : "border-orange-500"}>
           <CardContent className="py-8 text-center">
             {engine.passed ? <Trophy className="w-16 h-16 text-green-500 mx-auto mb-3" /> : <XCircle className="w-16 h-16 text-orange-500 mx-auto mb-3" />}
             <p className="text-4xl font-bold text-foreground">{engine.percentage}%</p>
             <p className="text-lg text-muted-foreground mt-1">{engine.resultScore} / {engine.resultTotal}</p>
             <p className="text-sm mt-3">
-              {engine.trialExpired ? "هذه نتيجتك في الدقائق الخمس الأولى. فعّل اشتراكك لتتدرب على الاختبار الكامل!" : engine.passed ? "أداء ممتاز! أنت جاهز للاختبار الحقيقي 🎉" : "تحتاج مزيداً من التدريب. راجع الدروس وحاول مرة أخرى"}
+              {engine.passed ? "أداء ممتاز! أنت جاهز للاختبار الحقيقي 🎉" : "تحتاج مزيداً من التدريب. راجع الدروس وحاول مرة أخرى"}
             </p>
           </CardContent>
         </Card>
 
+        {/* Stats breakdown */}
+        <div className="grid grid-cols-3 gap-3">
+          <Card>
+            <CardContent className="py-4 text-center">
+              <CheckCircle2 className="w-5 h-5 text-green-500 mx-auto mb-1" />
+              <p className="text-xl font-bold text-green-600">{correctFinal}</p>
+              <p className="text-xs text-muted-foreground">صحيحة</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="py-4 text-center">
+              <XCircle className="w-5 h-5 text-destructive mx-auto mb-1" />
+              <p className="text-xl font-bold text-destructive">{wrongFinal}</p>
+              <p className="text-xs text-muted-foreground">خاطئة</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="py-4 text-center">
+              <SkipForward className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
+              <p className="text-xl font-bold text-muted-foreground">{unansweredFinal}</p>
+              <p className="text-xs text-muted-foreground">لم تُجب</p>
+            </CardContent>
+          </Card>
+        </div>
+
         <ShareResult percentage={engine.percentage} score={engine.resultScore} total={engine.resultTotal} toast={engine.toast} />
 
-        {/* AI Performance Analysis */}
         <AIPerformanceAnalysis
           questions={engine.examQuestions}
           answers={engine.answers}
@@ -332,30 +357,45 @@ const ExamSimulator = () => {
           hasSubscription={engine.hasActiveSubscription}
         />
 
-        {/* Upgrade CTA for free users after exam */}
-        {!engine.hasActiveSubscription && !engine.trialExpired && (
+        {!engine.hasActiveSubscription && (
           <PostExamUpgrade percentage={engine.percentage} totalQuestions={engine.examQuestions.length} />
         )}
 
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-muted-foreground">مراجعة الإجابات</h3>
+        {/* Full Review Report */}
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-muted-foreground">مراجعة تفصيلية للإجابات</h3>
           {engine.examQuestions.map((q, i) => {
             const userAnswer = engine.answers[q.id];
             const isCorrect = userAnswer === q.correct_option;
+            const isUnanswered = !userAnswer;
+
             return (
-              <Card key={q.id} className={`border-r-4 ${isCorrect ? "border-r-green-500" : "border-r-red-500"}`}>
+              <Card key={q.id} className={`border-r-4 ${isCorrect ? "border-r-green-500" : isUnanswered ? "border-r-muted-foreground" : "border-r-destructive"}`}>
                 <CardContent className="py-3 px-4">
                   <div className="flex items-start gap-2">
-                    {isCorrect ? <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" /> : <XCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />}
+                    {isCorrect ? <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" /> :
+                     isUnanswered ? <SkipForward className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /> :
+                     <XCircle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{i + 1}. {q.question_text}</p>
-                      {!isCorrect && (
+
+                      {isUnanswered && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          إجابتك: <span className="text-red-500">{userAnswer ? (q as any)[`option_${userAnswer}`] : "لم تُجب"}</span>
-                          {" • "}الصحيحة: <span className="text-green-600">{(q as any)[`option_${q.correct_option}`]}</span>
+                          <span className="text-muted-foreground font-medium">لم تُجب</span>
+                          {" • "}الصحيحة: <span className="text-green-600 font-medium">{(q as any)[`option_${q.correct_option}`]}</span>
                         </p>
                       )}
-                      {!isCorrect && q.explanation && <p className="text-xs text-muted-foreground mt-1 bg-muted p-2 rounded">{q.explanation}</p>}
+
+                      {!isCorrect && !isUnanswered && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          إجابتك: <span className="text-destructive font-medium">{(q as any)[`option_${userAnswer}`]}</span>
+                          {" • "}الصحيحة: <span className="text-green-600 font-medium">{(q as any)[`option_${q.correct_option}`]}</span>
+                        </p>
+                      )}
+
+                      {!isCorrect && q.explanation && (
+                        <p className="text-xs text-muted-foreground mt-1 bg-muted p-2 rounded">{q.explanation}</p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
