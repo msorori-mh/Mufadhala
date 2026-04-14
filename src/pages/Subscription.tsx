@@ -835,10 +835,25 @@ const Subscription = () => {
                       </CardContent>
                     </Card>
                   )}
+
+                  {/* CTA: scroll to upload */}
+                  <div className="text-center space-y-2 pt-1">
+                    <p className="text-xs text-muted-foreground">بعد إتمام التحويل، انتقل لرفع السند</p>
+                    <Button
+                      className="w-full sm:w-auto px-8 h-12 text-base font-bold gap-2"
+                      onClick={() => {
+                        const el = document.getElementById("receipt-upload-section");
+                        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+                      }}
+                    >
+                      <Upload className="w-5 h-5" />
+                      تم التحويل، ارفع السند
+                    </Button>
+                  </div>
                 </div>
               );
             })()}
-            <Card>
+            <Card id="receipt-upload-section">
               <CardHeader className="pb-2"><CardTitle className="text-base">رفع سند التحويل</CardTitle></CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -849,7 +864,7 @@ const Subscription = () => {
 
                   {!receiptFile ? (
                     <>
-                      <p className="text-sm text-muted-foreground">قم برفع صورة سند التحويل</p>
+                      <p className="text-sm text-muted-foreground">ارفع صورة واضحة لسند التحويل ليتم مراجعتها</p>
                       <div
                         className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors"
                         onClick={() => document.getElementById("receipt")?.click()}
