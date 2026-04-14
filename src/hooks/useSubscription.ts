@@ -27,7 +27,7 @@ export const useSubscription = (userId: string | undefined): SubscriptionStatus 
 
   const { data, isLoading } = useQuery({
     queryKey: ["subscription", userId],
-    queryFn: async (): Promise<Omit<SubscriptionStatus, "loading"> & { rawStatus: string | null }> => {
+    queryFn: async () => {
       const { data } = await supabase
         .from("subscriptions")
         .select("status, expires_at, plan_id, trial_ends_at, subscription_plans(slug, allowed_major_ids)")
@@ -38,8 +38,9 @@ export const useSubscription = (userId: string | undefined): SubscriptionStatus 
       if (!data || data.length === 0) {
         return {
           hasSubscription: false, isActive: false, isPending: false,
-          isTrial: false, trialEndsAt: null, expiresAt: null,
-          planId: null, planSlug: null, allowedMajorIds: null, rawStatus: null,
+          isTrial: false, trialEndsAt: null as string | null, expiresAt: null as string | null,
+          planId: null as string | null, planSlug: null as string | null,
+          allowedMajorIds: null as string[] | null, rawStatus: null as string | null,
         };
       }
 
@@ -63,11 +64,7 @@ export const useSubscription = (userId: string | undefined): SubscriptionStatus 
     },
     enabled: !!userId,
     staleTime: 30_000,
-    // Poll every 20s when subscription is pending, otherwise every 3 min
-    refetchInterval: (query) => {
-      const status = query.state.data?.rawStatus;
-      return status === "pending" ? 20_000 : 3 * 60_000;
-    },
+    refetchInterval: 30_000,
   });
 
   // Show toast when status transitions from pending → active/rejected
