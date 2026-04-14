@@ -175,7 +175,6 @@ function App() {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 </PageShell>
-                </Routes>
               </Suspense>
               <MobileBottomNav />
               <Suspense fallback={null}>
