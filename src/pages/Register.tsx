@@ -20,32 +20,51 @@ import {
 } from "@/lib/registrationDraft";
 import { GOVERNORATES, YEMEN_PHONE_REGEX } from "@/domain/constants";
 import { trackFunnelEvent } from "@/lib/funnelTracking";
+import { isNativePlatform } from "@/lib/capacitor";
+import { saveNativeSession } from "@/lib/nativeSessionStorage";
+
+const DEBUG_NATIVE = false; // Set true for on-device APK debugging
 
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user: authUser, loading: authLoading } = useAuthContext();
   const [loading, setLoading] = useState(false);
+  const [submitPhase, setSubmitPhase] = useState("");
 
-  // Unified form state
+  // Form state — kept purely local until submit
   const [form, setForm] = useState<RegistrationDraft>(emptyDraft);
   const draftLoaded = useRef(false);
+  const userHasTyped = useRef(false);
   const [formTouched, setFormTouched] = useState(false);
+  const mountCount = useRef(0);
+
+  // Debug state for APK tracing
+  const [debugLog, setDebugLog] = useState<string[]>([]);
+  const addDebug = useCallback((msg: string) => {
+    if (!DEBUG_NATIVE) return;
+    const ts = new Date().toISOString().slice(11, 23);
+    setDebugLog(prev => [...prev.slice(-30), `${ts} ${msg}`]);
+    console.log(`[REG:DEBUG] ${msg}`);
+  }, []);
+
+  mountCount.current += 1;
 
   // Data
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
   const [colleges, setColleges] = useState<Tables<"colleges">[]>([]);
   const [majors, setMajors] = useState<Tables<"majors">[]>([]);
 
-  // Restore draft on mount — merge only empty fields if user already typed
-  // Restore draft on mount — always merge to avoid overwriting user input
+  // Restore draft on mount — ONLY if user hasn't started typing
   useEffect(() => {
     let cancelled = false;
+    addDebug(`[MOUNT] count=${mountCount.current} native=${isNativePlatform()}`);
+
     loadDraft().then((draft) => {
       if (cancelled) return;
-      if (draft) {
-        // Always use functional updater + merge to prevent race conditions
-        // where a stale promise overwrites freshly typed input
+      addDebug(`[DRAFT:loaded] found=${!!draft} userTyped=${userHasTyped.current}`);
+
+      if (draft && !userHasTyped.current) {
         setForm((prev) => {
           const merged = { ...prev };
           (Object.keys(draft) as (keyof RegistrationDraft)[]).forEach((key) => {
@@ -57,26 +76,31 @@ const Register = () => {
         });
       }
       draftLoaded.current = true;
+    }).catch((e) => {
+      addDebug(`[DRAFT:error] ${e}`);
+      draftLoaded.current = true;
     });
-    return () => { cancelled = true; };
-  }, []);
 
-  // Auto-save draft on every change (after initial load)
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-save draft on every change (debounced in saveDraft for native)
   useEffect(() => {
     if (!draftLoaded.current) return;
     saveDraft(form);
   }, [form]);
 
-  // Update a single field
+  // Update a single field — marks user as having typed
   const updateField = useCallback(
     <K extends keyof RegistrationDraft>(key: K, value: RegistrationDraft[K]) => {
+      userHasTyped.current = true;
       setFormTouched(true);
       setForm((prev) => ({ ...prev, [key]: value }));
     },
     [],
   );
 
-  // Redirect if already logged in — uses AuthContext (no race condition)
+  // Redirect if already logged in
   useEffect(() => {
     if (authLoading) return;
     if (authUser) {
@@ -104,6 +128,7 @@ const Register = () => {
       setMajors([]);
       return;
     }
+    let cancelled = false;
     const currentCollegeId = form.collegeId;
     supabase
       .from("colleges")
@@ -112,15 +137,16 @@ const Register = () => {
       .eq("is_active", true)
       .order("display_order")
       .then(({ data }) => {
+        if (cancelled) return;
         setColleges(data || []);
         if (data && currentCollegeId) {
           const stillValid = data.some((c) => c.id === currentCollegeId);
           if (!stillValid) {
-            updateField("collegeId", "");
-            updateField("majorId", "");
+            setForm(prev => ({ ...prev, collegeId: "", majorId: "" }));
           }
         }
       });
+    return () => { cancelled = true; };
   }, [form.universityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch majors when college changes
@@ -129,6 +155,8 @@ const Register = () => {
       setMajors([]);
       return;
     }
+    let cancelled = false;
+    const currentMajorId = form.majorId;
     supabase
       .from("majors")
       .select("*")
@@ -136,14 +164,16 @@ const Register = () => {
       .eq("is_active", true)
       .order("display_order")
       .then(({ data }) => {
+        if (cancelled) return;
         setMajors(data || []);
-        if (data && form.majorId) {
-          const stillValid = data.some((m) => m.id === form.majorId);
+        if (data && currentMajorId) {
+          const stillValid = data.some((m) => m.id === currentMajorId);
           if (!stillValid) {
-            updateField("majorId", "");
+            setForm(prev => ({ ...prev, majorId: "" }));
           }
         }
       });
+    return () => { cancelled = true; };
   }, [form.collegeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const validationChecks = {
@@ -155,13 +185,6 @@ const Register = () => {
     collegeId: !!form.collegeId,
   };
   const isFormValid = Object.values(validationChecks).every(Boolean);
-
-  // Debug: trace exact validation state (remove after confirming fix)
-  useEffect(() => {
-    if (formTouched) {
-      console.log('[REG] validation:', validationChecks, 'valid:', Object.values(validationChecks).every(Boolean));
-    }
-  }, [form]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fieldLabels: Record<string, string> = {
     firstName: "الاسم الأول",
@@ -181,7 +204,17 @@ const Register = () => {
       return;
     }
     setLoading(true);
+    addDebug("[SUBMIT:start]");
+    setSubmitPhase("invoking");
+
     try {
+      // Set a timeout to prevent infinite hang
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
+
+      setSubmitPhase("calling register-student");
+      addDebug("[SUBMIT:invoke-register-student]");
+
       const res = await supabase.functions.invoke("register-student", {
         body: {
           phone: form.phoneNumber,
@@ -195,33 +228,55 @@ const Register = () => {
         },
       });
 
-      // Handle edge function or backend errors
+      clearTimeout(timeout);
+      addDebug(`[SUBMIT:edge-response] error=${!!res.error} data=${!!res.data}`);
+
       const errorMsg = res.data?.error || (res.error ? "فشل في الاتصال بالخادم" : null);
       if (errorMsg) {
         toast({ variant: "destructive", title: "خطأ", description: errorMsg });
         setLoading(false);
+        setSubmitPhase("");
         return;
       }
 
-      // Set session and verify it was established
+      // Set session
+      setSubmitPhase("setting session");
+      addDebug("[SUBMIT:session-sync]");
+
       const { access_token, refresh_token } = res.data.session;
       const { error: sessionError } = await supabase.auth.setSession({ access_token, refresh_token });
+
       if (sessionError) {
         console.error("setSession error:", sessionError);
+        addDebug(`[SUBMIT:session-error] ${sessionError.message}`);
         toast({ variant: "destructive", title: "خطأ", description: "فشل في تثبيت الجلسة. يرجى المحاولة مرة أخرى." });
         setLoading(false);
+        setSubmitPhase("");
         return;
       }
 
-      // Only clear draft after confirmed session
-      await clearDraft();
+      // Save native session non-blocking (fire-and-forget)
+      if (isNativePlatform()) {
+        saveNativeSession(access_token, refresh_token).catch(e =>
+          console.warn('[SUBMIT:saveNative] failed:', e)
+        );
+      }
+
+      // Clear draft non-blocking (fire-and-forget)
+      addDebug("[SUBMIT:clearDraft]");
+      clearDraft().catch(e => console.warn('[SUBMIT:clearDraft] failed:', e));
+
       trackFunnelEvent("user_registered");
+      setSubmitPhase("navigating");
+      addDebug("[SUBMIT:navigate]");
       toast({ title: "تم التسجيل بنجاح! 🎉" });
       navigate("/welcome", { replace: true });
-    } catch {
+    } catch (e: any) {
+      addDebug(`[SUBMIT:error] ${e?.message || e}`);
       toast({ variant: "destructive", title: "خطأ", description: "حدث خطأ غير متوقع" });
     }
     setLoading(false);
+    setSubmitPhase("");
   };
 
   if (authLoading) {
@@ -306,9 +361,9 @@ const Register = () => {
               <NativeSelect
                 value={form.universityId}
                 onValueChange={(v) => {
-                  updateField("universityId", v);
-                  updateField("collegeId", "");
-                  updateField("majorId", "");
+                  userHasTyped.current = true;
+                  setFormTouched(true);
+                  setForm(prev => ({ ...prev, universityId: v, collegeId: "", majorId: "" }));
                 }}
                 placeholder="اختر الجامعة"
                 options={universities.map((u) => ({ value: u.id, label: u.name_ar }))}
@@ -341,8 +396,9 @@ const Register = () => {
               <NativeSelect
                 value={form.collegeId}
                 onValueChange={(v) => {
-                  updateField("collegeId", v);
-                  updateField("majorId", "");
+                  userHasTyped.current = true;
+                  setFormTouched(true;
+                  setForm(prev => ({ ...prev, collegeId: v, majorId: "" }));
                 }}
                 placeholder={!form.universityId ? "اختر الجامعة أولاً" : "اختر الكلية"}
                 disabled={!form.universityId}
@@ -376,6 +432,11 @@ const Register = () => {
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
               {loading ? "جاري التسجيل..." : "ابدأ الآن"}
             </Button>
+
+            {loading && submitPhase && (
+              <p className="text-xs text-center text-muted-foreground">{submitPhase}...</p>
+            )}
+
             <p className="mt-2 text-center text-xs text-muted-foreground">
               بتسجيلك فإنك توافق على{" "}
               <Link to="/privacy-policy" className="text-primary hover:underline">
@@ -386,7 +447,16 @@ const Register = () => {
                 شروط الاستخدام
               </Link>
             </p>
-            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v2.1</p>
+            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v2.2</p>
+
+            {/* APK Debug Panel — only visible when DEBUG_NATIVE=true */}
+            {DEBUG_NATIVE && (
+              <div className="mt-4 p-2 bg-black/80 text-green-400 text-[9px] font-mono rounded max-h-40 overflow-auto" dir="ltr">
+                <div>mount={mountCount.current} native={String(isNativePlatform())} phase={submitPhase || "idle"}</div>
+                <div>form: fn={form.firstName?.length || 0} ln={form.fourthName?.length || 0} ph={form.phoneNumber?.length || 0} gov={!!form.governorate} uni={!!form.universityId} col={!!form.collegeId}</div>
+                {debugLog.map((l, i) => <div key={i}>{l}</div>)}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
