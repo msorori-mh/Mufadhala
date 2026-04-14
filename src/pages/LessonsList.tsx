@@ -314,12 +314,19 @@ const LessonsList = () => {
           <>
             <div className="mb-4">
               <h1 className="text-2xl font-bold text-foreground">
-                {isOffline ? "الدروس المحفوظة" : `دروس ${majorName}`}
+                {isOffline ? "الدروس المحفوظة" : majorName ? `دروس ${majorName}` : <Skeleton className="h-7 w-40 inline-block" />}
               </h1>
               <p className="text-sm text-muted-foreground">
-                {isOffline ? `${lessons.length} درس محفوظ للقراءة أوفلاين` : `${lessons.length} درس متاح للتدريب`}
+                {lessonsStillLoading ? <Skeleton className="h-4 w-28 inline-block mt-1" /> : isOffline ? `${lessons.length} درس محفوظ للقراءة أوفلاين` : `${lessons.length} درس متاح للتدريب`}
               </p>
             </div>
+
+            {/* Inline skeleton while lessons load */}
+            {lessonsStillLoading && lessons.length === 0 && (
+              <div className="space-y-3">
+                {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}
+              </div>
+            )}
 
             {/* Search */}
             {lessons.length > 0 && (
