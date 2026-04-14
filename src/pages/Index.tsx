@@ -102,7 +102,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
             <Bot className="w-5 h-5 text-accent shrink-0" />
             <div>
               <span className="font-bold text-foreground text-sm">المساعد الذكي "مُفاضِل"</span>
-              <span className="text-muted-foreground text-xs mr-1">— مساعدك الشخصي بالذكاء الاصطناعي، يتابع تقدمك ويقترح خطة مذاكرة مخصصة لنقاط ضعفك.</span>
+              <span className="text-foreground/80 text-xs mr-1 font-medium">— مساعدك الشخصي بالذكاء الاصطناعي، يتابع تقدمك ويقترح خطة مذاكرة مخصصة لنقاط ضعفك.</span>
             </div>
           </div>
         </div>
