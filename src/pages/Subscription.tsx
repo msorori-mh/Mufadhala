@@ -100,6 +100,46 @@ const Subscription = () => {
     fetchAll();
   }, [authLoading, user]);
 
+  // Auto-poll subscription status every 20s when pending
+  const prevSubStatusRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!user || !subscription || subscription.status !== "pending") return;
+    prevSubStatusRef.current = subscription.status;
+
+    const interval = setInterval(async () => {
+      const { data } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (data && data.length > 0) {
+        const latest = data[0] as any as SubRecord;
+        if (latest.status !== prevSubStatusRef.current) {
+          setSubscription(latest);
+          prevSubStatusRef.current = latest.status;
+
+          if (latest.status === "active") {
+            toast({ title: "🎉 تم قبول الدفع وتفعيل اشتراكك بنجاح!" });
+          } else if (latest.status === "rejected") {
+            toast({ variant: "destructive", title: "تم رفض طلب الدفع", description: "يرجى المحاولة مرة أخرى" });
+          }
+
+          // Also refresh payment requests
+          const { data: pr } = await supabase
+            .from("payment_requests")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false });
+          if (pr) setPaymentRequests(pr as any as PaymentRequest[]);
+        }
+      }
+    }, 20_000);
+
+    return () => clearInterval(interval);
+  }, [user, subscription?.status]);
+
   const isActive = subscription?.status === "active";
   const isPending = subscription?.status === "pending";
   const isTrial = subscription?.status === "trial" && subscription?.trial_ends_at && new Date(subscription.trial_ends_at) > new Date();
