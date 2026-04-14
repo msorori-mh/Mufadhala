@@ -21,8 +21,8 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * ═══════════════════════════════════════════════════════════════
  */
 
-const VERSION_NAME = 'v5.0.1-stable';
-const VERSION_CODE = 500001; // 5 = major, 0 = minor, 0 = patch, 01 = build
+const VERSION_NAME = 'v5.0.0-field-guard';
+const VERSION_CODE = 500000; // 5 = major, 0 = minor, 0 = patch, 00 = build
 
 const config: CapacitorConfig = {
   appId: 'com.mufadhala.app',
