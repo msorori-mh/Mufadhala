@@ -45,7 +45,14 @@ export async function loadDraft(): Promise<RegistrationDraft | null> {
     }
     if (json) {
       const parsed = JSON.parse(json);
-      return { ...emptyDraft, ...parsed };
+      // Only pick known keys — ignore legacy fields (secondName, thirdName, etc.)
+      const safe: RegistrationDraft = { ...emptyDraft };
+      for (const key of Object.keys(emptyDraft) as (keyof RegistrationDraft)[]) {
+        if (key in parsed && typeof parsed[key] === 'string') {
+          safe[key] = parsed[key];
+        }
+      }
+      return safe;
     }
   } catch {}
   return null;
