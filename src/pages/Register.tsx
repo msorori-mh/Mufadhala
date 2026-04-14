@@ -106,6 +106,7 @@ const Register = () => {
       setMajors([]);
       return;
     }
+    const currentCollegeId = form.collegeId;
     supabase
       .from("colleges")
       .select("*")
@@ -114,8 +115,8 @@ const Register = () => {
       .order("display_order")
       .then(({ data }) => {
         setColleges(data || []);
-        if (data && form.collegeId) {
-          const stillValid = data.some((c) => c.id === form.collegeId);
+        if (data && currentCollegeId) {
+          const stillValid = data.some((c) => c.id === currentCollegeId);
           if (!stillValid) {
             updateField("collegeId", "");
             updateField("majorId", "");
