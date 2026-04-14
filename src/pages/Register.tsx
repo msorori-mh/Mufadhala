@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,15 @@ import {
 } from "@/lib/registrationDraft";
 import { GOVERNORATES, YEMEN_PHONE_REGEX } from "@/domain/constants";
 import { trackFunnelEvent } from "@/lib/funnelTracking";
+import RegDebugPanel, { type DebugEvent } from "@/components/RegDebugPanel";
+
+// ─── Debug helpers ───
+const _ts = () => {
+  const d = new Date();
+  return `${d.toTimeString().slice(0, 8)}.${String(d.getMilliseconds()).padStart(3, "0")}`;
+};
+
+let _globalMountCount = 0;
 
 const Register = () => {
   const navigate = useNavigate();
@@ -27,25 +36,90 @@ const Register = () => {
   const { user: authUser, loading: authLoading } = useAuthContext();
   const [loading, setLoading] = useState(false);
 
-  // Unified form state
-  const [form, setForm] = useState<RegistrationDraft>(emptyDraft);
+  // ─── Debug state ───
+  const mountId = useRef(++_globalMountCount);
+  const [debugEvents, setDebugEvents] = useState<DebugEvent[]>([]);
+  const [viewportH, setViewportH] = useState(window.innerHeight);
+
+  const pushEvent = useCallback((label: string, detail?: string) => {
+    const ev: DebugEvent = { time: _ts(), label, detail };
+    console.log(`[REG-DBG] ${ev.time} ${label}`, detail || "");
+    setDebugEvents((prev) => [...prev.slice(-100), ev]);
+  }, []);
+
+  // Track mount/unmount
+  useEffect(() => {
+    pushEvent("MOUNT", `mountId=${mountId.current}`);
+    return () => {
+      console.log(`[REG-DBG] UNMOUNT mountId=${mountId.current}`);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Track viewport/keyboard changes
+  useEffect(() => {
+    const onResize = () => {
+      const h = window.innerHeight;
+      setViewportH(h);
+      pushEvent("VIEWPORT_RESIZE", `h=${h}`);
+    };
+    window.addEventListener("resize", onResize);
+    if (window.visualViewport) {
+      const onVV = () => pushEvent("VISUAL_VIEWPORT", `h=${window.visualViewport!.height.toFixed(0)} oT=${window.visualViewport!.offsetTop.toFixed(0)}`);
+      window.visualViewport.addEventListener("resize", onVV);
+      return () => {
+        window.removeEventListener("resize", onResize);
+        window.visualViewport?.removeEventListener("resize", onVV);
+      };
+    }
+    return () => window.removeEventListener("resize", onResize);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── Form state with traced setForm ───
+  const [form, setFormRaw] = useState<RegistrationDraft>(emptyDraft);
   const draftLoaded = useRef(false);
   const [formTouched, setFormTouched] = useState(false);
+
+  // Wrapper that traces every setForm call
+  const setForm = useCallback(
+    (updater: RegistrationDraft | ((prev: RegistrationDraft) => RegistrationDraft), source: string) => {
+      setFormRaw((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        // Detect overwrites — fields that had values and became empty
+        const cleared: string[] = [];
+        const changed: string[] = [];
+        (Object.keys(prev) as (keyof RegistrationDraft)[]).forEach((k) => {
+          if (prev[k] !== next[k]) {
+            changed.push(`${k}:"${prev[k]}"→"${next[k]}"`);
+            if (prev[k] && !next[k]) cleared.push(k);
+          }
+        });
+        if (changed.length > 0) {
+          const label = cleared.length > 0
+            ? `⚠️ SETFORM:${source}:OVERWRITE_DETECTED`
+            : `SETFORM:${source}`;
+          const detail = changed.join(", ");
+          console.log(`[REG-DBG] ${_ts()} ${label}`, detail);
+          setDebugEvents((evs) => [...evs.slice(-100), { time: _ts(), label, detail }]);
+        }
+        return next;
+      });
+    },
+    [],
+  );
 
   // Data
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
   const [colleges, setColleges] = useState<Tables<"colleges">[]>([]);
   const [majors, setMajors] = useState<Tables<"majors">[]>([]);
 
-  // Restore draft on mount — merge only empty fields if user already typed
-  // Restore draft on mount — always merge to avoid overwriting user input
+  // Restore draft on mount
   useEffect(() => {
     let cancelled = false;
+    pushEvent("EFFECT:draftRestore:start");
     loadDraft().then((draft) => {
-      if (cancelled) return;
+      if (cancelled) { pushEvent("EFFECT:draftRestore:cancelled"); return; }
       if (draft) {
-        // Always use functional updater + merge to prevent race conditions
-        // where a stale promise overwrites freshly typed input
+        pushEvent("EFFECT:draftRestore:apply", JSON.stringify(draft));
         setForm((prev) => {
           const merged = { ...prev };
           (Object.keys(draft) as (keyof RegistrationDraft)[]).forEach((key) => {
@@ -54,39 +128,44 @@ const Register = () => {
             }
           });
           return merged;
-        });
+        }, "draftRestore");
+      } else {
+        pushEvent("EFFECT:draftRestore:noDraft");
       }
       draftLoaded.current = true;
     });
     return () => { cancelled = true; };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-save draft on every change (after initial load)
+  // Auto-save draft
   useEffect(() => {
     if (!draftLoaded.current) return;
     saveDraft(form);
   }, [form]);
 
-  // Update a single field
+  // Update a single field — traced
   const updateField = useCallback(
     <K extends keyof RegistrationDraft>(key: K, value: RegistrationDraft[K]) => {
       setFormTouched(true);
-      setForm((prev) => ({ ...prev, [key]: value }));
+      setForm((prev) => ({ ...prev, [key]: value }), `updateField:${key}`);
     },
-    [],
+    [setForm],
   );
 
-  // Redirect if already logged in — uses AuthContext (no race condition)
+  // Redirect if already logged in
   useEffect(() => {
+    pushEvent("EFFECT:authCheck", `authLoading=${authLoading} authUser=${!!authUser}`);
     if (authLoading) return;
     if (authUser) {
+      pushEvent("EFFECT:authCheck:redirect");
       clearDraft();
       navigate("/dashboard", { replace: true });
     }
-  }, [authLoading, authUser, navigate]);
+  }, [authLoading, authUser, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch universities
   useEffect(() => {
+    pushEvent("EFFECT:fetchUniversities");
     supabase
       .from("universities")
       .select("*")
@@ -95,12 +174,13 @@ const Register = () => {
       .then(({ data }) => {
         if (data) setUniversities(data);
       });
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch colleges when university changes
   useEffect(() => {
     let cancelled = false;
     const uniId = form.universityId;
+    pushEvent("EFFECT:fetchColleges", `uniId=${uniId}`);
     if (!uniId) {
       setColleges([]);
       setMajors([]);
@@ -113,16 +193,16 @@ const Register = () => {
       .eq("is_active", true)
       .order("display_order")
       .then(({ data }) => {
-        if (cancelled) return;
+        if (cancelled) { pushEvent("EFFECT:fetchColleges:cancelled"); return; }
+        pushEvent("EFFECT:fetchColleges:done", `count=${data?.length}`);
         setColleges(data || []);
-        // Use functional updater to check CURRENT state, not stale closure
         setForm((prev) => {
-          if (prev.universityId !== uniId) return prev; // university already changed
+          if (prev.universityId !== uniId) return prev;
           if (!prev.collegeId) return prev;
           const stillValid = data?.some((c) => c.id === prev.collegeId);
           if (stillValid) return prev;
           return { ...prev, collegeId: "", majorId: "" };
-        });
+        }, "collegeFetchValidation");
       });
     return () => { cancelled = true; };
   }, [form.universityId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -131,6 +211,7 @@ const Register = () => {
   useEffect(() => {
     let cancelled = false;
     const colId = form.collegeId;
+    pushEvent("EFFECT:fetchMajors", `colId=${colId}`);
     if (!colId) {
       setMajors([]);
       return;
@@ -142,15 +223,16 @@ const Register = () => {
       .eq("is_active", true)
       .order("display_order")
       .then(({ data }) => {
-        if (cancelled) return;
+        if (cancelled) { pushEvent("EFFECT:fetchMajors:cancelled"); return; }
+        pushEvent("EFFECT:fetchMajors:done", `count=${data?.length}`);
         setMajors(data || []);
         setForm((prev) => {
-          if (prev.collegeId !== colId) return prev; // college already changed
+          if (prev.collegeId !== colId) return prev;
           if (!prev.majorId) return prev;
           const stillValid = data?.some((m) => m.id === prev.majorId);
           if (stillValid) return prev;
           return { ...prev, majorId: "" };
-        });
+        }, "majorFetchValidation");
       });
     return () => { cancelled = true; };
   }, [form.collegeId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -165,10 +247,9 @@ const Register = () => {
   };
   const isFormValid = Object.values(validationChecks).every(Boolean);
 
-  // Debug: trace exact validation state (remove after confirming fix)
   useEffect(() => {
     if (formTouched) {
-      console.log('[REG] validation:', validationChecks, 'valid:', Object.values(validationChecks).every(Boolean));
+      console.log('[REG] validation:', validationChecks, 'valid:', isFormValid);
     }
   }, [form]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -204,7 +285,6 @@ const Register = () => {
         },
       });
 
-      // Handle edge function or backend errors
       const errorMsg = res.data?.error || (res.error ? "فشل في الاتصال بالخادم" : null);
       if (errorMsg) {
         toast({ variant: "destructive", title: "خطأ", description: errorMsg });
@@ -212,7 +292,6 @@ const Register = () => {
         return;
       }
 
-      // Set session and verify it was established
       const { access_token, refresh_token } = res.data.session;
       const { error: sessionError } = await supabase.auth.setSession({ access_token, refresh_token });
       if (sessionError) {
@@ -222,7 +301,6 @@ const Register = () => {
         return;
       }
 
-      // Only clear draft after confirmed session
       await clearDraft();
       trackFunnelEvent("user_registered");
       toast({ title: "تم التسجيل بنجاح! 🎉" });
@@ -244,7 +322,6 @@ const Register = () => {
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-6">
           <Link to="/" className="inline-flex flex-col items-center gap-2">
             <div className="w-20 h-20 flex items-center justify-center animate-scale-in rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
@@ -266,7 +343,8 @@ const Register = () => {
                 <Input
                   value={form.firstName}
                   onChange={(e) => updateField("firstName", e.target.value)}
-                  placeholder=""
+                  onFocus={() => pushEvent("FOCUS:firstName")}
+                  onBlur={() => pushEvent("BLUR:firstName", `val="${form.firstName}"`)}
                 />
               </div>
               <div className="space-y-1.5">
@@ -274,7 +352,8 @@ const Register = () => {
                 <Input
                   value={form.fourthName}
                   onChange={(e) => updateField("fourthName", e.target.value)}
-                  placeholder=""
+                  onFocus={() => pushEvent("FOCUS:fourthName")}
+                  onBlur={() => pushEvent("BLUR:fourthName", `val="${form.fourthName}"`)}
                 />
               </div>
             </div>
@@ -290,6 +369,8 @@ const Register = () => {
                   onChange={(e) =>
                     updateField("phoneNumber", e.target.value.replace(/\D/g, "").slice(0, 9))
                   }
+                  onFocus={() => pushEvent("FOCUS:phoneNumber", `firstName="${form.firstName}" fourthName="${form.fourthName}"`)}
+                  onBlur={() => pushEvent("BLUR:phoneNumber", `val="${form.phoneNumber}"`)}
                   className="text-left font-mono"
                   dir="ltr"
                   maxLength={9}
@@ -395,10 +476,18 @@ const Register = () => {
                 شروط الاستخدام
               </Link>
             </p>
-            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v2.1</p>
+            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v2.1-dbg</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Debug panel — dev only */}
+      <RegDebugPanel
+        form={form}
+        events={debugEvents}
+        mountCount={mountId.current}
+        viewportH={viewportH}
+      />
     </div>
   );
 };
