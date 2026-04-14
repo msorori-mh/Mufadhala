@@ -631,7 +631,7 @@ const Register = () => {
                 شروط الاستخدام
               </Link>
             </p>
-            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v3.0-debug</p>
+            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v4.0-kb-trace</p>
           </CardContent>
         </Card>
       </div>
