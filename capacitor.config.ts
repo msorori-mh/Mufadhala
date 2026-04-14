@@ -4,10 +4,6 @@ const config: CapacitorConfig = {
   appId: 'com.mufadhala.app',
   appName: 'مُفَاضَلَة',
   webDir: 'dist',
-  server: {
-    url: 'https://uni-admission-coach.lovable.app',
-    cleartext: true,
-  },
   android: {
     backgroundColor: '#1A237E',
     allowMixedContent: true,
