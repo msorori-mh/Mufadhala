@@ -65,7 +65,7 @@ function RegDebugPanel({
         onClick={() => setOpen(!open)}
         className="w-full flex justify-between items-center px-2 py-1 bg-amber-600 text-black font-bold text-xs"
       >
-        <span>🐛 v4 {isNative ? "[APK]" : "[WEB]"} m:{mountCount} s:{submitPhase} vh:{vh} vv:{vvh} kb:{kbState} f:{activeField}</span>
+        <span>🐛 v5.0-field-guard {isNative ? "[APK]" : "[WEB]"} m:{mountCount} s:{submitPhase} vh:{vh} vv:{vvh} kb:{kbState} f:{activeField}</span>
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
       </button>
       {open && (
