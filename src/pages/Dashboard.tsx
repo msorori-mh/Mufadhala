@@ -85,10 +85,10 @@ const Dashboard = () => {
   const { data: dashData, isLoading: dashLoading } = useQuery({
     queryKey: ["dashboard-data", student?.id, subjectIds],
     queryFn: async () => {
-      if (!student) return { attempts: [], lessonCount: 0, completedLessons: 0, collegeName: null };
+      if (!student) return { attempts: [], lessonCount: 0, completedLessons: 0, lessonsStarted: 0, collegeName: null };
 
       // Use subject-based lesson count (deduplicated)
-      const [attemptsRes, lessons, progressRes, collegeRes] = await Promise.all([
+      const [attemptsRes, lessons, completedRes, startedRes, collegeRes] = await Promise.all([
         supabase.from("exam_attempts")
           .select("id, score, total, completed_at, major_id")
           .eq("student_id", student.id)
@@ -98,6 +98,7 @@ const Dashboard = () => {
           ? fetchLessonsBySubjects(supabase, subjectIds)
           : Promise.resolve([]),
         supabase.from("lesson_progress").select("id", { count: "exact", head: true }).eq("student_id", student.id).eq("is_completed", true),
+        supabase.from("lesson_progress").select("id", { count: "exact", head: true }).eq("student_id", student.id),
         student.college_id
           ? supabase.from("colleges").select("name_ar").eq("id", student.college_id).maybeSingle()
           : Promise.resolve({ data: null }),
@@ -106,7 +107,8 @@ const Dashboard = () => {
       return {
         attempts: (attemptsRes.data || []) as ExamAttemptRow[],
         lessonCount: lessons.length,
-        completedLessons: progressRes.count ?? 0,
+        completedLessons: completedRes.count ?? 0,
+        lessonsStarted: startedRes.count ?? 0,
         collegeName: (collegeRes.data as any)?.name_ar ?? null,
       };
     },
@@ -117,6 +119,7 @@ const Dashboard = () => {
   const attempts = dashData?.attempts ?? [];
   const lessonCount = dashData?.lessonCount ?? 0;
   const completedLessons = dashData?.completedLessons ?? 0;
+  const lessonsStarted = dashData?.lessonsStarted ?? 0;
   const collegeName = dashData?.collegeName ?? null;
   const loading = accessLoading || dashLoading;
 
@@ -434,6 +437,7 @@ const Dashboard = () => {
                 attempts={attempts}
                 completedLessons={completedLessons}
                 totalLessons={lessonCount}
+                lessonsStarted={lessonsStarted}
                 hasSubscription={hasActiveSubscription}
               />
             )}
