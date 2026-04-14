@@ -155,6 +155,8 @@ const Settings = () => {
             </div>
           </CardContent>
         </Card>
+        {/* Debug Panel */}
+        <DebugPanel />
       </div>
     </div>
   );
