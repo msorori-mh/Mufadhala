@@ -87,6 +87,8 @@ function RegDebugPanel({
   );
 }
 
+const PROTECTED_TEXT_FIELDS: (keyof RegistrationDraft)[] = ["firstName", "fourthName", "phoneNumber"];
+
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -94,7 +96,7 @@ const Register = () => {
   const [checkingSession, setCheckingSession] = useState(true);
 
   // Unified form state — fully local, NO async hydration on native
-  const [form, setForm] = useState<RegistrationDraft>(emptyDraft);
+  const [form, setFormRaw] = useState<RegistrationDraft>(emptyDraft);
   const draftLoaded = useRef(false);
   const formRef = useRef<RegistrationDraft>(emptyDraft); // always current
   const mountCount = useRef(0);
@@ -105,6 +107,31 @@ const Register = () => {
   const lastFormSnapshot = useRef<string>("");
   const lastEventRef = useRef<string>("init");
   const isNative = isNativePlatform();
+
+  // ─── OVERWRITE GUARD: track which text fields user has manually typed into ───
+  const userTouchedFields = useRef<Set<keyof RegistrationDraft>>(new Set());
+  const updateSourceRef = useRef<"user" | "internal">("internal");
+
+  // Guarded setForm: on native, prevents non-user overwrites of touched text fields
+  const setForm: typeof setFormRaw = useCallback((updater) => {
+    if (!isNative || updateSourceRef.current === "user") {
+      setFormRaw(updater);
+      return;
+    }
+    // Internal update on native → protect touched text fields
+    setFormRaw((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      const guarded = { ...next };
+      for (const field of PROTECTED_TEXT_FIELDS) {
+        if (userTouchedFields.current.has(field) && prev[field] && !next[field]) {
+          // BLOCK: internal logic trying to clear a user-typed field
+          console.log(`[GUARD:BLOCKED] ${field} clear blocked! keeping "${prev[field]}"`);
+          guarded[field] = prev[field];
+        }
+      }
+      return guarded;
+    });
+  }, [isNative]);
 
   const log = useCallback((tag: string, msg: string, critical = false) => {
     console.log(`[${tag}] ${msg}`);
