@@ -109,8 +109,16 @@ const LessonsList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSubjectFilter, setActiveSubjectFilter] = useState<string>("all");
   const { paywallProps, showPaywall } = usePaywall();
-  const [questionInteractions] = useState(0); // placeholder for future tracking
+  const [questionInteractions] = useState(0);
   const authLoading = accessLoading;
+
+  // Auto-trigger paywall after engagement thresholds
+  usePaywallTrigger({
+    completedLessons: lessonsData?.completedLessons?.size ?? 0,
+    questionInteractions,
+    hasSubscription: !!hasSubscription,
+    onTrigger: (reason) => showPaywall(reason),
+  });
 
   useEffect(() => {
     if (!accessLoading && (isAdmin || isModerator)) {
