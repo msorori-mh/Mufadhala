@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
     backgroundColor: '#1A237E',
     allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: false,
+    webContentsDebuggingEnabled: true,
   },
   plugins: {
     SplashScreen: {
