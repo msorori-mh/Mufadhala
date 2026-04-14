@@ -437,6 +437,7 @@ const Dashboard = () => {
                 attempts={attempts}
                 completedLessons={completedLessons}
                 totalLessons={lessonCount}
+                lessonsStarted={lessonsStarted}
                 hasSubscription={hasActiveSubscription}
               />
             )}
