@@ -1,5 +1,7 @@
+import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface SubscriptionStatus {
   hasSubscription: boolean;
@@ -21,9 +23,11 @@ const defaultStatus: SubscriptionStatus = {
 };
 
 export const useSubscription = (userId: string | undefined): SubscriptionStatus => {
+  const prevStatusRef = useRef<string | null>(null);
+
   const { data, isLoading } = useQuery({
     queryKey: ["subscription", userId],
-    queryFn: async (): Promise<Omit<SubscriptionStatus, "loading">> => {
+    queryFn: async (): Promise<Omit<SubscriptionStatus, "loading"> & { rawStatus: string | null }> => {
       const { data } = await supabase
         .from("subscriptions")
         .select("status, expires_at, plan_id, trial_ends_at, subscription_plans(slug, allowed_major_ids)")
@@ -35,14 +39,13 @@ export const useSubscription = (userId: string | undefined): SubscriptionStatus 
         return {
           hasSubscription: false, isActive: false, isPending: false,
           isTrial: false, trialEndsAt: null, expiresAt: null,
-          planId: null, planSlug: null, allowedMajorIds: null,
+          planId: null, planSlug: null, allowedMajorIds: null, rawStatus: null,
         };
       }
 
       const sub = data[0];
       const isActive = sub.status === "active" && (!sub.expires_at || new Date(sub.expires_at) > new Date());
       const isTrial = sub.status === "trial" && !!sub.trial_ends_at && new Date(sub.trial_ends_at) > new Date();
-
       const plan = sub.subscription_plans as { slug: string; allowed_major_ids: string[] | null } | null;
 
       return {
@@ -55,15 +58,36 @@ export const useSubscription = (userId: string | undefined): SubscriptionStatus 
         planId: sub.plan_id,
         planSlug: plan?.slug ?? null,
         allowedMajorIds: plan?.allowed_major_ids ?? null,
+        rawStatus: sub.status,
       };
     },
     enabled: !!userId,
-    staleTime: 3 * 60 * 1000, // 3 min — subscription rarely changes mid-session
+    staleTime: 30_000,
+    // Poll every 20s when subscription is pending, otherwise every 3 min
+    refetchInterval: (query) => {
+      const status = query.state.data?.rawStatus;
+      return status === "pending" ? 20_000 : 3 * 60_000;
+    },
   });
+
+  // Show toast when status transitions from pending → active/rejected
+  useEffect(() => {
+    if (!data) return;
+    const current = data.rawStatus;
+    const prev = prevStatusRef.current;
+    prevStatusRef.current = current;
+
+    if (prev === "pending" && current === "active") {
+      toast.success("تم قبول الدفع وتفعيل اشتراكك بنجاح! 🎉");
+    } else if (prev === "pending" && current === "rejected") {
+      toast.error("تم رفض طلب الدفع. يرجى المحاولة مرة أخرى.");
+    }
+  }, [data]);
 
   if (isLoading || !data) {
     return { ...defaultStatus, loading: isLoading };
   }
 
-  return { ...data, loading: false };
+  const { rawStatus: _, ...rest } = data;
+  return { ...rest, loading: false };
 };

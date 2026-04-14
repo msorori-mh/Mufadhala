@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -99,6 +99,46 @@ const Subscription = () => {
     };
     fetchAll();
   }, [authLoading, user]);
+
+  // Auto-poll subscription status every 20s when pending
+  const prevSubStatusRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!user || !subscription || subscription.status !== "pending") return;
+    prevSubStatusRef.current = subscription.status;
+
+    const interval = setInterval(async () => {
+      const { data } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (data && data.length > 0) {
+        const latest = data[0] as any as SubRecord;
+        if (latest.status !== prevSubStatusRef.current) {
+          setSubscription(latest);
+          prevSubStatusRef.current = latest.status;
+
+          if (latest.status === "active") {
+            toast({ title: "🎉 تم قبول الدفع وتفعيل اشتراكك بنجاح!" });
+          } else if (latest.status === "rejected") {
+            toast({ variant: "destructive", title: "تم رفض طلب الدفع", description: "يرجى المحاولة مرة أخرى" });
+          }
+
+          // Also refresh payment requests
+          const { data: pr } = await supabase
+            .from("payment_requests")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false });
+          if (pr) setPaymentRequests(pr as any as PaymentRequest[]);
+        }
+      }
+    }, 20_000);
+
+    return () => clearInterval(interval);
+  }, [user, subscription?.status]);
 
   const isActive = subscription?.status === "active";
   const isPending = subscription?.status === "pending";
@@ -375,9 +415,13 @@ const Subscription = () => {
         {isPending && (
           <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-900">
             <CardContent className="py-6 text-center">
-              <Clock className="w-12 h-12 text-yellow-600 mx-auto mb-3" />
+              <Clock className="w-12 h-12 text-yellow-600 mx-auto mb-3 animate-pulse" />
               <h2 className="text-lg font-bold text-yellow-700 dark:text-yellow-400">طلبك قيد المراجعة</h2>
               <p className="text-sm text-yellow-600 dark:text-yellow-500 mt-1">سيتم مراجعة طلب الدفع وتفعيل اشتراكك في أقرب وقت</p>
+              <p className="text-xs text-yellow-500 dark:text-yellow-600 mt-3 flex items-center justify-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                يتم التحقق تلقائياً كل 20 ثانية
+              </p>
             </CardContent>
           </Card>
         )}
