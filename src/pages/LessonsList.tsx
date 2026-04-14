@@ -112,14 +112,6 @@ const LessonsList = () => {
   const [questionInteractions] = useState(0);
   const authLoading = accessLoading;
 
-  // Auto-trigger paywall after engagement thresholds
-  usePaywallTrigger({
-    completedLessons: lessonsData?.completedLessons?.size ?? 0,
-    questionInteractions,
-    hasSubscription: !!hasSubscription,
-    onTrigger: (reason) => showPaywall(reason),
-  });
-
   useEffect(() => {
     if (!accessLoading && (isAdmin || isModerator)) {
       navigate("/admin/content", { replace: true });
