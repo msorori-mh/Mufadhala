@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
 
@@ -6,33 +6,43 @@ type AppRole = "admin" | "moderator" | "student";
 
 export const useAuth = (requiredRole?: AppRole) => {
   const navigate = useNavigate();
-  const { user, roles, loading: authLoading, isAdmin, isModerator, isStaff, isRecoverySession } = useAuthContext();
-  const [loading, setLoading] = useState(true);
-  const checkedRef = useRef(false);
+  const {
+    user, roles,
+    loading: contextLoading,
+    authLoading, rolesLoading,
+    isAuthReady, isRolesReady,
+    isAdmin, isModerator, isStaff, isRecoverySession,
+  } = useAuthContext();
+  const [redirected, setRedirected] = useState(false);
 
   useEffect(() => {
-    if (authLoading) return;
+    // Wait until both auth AND roles are fully resolved
+    if (!isAuthReady || !isRolesReady) return;
 
     // Don't redirect during password recovery flow
-    if (isRecoverySession) {
-      setLoading(false);
-      return;
-    }
+    if (isRecoverySession) return;
+
+    // Prevent duplicate redirects
+    if (redirected) return;
 
     if (!user) {
+      setRedirected(true);
       navigate("/register");
-      setLoading(false);
       return;
     }
 
     if (requiredRole && !roles.includes(requiredRole) && !roles.includes("admin")) {
+      setRedirected(true);
       navigate("/dashboard");
-      setLoading(false);
       return;
     }
+  }, [isAuthReady, isRolesReady, user, roles, requiredRole, navigate, isRecoverySession, redirected]);
 
-    setLoading(false);
-  }, [authLoading, user, roles, requiredRole, navigate, isRecoverySession]);
-
-  return { user, roles, loading: loading || authLoading, isAdmin, isModerator, isStaff };
+  return {
+    user, roles,
+    loading: contextLoading,
+    authLoading, rolesLoading,
+    isAuthReady, isRolesReady,
+    isAdmin, isModerator, isStaff,
+  };
 };

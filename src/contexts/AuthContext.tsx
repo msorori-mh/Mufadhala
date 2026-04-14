@@ -11,6 +11,10 @@ interface AuthState {
   user: User | null;
   roles: AppRole[];
   loading: boolean;
+  authLoading: boolean;
+  rolesLoading: boolean;
+  isAuthReady: boolean;
+  isRolesReady: boolean;
   isAdmin: boolean;
   isModerator: boolean;
   isStaff: boolean;
@@ -21,6 +25,10 @@ const AuthContext = createContext<AuthState>({
   user: null,
   roles: [],
   loading: true,
+  authLoading: true,
+  rolesLoading: false,
+  isAuthReady: false,
+  isRolesReady: false,
   isAdmin: false,
   isModerator: false,
   isStaff: false,
@@ -32,32 +40,50 @@ export const useAuthContext = () => useContext(AuthContext);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [rolesLoading, setRolesLoading] = useState(false);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isRolesReady, setIsRolesReady] = useState(false);
   const [isRecoverySession, setIsRecoverySession] = useState(
     () => sessionStorage.getItem("supabase_recovery_mode") === "true"
   );
   const initialized = useRef(false);
+  const rolesFetchedForUser = useRef<string | null>(null);
 
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
 
-    const fetchRoles = async (userId: string, attempt = 0) => {
+    const fetchRoles = async (userId: string, attempt = 0): Promise<AppRole[]> => {
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", userId);
       if (error) {
         if (attempt < 1) {
-          // Retry once after 1 second
-          setTimeout(() => fetchRoles(userId, attempt + 1), 1000);
-          return;
+          await new Promise((r) => setTimeout(r, 1000));
+          return fetchRoles(userId, attempt + 1);
         }
         toast.error("تعذّر تحميل صلاحيات الحساب. يرجى إعادة تشغيل التطبيق.");
-        return;
+        return [];
       }
-      const userRoles = (data || []).map((r) => r.role as AppRole);
-      setRoles(userRoles);
+      return (data || []).map((r) => r.role as AppRole);
+    };
+
+    const completeAuth = async (sessionUser: User) => {
+      setUser(sessionUser);
+      setAuthLoading(false);
+      setIsAuthReady(true);
+
+      // Now fetch roles — block role readiness until done
+      if (rolesFetchedForUser.current !== sessionUser.id) {
+        setRolesLoading(true);
+        rolesFetchedForUser.current = sessionUser.id;
+        const userRoles = await fetchRoles(sessionUser.id);
+        setRoles(userRoles);
+        setRolesLoading(false);
+        setIsRolesReady(true);
+      }
     };
 
     const initSession = async () => {
@@ -65,11 +91,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session) {
-        setUser(session.user);
-        setLoading(false); // Unblock UI immediately
-        // Fetch roles in background — doesn't block first paint
-        fetchRoles(session.user.id);
         saveNativeSession(session.access_token, session.refresh_token);
+        await completeAuth(session.user);
         return;
       }
 
@@ -83,10 +106,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
 
           if (restoredSession && !error) {
-            setUser(restoredSession.user);
-            setLoading(false); // Unblock UI immediately
-            fetchRoles(restoredSession.user.id);
             saveNativeSession(restoredSession.access_token, restoredSession.refresh_token);
+            await completeAuth(restoredSession.user);
             return;
           } else {
             await clearNativeSession();
@@ -94,7 +115,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      setLoading(false);
+      // No session — mark everything as ready (no user, no roles needed)
+      setAuthLoading(false);
+      setIsAuthReady(true);
+      setIsRolesReady(true);
     };
 
     initSession();
@@ -113,12 +137,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session) {
         setUser(session.user);
         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-          fetchRoles(session.user.id);
           saveNativeSession(session.access_token, session.refresh_token);
+          // Fetch roles on sign-in events
+          if (rolesFetchedForUser.current !== session.user.id) {
+            setRolesLoading(true);
+            rolesFetchedForUser.current = session.user.id;
+            const userRoles = await fetchRoles(session.user.id);
+            setRoles(userRoles);
+            setRolesLoading(false);
+            setIsRolesReady(true);
+          }
         }
       } else {
         setUser(null);
         setRoles([]);
+        rolesFetchedForUser.current = null;
+        setIsRolesReady(true);
         clearNativeSession();
       }
     });
@@ -130,8 +164,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isModerator = roles.includes("moderator");
   const isStaff = isAdmin || isModerator;
 
+  // Overall loading: true until BOTH auth and roles are resolved
+  const loading = authLoading || rolesLoading || !isAuthReady || !isRolesReady;
+
   return (
-    <AuthContext.Provider value={{ user, roles, loading, isAdmin, isModerator, isStaff, isRecoverySession }}>
+    <AuthContext.Provider value={{
+      user, roles, loading,
+      authLoading, rolesLoading,
+      isAuthReady, isRolesReady,
+      isAdmin, isModerator, isStaff, isRecoverySession,
+    }}>
       {children}
     </AuthContext.Provider>
   );
