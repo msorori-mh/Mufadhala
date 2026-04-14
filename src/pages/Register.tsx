@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import NativeSelect from "@/components/NativeSelect";
-import { Loader2, Rocket } from "lucide-react";
+import { Loader2, Rocket, Bug, ChevronDown, ChevronUp } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -17,8 +17,69 @@ import {
   loadDraft,
   clearDraft,
 } from "@/lib/registrationDraft";
+import { saveNativeSession } from "@/lib/nativeSessionStorage";
+import { isNativePlatform } from "@/lib/capacitor";
 import { GOVERNORATES, YEMEN_PHONE_REGEX } from "@/domain/constants";
 import { trackFunnelEvent } from "@/lib/funnelTracking";
+
+/* ─── APK Debug Panel ─── */
+interface DebugLog {
+  ts: number;
+  tag: string;
+  msg: string;
+}
+
+function RegDebugPanel({
+  form,
+  logs,
+  mountCount,
+  submitPhase,
+}: {
+  form: RegistrationDraft;
+  logs: DebugLog[];
+  mountCount: number;
+  submitPhase: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const isNative = isNativePlatform();
+  const [vh, setVh] = useState(window.innerHeight);
+
+  useEffect(() => {
+    const h = () => setVh(window.innerHeight);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+
+  return (
+    <div
+      dir="ltr"
+      className="fixed bottom-0 left-0 right-0 z-[99999] bg-black/90 text-green-400 text-[10px] font-mono"
+    >
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex justify-between items-center px-2 py-1 bg-amber-600 text-black font-bold text-xs"
+      >
+        <span>🐛 REG DEBUG {isNative ? "[NATIVE APK]" : "[WEB]"} | mounts:{mountCount} | submit:{submitPhase} | vh:{vh}</span>
+        {open ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+      </button>
+      {open && (
+        <div className="max-h-48 overflow-y-auto p-1 space-y-0.5">
+          <div className="text-yellow-300">
+            FORM: fn="{form.firstName}" ln="{form.fourthName}" ph="{form.phoneNumber}" gov="{form.governorate}" uni="{form.universityId?.slice(0,8)}" col="{form.collegeId?.slice(0,8)}" maj="{form.majorId?.slice(0,8)}" gpa="{form.highSchoolGpa}"
+          </div>
+          <div className="border-t border-green-800 mt-1 pt-1 text-green-300">
+            {logs.slice(-30).map((l, i) => (
+              <div key={i}>
+                <span className="text-gray-500">{new Date(l.ts).toLocaleTimeString()}</span>{" "}
+                <span className="text-cyan-400">[{l.tag}]</span> {l.msg}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const Register = () => {
   const navigate = useNavigate();
@@ -26,25 +87,51 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
 
-  // Unified form state
+  // Unified form state — fully local, NO async hydration on native
   const [form, setForm] = useState<RegistrationDraft>(emptyDraft);
   const draftLoaded = useRef(false);
-  const formTouched = useRef(false);
+  const formRef = useRef<RegistrationDraft>(emptyDraft); // always current
+  const mountCount = useRef(0);
+  const [submitPhase, setSubmitPhase] = useState("idle");
+  const [debugLogs, setDebugLogs] = useState<DebugLog[]>([]);
+  const isNative = isNativePlatform();
+
+  const log = useCallback((tag: string, msg: string) => {
+    console.log(`[${tag}] ${msg}`);
+    setDebugLogs((prev) => [...prev.slice(-100), { ts: Date.now(), tag, msg }]);
+  }, []);
+
+  // Keep formRef in sync
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
+
+  // Mount counter
+  useEffect(() => {
+    mountCount.current += 1;
+    log("LIFECYCLE", `Register mounted (count: ${mountCount.current}), isNative: ${isNative}`);
+    return () => log("LIFECYCLE", "Register unmounting");
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Data
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
   const [colleges, setColleges] = useState<Tables<"colleges">[]>([]);
   const [majors, setMajors] = useState<Tables<"majors">[]>([]);
 
-  // Restore draft on mount — merge only empty fields if user already typed
-  // Restore draft on mount — always merge to avoid overwriting user input
+  // ─── STABILIZATION: Draft restore ───
+  // On NATIVE: SKIP draft restore entirely to prevent async race conditions
+  // On WEB: restore from localStorage (synchronous, safe)
   useEffect(() => {
+    if (isNative) {
+      log("FORM:draftRestore", "SKIPPED on native — stabilization mode");
+      draftLoaded.current = true;
+      return;
+    }
     let cancelled = false;
     loadDraft().then((draft) => {
       if (cancelled) return;
       if (draft) {
-        // Always use functional updater + merge to prevent race conditions
-        // where a stale promise overwrites freshly typed input
+        log("FORM:draftRestore", `Restored: ${JSON.stringify(draft)}`);
         setForm((prev) => {
           const merged = { ...prev };
           (Object.keys(draft) as (keyof RegistrationDraft)[]).forEach((key) => {
@@ -58,34 +145,45 @@ const Register = () => {
       draftLoaded.current = true;
     });
     return () => { cancelled = true; };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-save draft on every change (after initial load)
+  // ─── STABILIZATION: Auto-save draft ───
+  // On NATIVE: DISABLED — no Preferences writes during registration
+  // On WEB: debounced save to localStorage
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
     if (!draftLoaded.current) return;
-    saveDraft(form);
-  }, [form]);
+    if (isNative) return; // STABILIZATION: no async saves on native
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      saveDraft(form);
+    }, 1000); // debounce 1s
+    return () => clearTimeout(saveTimer.current);
+  }, [form, isNative]);
 
   // Update a single field
   const updateField = useCallback(
     <K extends keyof RegistrationDraft>(key: K, value: RegistrationDraft[K]) => {
-      formTouched.current = true;
+      log(`FORM:updateField:${key}`, `"${value}"`);
       setForm((prev) => ({ ...prev, [key]: value }));
     },
-    [],
+    [log],
   );
 
-  // Check session on mount — clear stale draft if already logged in
+  // Check session on mount
   useEffect(() => {
+    log("NATIVE:initSession", "Checking session...");
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        clearDraft(); // Remove stale draft data
+        log("NATIVE:initSession", "Session found → redirect to dashboard");
+        clearDraft();
         navigate("/dashboard", { replace: true });
       } else {
+        log("NATIVE:initSession", "No session → show form");
         setCheckingSession(false);
       }
     });
-  }, [navigate]);
+  }, [navigate, log]);
 
   // Fetch universities
   useEffect(() => {
@@ -95,9 +193,12 @@ const Register = () => {
       .eq("is_active", true)
       .order("display_order")
       .then(({ data }) => {
-        if (data) setUniversities(data);
+        if (data) {
+          setUniversities(data);
+          log("DATA", `Universities loaded: ${data.length}`);
+        }
       });
-  }, []);
+  }, [log]);
 
   // Fetch colleges when university changes
   useEffect(() => {
@@ -106,6 +207,7 @@ const Register = () => {
       setMajors([]);
       return;
     }
+    const currentUni = form.universityId;
     supabase
       .from("colleges")
       .select("*")
@@ -113,16 +215,19 @@ const Register = () => {
       .eq("is_active", true)
       .order("display_order")
       .then(({ data }) => {
+        // Guard: ignore if university changed while loading
+        if (formRef.current.universityId !== currentUni) return;
         setColleges(data || []);
-        if (data && form.collegeId) {
-          const stillValid = data.some((c) => c.id === form.collegeId);
+        log("DATA", `Colleges loaded: ${data?.length || 0}`);
+        if (data && formRef.current.collegeId) {
+          const stillValid = data.some((c) => c.id === formRef.current.collegeId);
           if (!stillValid) {
             updateField("collegeId", "");
             updateField("majorId", "");
           }
         }
       });
-  }, [form.universityId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [form.universityId, updateField, log]);
 
   // Fetch majors when college changes
   useEffect(() => {
@@ -130,6 +235,7 @@ const Register = () => {
       setMajors([]);
       return;
     }
+    const currentCol = form.collegeId;
     supabase
       .from("majors")
       .select("*")
@@ -137,15 +243,17 @@ const Register = () => {
       .eq("is_active", true)
       .order("display_order")
       .then(({ data }) => {
+        if (formRef.current.collegeId !== currentCol) return;
         setMajors(data || []);
-        if (data && form.majorId) {
-          const stillValid = data.some((m) => m.id === form.majorId);
+        log("DATA", `Majors loaded: ${data?.length || 0}`);
+        if (data && formRef.current.majorId) {
+          const stillValid = data.some((m) => m.id === formRef.current.majorId);
           if (!stillValid) {
             updateField("majorId", "");
           }
         }
       });
-  }, [form.collegeId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [form.collegeId, updateField, log]);
 
   const isFormValid =
     form.firstName.trim() &&
@@ -160,8 +268,23 @@ const Register = () => {
       toast({ variant: "destructive", title: "يرجى ملء جميع الحقول بشكل صحيح" });
       return;
     }
+
     setLoading(true);
+    setSubmitPhase("validating");
+    log("SUBMIT:start", JSON.stringify(formRef.current));
+
+    // Timeout guard — never hang silently
+    const submitTimeout = setTimeout(() => {
+      log("SUBMIT:timeout", "Submit timed out after 30s");
+      setLoading(false);
+      setSubmitPhase("timeout");
+      toast({ variant: "destructive", title: "انتهت المهلة", description: "يرجى المحاولة مرة أخرى" });
+    }, 30000);
+
     try {
+      setSubmitPhase("invoking-edge");
+      log("SUBMIT:invoke-register-student", "Calling edge function...");
+
       const res = await supabase.functions.invoke("register-student", {
         body: {
           phone: form.phoneNumber,
@@ -175,31 +298,53 @@ const Register = () => {
         },
       });
 
-      // Handle edge function or backend errors
+      log("SUBMIT:edge-response", `status: ${res.error ? "ERROR" : "OK"}, data: ${JSON.stringify(res.data?.error || "success")}`);
+
       const errorMsg = res.data?.error || (res.error ? "فشل في الاتصال بالخادم" : null);
       if (errorMsg) {
+        clearTimeout(submitTimeout);
         toast({ variant: "destructive", title: "خطأ", description: errorMsg });
         setLoading(false);
+        setSubmitPhase("error");
         return;
       }
 
-      // Set session and verify it was established
+      setSubmitPhase("session-sync");
+      log("SUBMIT:session-sync", "Setting session...");
       const { access_token, refresh_token } = res.data.session;
       const { error: sessionError } = await supabase.auth.setSession({ access_token, refresh_token });
+
       if (sessionError) {
-        console.error("setSession error:", sessionError);
+        clearTimeout(submitTimeout);
+        log("SUBMIT:session-sync", `ERROR: ${sessionError.message}`);
         toast({ variant: "destructive", title: "خطأ", description: "فشل في تثبيت الجلسة. يرجى المحاولة مرة أخرى." });
         setLoading(false);
+        setSubmitPhase("session-error");
         return;
       }
 
-      // Only clear draft after confirmed session
+      // Save session to native storage EXPLICITLY (don't rely on onAuthStateChange)
+      if (isNative) {
+        log("NATIVE:saveNativeSession", "Saving tokens to Preferences...");
+        await saveNativeSession(access_token, refresh_token);
+        log("NATIVE:saveNativeSession", "Done");
+      }
+
+      setSubmitPhase("cleanup");
+      log("SUBMIT:cleanup", "Clearing draft...");
       await clearDraft();
       trackFunnelEvent("user_registered");
+
+      clearTimeout(submitTimeout);
+      setSubmitPhase("navigating");
+      log("SUBMIT:navigate", "→ /welcome");
       toast({ title: "تم التسجيل بنجاح! 🎉" });
       navigate("/welcome", { replace: true });
-    } catch {
+    } catch (err: any) {
+      clearTimeout(submitTimeout);
+      log("SUBMIT:error", err?.message || "unknown");
       toast({ variant: "destructive", title: "خطأ", description: "حدث خطأ غير متوقع" });
+      setSubmitPhase("catch-error");
     }
     setLoading(false);
   };
@@ -351,9 +496,6 @@ const Register = () => {
               {loading ? "جاري التسجيل..." : "ابدأ الآن"}
             </Button>
 
-
-
-
             <p className="mt-2 text-center text-xs text-muted-foreground">
               بتسجيلك فإنك توافق على{" "}
               <Link to="/privacy-policy" className="text-primary hover:underline">
@@ -364,10 +506,18 @@ const Register = () => {
                 شروط الاستخدام
               </Link>
             </p>
-            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v2.1</p>
+            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v3.0-debug</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* APK Debug Panel — always visible */}
+      <RegDebugPanel
+        form={form}
+        logs={debugLogs}
+        mountCount={mountCount.current}
+        submitPhase={submitPhase}
+      />
     </div>
   );
 };
