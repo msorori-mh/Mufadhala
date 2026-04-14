@@ -16,6 +16,7 @@ import { useOfflineStatus } from "@/hooks/useOfflineStatus";
 import { saveLesson as saveLessonOffline, getLesson as getOfflineLesson, removeLesson as removeOfflineLesson, type OfflineLesson } from "@/lib/offlineStorage";
 import { trackFunnelEvent, hasTrackedEvent } from "@/lib/funnelTracking";
 import ChatWidget from "@/components/ChatWidget";
+import PaywallSheet, { usePaywall } from "@/components/PaywallSheet";
 
 interface Lesson {
   id: string;
@@ -339,28 +340,14 @@ const LessonDetail = () => {
                     ? "باقتك الحالية لا تغطي هذا التخصص. يمكنك ترقية اشتراكك"
                     : "يمكنك قراءة الملخص مجاناً. اشترك للوصول الكامل"}
                 </p>
-                <div className="grid grid-cols-2 gap-2 max-w-xs mx-auto text-right">
-                  {[
-                    "✔ جميع الدروس والشروحات",
-                    "✔ بنك الأسئلة الكامل",
-                    "✔ محاكاة الاختبار الحقيقي",
-                    "✔ تحليل الأداء المتقدم",
-                  ].map((f) => (
-                    <p key={f} className="text-xs text-foreground font-medium">{f}</p>
-                  ))}
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2 justify-center mt-2">
-                  <Button className="px-6 py-5 text-base font-bold gap-2" onClick={() => {
-                    trackFunnelEvent("subscribe_clicked", { source: "lesson_paywall" });
-                    navigate("/subscription");
-                  }}>
-                    <Sparkles className="w-4 h-4" />
-                    عرض الخطط والأسعار
-                  </Button>
-                </div>
-                <p className="text-[10px] text-muted-foreground">خطط تبدأ من خطة مجانية • الخطة التحضيرية الأكثر شعبية</p>
+                <Button className="px-6 py-5 text-base font-bold gap-2" onClick={() => paywallActions.showPaywall("locked_lesson", lesson.title, true)}>
+                  <Sparkles className="w-4 h-4" />
+                  عرض الخطط والأسعار
+                </Button>
+                <p className="text-[10px] text-muted-foreground">دفعة واحدة فقط • وصول كامل طوال الموسم</p>
               </CardContent>
             </Card>
+            <PaywallSheet {...paywallActions.paywallProps} />
           </div>
         ) : (
           <>
