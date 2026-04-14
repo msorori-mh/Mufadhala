@@ -246,12 +246,15 @@ const LessonDetail = () => {
     }
   }, [lesson, id, authLoading, loading]);
 
-  // Track paywall view
+  // Auto-show paywall when landing on locked lesson
   useEffect(() => {
     if (!lesson || loading || subLoading || authLoading) return;
     const access = isStaff || (hasActiveSubscription && planCoversLesson) || isDynamicallyFree || lesson.is_free || isFromCache;
     if (!access && id) {
       trackFunnelEvent("paywall_viewed", { lesson_id: id });
+      // Auto-open paywall sheet after a brief delay
+      const t = setTimeout(() => paywallActions.showPaywall("locked_lesson", lesson.title, true), 800);
+      return () => clearTimeout(t);
     }
   }, [lesson, loading, subLoading, authLoading, isStaff, hasActiveSubscription, planCoversLesson, isDynamicallyFree, isFromCache, id]);
 
