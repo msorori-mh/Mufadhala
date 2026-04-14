@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import NativeSelect from "@/components/NativeSelect";
 import { Loader2, Rocket } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 import {
@@ -23,8 +24,8 @@ import { trackFunnelEvent } from "@/lib/funnelTracking";
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user: authUser, loading: authLoading } = useAuthContext();
   const [loading, setLoading] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
 
   // Unified form state
   const [form, setForm] = useState<RegistrationDraft>(emptyDraft);
@@ -75,17 +76,14 @@ const Register = () => {
     [],
   );
 
-  // Check session on mount — clear stale draft if already logged in
+  // Redirect if already logged in — uses AuthContext (no race condition)
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        clearDraft(); // Remove stale draft data
-        navigate("/dashboard", { replace: true });
-      } else {
-        setCheckingSession(false);
-      }
-    });
-  }, [navigate]);
+    if (authLoading) return;
+    if (authUser) {
+      clearDraft();
+      navigate("/dashboard", { replace: true });
+    }
+  }, [authLoading, authUser, navigate]);
 
   // Fetch universities
   useEffect(() => {
@@ -226,7 +224,7 @@ const Register = () => {
     setLoading(false);
   };
 
-  if (checkingSession) {
+  if (authLoading) {
     return (
       <div className="min-h-screen gradient-hero flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-white animate-spin" />
