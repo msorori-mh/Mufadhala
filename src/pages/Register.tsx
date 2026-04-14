@@ -76,17 +76,14 @@ const Register = () => {
     [],
   );
 
-  // Check session on mount — clear stale draft if already logged in
+  // Redirect if already logged in — uses AuthContext (no race condition)
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        clearDraft(); // Remove stale draft data
-        navigate("/dashboard", { replace: true });
-      } else {
-        setCheckingSession(false);
-      }
-    });
-  }, [navigate]);
+    if (authLoading) return;
+    if (authUser) {
+      clearDraft();
+      navigate("/dashboard", { replace: true });
+    }
+  }, [authLoading, authUser, navigate]);
 
   // Fetch universities
   useEffect(() => {
@@ -227,7 +224,7 @@ const Register = () => {
     setLoading(false);
   };
 
-  if (checkingSession) {
+  if (authLoading) {
     return (
       <div className="min-h-screen gradient-hero flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-white animate-spin" />
