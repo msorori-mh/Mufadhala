@@ -65,6 +65,7 @@ const Subscription = () => {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
 
   const [promoCode, setPromoCode] = useState("");
   const [promoDiscount, setPromoDiscount] = useState(0);
@@ -278,7 +279,9 @@ const Subscription = () => {
         }
       }).catch(() => { /* non-critical */ });
 
-      toast({ title: "تم إرسال طلب الدفع بنجاح!" });
+      toast({ title: "✅ تم إرسال السند بنجاح", description: "طلبك قيد المراجعة — سيتم تفعيل اشتراكك في أقرب وقت" });
+      setReceiptFile(null);
+      if (receiptPreview) { URL.revokeObjectURL(receiptPreview); setReceiptPreview(null); }
       setSubscription({ id: newSub.id, status: "pending", plan_id: selectedPlan.id, starts_at: null, expires_at: null, trial_ends_at: null });
       setStep("plans");
     }
@@ -769,17 +772,88 @@ const Subscription = () => {
                     <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                     <span>⚠️ تنبيه: سيتم رفض أي سند مكرر أو مستخدم من قبل أكثر من حساب. النظام يتحقق تلقائياً.</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">قم بتحويل المبلغ إلى الحساب المحدد أعلاه، ثم ارفع صورة سند التحويل هنا</p>
-                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                    <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                    <Label htmlFor="receipt" className="cursor-pointer text-primary text-sm font-medium">
-                      {receiptFile ? receiptFile.name : "اضغط لاختيار الصورة"}
-                    </Label>
-                    <Input id="receipt" type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => setReceiptFile(e.target.files?.[0] || null)} />
-                    {receiptFile && <p className="text-xs text-muted-foreground mt-1">{(receiptFile.size / 1024 / 1024).toFixed(2)} MB</p>}
-                  </div>
+
+                  {!receiptFile ? (
+                    <>
+                      <p className="text-sm text-muted-foreground">قم برفع صورة سند التحويل</p>
+                      <div
+                        className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                        onClick={() => document.getElementById("receipt")?.click()}
+                      >
+                        <Upload className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+                        <p className="text-primary text-sm font-medium">اضغط لاختيار صورة السند</p>
+                        <p className="text-xs text-muted-foreground mt-1">JPG, PNG أو PDF — حد أقصى 5 ميجابايت</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-sm text-green-700 dark:text-green-400">
+                        <CheckCircle className="w-4 h-4 shrink-0" />
+                        <span>تم اختيار السند بنجاح</span>
+                      </div>
+
+                      {/* Image preview */}
+                      {receiptPreview && (
+                        <div className="relative border rounded-lg overflow-hidden bg-muted">
+                          <img
+                            src={receiptPreview}
+                            alt="معاينة السند"
+                            className="w-full max-h-[240px] object-contain"
+                          />
+                        </div>
+                      )}
+
+                      {/* File info */}
+                      <div className="flex items-center justify-between bg-muted rounded-lg p-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <CreditCard className="w-4 h-4 text-primary shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{receiptFile.name}</p>
+                            <p className="text-xs text-muted-foreground">{(receiptFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive shrink-0"
+                          onClick={() => {
+                            setReceiptFile(null);
+                            setReceiptPreview(null);
+                            const input = document.getElementById("receipt") as HTMLInputElement;
+                            if (input) input.value = "";
+                          }}
+                        >
+                          تغيير الصورة
+                        </Button>
+                      </div>
+                    </>
+                  )}
+
+                  <Input
+                    id="receipt"
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setReceiptFile(file);
+                      if (file && file.type.startsWith("image/")) {
+                        const url = URL.createObjectURL(file);
+                        setReceiptPreview(url);
+                      } else {
+                        setReceiptPreview(null);
+                      }
+                    }}
+                  />
+
+                  <p className="text-xs text-muted-foreground text-center">سيتم مراجعة السند خلال وقت قصير بعد الإرسال</p>
+
+                  {!receiptFile && (
+                    <p className="text-xs text-center text-destructive">يرجى اختيار صورة السند أولاً</p>
+                  )}
+
                   <Button onClick={handleSubmit} disabled={!receiptFile || submitting} className="w-full">
-                    {submitting ? <><Loader2 className="w-4 h-4 ml-1 animate-spin" /> جاري الإرسال...</> : <><CreditCard className="w-4 h-4 ml-1" /> إرسال طلب الدفع</>}
+                    {submitting ? <><Loader2 className="w-4 h-4 ml-1 animate-spin" /> جاري رفع السند...</> : <><CreditCard className="w-4 h-4 ml-1" /> إرسال طلب الدفع</>}
                   </Button>
                 </div>
               </CardContent>
