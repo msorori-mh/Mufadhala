@@ -18,7 +18,7 @@ export const useStudentData = (userId: string | undefined) => {
       return data as Tables<"students"> | null;
     },
     enabled: !!userId,
-    staleTime: 30 * 1000, // 30s — lower to catch fresh registration data quickly
+    staleTime: 2 * 60 * 1000, // 2min — cached across pages, fresh registration uses invalidation
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
   });
