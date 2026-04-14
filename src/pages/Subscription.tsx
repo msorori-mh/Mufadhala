@@ -697,15 +697,20 @@ const Subscription = () => {
                 <div key={type}>
                   <h3 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1">{icon} {label}</h3>
                   {filtered.map((m) => (
-                    <Card key={m.id} className="cursor-pointer hover:border-primary transition-colors mb-2" onClick={() => handleSelectMethod(m)}>
+                    <Card key={m.id} className="cursor-pointer hover:border-primary hover:shadow-md transition-all mb-2" onClick={() => handleSelectMethod(m)}>
                       <CardContent className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          {m.logo_url && <img src={m.logo_url} alt={m.name} className="w-6 h-6 rounded object-contain" />}
-                          <p className="font-semibold text-sm">{m.name}</p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            {m.logo_url && <img src={m.logo_url} alt={m.name} className="w-8 h-8 rounded-lg object-contain border bg-background p-0.5" />}
+                            <div>
+                              <p className="font-bold text-sm text-foreground">{m.name}</p>
+                              {m.account_number && (
+                                <p className="text-xs text-muted-foreground mt-0.5 font-mono" dir="ltr">{m.account_number}</p>
+                              )}
+                            </div>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground rotate-180" />
                         </div>
-                        {m.account_name && <p className="text-xs text-muted-foreground">باسم: {m.account_name}</p>}
-                        {m.account_number && <p className="text-xs text-muted-foreground">رقم: {m.account_number}</p>}
-                        {m.details && <p className="text-xs text-muted-foreground">{m.details}</p>}
                       </CardContent>
                     </Card>
                   ))}
@@ -726,84 +731,109 @@ const Subscription = () => {
               const raw = getPlanPrice(selectedPlan, studentGovernorate);
               const final_ = promoDiscount > 0 ? Math.round(raw * (1 - promoDiscount / 100)) : raw;
               return (
-                <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
-                  <div><span className="text-muted-foreground">الخطة:</span> <span className="font-semibold">{selectedPlan.name}</span></div>
-                  <div><span className="text-muted-foreground">المبلغ:</span> <span className="font-semibold">{final_.toLocaleString()} {selectedPlan.currency}</span></div>
-                  <div><span className="text-muted-foreground">طريقة الدفع:</span> <span className="font-semibold">{selectedMethod.name}</span></div>
-                  {selectedMethod.account_name && (
-                    <div
-                      className="flex items-center gap-1 cursor-pointer group"
-                      onClick={() => copyToClipboard(selectedMethod.account_name!, "اسم الحساب")}
-                    >
-                      <span className="text-muted-foreground">باسم:</span>
-                      <span className="font-semibold">{selectedMethod.account_name}</span>
-                      {copiedField === "اسم الحساب" ? (
-                        <Check className="w-3.5 h-3.5 text-green-500" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                      )}
-                    </div>
-                  )}
-                  {selectedMethod.account_number && (
-                    <div
-                      className="flex items-center gap-1 cursor-pointer group"
-                      onClick={() => copyToClipboard(selectedMethod.account_number!, "رقم الحساب")}
-                    >
-                      <span className="text-muted-foreground">الحساب:</span>
-                      <span className="font-semibold">{selectedMethod.account_number}</span>
-                      {copiedField === "رقم الحساب" ? (
-                        <Check className="w-3.5 h-3.5 text-green-500" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                      )}
-                    </div>
-                  )}
-                  {promoDiscount > 0 && <div className="text-green-600">خصم {promoDiscount}% مُطبّق</div>}
+                <div className="space-y-3">
+                  {/* Plan & amount summary */}
+                  <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
+                    <div><span className="text-muted-foreground">الخطة:</span> <span className="font-semibold">{selectedPlan.name}</span></div>
+                    <div><span className="text-muted-foreground">المبلغ:</span> <span className="font-semibold text-primary">{final_.toLocaleString()} {selectedPlan.currency}</span></div>
+                    {promoDiscount > 0 && <div className="text-green-600 text-xs">خصم {promoDiscount}% مُطبّق ✓</div>}
+                  </div>
+
+                  {/* Transfer details card — emphasized */}
+                  <Card className="border-primary/30 bg-primary/5 shadow-sm">
+                    <CardContent className="py-4 px-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="w-5 h-5 text-primary" />
+                        <h3 className="font-bold text-sm text-foreground">بيانات التحويل</h3>
+                        {selectedMethod.logo_url && <img src={selectedMethod.logo_url} alt={selectedMethod.name} className="w-6 h-6 rounded object-contain mr-auto" />}
+                      </div>
+
+                      <div className="bg-background rounded-lg border p-3 space-y-2.5">
+                        {/* Payment method name */}
+                        <div className="text-xs text-muted-foreground">{selectedMethod.name}</div>
+
+                        {/* Account number — large and copyable */}
+                        {selectedMethod.account_number && (
+                          <div>
+                            <p className="text-[11px] text-muted-foreground mb-1">رقم الحساب:</p>
+                            <div
+                              className="flex items-center justify-between bg-muted/60 rounded-lg px-3 py-2.5 cursor-pointer hover:bg-muted transition-colors group"
+                              onClick={() => copyToClipboard(selectedMethod.account_number!, "رقم الحساب")}
+                            >
+                              <span className="font-bold text-base text-foreground font-mono tracking-wide" dir="ltr">{selectedMethod.account_number}</span>
+                              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 shrink-0">
+                                {copiedField === "رقم الحساب" ? (
+                                  <><Check className="w-3.5 h-3.5 text-green-500" /> <span className="text-green-600">تم النسخ</span></>
+                                ) : (
+                                  <><Copy className="w-3.5 h-3.5" /> نسخ</>
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Account holder name — copyable */}
+                        {selectedMethod.account_name && (
+                          <div>
+                            <p className="text-[11px] text-muted-foreground mb-1">اسم صاحب الحساب:</p>
+                            <div
+                              className="flex items-center justify-between bg-muted/60 rounded-lg px-3 py-2 cursor-pointer hover:bg-muted transition-colors group"
+                              onClick={() => copyToClipboard(selectedMethod.account_name!, "اسم الحساب")}
+                            >
+                              <span className="font-semibold text-sm text-foreground">{selectedMethod.account_name}</span>
+                              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 shrink-0">
+                                {copiedField === "اسم الحساب" ? (
+                                  <><Check className="w-3.5 h-3.5 text-green-500" /> <span className="text-green-600">تم</span></>
+                                ) : (
+                                  <><Copy className="w-3.5 h-3.5" /> نسخ</>
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Extra details */}
+                        {selectedMethod.details && (
+                          <p className="text-xs text-muted-foreground border-t pt-2">{selectedMethod.details}</p>
+                        )}
+                      </div>
+
+                      {/* Helper text */}
+                      <p className="text-[11px] text-muted-foreground text-center">يرجى تحويل المبلغ إلى رقم الحساب الموضح أعلاه ثم رفع سند التحويل</p>
+                    </CardContent>
+                  </Card>
+
+                  {/* Barcode section */}
                   {selectedMethod.barcode_url && (
-                    <div className="mt-3 text-center">
-                      <p className="text-sm font-medium text-muted-foreground mb-2">امسح الباركود للتحويل مباشرة</p>
-                      <img
-                        src={selectedMethod.barcode_url}
-                        alt="باركود الدفع"
-                        className="mx-auto max-w-[200px] rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => setBarcodeZoom(selectedMethod.barcode_url)}
-                      />
-                      <div className="flex justify-center gap-2 mt-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs gap-1"
+                    <Card className="border-border">
+                      <CardContent className="py-4 text-center space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">أو امسح الباركود للتحويل مباشرة</p>
+                        <img
+                          src={selectedMethod.barcode_url}
+                          alt="باركود الدفع"
+                          className="mx-auto max-w-[200px] rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => setBarcodeZoom(selectedMethod.barcode_url)}
-                        >
-                          <ZoomIn className="w-3.5 h-3.5" />
-                          تكبير
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs gap-1"
-                          onClick={async () => {
+                        />
+                        <div className="flex justify-center gap-2 mt-2">
+                          <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setBarcodeZoom(selectedMethod.barcode_url)}>
+                            <ZoomIn className="w-3.5 h-3.5" /> تكبير
+                          </Button>
+                          <Button variant="outline" size="sm" className="text-xs gap-1" onClick={async () => {
                             try {
                               const res = await fetch(selectedMethod.barcode_url!);
                               const blob = await res.blob();
                               const url = URL.createObjectURL(blob);
                               const a = document.createElement("a");
-                              a.href = url;
-                              a.download = `barcode-${selectedMethod.name}.jpg`;
-                              document.body.appendChild(a);
-                              a.click();
-                              document.body.removeChild(a);
+                              a.href = url; a.download = `barcode-${selectedMethod.name}.jpg`;
+                              document.body.appendChild(a); a.click(); document.body.removeChild(a);
                               URL.revokeObjectURL(url);
-                            } catch {
-                              window.open(selectedMethod.barcode_url!, "_blank");
-                            }
-                          }}
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          تحميل
-                        </Button>
-                      </div>
-                    </div>
+                            } catch { window.open(selectedMethod.barcode_url!, "_blank"); }
+                          }}>
+                            <Download className="w-3.5 h-3.5" /> تحميل
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
                   )}
                 </div>
               );
