@@ -87,6 +87,8 @@ function RegDebugPanel({
   );
 }
 
+const PROTECTED_TEXT_FIELDS: (keyof RegistrationDraft)[] = ["firstName", "fourthName", "phoneNumber"];
+
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -94,7 +96,7 @@ const Register = () => {
   const [checkingSession, setCheckingSession] = useState(true);
 
   // Unified form state — fully local, NO async hydration on native
-  const [form, setForm] = useState<RegistrationDraft>(emptyDraft);
+  const [form, setFormRaw] = useState<RegistrationDraft>(emptyDraft);
   const draftLoaded = useRef(false);
   const formRef = useRef<RegistrationDraft>(emptyDraft); // always current
   const mountCount = useRef(0);
@@ -105,6 +107,31 @@ const Register = () => {
   const lastFormSnapshot = useRef<string>("");
   const lastEventRef = useRef<string>("init");
   const isNative = isNativePlatform();
+
+  // ─── OVERWRITE GUARD: track which text fields user has manually typed into ───
+  const userTouchedFields = useRef<Set<keyof RegistrationDraft>>(new Set());
+  const updateSourceRef = useRef<"user" | "internal">("internal");
+
+  // Guarded setForm: on native, prevents non-user overwrites of touched text fields
+  const setForm: typeof setFormRaw = useCallback((updater) => {
+    if (!isNative || updateSourceRef.current === "user") {
+      setFormRaw(updater);
+      return;
+    }
+    // Internal update on native → protect touched text fields
+    setFormRaw((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      const guarded = { ...next };
+      for (const field of PROTECTED_TEXT_FIELDS) {
+        if (userTouchedFields.current.has(field) && prev[field] && !next[field]) {
+          // BLOCK: internal logic trying to clear a user-typed field
+          console.log(`[GUARD:BLOCKED] ${field} clear blocked! keeping "${prev[field]}"`);
+          guarded[field] = prev[field];
+        }
+      }
+      return guarded;
+    });
+  }, [isNative]);
 
   const log = useCallback((tag: string, msg: string, critical = false) => {
     console.log(`[${tag}] ${msg}`);
@@ -132,10 +159,12 @@ const Register = () => {
     lastFormSnapshot.current = snap;
   }, [form, log]);
 
-  // Mount counter
+  // Mount counter + scroll normalization
   useEffect(() => {
     mountCount.current += 1;
     log("LIFECYCLE", `Register mounted (count: ${mountCount.current}), isNative: ${isNative}`);
+    // Normalize viewport on mount — prevent stale scroll position from triggering resize
+    window.scrollTo(0, 0);
     return () => log("LIFECYCLE", "Register unmounting");
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -282,17 +311,24 @@ const Register = () => {
     return () => clearTimeout(saveTimer.current);
   }, [form, isNative]);
 
-  // Update a single field
+  // Update a single field — marks source as "user" for text inputs
   const updateField = useCallback(
     <K extends keyof RegistrationDraft>(key: K, value: RegistrationDraft[K]) => {
       log(`FORM:updateField:${key}`, `"${value}"`);
+      // Mark text fields as user-touched
+      if (PROTECTED_TEXT_FIELDS.includes(key)) {
+        userTouchedFields.current.add(key);
+      }
+      updateSourceRef.current = "user";
       setForm((prev) => {
         const next = { ...prev, [key]: value };
         log(`FORM:stateAfterUpdate:${key}`, `fn="${next.firstName}" ln="${next.fourthName}" ph="${next.phoneNumber}"`);
         return next;
       });
+      // Reset source back to internal after microtask
+      queueMicrotask(() => { updateSourceRef.current = "internal"; });
     },
-    [log],
+    [log, setForm],
   );
 
   // Check session on mount
@@ -631,7 +667,7 @@ const Register = () => {
                 شروط الاستخدام
               </Link>
             </p>
-            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v4.0-kb-trace</p>
+            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v5.0-field-guard</p>
           </CardContent>
         </Card>
       </div>
