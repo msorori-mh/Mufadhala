@@ -12,7 +12,9 @@ export type FunnelEvent =
   | "paywall_viewed"
   | "subscribe_clicked"
   | "engagement_modal_shown"
-  | "engagement_modal_clicked";
+  | "engagement_modal_clicked"
+  | "paywall_cta_clicked"
+  | "subscription_page_opened_from_paywall";
 
 interface TrackedEvent {
   event: FunnelEvent;
