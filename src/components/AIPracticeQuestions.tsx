@@ -204,7 +204,7 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
                     <p className="text-sm font-medium mb-2">
                       {i + 1}. {q.question_text}
                     </p>
-                    <div className="grid grid-cols-2 gap-1.5">
+                    <div className="grid grid-cols-1 gap-1.5">
                       {(["a", "b", "c", "d"] as const).map((opt) => {
                         const optText = q[`option_${opt}` as keyof AIQuestion] as string;
                         const isSelected = userAnswer === opt;

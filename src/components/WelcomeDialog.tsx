@@ -92,7 +92,7 @@ const WelcomeDialog = ({ userId }: WelcomeDialogProps) => {
           </DialogTitle>
           <DialogDescription className="text-base">
             {collegeName
-              ? `تم تجهيز محتوى خاص بك حسب ${collegeName}`
+              ? `تم تجهيز محتوى خاص بك حسب كلية ${collegeName}`
               : "منصتك الذكية للتحضير لاختبارات المفاضلة الجامعية"}
           </DialogDescription>
         </DialogHeader>

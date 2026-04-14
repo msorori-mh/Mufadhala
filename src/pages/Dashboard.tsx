@@ -20,7 +20,7 @@ import { getDailyTip, dailyTips } from "@/data/dailyTips";
 import {
   GraduationCap, LogOut, UserCircle, Bell, Shield, BookOpen,
   ClipboardCheck, Trophy, TrendingUp, Target, BarChart3, CreditCard, Search,
-  Building2, ChevronLeft, Lightbulb, RefreshCw, Sparkles,
+  Building2, ChevronLeft, Lightbulb, RefreshCw,
 } from "lucide-react";
 import DashboardCharts from "@/components/DashboardCharts";
 import UpgradeCTABanner from "@/components/UpgradeCTABanner";
@@ -343,11 +343,11 @@ const Dashboard = () => {
               <div className="space-y-3">
                 <h2 className="text-sm font-bold text-foreground">🚀 ابدأ رحلتك نحو القبول</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-{[
+                  {[
                     { icon: BookOpen, title: "استعرض الدروس", desc: "ابدأ بمراجعة الملخصات الذكية لتخصصك", path: "/lessons", color: "text-secondary", bg: "bg-secondary/10" },
                     { icon: ClipboardCheck, title: "خُض اختبار محاكاة", desc: "جرّب نفسك بـ 45 سؤال في 90 دقيقة", path: "/exam", color: "text-primary", bg: "bg-primary/10" },
-                    { icon: Sparkles, title: "مولد الأسئلة الذكي", desc: "أسئلة تدريبية مخصصة بالذكاء الاصطناعي", path: "/exam?mode=ai", color: "text-accent", bg: "bg-accent/10" },
-                    { icon: CreditCard, title: "الاشتراك والتفعيل", desc: "فعّل اشتراكك للوصول لكامل المحتوى", path: "/subscription", color: "text-primary", bg: "bg-primary/10" },
+                    { icon: CreditCard, title: "الاشتراك والتفعيل", desc: "فعّل اشتراكك للوصول لكامل المحتوى", path: "/subscription", color: "text-accent", bg: "bg-accent/10" },
+                    { icon: Search, title: "ابحث في المحتوى", desc: "ابحث بالمادة أو الكلية أو التخصص", path: "/search", color: "text-primary", bg: "bg-primary/10" },
                   ].map((item) => (
                     <Card key={item.path} className="cursor-pointer hover:shadow-md transition-shadow border" onClick={() => navigate(item.path)}>
                       <CardContent className="flex items-center gap-3 p-3">

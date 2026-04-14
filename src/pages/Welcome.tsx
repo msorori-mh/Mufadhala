@@ -125,7 +125,7 @@ const Welcome = () => {
 
         {collegeName && (
           <p className="text-base text-primary font-semibold text-center mb-1">
-            {collegeName} تنتظرك
+            كلية {collegeName} تنتظرك
           </p>
         )}
 

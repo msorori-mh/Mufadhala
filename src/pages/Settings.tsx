@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, User, Moon, Sun, Bell, LogOut, Trash2, Globe, ChevronLeft, RefreshCw } from "lucide-react";
+import { ArrowRight, User, Moon, Sun, Bell, LogOut, Trash2, Globe, ChevronLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
-import { isNativePlatform } from "@/lib/capacitor";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -32,23 +31,6 @@ const Settings = () => {
     navigate("/login");
   };
 
-  const [checking, setChecking] = useState(false);
-  const handleCheckUpdate = async () => {
-    setChecking(true);
-    toast.info("جارٍ البحث عن تحديثات...");
-    try {
-      // Clear caches and reload to fetch latest version from server
-      if ('caches' in window) {
-        const names = await caches.keys();
-        await Promise.all(names.map(n => caches.delete(n)));
-      }
-      await new Promise(r => setTimeout(r, 1500));
-      window.location.reload();
-    } catch {
-      setChecking(false);
-      toast.error("تعذر البحث عن تحديثات. تحقق من اتصالك بالإنترنت.");
-    }
-  };
 
   if (loading) {
     return (
@@ -93,20 +75,6 @@ const Settings = () => {
               <User className="w-4 h-4" />
               تعديل الملف الشخصي
             </Button>
-            {isNativePlatform() && (
-              <>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-2"
-                  onClick={handleCheckUpdate}
-                  disabled={checking}
-                >
-                  <RefreshCw className={`w-4 h-4 ${checking ? "animate-spin" : ""}`} />
-                  البحث عن تحديثات
-                </Button>
-                <Separator />
-              </>
-            )}
             <Button
               variant="outline"
               className="w-full justify-start gap-2 text-destructive hover:text-destructive"
