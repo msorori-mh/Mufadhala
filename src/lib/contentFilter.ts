@@ -55,23 +55,17 @@ export async function resolveSubjectIds(
   supabase: { from: (table: string) => any },
   collegeId: string,
 ): Promise<{ subjectIds: string[]; resolvedVia: "track" | "none" }> {
-  // Step 1: Get admission_track_id from the college
+  // Single query: college → admission_track → track_subjects via join
   const { data: college } = await supabase
     .from("colleges")
-    .select("admission_track_id")
+    .select("admission_track_id, admission_tracks(track_subjects(subject_id))")
     .eq("id", collegeId)
     .maybeSingle();
 
-  const trackId = college?.admission_track_id;
-
-  // Step 2: If track exists, use track_subjects
-  if (trackId) {
-    const { data } = await supabase
-      .from("track_subjects")
-      .select("subject_id")
-      .eq("track_id", trackId);
-    const ids = (data || []).map((r: any) => r.subject_id as string);
-    if (ids.length > 0) return { subjectIds: ids, resolvedVia: "track" };
+  const trackSubjects = college?.admission_tracks?.track_subjects;
+  if (trackSubjects && trackSubjects.length > 0) {
+    const ids = trackSubjects.map((r: any) => r.subject_id as string);
+    return { subjectIds: ids, resolvedVia: "track" };
   }
 
   return { subjectIds: [], resolvedVia: "none" };
