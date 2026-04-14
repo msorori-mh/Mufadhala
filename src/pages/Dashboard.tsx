@@ -217,7 +217,7 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6 pb-20 md:pb-6">
+      <main className="max-w-6xl mx-auto px-4 py-6 pb-28 md:pb-6">
         <div className="grid md:grid-cols-[220px_1fr] lg:grid-cols-[250px_1fr] gap-5">
           {/* ===== Sidebar (right in RTL) ===== */}
           <aside className="space-y-4 order-2 md:order-1">
