@@ -842,7 +842,7 @@ const Subscription = () => {
                           <img
                             src={receiptPreview}
                             alt="معاينة السند"
-                            className="w-full max-h-[240px] object-contain"
+                            className="w-full max-h-[200px] sm:max-h-[240px] object-contain"
                           />
                         </div>
                       )}
