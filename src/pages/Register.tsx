@@ -11,106 +11,72 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
-import { clearDraft } from "@/lib/registrationDraft";
+import {
+  RegistrationDraft,
+  emptyDraft,
+  saveDraft,
+  loadDraft,
+  clearDraft,
+} from "@/lib/registrationDraft";
 import { GOVERNORATES, YEMEN_PHONE_REGEX } from "@/domain/constants";
 import { trackFunnelEvent } from "@/lib/funnelTracking";
-import { isNativePlatform } from "@/lib/capacitor";
-import RegisterDebugPanel from "@/components/RegisterDebugPanel";
-
-// ── Types ──
-interface FormState {
-  firstName: string;
-  fourthName: string;
-  phoneNumber: string;
-  governorate: string;
-  universityId: string;
-  collegeId: string;
-  majorId: string;
-  highSchoolGpa: string;
-}
-
-const emptyForm: FormState = {
-  firstName: "",
-  fourthName: "",
-  phoneNumber: "",
-  governorate: "",
-  universityId: "",
-  collegeId: "",
-  majorId: "",
-  highSchoolGpa: "",
-};
-
-// ── Debug trace log (in-memory ring buffer) ──
-interface TraceEntry {
-  ts: number;
-  source: string;
-  changed: string[];
-  snapshot: FormState;
-}
-const MAX_TRACE = 60;
 
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user: authUser, loading: authLoading } = useAuthContext();
   const [loading, setLoading] = useState(false);
-  const [submitPhase, setSubmitPhase] = useState("");
 
-  // ── Single source of truth for form ──
-  const [form, setForm] = useState<FormState>(emptyForm);
+  // Unified form state
+  const [form, setForm] = useState<RegistrationDraft>(emptyDraft);
+  const draftLoaded = useRef(false);
   const [formTouched, setFormTouched] = useState(false);
-  const mountCount = useRef(0);
-  const [traceLog, setTraceLog] = useState<TraceEntry[]>([]);
-  const [lastSource, setLastSource] = useState("");
-  const [viewportH, setViewportH] = useState(window.innerHeight);
-  const [kbVisible, setKbVisible] = useState(false);
 
-  // Increment mount count
+  // Data
+  const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
+  const [colleges, setColleges] = useState<Tables<"colleges">[]>([]);
+  const [majors, setMajors] = useState<Tables<"majors">[]>([]);
+
+  // Restore draft on mount — merge only empty fields if user already typed
+  // Restore draft on mount — always merge to avoid overwriting user input
   useEffect(() => {
-    mountCount.current += 1;
+    let cancelled = false;
+    loadDraft().then((draft) => {
+      if (cancelled) return;
+      if (draft) {
+        // Always use functional updater + merge to prevent race conditions
+        // where a stale promise overwrites freshly typed input
+        setForm((prev) => {
+          const merged = { ...prev };
+          (Object.keys(draft) as (keyof RegistrationDraft)[]).forEach((key) => {
+            if (!merged[key] && draft[key]) {
+              merged[key] = draft[key];
+            }
+          });
+          return merged;
+        });
+      }
+      draftLoaded.current = true;
+    });
+    return () => { cancelled = true; };
   }, []);
 
-  // ── Traced setter ──
-  const tracedSetForm = useCallback(
-    (source: string, updater: (prev: FormState) => FormState) => {
-      setForm((prev) => {
-        const next = updater(prev);
-        // Compute changed keys
-        const changed: string[] = [];
-        for (const k of Object.keys(next) as (keyof FormState)[]) {
-          if (prev[k] !== next[k]) changed.push(k);
-        }
-        if (changed.length > 0) {
-          const entry: TraceEntry = {
-            ts: Date.now(),
-            source,
-            changed,
-            snapshot: { ...next },
-          };
-          console.log(`[SETFORM:${source}]`, { changed, prev: { ...prev }, next: { ...next } });
-          setTraceLog((t) => [...t.slice(-(MAX_TRACE - 1)), entry]);
-          setLastSource(source);
-        }
-        return next;
-      });
+  // Auto-save draft on every change (after initial load)
+  useEffect(() => {
+    if (!draftLoaded.current) return;
+    saveDraft(form);
+  }, [form]);
+
+  // Update a single field
+  const updateField = useCallback(
+    <K extends keyof RegistrationDraft>(key: K, value: RegistrationDraft[K]) => {
+      setFormTouched(true);
+      setForm((prev) => ({ ...prev, [key]: value }));
     },
     [],
   );
 
-  // ── Update a single field (the ONLY mutation path for user input) ──
-  const updateField = useCallback(
-    <K extends keyof FormState>(key: K, value: FormState[K]) => {
-      setFormTouched(true);
-      tracedSetForm(`updateField:${key}`, (prev) => ({ ...prev, [key]: value }));
-    },
-    [tracedSetForm],
-  );
-
-  // ── PHASE 1: Draft restore DISABLED on mobile for stability ──
-  // On web we also skip draft restore to keep behavior consistent during debugging
-  // (Draft restore was identified as a race condition source)
-
-  // ── Redirect if already logged in ──
+  // Redirect if already logged in — uses AuthContext (no race condition)
   useEffect(() => {
     if (authLoading) return;
     if (authUser) {
@@ -119,11 +85,7 @@ const Register = () => {
     }
   }, [authLoading, authUser, navigate]);
 
-  // ── Data loading ──
-  const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
-  const [colleges, setColleges] = useState<Tables<"colleges">[]>([]);
-  const [majors, setMajors] = useState<Tables<"majors">[]>([]);
-
+  // Fetch universities
   useEffect(() => {
     supabase
       .from("universities")
@@ -135,14 +97,14 @@ const Register = () => {
       });
   }, []);
 
-  // Fetch colleges when university changes — ONLY reset collegeId & majorId
+  // Fetch colleges when university changes
   useEffect(() => {
     if (!form.universityId) {
       setColleges([]);
       setMajors([]);
       return;
     }
-    let cancelled = false;
+    const currentCollegeId = form.collegeId;
     supabase
       .from("colleges")
       .select("*")
@@ -150,30 +112,23 @@ const Register = () => {
       .eq("is_active", true)
       .order("display_order")
       .then(({ data }) => {
-        if (cancelled) return;
         setColleges(data || []);
-        // Only reset college/major if current selection is no longer valid
-        if (data) {
-          setForm((prev) => {
-            const stillValid = data.some((c) => c.id === prev.collegeId);
-            if (!stillValid && prev.collegeId) {
-              console.log("[SETFORM:universityEffect] resetting collegeId+majorId");
-              return { ...prev, collegeId: "", majorId: "" };
-            }
-            return prev;
-          });
+        if (data && currentCollegeId) {
+          const stillValid = data.some((c) => c.id === currentCollegeId);
+          if (!stillValid) {
+            updateField("collegeId", "");
+            updateField("majorId", "");
+          }
         }
       });
-    return () => { cancelled = true; };
-  }, [form.universityId]);
+  }, [form.universityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch majors when college changes — ONLY reset majorId
+  // Fetch majors when college changes
   useEffect(() => {
     if (!form.collegeId) {
       setMajors([]);
       return;
     }
-    let cancelled = false;
     supabase
       .from("majors")
       .select("*")
@@ -181,41 +136,16 @@ const Register = () => {
       .eq("is_active", true)
       .order("display_order")
       .then(({ data }) => {
-        if (cancelled) return;
         setMajors(data || []);
-        if (data) {
-          setForm((prev) => {
-            const stillValid = data.some((m) => m.id === prev.majorId);
-            if (!stillValid && prev.majorId) {
-              console.log("[SETFORM:collegeEffect] resetting majorId");
-              return { ...prev, majorId: "" };
-            }
-            return prev;
-          });
+        if (data && form.majorId) {
+          const stillValid = data.some((m) => m.id === form.majorId);
+          if (!stillValid) {
+            updateField("majorId", "");
+          }
         }
       });
-    return () => { cancelled = true; };
-  }, [form.collegeId]);
+  }, [form.collegeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Viewport / keyboard tracking ──
-  useEffect(() => {
-    const onResize = () => {
-      const h = window.innerHeight;
-      const wasKb = kbVisible;
-      const isKb = h < viewportH - 100;
-      setViewportH(h);
-      if (isKb !== wasKb) setKbVisible(isKb);
-    };
-    window.addEventListener("resize", onResize);
-    const vv = window.visualViewport;
-    vv?.addEventListener("resize", onResize);
-    return () => {
-      window.removeEventListener("resize", onResize);
-      vv?.removeEventListener("resize", onResize);
-    };
-  }, [viewportH, kbVisible]);
-
-  // ── Validation ──
   const validationChecks = {
     firstName: !!form.firstName.trim(),
     fourthName: !!form.fourthName.trim(),
@@ -225,6 +155,13 @@ const Register = () => {
     collegeId: !!form.collegeId,
   };
   const isFormValid = Object.values(validationChecks).every(Boolean);
+
+  // Debug: trace exact validation state (remove after confirming fix)
+  useEffect(() => {
+    if (formTouched) {
+      console.log('[REG] validation:', validationChecks, 'valid:', Object.values(validationChecks).every(Boolean));
+    }
+  }, [form]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fieldLabels: Record<string, string> = {
     firstName: "الاسم الأول",
@@ -238,95 +175,51 @@ const Register = () => {
     .filter(([, ok]) => !ok)
     .map(([key]) => fieldLabels[key]);
 
-  // ── Submit with timeout protection ──
   const handleRegister = async () => {
-    setSubmitPhase("validation");
-    console.log("[SUBMIT:start]", { form, isFormValid, validationChecks });
-
     if (!isFormValid) {
       toast({ variant: "destructive", title: "يرجى ملء جميع الحقول بشكل صحيح" });
-      setSubmitPhase("");
       return;
     }
-
     setLoading(true);
-    setSubmitPhase("payload-created");
-
-    const payload = {
-      phone: form.phoneNumber,
-      first_name: form.firstName.trim(),
-      fourth_name: form.fourthName.trim(),
-      governorate: form.governorate,
-      university_id: form.universityId,
-      college_id: form.collegeId,
-      major_id: form.majorId,
-      high_school_gpa: form.highSchoolGpa ? parseFloat(form.highSchoolGpa) : null,
-    };
-    console.log("[SUBMIT:payload-created]", payload);
-
-    // Timeout protection: 30 seconds max
-    const timeoutId = setTimeout(() => {
-      console.error("[SUBMIT:TIMEOUT] exceeded 30s");
-      setLoading(false);
-      setSubmitPhase("timeout");
-      toast({
-        variant: "destructive",
-        title: "انتهت مهلة الطلب",
-        description: "يرجى المحاولة مرة أخرى",
-      });
-    }, 30000);
-
     try {
-      setSubmitPhase("invoke-register-student");
-      console.log("[SUBMIT:invoke-register-student]");
+      const res = await supabase.functions.invoke("register-student", {
+        body: {
+          phone: form.phoneNumber,
+          first_name: form.firstName.trim(),
+          fourth_name: form.fourthName.trim(),
+          governorate: form.governorate,
+          university_id: form.universityId,
+          college_id: form.collegeId,
+          major_id: form.majorId,
+          high_school_gpa: form.highSchoolGpa ? parseFloat(form.highSchoolGpa) : null,
+        },
+      });
 
-      const res = await supabase.functions.invoke("register-student", { body: payload });
-
-      console.log("[SUBMIT:edge-response]", { data: res.data, error: res.error });
-      setSubmitPhase("edge-response");
-
+      // Handle edge function or backend errors
       const errorMsg = res.data?.error || (res.error ? "فشل في الاتصال بالخادم" : null);
       if (errorMsg) {
-        clearTimeout(timeoutId);
         toast({ variant: "destructive", title: "خطأ", description: errorMsg });
         setLoading(false);
-        setSubmitPhase("error: " + errorMsg);
         return;
       }
 
-      setSubmitPhase("session-establishing");
+      // Set session and verify it was established
       const { access_token, refresh_token } = res.data.session;
       const { error: sessionError } = await supabase.auth.setSession({ access_token, refresh_token });
-
       if (sessionError) {
-        clearTimeout(timeoutId);
-        console.error("[SUBMIT:session-error]", sessionError);
-        toast({
-          variant: "destructive",
-          title: "خطأ",
-          description: "فشل في تثبيت الجلسة. يرجى المحاولة مرة أخرى.",
-        });
+        console.error("setSession error:", sessionError);
+        toast({ variant: "destructive", title: "خطأ", description: "فشل في تثبيت الجلسة. يرجى المحاولة مرة أخرى." });
         setLoading(false);
-        setSubmitPhase("session-error");
         return;
       }
 
-      clearTimeout(timeoutId);
-      setSubmitPhase("session-established");
-      console.log("[SUBMIT:session-established]");
-
+      // Only clear draft after confirmed session
       await clearDraft();
       trackFunnelEvent("user_registered");
       toast({ title: "تم التسجيل بنجاح! 🎉" });
-
-      setSubmitPhase("navigate-welcome");
-      console.log("[SUBMIT:navigate-welcome]");
       navigate("/welcome", { replace: true });
-    } catch (err) {
-      clearTimeout(timeoutId);
-      console.error("[SUBMIT:exception]", err);
+    } catch {
       toast({ variant: "destructive", title: "خطأ", description: "حدث خطأ غير متوقع" });
-      setSubmitPhase("exception");
     }
     setLoading(false);
   };
@@ -364,8 +257,7 @@ const Register = () => {
                 <Input
                   value={form.firstName}
                   onChange={(e) => updateField("firstName", e.target.value)}
-                  onFocus={() => console.log("[FOCUS:firstName]", { firstName: form.firstName })}
-                  autoComplete="off"
+                  placeholder=""
                 />
               </div>
               <div className="space-y-1.5">
@@ -373,8 +265,7 @@ const Register = () => {
                 <Input
                   value={form.fourthName}
                   onChange={(e) => updateField("fourthName", e.target.value)}
-                  onFocus={() => console.log("[FOCUS:fourthName]", { fourthName: form.fourthName })}
-                  autoComplete="off"
+                  placeholder=""
                 />
               </div>
             </div>
@@ -390,11 +281,9 @@ const Register = () => {
                   onChange={(e) =>
                     updateField("phoneNumber", e.target.value.replace(/\D/g, "").slice(0, 9))
                   }
-                  onFocus={() => console.log("[FOCUS:phoneNumber]", { firstName: form.firstName, fourthName: form.fourthName })}
                   className="text-left font-mono"
                   dir="ltr"
                   maxLength={9}
-                  autoComplete="off"
                 />
               </div>
               {form.phoneNumber && !YEMEN_PHONE_REGEX.test(form.phoneNumber) && (
@@ -417,13 +306,9 @@ const Register = () => {
               <NativeSelect
                 value={form.universityId}
                 onValueChange={(v) => {
-                  tracedSetForm("universitySelect", (prev) => ({
-                    ...prev,
-                    universityId: v,
-                    collegeId: "",
-                    majorId: "",
-                  }));
-                  setFormTouched(true);
+                  updateField("universityId", v);
+                  updateField("collegeId", "");
+                  updateField("majorId", "");
                 }}
                 placeholder="اختر الجامعة"
                 options={universities.map((u) => ({ value: u.id, label: u.name_ar }))}
@@ -444,7 +329,6 @@ const Register = () => {
                 min="60"
                 max="100"
                 step="0.01"
-                autoComplete="off"
               />
               {form.highSchoolGpa &&
                 (parseFloat(form.highSchoolGpa) < 60 || parseFloat(form.highSchoolGpa) > 100) && (
@@ -457,12 +341,8 @@ const Register = () => {
               <NativeSelect
                 value={form.collegeId}
                 onValueChange={(v) => {
-                  tracedSetForm("collegeSelect", (prev) => ({
-                    ...prev,
-                    collegeId: v,
-                    majorId: "",
-                  }));
-                  setFormTouched(true);
+                  updateField("collegeId", v);
+                  updateField("majorId", "");
                 }}
                 placeholder={!form.universityId ? "اختر الجامعة أولاً" : "اختر الكلية"}
                 disabled={!form.universityId}
@@ -506,23 +386,9 @@ const Register = () => {
                 شروط الاستخدام
               </Link>
             </p>
-            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v3.0-debug</p>
+            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v2.1</p>
           </CardContent>
         </Card>
-
-        {/* Debug panel — visible on device */}
-        <RegisterDebugPanel
-          form={form}
-          validationChecks={validationChecks}
-          isFormValid={isFormValid}
-          loading={loading}
-          submitPhase={submitPhase}
-          lastSource={lastSource}
-          mountCount={mountCount.current}
-          viewportH={viewportH}
-          kbVisible={kbVisible}
-          traceLog={traceLog}
-        />
       </div>
     </div>
   );
