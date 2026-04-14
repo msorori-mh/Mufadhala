@@ -29,7 +29,7 @@ const Register = () => {
   // Unified form state
   const [form, setForm] = useState<RegistrationDraft>(emptyDraft);
   const draftLoaded = useRef(false);
-  const formTouched = useRef(false);
+  const [formTouched, setFormTouched] = useState(false);
 
   // Data
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
@@ -69,7 +69,7 @@ const Register = () => {
   // Update a single field
   const updateField = useCallback(
     <K extends keyof RegistrationDraft>(key: K, value: RegistrationDraft[K]) => {
-      formTouched.current = true;
+      setFormTouched(true);
       setForm((prev) => ({ ...prev, [key]: value }));
     },
     [],
@@ -106,6 +106,7 @@ const Register = () => {
       setMajors([]);
       return;
     }
+    const currentCollegeId = form.collegeId;
     supabase
       .from("colleges")
       .select("*")
@@ -114,8 +115,8 @@ const Register = () => {
       .order("display_order")
       .then(({ data }) => {
         setColleges(data || []);
-        if (data && form.collegeId) {
-          const stillValid = data.some((c) => c.id === form.collegeId);
+        if (data && currentCollegeId) {
+          const stillValid = data.some((c) => c.id === currentCollegeId);
           if (!stillValid) {
             updateField("collegeId", "");
             updateField("majorId", "");
@@ -156,6 +157,13 @@ const Register = () => {
     collegeId: !!form.collegeId,
   };
   const isFormValid = Object.values(validationChecks).every(Boolean);
+
+  // Debug: trace exact validation state (remove after confirming fix)
+  useEffect(() => {
+    if (formTouched) {
+      console.log('[REG] validation:', validationChecks, 'valid:', Object.values(validationChecks).every(Boolean));
+    }
+  }, [form]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fieldLabels: Record<string, string> = {
     firstName: "الاسم الأول",
@@ -356,7 +364,7 @@ const Register = () => {
               </div>
             )}
 
-            {formTouched.current && !isFormValid && missingFields.length > 0 && (
+            {formTouched && !isFormValid && missingFields.length > 0 && (
               <p className="text-xs text-destructive text-center">
                 أكمل: {missingFields.join("، ")}
               </p>
