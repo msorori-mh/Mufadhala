@@ -29,7 +29,7 @@ const Register = () => {
   // Unified form state
   const [form, setForm] = useState<RegistrationDraft>(emptyDraft);
   const draftLoaded = useRef(false);
-  const formTouched = useRef(false);
+  const [formTouched, setFormTouched] = useState(false);
 
   // Data
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
