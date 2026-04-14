@@ -309,17 +309,24 @@ const Register = () => {
     return () => clearTimeout(saveTimer.current);
   }, [form, isNative]);
 
-  // Update a single field
+  // Update a single field — marks source as "user" for text inputs
   const updateField = useCallback(
     <K extends keyof RegistrationDraft>(key: K, value: RegistrationDraft[K]) => {
       log(`FORM:updateField:${key}`, `"${value}"`);
+      // Mark text fields as user-touched
+      if (PROTECTED_TEXT_FIELDS.includes(key)) {
+        userTouchedFields.current.add(key);
+      }
+      updateSourceRef.current = "user";
       setForm((prev) => {
         const next = { ...prev, [key]: value };
         log(`FORM:stateAfterUpdate:${key}`, `fn="${next.firstName}" ln="${next.fourthName}" ph="${next.phoneNumber}"`);
         return next;
       });
+      // Reset source back to internal after microtask
+      queueMicrotask(() => { updateSourceRef.current = "internal"; });
     },
-    [log],
+    [log, setForm],
   );
 
   // Check session on mount
