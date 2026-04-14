@@ -415,9 +415,13 @@ const Subscription = () => {
         {isPending && (
           <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-900">
             <CardContent className="py-6 text-center">
-              <Clock className="w-12 h-12 text-yellow-600 mx-auto mb-3" />
+              <Clock className="w-12 h-12 text-yellow-600 mx-auto mb-3 animate-pulse" />
               <h2 className="text-lg font-bold text-yellow-700 dark:text-yellow-400">طلبك قيد المراجعة</h2>
               <p className="text-sm text-yellow-600 dark:text-yellow-500 mt-1">سيتم مراجعة طلب الدفع وتفعيل اشتراكك في أقرب وقت</p>
+              <p className="text-xs text-yellow-500 dark:text-yellow-600 mt-3 flex items-center justify-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                يتم التحقق تلقائياً كل 20 ثانية
+              </p>
             </CardContent>
           </Card>
         )}
