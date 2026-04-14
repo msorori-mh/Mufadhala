@@ -292,7 +292,7 @@ const LessonsList = () => {
         </div>
       )}
 
-      <main className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6">
+      <main className="max-w-4xl mx-auto px-4 py-6 pb-28 md:pb-6">
         {!isOffline && !canAccessContent ? (
           <NoCollegeView refetch={refetchStudent} />
         ) : (

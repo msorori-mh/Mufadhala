@@ -88,7 +88,7 @@ const Leaderboard = () => {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6 space-y-4">
+      <main className="max-w-4xl mx-auto px-4 py-6 pb-28 md:pb-6 space-y-4">
         {/* Filter */}
         <div className="flex items-center gap-3">
           <Users className="w-4 h-4 text-muted-foreground shrink-0" />

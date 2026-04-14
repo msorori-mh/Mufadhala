@@ -132,7 +132,10 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .mb-bottom-nav {
-    margin-bottom: 3.5rem;
+    margin-bottom: 7rem;
+  }
+  .pb-bottom-nav {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px) + 1.5rem);
   }
 
   .gradient-primary {
