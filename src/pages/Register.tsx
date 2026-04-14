@@ -69,7 +69,7 @@ const Register = () => {
   // Update a single field
   const updateField = useCallback(
     <K extends keyof RegistrationDraft>(key: K, value: RegistrationDraft[K]) => {
-      formTouched.current = true;
+      setFormTouched(true);
       setForm((prev) => ({ ...prev, [key]: value }));
     },
     [],
@@ -356,7 +356,7 @@ const Register = () => {
               </div>
             )}
 
-            {formTouched.current && !isFormValid && missingFields.length > 0 && (
+            {formTouched && !isFormValid && missingFields.length > 0 && (
               <p className="text-xs text-destructive text-center">
                 أكمل: {missingFields.join("، ")}
               </p>
