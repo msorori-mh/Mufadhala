@@ -93,6 +93,20 @@ const Settings = () => {
               <User className="w-4 h-4" />
               تعديل الملف الشخصي
             </Button>
+            {isNativePlatform() && (
+              <>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2"
+                  onClick={handleCheckUpdate}
+                  disabled={checking}
+                >
+                  <RefreshCw className={`w-4 h-4 ${checking ? "animate-spin" : ""}`} />
+                  البحث عن تحديثات
+                </Button>
+                <Separator />
+              </>
+            )}
             <Button
               variant="outline"
               className="w-full justify-start gap-2 text-destructive hover:text-destructive"
