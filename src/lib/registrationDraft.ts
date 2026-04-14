@@ -25,10 +25,27 @@ export const emptyDraft: RegistrationDraft = {
   highSchoolGpa: '',
 };
 
+// Debounced save — prevent native IPC storm on every keystroke
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
 export async function saveDraft(draft: RegistrationDraft) {
+  // Cancel any pending save
+  if (saveTimer) clearTimeout(saveTimer);
+
   const json = JSON.stringify(draft);
+
   if (isNativePlatform()) {
-    await Preferences.set({ key: DRAFT_KEY, value: json });
+    // Debounce native writes (Capacitor Preferences IPC is expensive)
+    return new Promise<void>((resolve) => {
+      saveTimer = setTimeout(async () => {
+        try {
+          await Preferences.set({ key: DRAFT_KEY, value: json });
+        } catch (e) {
+          console.warn('[DRAFT:save] native write failed:', e);
+        }
+        resolve();
+      }, 500);
+    });
   } else {
     try { localStorage.setItem(DRAFT_KEY, json); } catch {}
   }
@@ -47,13 +64,24 @@ export async function loadDraft(): Promise<RegistrationDraft | null> {
       const parsed = JSON.parse(json);
       return { ...emptyDraft, ...parsed };
     }
-  } catch {}
+  } catch (e) {
+    console.warn('[DRAFT:load] failed:', e);
+  }
   return null;
 }
 
 export async function clearDraft() {
+  // Cancel any pending save first
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
   if (isNativePlatform()) {
-    await Preferences.remove({ key: DRAFT_KEY });
+    try {
+      await Preferences.remove({ key: DRAFT_KEY });
+    } catch (e) {
+      console.warn('[DRAFT:clear] native remove failed:', e);
+    }
   } else {
     try { localStorage.removeItem(DRAFT_KEY); } catch {}
   }
