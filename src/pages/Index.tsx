@@ -118,16 +118,18 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       <section id="features-section" className="bg-muted py-8 px-4">
         <div className="max-w-5xl mx-auto grid gap-4 md:grid-cols-3">
           {[
-            { icon: BookOpen, emoji: "📚", title: "شمولية المنهج الوزاري", desc: "تغطية دقيقة لكافة المقررات الدراسية المطلوبة في اختبارات المفاضلة." },
-            { icon: Brain, emoji: "🧠", title: "تعزيز الفهم بالتعليل", desc: "شرح علمي مبسط لكل سؤال يوضح لماذا هذه الإجابة هي الأصح." },
-            { icon: FileCheck, emoji: "⏱️", title: "محاكاة بيئة الاختبار", desc: "اختبارات تحاكي النمط الحقيقي من حيث الدرجات وإدارة الوقت." },
+            { icon: BookOpen, emoji: "📚", title: "شمولية المنهج الوزاري", desc: "تغطية دقيقة لكافة المقررات الدراسية المطلوبة في اختبارات المفاضلة.", color: "text-emerald-600", bg: "bg-emerald-50" },
+            { icon: Brain, emoji: "🧠", title: "تعزيز الفهم بالتعليل", desc: "شرح علمي مبسط لكل سؤال يوضح لماذا هذه الإجابة هي الأصح.", color: "text-blue-600", bg: "bg-blue-50" },
+            { icon: FileCheck, emoji: "⏱️", title: "محاكاة بيئة الاختبار", desc: "اختبارات تحاكي النمط الحقيقي من حيث الدرجات وإدارة الوقت.", color: "text-rose-600", bg: "bg-rose-50" },
           ].map((f, i) => (
-            <div key={i} className="bg-card rounded-xl border p-4 text-center animate-fade-in" style={{ animationDelay: `${i * 150}ms` }}>
-              <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-accent/10 mb-3">
-                <f.icon className="w-5 h-5 text-accent" />
+            <div key={i} className="flex items-start gap-4 bg-card rounded-2xl border border-border/60 p-5 animate-fade-in shadow-sm hover:shadow-md transition-shadow" style={{ animationDelay: `${i * 150}ms` }} dir="rtl">
+              <div className={`shrink-0 w-12 h-12 rounded-xl ${f.bg} flex items-center justify-center`}>
+                <f.icon className={`w-6 h-6 ${f.color}`} />
               </div>
-              <h3 className="font-bold text-foreground text-sm mb-2">{f.emoji} {f.title}</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
+              <div className="min-w-0">
+                <h3 className="font-bold text-foreground text-sm mb-1">{f.emoji} {f.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
+              </div>
             </div>
           ))}
         </div>
