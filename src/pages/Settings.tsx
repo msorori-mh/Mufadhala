@@ -32,6 +32,23 @@ const Settings = () => {
     navigate("/login");
   };
 
+  const [checking, setChecking] = useState(false);
+  const handleCheckUpdate = async () => {
+    setChecking(true);
+    toast.info("جارٍ البحث عن تحديثات...");
+    try {
+      // Clear caches and reload to fetch latest version from server
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map(n => caches.delete(n)));
+      }
+      await new Promise(r => setTimeout(r, 1500));
+      window.location.reload();
+    } catch {
+      setChecking(false);
+      toast.error("تعذر البحث عن تحديثات. تحقق من اتصالك بالإنترنت.");
+    }
+  };
 
   if (loading) {
     return (
