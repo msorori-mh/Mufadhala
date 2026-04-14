@@ -242,7 +242,7 @@ const LessonsList = () => {
     return result;
   }, [lessons, FREE_COUNT]);
 
-  const loading = accessLoading || (!isOffline && lessonsLoading) || subLoading;
+  const lessonsStillLoading = !isOffline && lessonsLoading;
 
   const filteredLessons = useMemo(() => {
     let result = lessons;
