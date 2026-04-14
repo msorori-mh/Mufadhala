@@ -159,10 +159,12 @@ const Register = () => {
     lastFormSnapshot.current = snap;
   }, [form, log]);
 
-  // Mount counter
+  // Mount counter + scroll normalization
   useEffect(() => {
     mountCount.current += 1;
     log("LIFECYCLE", `Register mounted (count: ${mountCount.current}), isNative: ${isNative}`);
+    // Normalize viewport on mount — prevent stale scroll position from triggering resize
+    window.scrollTo(0, 0);
     return () => log("LIFECYCLE", "Register unmounting");
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
