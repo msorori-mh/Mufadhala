@@ -158,6 +158,13 @@ const Register = () => {
   };
   const isFormValid = Object.values(validationChecks).every(Boolean);
 
+  // Debug: trace exact validation state (remove after confirming fix)
+  useEffect(() => {
+    if (formTouched) {
+      console.log('[REG] validation:', validationChecks, 'valid:', Object.values(validationChecks).every(Boolean));
+    }
+  }, [form]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const fieldLabels: Record<string, string> = {
     firstName: "الاسم الأول",
     fourthName: "اللقب",
