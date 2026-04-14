@@ -75,10 +75,11 @@ const Register = () => {
     [],
   );
 
-  // Check session on mount
+  // Check session on mount — clear stale draft if already logged in
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
+        clearDraft(); // Remove stale draft data
         navigate("/dashboard", { replace: true });
       } else {
         setCheckingSession(false);

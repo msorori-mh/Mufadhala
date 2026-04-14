@@ -79,7 +79,7 @@ const StudentProfile = () => {
       setLoading(false);
     };
     init();
-  }, [navigate]);
+  }, [authLoading, user, navigate]);
 
   // Fetch colleges when university changes
   useEffect(() => {
