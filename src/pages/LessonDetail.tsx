@@ -62,6 +62,7 @@ const LessonDetail = () => {
   const { isActive: hasActiveSubscription, loading: subLoading, planId, allowedMajorIds } = useSubscription(user?.id);
   const [planCoversLesson, setPlanCoversLesson] = useState(false);
   const isOffline = useOfflineStatus();
+  const paywallActions = usePaywall();
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
