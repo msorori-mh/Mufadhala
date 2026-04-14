@@ -486,7 +486,7 @@ const LessonsList = () => {
                     onClick={(e) => {
                       if (isLocked) {
                         e.preventDefault();
-                        setLockedLesson(lesson);
+                        showPaywall("locked_lesson", lesson.title, true);
                       } else {
                         navigate(`/lessons/${lesson.id}`);
                       }
@@ -579,31 +579,8 @@ const LessonsList = () => {
         )}
       </main>
 
-      {/* Locked lesson dialog */}
-      <Dialog open={!!lockedLesson} onOpenChange={(open) => !open && setLockedLesson(null)}>
-        <DialogContent className="text-center max-w-sm" dir="rtl">
-          <DialogHeader className="items-center">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
-              <Lock className="w-8 h-8 text-primary" />
-            </div>
-            <DialogTitle className="text-lg">{lockedLesson?.title}</DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed mt-2">
-              هذا الدرس جزء من المحتوى المتقدم 🚀
-              <br />
-              اشترك الآن واحصل على جميع الدروس والأسئلة لتتفوق في المفاضلة!
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex-col gap-2 sm:flex-col mt-2">
-            <Button onClick={() => { setLockedLesson(null); navigate("/subscription"); }} className="w-full gap-2">
-              <Rocket className="w-4 h-4" />
-              تفعيل الاشتراك
-            </Button>
-            <Button variant="ghost" onClick={() => setLockedLesson(null)} className="w-full">
-              لاحقاً
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Paywall Sheet */}
+      <PaywallSheet {...paywallProps} />
     </div>
   );
 };
