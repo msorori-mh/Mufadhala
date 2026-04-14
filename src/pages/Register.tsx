@@ -22,11 +22,12 @@ import { isNativePlatform } from "@/lib/capacitor";
 import { GOVERNORATES, YEMEN_PHONE_REGEX } from "@/domain/constants";
 import { trackFunnelEvent } from "@/lib/funnelTracking";
 
-/* ─── APK Debug Panel ─── */
+/* ─── APK Debug Panel v4 — keyboard/viewport/focus tracing ─── */
 interface DebugLog {
   ts: number;
   tag: string;
   msg: string;
+  critical?: boolean;
 }
 
 function RegDebugPanel({
@@ -34,15 +35,20 @@ function RegDebugPanel({
   logs,
   mountCount,
   submitPhase,
+  kbState,
+  activeField,
 }: {
   form: RegistrationDraft;
   logs: DebugLog[];
   mountCount: number;
   submitPhase: string;
+  kbState: string;
+  activeField: string;
 }) {
   const [open, setOpen] = useState(false);
   const isNative = isNativePlatform();
   const [vh, setVh] = useState(window.innerHeight);
+  const vvh = (window.visualViewport?.height ?? window.innerHeight).toFixed(0);
 
   useEffect(() => {
     const h = () => setVh(window.innerHeight);
@@ -59,17 +65,17 @@ function RegDebugPanel({
         onClick={() => setOpen(!open)}
         className="w-full flex justify-between items-center px-2 py-1 bg-amber-600 text-black font-bold text-xs"
       >
-        <span>🐛 REG DEBUG {isNative ? "[NATIVE APK]" : "[WEB]"} | mounts:{mountCount} | submit:{submitPhase} | vh:{vh}</span>
+        <span>🐛 v4 {isNative ? "[APK]" : "[WEB]"} m:{mountCount} s:{submitPhase} vh:{vh} vv:{vvh} kb:{kbState} f:{activeField}</span>
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
       </button>
       {open && (
         <div className="max-h-48 overflow-y-auto p-1 space-y-0.5">
           <div className="text-yellow-300">
-            FORM: fn="{form.firstName}" ln="{form.fourthName}" ph="{form.phoneNumber}" gov="{form.governorate}" uni="{form.universityId?.slice(0,8)}" col="{form.collegeId?.slice(0,8)}" maj="{form.majorId?.slice(0,8)}" gpa="{form.highSchoolGpa}"
+            FORM: fn="{form.firstName}" ln="{form.fourthName}" ph="{form.phoneNumber}" gov="{form.governorate}"
           </div>
           <div className="border-t border-green-800 mt-1 pt-1 text-green-300">
-            {logs.slice(-30).map((l, i) => (
-              <div key={i}>
+            {logs.slice(-40).map((l, i) => (
+              <div key={i} className={l.critical ? "text-red-400 font-bold" : ""}>
                 <span className="text-gray-500">{new Date(l.ts).toLocaleTimeString()}</span>{" "}
                 <span className="text-cyan-400">[{l.tag}]</span> {l.msg}
               </div>
@@ -94,23 +100,138 @@ const Register = () => {
   const mountCount = useRef(0);
   const [submitPhase, setSubmitPhase] = useState("idle");
   const [debugLogs, setDebugLogs] = useState<DebugLog[]>([]);
+  const [kbState, setKbState] = useState("hidden");
+  const [activeField, setActiveField] = useState("none");
+  const lastFormSnapshot = useRef<string>("");
+  const lastEventRef = useRef<string>("init");
   const isNative = isNativePlatform();
 
-  const log = useCallback((tag: string, msg: string) => {
+  const log = useCallback((tag: string, msg: string, critical = false) => {
     console.log(`[${tag}] ${msg}`);
-    setDebugLogs((prev) => [...prev.slice(-100), { ts: Date.now(), tag, msg }]);
+    setDebugLogs((prev) => [...prev.slice(-100), { ts: Date.now(), tag, msg, critical }]);
   }, []);
 
-  // Keep formRef in sync
+  // Keep formRef in sync + detect unexpected resets
   useEffect(() => {
     formRef.current = form;
-  }, [form]);
+    const snap = `${form.firstName}|${form.fourthName}|${form.phoneNumber}`;
+    const prev = lastFormSnapshot.current;
+    if (prev && prev !== snap) {
+      const [pFn, pLn, pPh] = prev.split("|");
+      // Detect if a non-empty field became empty without updateField
+      if (pFn && !form.firstName) {
+        log("CRITICAL:RESET", `firstName cleared! was="${pFn}" now="" lastEvent=${lastEventRef.current}`, true);
+      }
+      if (pLn && !form.fourthName) {
+        log("CRITICAL:RESET", `fourthName cleared! was="${pLn}" now="" lastEvent=${lastEventRef.current}`, true);
+      }
+      if (pPh && !form.phoneNumber) {
+        log("CRITICAL:RESET", `phoneNumber cleared! was="${pPh}" now="" lastEvent=${lastEventRef.current}`, true);
+      }
+    }
+    lastFormSnapshot.current = snap;
+  }, [form, log]);
 
   // Mount counter
   useEffect(() => {
     mountCount.current += 1;
     log("LIFECYCLE", `Register mounted (count: ${mountCount.current}), isNative: ${isNative}`);
     return () => log("LIFECYCLE", "Register unmounting");
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── PHASE 1: Keyboard events (Capacitor plugin) ───
+  useEffect(() => {
+    if (!isNative) return;
+    let cleanup: (() => void) | undefined;
+    (async () => {
+      try {
+        const { Keyboard } = await import("@capacitor/keyboard");
+        const listeners = await Promise.all([
+          Keyboard.addListener("keyboardWillShow", (info) => {
+            lastEventRef.current = "kb-willShow";
+            log("KB:willShow", `height=${info.keyboardHeight} form: fn="${formRef.current.firstName}" ln="${formRef.current.fourthName}"`);
+            setKbState("showing");
+          }),
+          Keyboard.addListener("keyboardDidShow", (info) => {
+            lastEventRef.current = "kb-didShow";
+            log("KB:didShow", `height=${info.keyboardHeight}`);
+            setKbState("visible");
+          }),
+          Keyboard.addListener("keyboardWillHide", () => {
+            lastEventRef.current = "kb-willHide";
+            log("KB:willHide", `form: fn="${formRef.current.firstName}" ln="${formRef.current.fourthName}"`);
+            setKbState("hiding");
+          }),
+          Keyboard.addListener("keyboardDidHide", () => {
+            lastEventRef.current = "kb-didHide";
+            log("KB:didHide", `form: fn="${formRef.current.firstName}" ln="${formRef.current.fourthName}"`);
+            setKbState("hidden");
+          }),
+        ]);
+        cleanup = () => listeners.forEach((l) => l.remove());
+        log("KB:init", "Keyboard listeners registered");
+      } catch (e: any) {
+        log("KB:init", `FAILED: ${e.message}`);
+      }
+    })();
+    return () => cleanup?.();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── PHASE 2: Viewport / resize trace ───
+  useEffect(() => {
+    let prevH = window.innerHeight;
+    const onResize = () => {
+      const newH = window.innerHeight;
+      const delta = newH - prevH;
+      if (Math.abs(delta) > 5) {
+        lastEventRef.current = `resize-${delta}`;
+        log("VIEWPORT:resize", `${prevH}→${newH} (Δ${delta}) form: fn="${formRef.current.firstName}" ln="${formRef.current.fourthName}"`);
+      }
+      prevH = newH;
+    };
+    window.addEventListener("resize", onResize);
+
+    const vv = window.visualViewport;
+    let prevVV = vv?.height ?? 0;
+    const onVVResize = () => {
+      const newVV = vv?.height ?? 0;
+      const delta = Math.round(newVV - prevVV);
+      if (Math.abs(delta) > 5) {
+        lastEventRef.current = `vv-resize-${delta}`;
+        log("VIEWPORT:visualViewport", `${prevVV.toFixed(0)}→${newVV.toFixed(0)} (Δ${delta})`);
+      }
+      prevVV = newVV;
+    };
+    vv?.addEventListener("resize", onVVResize);
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+      vv?.removeEventListener("resize", onVVResize);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── PHASE 3: Focus / blur trace (document level) ───
+  useEffect(() => {
+    const onFocusIn = (e: FocusEvent) => {
+      const el = e.target as HTMLElement;
+      const name = el.getAttribute("placeholder") || el.tagName || "unknown";
+      lastEventRef.current = `focus-${name}`;
+      setActiveField(name.slice(0, 15));
+      log("FOCUS:in", `"${name}" form: fn="${formRef.current.firstName}" ln="${formRef.current.fourthName}"`);
+    };
+    const onFocusOut = (e: FocusEvent) => {
+      const el = e.target as HTMLElement;
+      const name = el.getAttribute("placeholder") || el.tagName || "unknown";
+      lastEventRef.current = `blur-${name}`;
+      setActiveField("none");
+      log("FOCUS:out", `"${name}" form: fn="${formRef.current.firstName}" ln="${formRef.current.fourthName}"`);
+    };
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Data
@@ -510,7 +631,7 @@ const Register = () => {
                 شروط الاستخدام
               </Link>
             </p>
-            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v3.0-debug</p>
+            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v4.0-kb-trace</p>
           </CardContent>
         </Card>
       </div>
@@ -521,6 +642,8 @@ const Register = () => {
         logs={debugLogs}
         mountCount={mountCount.current}
         submitPhase={submitPhase}
+        kbState={kbState}
+        activeField={activeField}
       />
     </div>
   );
