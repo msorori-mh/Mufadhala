@@ -279,7 +279,9 @@ const Subscription = () => {
         }
       }).catch(() => { /* non-critical */ });
 
-      toast({ title: "تم إرسال طلب الدفع بنجاح!" });
+      toast({ title: "✅ تم إرسال السند بنجاح", description: "طلبك قيد المراجعة — سيتم تفعيل اشتراكك في أقرب وقت" });
+      setReceiptFile(null);
+      if (receiptPreview) { URL.revokeObjectURL(receiptPreview); setReceiptPreview(null); }
       setSubscription({ id: newSub.id, status: "pending", plan_id: selectedPlan.id, starts_at: null, expires_at: null, trial_ends_at: null });
       setStep("plans");
     }
