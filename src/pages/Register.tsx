@@ -8,6 +8,7 @@ import NativeSelect from "@/components/NativeSelect";
 import { Loader2, Rocket } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 import {
