@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 type ContentPart =
   | { type: "text"; text: string }
@@ -192,7 +192,7 @@ interface ChatWidgetProps {
 }
 
 const ChatWidget = React.forwardRef<HTMLDivElement, ChatWidgetProps>(({ lessonContext, defaultOpen }, ref) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { isActive: hasSubscription } = useSubscription(user?.id);
   const [open, setOpen] = useState(defaultOpen ?? false);
   const [messages, setMessages] = useState<Message[]>([]);
