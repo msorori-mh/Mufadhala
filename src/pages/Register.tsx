@@ -179,7 +179,17 @@ const Register = () => {
         },
       });
 
-      const errorMsg = res.data?.error || (res.error ? "فشل في الاتصال بالخادم" : null);
+      let errorMsg = res.data?.error;
+      if (!errorMsg && res.error) {
+        try {
+          const ctx = (res.error as any)?.context;
+          if (ctx instanceof Response) {
+            const body = await ctx.json();
+            errorMsg = body?.error;
+          }
+        } catch {}
+        if (!errorMsg) errorMsg = "فشل في الاتصال بالخادم";
+      }
       if (errorMsg) {
         const isDuplicate = errorMsg.includes("مسجل مسبقاً");
         toast({
