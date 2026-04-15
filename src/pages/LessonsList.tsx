@@ -189,7 +189,7 @@ const LessonsList = () => {
   });
 
   const lessons = isOffline ? (offlineLessons || []) : (lessonsData?.lessons || []);
-  const majorName = lessonsData?.majorName || "";
+  const majorName = filterName || lessonsData?.majorName || "";
   const subjects = lessonsData?.subjects || [];
   const questionCounts = lessonsData?.questionCounts || {};
   const completedLessons = lessonsData?.completedLessons || new Set<string>();
