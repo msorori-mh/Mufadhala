@@ -70,29 +70,20 @@ export function useStudentAccess(): StudentAccessResult {
   const subjectIds = subjectResult?.subjectIds ?? [];
   const resolvedVia = subjectResult?.resolvedVia ?? "pending";
 
-  // Fetch filter name (college display name)
+  // Fetch filter name — always resolve via college → admission_track name
   const { data: filterName = "" } = useQuery({
-    queryKey: ["filter-name", filter?.type, filter?.value],
+    queryKey: ["filter-name", collegeId],
     queryFn: async () => {
-      if (!filter) return "";
-      if (filter.type === "major") {
-        const { data } = await supabase
-          .from("majors")
-          .select("name_ar")
-          .eq("id", filter.value)
-          .maybeSingle();
-        return data?.name_ar ?? "";
-      }
-      // For college: fetch track name via admission_track_id
+      if (!collegeId) return "";
       const { data } = await supabase
         .from("colleges")
         .select("name_ar, admission_tracks(name_ar)")
-        .eq("id", filter.value)
+        .eq("id", collegeId)
         .maybeSingle();
       const trackName = (data?.admission_tracks as any)?.name_ar;
       return trackName || data?.name_ar || "";
     },
-    enabled: !!filter,
+    enabled: !!collegeId,
     staleTime: 10 * 60 * 1000,
   });
 
