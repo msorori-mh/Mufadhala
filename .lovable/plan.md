@@ -1,33 +1,42 @@
 
 
-# تغيير حدود المحتوى المجاني وإزالة قيود المحاكي للمشتركين
+# إصلاح رسالة الخطأ عند التسجيل برقم مسجل مسبقاً
 
-## ملخص التغييرات
+## المشكلة
+عند التسجيل برقم موجود مسبقاً، تعيد وظيفة `register-student` استجابة بحالة **409** مع رسالة خطأ واضحة. لكن مكتبة `supabase.functions.invoke` تعامل أي استجابة غير 200 كخطأ — فتجعل `res.data = null` وتضع الخطأ في `res.error`. نتيجة لذلك يسقط الكود في الرسالة العامة "فشل في الاتصال بالخادم".
 
-### 1. زيادة الدروس المجانية من 3 إلى 10
-- تحديث القيمة الافتراضية في `app_cache` عبر أداة الإدراج (INSERT/UPDATE)
-- تحديث القيم الافتراضية (fallback) في الكود من `3` إلى `10` في:
-  - `src/pages/LessonsList.tsx` (سطر 210)
-  - `src/pages/LessonDetail.tsx` (سطر 124)
-- تحديث دالة `is_free_lesson` في قاعدة البيانات لتغيير القيمة الافتراضية من 3 إلى 10
+## الحل (خياران، سيتم تنفيذ الأول)
 
-### 2. السماح بـ 20 سؤال مجاني قبل طلب الاشتراك
-- تحديث `usePaywallTrigger.ts`: تغيير حد `questionInteractions` من `3` إلى `20`
-- تحديث حد `completedLessons` من `2` إلى `10` ليتوافق مع الدروس المجانية الجديدة
+### الخيار المعتمد: تعديل Edge Function لإرجاع HTTP 200 دائماً
+تغيير `register-student/index.ts` ليعيد `status: 200` مع حقل `error` في الجسم بدلاً من `status: 409`. هذا يضمن وصول `res.data.error` بشكل صحيح للعميل.
 
-### 3. إزالة حد المحاولات للمشتركين في المحاكي
-- في `src/features/exams/hooks/useExamEngine.ts` (سطر 502-503): إزالة شرط `attemptsUsed < MAX_ATTEMPTS` للمشتركين — جعل `canStartOnline` غير مقيد بعدد المحاولات عند وجود اشتراك نشط
-- نفس التغيير في `src/features/exams/hooks/useTrueExamEngine.ts` إن وُجد نفس القيد
+**الملفات المتأثرة:**
+1. `supabase/functions/register-student/index.ts` — تغيير سطر واحد: إرجاع 200 بدلاً من 409 عند الرقم المكرر
+2. `src/pages/Register.tsx` — إضافة معالجة احتياطية لقراءة رسالة الخطأ من `res.error` في حال وجود أخطاء HTTP أخرى
 
-## تفاصيل تقنية
+**التغيير في Edge Function (سطر واحد):**
+```
+// قبل:
+}, 409);
+// بعد:
+}, 200);
+```
 
-**قاعدة البيانات:**
-- تحديث `app_cache` بقيمة `free_lessons_count = 10`
-- تحديث دالة `is_free_lesson` (migration) لتغيير fallback من 3 إلى 10
+**التغيير في Register.tsx (سطر 182):**
+إضافة محاولة لاستخراج رسالة الخطأ من جسم الاستجابة حتى عند وجود `res.error`:
+```typescript
+let errorMsg = res.data?.error;
+if (!errorMsg && res.error) {
+  try {
+    const ctx = res.error?.context;
+    if (ctx instanceof Response) {
+      const body = await ctx.json();
+      errorMsg = body?.error;
+    }
+  } catch {}
+  if (!errorMsg) errorMsg = "فشل في الاتصال بالخادم";
+}
+```
 
-**ملفات الكود المتأثرة (4 ملفات):**
-- `src/pages/LessonsList.tsx` — fallback value
-- `src/pages/LessonDetail.tsx` — fallback value
-- `src/hooks/usePaywallTrigger.ts` — حدود التفعيل
-- `src/features/exams/hooks/useExamEngine.ts` — إزالة حد المحاولات للمشتركين
+هذا يضمن عرض "هذا الرقم مسجل مسبقاً" بشكل صحيح مع زر "تسجيل الدخول".
 
