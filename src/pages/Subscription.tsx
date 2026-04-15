@@ -11,7 +11,7 @@ import { useStudentAccess } from "@/hooks/useStudentAccess";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, CreditCard, Upload, CheckCircle, Clock,
-  Building, ArrowLeftRight, ChevronRight, GraduationCap, Smartphone, Globe,
+  Building, ArrowLeftRight, ChevronRight, GraduationCap, Smartphone, Globe, Banknote, Monitor,
   Star, Sparkles, Tag, Timer, Info, ChevronDown, ZoomIn, Download, Copy, Check,
   Crown, Zap, Brain, BarChart3, BookOpen, ClipboardCheck, Lock, Bot, AlertTriangle
 } from "lucide-react";
@@ -688,11 +688,11 @@ const Subscription = () => {
             <h2 className="text-lg font-bold">اختر طريقة الدفع</h2>
             <p className="text-sm text-muted-foreground">قم بالتحويل إلى أحد الحسابات التالية ثم ارفع سند التحويل</p>
 
-            {["bank", "exchange", "ewallet", "network_transfer"].map((type) => {
+            {["bank", "exchange", "ewallet", "network_transfer", "kuraimi_transfer", "hasib_point"].map((type) => {
               const filtered = methods.filter((m) => m.type === type);
               if (filtered.length === 0) return null;
-              const icon = type === "bank" ? <Building className="w-4 h-4" /> : type === "exchange" ? <ArrowLeftRight className="w-4 h-4" /> : type === "network_transfer" ? <Globe className="w-4 h-4" /> : <Smartphone className="w-4 h-4" />;
-              const label = type === "bank" ? "حسابات بنكية" : type === "exchange" ? "شركات صرافة" : type === "network_transfer" ? "تحويل عبر الشبكة الموحدة" : "محافظ إلكترونية";
+              const icon = type === "bank" ? <Building className="w-4 h-4" /> : type === "exchange" ? <ArrowLeftRight className="w-4 h-4" /> : type === "network_transfer" ? <Globe className="w-4 h-4" /> : type === "kuraimi_transfer" ? <Banknote className="w-4 h-4" /> : type === "hasib_point" ? <Monitor className="w-4 h-4" /> : <Smartphone className="w-4 h-4" />;
+              const label = type === "bank" ? "حسابات بنكية" : type === "exchange" ? "شركات صرافة" : type === "network_transfer" ? "تحويل عبر الشبكة الموحدة" : type === "kuraimi_transfer" ? "تحويل عبر الكريمي" : type === "hasib_point" ? "نقطة حاسب" : "محافظ إلكترونية";
               return (
                 <div key={type}>
                   <h3 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1">{icon} {label}</h3>

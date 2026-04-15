@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Pencil, Trash2, Building, ArrowLeftRight, Smartphone, Globe, QrCode, X } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Building, ArrowLeftRight, Smartphone, Globe, QrCode, X, Banknote, Monitor } from "lucide-react";
 
 interface PaymentMethod {
   id: string;
@@ -145,6 +145,8 @@ const AdminPaymentMethods = () => {
   const exchanges = methods.filter((m) => m.type === "exchange");
   const ewallets = methods.filter((m) => m.type === "ewallet");
   const networkTransfers = methods.filter((m) => m.type === "network_transfer");
+  const kuraimiTransfers = methods.filter((m) => m.type === "kuraimi_transfer");
+  const hasibPoints = methods.filter((m) => m.type === "hasib_point");
 
   return (
     <AdminLayout>
@@ -276,6 +278,65 @@ const AdminPaymentMethods = () => {
           </div>
         )}
 
+        {kuraimiTransfers.length > 0 && (
+          <div>
+            <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1"><Banknote className="w-4 h-4" /> تحويل عبر الكريمي</h2>
+            <div className="space-y-2">
+              {kuraimiTransfers.map((m) => (
+                <Card key={m.id}>
+                  <CardContent className="py-3 px-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                         <div className="flex items-center gap-2">
+                           {m.logo_url && <img src={m.logo_url} alt={m.name} className="w-6 h-6 rounded object-contain" />}
+                           <p className="font-semibold text-sm">{m.name}</p>
+                           <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
+                           {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
+                         </div>
+                         {m.account_name && <p className="text-xs text-muted-foreground mt-1">اسم المستلم: {m.account_name}</p>}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(m)}><Pencil className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(m.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {hasibPoints.length > 0 && (
+          <div>
+            <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1"><Monitor className="w-4 h-4" /> نقطة حاسب</h2>
+            <div className="space-y-2">
+              {hasibPoints.map((m) => (
+                <Card key={m.id}>
+                  <CardContent className="py-3 px-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                         <div className="flex items-center gap-2">
+                           {m.logo_url && <img src={m.logo_url} alt={m.name} className="w-6 h-6 rounded object-contain" />}
+                           <p className="font-semibold text-sm">{m.name}</p>
+                           <Badge variant={m.is_active ? "default" : "secondary"}>{m.is_active ? "مفعل" : "معطل"}</Badge>
+                           {m.barcode_url && <QrCode className="w-4 h-4 text-primary" />}
+                         </div>
+                         {m.account_name && <p className="text-xs text-muted-foreground mt-1">اسم الحساب: {m.account_name}</p>}
+                         {m.account_number && <p className="text-xs text-muted-foreground">رقم الحساب: {m.account_number}</p>}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(m)}><Pencil className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(m.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
         {methods.length === 0 && <p className="text-center text-muted-foreground py-8">لا توجد طرق دفع بعد</p>}
       </div>
 
@@ -290,9 +351,11 @@ const AdminPaymentMethods = () => {
                 <option value="exchange">شركة صرافة</option>
                 <option value="ewallet">محفظة إلكترونية</option>
                 <option value="network_transfer">تحويل عبر الشبكة الموحدة</option>
+                <option value="kuraimi_transfer">تحويل عبر الكريمي</option>
+                <option value="hasib_point">نقطة حاسب</option>
               </select>
             </div>
-            <div className="space-y-2"><Label>{type === "bank" ? "اسم البنك" : type === "exchange" ? "اسم شركة الصرافة" : type === "network_transfer" ? "اسم الخدمة" : "اسم المحفظة"} *</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+            <div className="space-y-2"><Label>{type === "bank" ? "اسم البنك" : type === "exchange" ? "اسم شركة الصرافة" : type === "network_transfer" ? "اسم الخدمة" : type === "kuraimi_transfer" ? "اسم الكريمي" : type === "hasib_point" ? "اسم نقطة حاسب" : "اسم المحفظة"} *</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
             <div className="space-y-2">
               <Label>شعار طريقة الدفع</Label>
               {logoPreview && !removingLogo ? (
@@ -312,8 +375,8 @@ const AdminPaymentMethods = () => {
                 </>
               )}
             </div>
-            <div className="space-y-2"><Label>{type === "network_transfer" ? "تحويل بأسم (اسم المستلم)" : type === "bank" ? "ايداع الى حساب" : "اسم صاحب الحساب"}</Label><Input value={accountName} onChange={(e) => setAccountName(e.target.value)} /></div>
-            <div className="space-y-2"><Label>{type === "bank" ? "رقم الحساب" : type === "exchange" || type === "network_transfer" ? "رقم الهاتف" : "رقم المحفظة"}</Label><Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} /></div>
+            <div className="space-y-2"><Label>{type === "kuraimi_transfer" ? "اسم المستلم" : type === "network_transfer" ? "تحويل بأسم (اسم المستلم)" : type === "bank" ? "ايداع الى حساب" : type === "hasib_point" ? "اسم الحساب" : "اسم صاحب الحساب"}</Label><Input value={accountName} onChange={(e) => setAccountName(e.target.value)} /></div>
+            <div className="space-y-2"><Label>{type === "bank" || type === "hasib_point" ? "رقم الحساب" : type === "exchange" || type === "network_transfer" || type === "kuraimi_transfer" ? "رقم الهاتف" : "رقم المحفظة"}</Label><Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} /></div>
             <div className="space-y-2"><Label>تفاصيل إضافية</Label><Textarea value={details} onChange={(e) => setDetails(e.target.value)} placeholder="الفرع، ملاحظات..." /></div>
             <div className="space-y-2">
               <Label>صورة الباركود / QR Code</Label>
