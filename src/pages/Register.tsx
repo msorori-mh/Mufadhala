@@ -39,6 +39,7 @@ const Register = () => {
 
   // ── Validation state (lightweight, only for UI feedback) ──
   const [phoneValue, setPhoneValue] = useState(""); // shadow for validation display
+  const [gpaValue, setGpaValue] = useState(""); // shadow for GPA validation
   const [formValid, setFormValid] = useState(false);
   const [loading, setLoading] = useState(false);
   const [phoneDuplicate, setPhoneDuplicate] = useState(false);
@@ -353,11 +354,17 @@ const Register = () => {
               type="number"
               inputMode="decimal"
               step="0.01"
-              min="0"
+              min="60"
               max="100"
               defaultValue={_textBackup.gpa}
-              onChange={revalidate}
+              onChange={(e) => {
+                setGpaValue(e.target.value);
+                revalidate();
+              }}
             />
+            {gpaValue && (parseFloat(gpaValue) < 60 || parseFloat(gpaValue) > 100) && (
+              <p className="text-xs text-destructive">المعدل يجب أن يكون بين 60 و 100</p>
+            )}
           </div>
 
           <Button className="w-full" size="lg" disabled={!formValid || loading || phoneDuplicate} onClick={handleSubmit}>
