@@ -297,23 +297,23 @@ const Dashboard = () => {
             </nav>
 
             {/* Nav grid - mobile only */}
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 md:hidden">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 md:hidden">
               {navCards.map((card) => (
                 <div
                   key={card.path}
                   className="transition-all duration-200 active:scale-95"
                 >
                   <Link to={card.path} className="block">
-                    <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card border border-border hover:shadow-sm transition-shadow text-center">
-                      <div className={`relative w-9 h-9 rounded-full ${card.bgColor} flex items-center justify-center`}>
-                        <card.icon className={`w-4 h-4 ${card.iconColor}`} />
+                    <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-card border border-border hover:shadow-md transition-shadow text-center min-h-[80px] justify-center">
+                      <div className={`relative w-11 h-11 rounded-full ${card.bgColor} flex items-center justify-center`}>
+                        <card.icon className={`w-5 h-5 ${card.iconColor}`} />
                         {card.badge ? (
-                          <span className="absolute -top-0.5 -left-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                          <span className="absolute -top-0.5 -left-0.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
                             {card.badge}
                           </span>
                         ) : null}
                       </div>
-                      <span className="text-[10px] font-medium text-foreground leading-tight line-clamp-2">{card.title}</span>
+                      <span className="text-[11px] font-medium text-foreground leading-tight line-clamp-2">{card.title}</span>
                     </div>
                   </Link>
                 </div>
@@ -349,14 +349,14 @@ const Dashboard = () => {
                     { icon: CreditCard, title: "الاشتراك والتفعيل", desc: "فعّل اشتراكك للوصول لكامل المحتوى", path: "/subscription", color: "text-accent", bg: "bg-accent/10" },
                     { icon: Search, title: "ابحث في المحتوى", desc: "ابحث بالمادة أو الكلية أو التخصص", path: "/search", color: "text-primary", bg: "bg-primary/10" },
                   ].map((item) => (
-                    <Card key={item.path} className="cursor-pointer hover:shadow-md transition-shadow border" onClick={() => navigate(item.path)}>
-                      <CardContent className="flex items-center gap-3 p-3">
-                        <div className={`w-10 h-10 rounded-lg ${item.bg} flex items-center justify-center shrink-0`}>
+                    <Card key={item.path} className="cursor-pointer hover:shadow-md active:scale-[0.98] transition-all border" onClick={() => navigate(item.path)}>
+                      <CardContent className="flex items-center gap-3 p-4">
+                        <div className={`w-11 h-11 rounded-lg ${item.bg} flex items-center justify-center shrink-0`}>
                           <item.icon className={`w-5 h-5 ${item.color}`} />
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="font-semibold text-foreground text-sm">{item.title}</p>
-                          <p className="text-xs text-muted-foreground truncate">{item.desc}</p>
+                          <p className="text-xs text-muted-foreground">{item.desc}</p>
                         </div>
                         <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0" />
                       </CardContent>
@@ -401,15 +401,15 @@ const Dashboard = () => {
 
 
             {totalExams > 0 && (
-              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
                 {statCards.map((s) => (
-                  <Card key={s.label} className="relative overflow-hidden">
-                    <CardContent className="p-2.5 sm:p-3 flex flex-col items-center text-center gap-0.5">
-                      <div className={`w-7 h-7 rounded-md ${s.bg} flex items-center justify-center mb-0.5`}>
-                        <s.icon className={`w-3.5 h-3.5 ${s.color}`} />
+                  <Card key={s.label} className="relative overflow-hidden active:scale-[0.97] transition-transform">
+                    <CardContent className="p-3 sm:p-4 flex flex-col items-center text-center gap-1">
+                      <div className={`w-9 h-9 rounded-lg ${s.bg} flex items-center justify-center mb-0.5`}>
+                        <s.icon className={`w-4 h-4 ${s.color}`} />
                       </div>
-                      <span className="text-lg sm:text-xl font-bold text-foreground">{s.value}</span>
-                      <span className="text-[10px] text-muted-foreground">{s.label}</span>
+                      <span className="text-xl sm:text-2xl font-bold text-foreground">{s.value}</span>
+                      <span className="text-[11px] text-muted-foreground">{s.label}</span>
                     </CardContent>
                   </Card>
                 ))}
