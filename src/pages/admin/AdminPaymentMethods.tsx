@@ -145,6 +145,8 @@ const AdminPaymentMethods = () => {
   const exchanges = methods.filter((m) => m.type === "exchange");
   const ewallets = methods.filter((m) => m.type === "ewallet");
   const networkTransfers = methods.filter((m) => m.type === "network_transfer");
+  const kuraimiTransfers = methods.filter((m) => m.type === "kuraimi_transfer");
+  const hasibPoints = methods.filter((m) => m.type === "hasib_point");
 
   return (
     <AdminLayout>
