@@ -153,6 +153,7 @@ function App() {
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/delete-account" element={<DeleteAccount />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/request-delete" element={<PublicDeleteAccount />} />
                   <Route path="/terms-of-service" element={<TermsOfService />} />
                   <Route path="/admin" element={<AdminDashboard />} />
                   <Route path="/admin/universities" element={<AdminUniversities />} />
