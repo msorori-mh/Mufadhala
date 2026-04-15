@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { ArrowRight, User, Moon, Sun, Bell, LogOut, Trash2, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -129,6 +129,15 @@ const Settings = () => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">الإصدار</span>
               <span className="text-sm font-medium" dir="ltr">v5.0.1</span>
+            </div>
+            <Separator />
+            <div className="flex flex-col gap-2">
+              <Link to="/privacy-policy" className="text-sm text-primary hover:underline">
+                سياسة الخصوصية
+              </Link>
+              <Link to="/terms-of-service" className="text-sm text-primary hover:underline">
+                شروط الاستخدام
+              </Link>
             </div>
           </CardContent>
         </Card>
