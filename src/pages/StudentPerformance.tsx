@@ -64,8 +64,8 @@ const StudentPerformance = () => {
       const { subjectIds } = await resolveSubjectIds(supabase, student.college_id);
       if (subjectIds.length === 0) return null;
 
-      // Fetch deduplicated lessons + exams + progress in parallel
-      const [{ data: exams }, lessonResult, { data: prog }, { data: peers }] = await Promise.all([
+      // Fetch deduplicated lessons + exams + progress + subjects in parallel
+      const [{ data: exams }, lessonResult, { data: prog }, { data: peers }, { data: subjectsData }] = await Promise.all([
         supabase.from("exam_attempts").select("id, score, total, completed_at, major_id")
           .eq("student_id", student.id).not("completed_at", "is", null).order("completed_at", { ascending: true }),
         supabase.from("lessons").select("id, title, major_id, subject_id")
@@ -75,6 +75,7 @@ const StudentPerformance = () => {
           ? supabase.from("exam_attempts").select("score, total, student_id")
               .eq("major_id", filter.value).not("completed_at", "is", null)
           : Promise.resolve({ data: [] as any[] }),
+        supabase.from("subjects").select("id, name_ar").in("id", subjectIds).eq("is_active", true).order("display_order"),
       ]);
 
       // Deduplicate lessons
@@ -84,7 +85,7 @@ const StudentPerformance = () => {
         const key = `${l.title}::${l.subject_id}`;
         if (!seenTitles.has(key)) {
           seenTitles.add(key);
-          uniqueLessons.push({ id: l.id, title: l.title, major_id: l.major_id });
+          uniqueLessons.push({ id: l.id, title: l.title, major_id: l.major_id, subject_id: l.subject_id });
         }
       });
 
@@ -101,6 +102,7 @@ const StudentPerformance = () => {
         questions,
         completedLessonIds: new Set((prog || []).map((p: any) => p.lesson_id)),
         peerAttempts: (peers || []).filter((p: any) => p.student_id !== student.id) as { score: number; total: number }[],
+        subjects: (subjectsData || []) as SubjectInfo[],
       };
     },
     enabled: !!student && !!student.college_id,
