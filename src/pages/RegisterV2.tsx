@@ -20,9 +20,8 @@ const RegisterV2 = () => {
   const { toast } = useToast();
 
   // ── TEXT INPUTS: Uncontrolled (DOM owns the values) ──
-  // This is the ROOT FIX for Android WebView clearing fields.
-  // React never writes to these inputs, so no re-render or
-  // spurious WebView event can erase what the user typed.
+  // Protects against re-render clearing values (Android WebView bug).
+  // Module-level snapshot protects against full remount.
   const firstNameRef = useRef<HTMLInputElement>(null);
   const lastNameRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
@@ -38,6 +37,15 @@ const RegisterV2 = () => {
   const [phoneValue, setPhoneValue] = useState(""); // shadow for validation display
   const [formValid, setFormValid] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // ── Sync text values to module-level backup on every change ──
+  const syncToBackup = useCallback(() => {
+    _textBackup.firstName = firstNameRef.current?.value ?? "";
+    _textBackup.lastName = lastNameRef.current?.value ?? "";
+    _textBackup.phone = phoneRef.current?.value ?? "";
+    _textBackup.gpa = gpaRef.current?.value ?? "";
+  }, []);
+
   const [universities, setUniversities] = useState<University[]>([]);
   const [colleges, setColleges] = useState<College[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
@@ -55,7 +63,8 @@ const RegisterV2 = () => {
       universityId !== "" &&
       collegeId !== ""
     );
-  }, [governorate, universityId, collegeId]);
+    syncToBackup();
+  }, [governorate, universityId, collegeId, syncToBackup]);
 
   // Re-check validity when select values change
   useEffect(() => {
@@ -203,7 +212,7 @@ const RegisterV2 = () => {
             <Label>الاسم الأول *</Label>
             <Input
               ref={firstNameRef}
-              defaultValue=""
+              defaultValue={_textBackup.firstName}
               onChange={revalidate}
             />
           </div>
@@ -212,7 +221,7 @@ const RegisterV2 = () => {
             <Label>اللقب *</Label>
             <Input
               ref={lastNameRef}
-              defaultValue=""
+              defaultValue={_textBackup.lastName}
               onChange={revalidate}
             />
           </div>
@@ -226,7 +235,7 @@ const RegisterV2 = () => {
                 type="tel"
                 inputMode="numeric"
                 maxLength={9}
-                defaultValue=""
+                defaultValue={_textBackup.phone}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, "").slice(0, 9);
                   // For numeric filtering, we DO write back to the input
@@ -293,7 +302,7 @@ const RegisterV2 = () => {
               step="0.01"
               min="0"
               max="100"
-              defaultValue=""
+              defaultValue={_textBackup.gpa}
               onChange={revalidate}
             />
           </div>
