@@ -11,7 +11,8 @@ import { useModeratorScope } from "@/hooks/useModeratorScope";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Search, Pencil, Trash2, Eye, Filter, X, Users } from "lucide-react";
+import { Loader2, Search, Pencil, Trash2, Eye, Filter, X, Users, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/exportReport";
 import type { Tables } from "@/integrations/supabase/types";
 
 const AdminStudents = () => {
