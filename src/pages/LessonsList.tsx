@@ -207,12 +207,12 @@ const LessonsList = () => {
     queryKey: ["free-lessons-count"],
     queryFn: async () => {
       const { data } = await supabase.rpc("get_cache", { _key: "free_lessons_count" });
-      return data != null ? Number(data) : 3;
+      return data != null ? Number(data) : 10;
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  const FREE_COUNT = freeLessonsCount ?? 3;
+  const FREE_COUNT = freeLessonsCount ?? 10;
 
   // Compute which lessons are free: first N per subject (by display_order)
   const freeLessonIds = useMemo(() => {
