@@ -16,7 +16,6 @@ import { useBottomNavVisible } from "./hooks/useBottomNavVisible";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import RegisterV2 from "./pages/RegisterV2";
 import Dashboard from "./pages/Dashboard";
 import Welcome from "./pages/Welcome";
 import LessonsList from "./pages/LessonsList";
