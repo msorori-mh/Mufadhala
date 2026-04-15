@@ -130,6 +130,15 @@ const Settings = () => {
               <span className="text-sm text-muted-foreground">الإصدار</span>
               <span className="text-sm font-medium" dir="ltr">v5.0.1</span>
             </div>
+            <Separator />
+            <div className="flex flex-col gap-2">
+              <Link to="/privacy-policy" className="text-sm text-primary hover:underline">
+                سياسة الخصوصية
+              </Link>
+              <Link to="/terms-of-service" className="text-sm text-primary hover:underline">
+                شروط الاستخدام
+              </Link>
+            </div>
           </CardContent>
         </Card>
 
