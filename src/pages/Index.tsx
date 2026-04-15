@@ -43,6 +43,14 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
   const s = useCountUp(150);
   const m = useCountUp(100);
 
+  const aiRef = useScrollReveal();
+  const pillarsRef = useStaggerReveal(150);
+  const badgesRef = useStaggerReveal(120);
+  const statsRef = useScrollReveal();
+  const trustRef = useScrollReveal();
+  const socialRef = useScrollReveal();
+  const faqRef = useScrollReveal();
+
   if (checking) {
     return (
       <div ref={fwdRef} className="min-h-screen gradient-hero flex items-center justify-center">
