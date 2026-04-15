@@ -5,6 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { BookOpen, ClipboardCheck, TrendingUp, Loader2, Brain, FileCheck, Shield, Focus, WifiOff, Users, CheckCircle, Bot, Clock, Headphones, HelpCircle } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
+import { useScrollReveal, useStaggerReveal } from "@/hooks/useScrollReveal";
 
 function useCountUp(end: number, duration = 2000) {
   const [value, setValue] = useState(0);
