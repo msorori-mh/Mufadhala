@@ -11,7 +11,8 @@ import { useModeratorScope } from "@/hooks/useModeratorScope";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Search, Pencil, Trash2, Eye, Filter, X, Users } from "lucide-react";
+import { Loader2, Search, Pencil, Trash2, Eye, Filter, X, Users, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/exportReport";
 import type { Tables } from "@/integrations/supabase/types";
 
 const AdminStudents = () => {
@@ -194,12 +195,34 @@ const AdminStudents = () => {
             <h1 className="text-2xl font-bold">الطلاب</h1>
             <p className="text-sm text-muted-foreground">{scopedStudents.length} طالب مسجل</p>
           </div>
-          {hasActiveFilter && (
-            <Button variant="outline" size="sm" onClick={clearFilters} className="gap-1">
-              <X className="w-4 h-4" />
-              مسح الفلاتر
+          <div className="flex items-center gap-2">
+            {hasActiveFilter && (
+              <Button variant="outline" size="sm" onClick={clearFilters} className="gap-1">
+                <X className="w-4 h-4" />
+                مسح الفلاتر
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => {
+              exportToExcel({
+                title: "قائمة الطلاب",
+                headers: ["الاسم", "الهاتف", "المحافظة", "الجامعة", "الكلية", "التخصص", "المعدل", "رقم التنسيق"],
+                rows: filtered.map((s) => [
+                  getFullName(s),
+                  s.phone || "-",
+                  s.governorate || "-",
+                  getUniName(s.university_id),
+                  getCollegeName(s.college_id),
+                  getMajorName(s.major_id),
+                  s.gpa ?? "-",
+                  s.coordination_number || "-",
+                ]),
+                summary: { "إجمالي الطلاب": filtered.length },
+              }, "students_export");
+            }} className="gap-1">
+              <Download className="w-4 h-4" />
+              تصدير Excel
             </Button>
-          )}
+          </div>
         </div>
 
         {/* Filters */}
@@ -280,6 +303,7 @@ const AdminStudents = () => {
                         {getUniName(s.university_id)} • {getMajorName(s.major_id)}
                       </p>
                       {s.governorate && <p className="text-xs text-muted-foreground">{s.governorate}</p>}
+                      {s.phone && <p className="text-xs text-muted-foreground">📱 {s.phone}</p>}
                     </div>
                     <div className="flex items-center gap-1">
                       {s.gpa && <Badge variant="secondary" className="text-xs">{s.gpa}%</Badge>}
@@ -303,6 +327,7 @@ const AdminStudents = () => {
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-2">
                 <div><span className="text-muted-foreground">الاسم:</span> <span className="font-medium">{getFullName(viewing)}</span></div>
+                <div><span className="text-muted-foreground">الهاتف:</span> <span className="font-medium">{viewing.phone || "-"}</span></div>
                 <div><span className="text-muted-foreground">المعدل:</span> <span className="font-medium">{viewing.gpa || "-"}%</span></div>
                 <div><span className="text-muted-foreground">الجامعة:</span> <span className="font-medium">{getUniName(viewing.university_id)}</span></div>
                 <div><span className="text-muted-foreground">الكلية:</span> <span className="font-medium">{getCollegeName(viewing.college_id)}</span></div>
