@@ -30,6 +30,7 @@ const CollegeGuide = () => {
   const [loading, setLoading] = useState(true);
   const [filterUni, setFilterUni] = useState("");
   const [searchText, setSearchText] = useState("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
