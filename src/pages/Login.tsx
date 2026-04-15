@@ -22,6 +22,7 @@ const Login = () => {
   const [step, setStep] = useState<Step>("phone");
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [notRegistered, setNotRegistered] = useState(false);
 
   const isPhoneValid = YEMEN_PHONE_REGEX.test(phoneValue);
 
@@ -79,11 +80,17 @@ const Login = () => {
 
       const errorMsg = res.data?.error || (res.error ? "فشل في الاتصال بالخادم" : null);
       if (errorMsg) {
-        toast({ variant: "destructive", title: "خطأ", description: errorMsg });
+        // Check if this is a "not registered" error (404)
+        if (errorMsg.includes("لا يوجد حساب")) {
+          setNotRegistered(true);
+        } else {
+          toast({ variant: "destructive", title: "خطأ", description: errorMsg });
+        }
         setLoading(false);
         return;
       }
 
+      setNotRegistered(false);
       const { access_token, refresh_token } = res.data.session;
       const { error: sessionError } = await supabase.auth.setSession({ access_token, refresh_token });
       if (sessionError) {
