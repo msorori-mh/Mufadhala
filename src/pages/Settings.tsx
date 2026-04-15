@@ -142,7 +142,7 @@ const Settings = () => {
             <Separator />
             <div className="flex flex-col gap-2">
               <span className="text-sm text-muted-foreground">الدعم الفني</span>
-              <a href="https://wa.me/967780060056" target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1.5">
+              <a href={`https://wa.me/967780060056?text=${encodeURIComponent("السلام عليكم، أحتاج مساعدة من فريق الدعم الفني لتطبيق مُفَاضَلَة 🎓")}`} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1.5">
                 <MessageCircle className="w-3.5 h-3.5" />
                 واتساب: 780060056
               </a>
