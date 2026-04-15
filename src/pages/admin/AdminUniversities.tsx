@@ -11,12 +11,19 @@ import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, Upload, FileText, X, CalendarClock, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Upload, FileText, X, CalendarClock, GripVertical, Image } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 interface TimelinePhase {
   phase: string;
   date: string;
+}
+
+interface GuideFile {
+  url: string;
+  name: string;
+  type: "pdf" | "image";
+  uploaded_at: string;
 }
 
 const AdminUniversities = () => {
@@ -32,7 +39,7 @@ const AdminUniversities = () => {
   const [isActive, setIsActive] = useState(true);
   const [displayOrder, setDisplayOrder] = useState(0);
   const [guideText, setGuideText] = useState("");
-  const [guideUrl, setGuideUrl] = useState("");
+  const [guideFiles, setGuideFiles] = useState<GuideFile[]>([]);
   const [coordinationTimeline, setCoordinationTimeline] = useState<TimelinePhase[]>([]);
   const [coordinationInstructions, setCoordinationInstructions] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -53,7 +60,7 @@ const AdminUniversities = () => {
     setEditing(null);
     setNameAr(""); setNameEn(""); setCode("");
     setIsActive(true); setDisplayOrder(universities.length);
-    setGuideText(""); setGuideUrl("");
+    setGuideText(""); setGuideFiles([]);
     setCoordinationTimeline([]); setCoordinationInstructions("");
     setDialogOpen(true);
   };
@@ -66,7 +73,17 @@ const AdminUniversities = () => {
     setIsActive(u.is_active);
     setDisplayOrder(u.display_order);
     setGuideText(u.guide_text || "");
-    setGuideUrl(u.guide_url || "");
+    
+    // Load guide_files from DB, fallback to guide_url migration
+    const dbFiles = (u as any).guide_files;
+    if (Array.isArray(dbFiles) && dbFiles.length > 0) {
+      setGuideFiles(dbFiles);
+    } else if (u.guide_url) {
+      setGuideFiles([{ url: u.guide_url, name: "دليل التنسيق", type: u.guide_url.toLowerCase().endsWith(".pdf") ? "pdf" : "image", uploaded_at: u.created_at }]);
+    } else {
+      setGuideFiles([]);
+    }
+
     const timeline = (u as any).coordination_timeline;
     setCoordinationTimeline(Array.isArray(timeline) ? timeline : []);
     setCoordinationInstructions((u as any).coordination_instructions || "");
@@ -76,34 +93,50 @@ const AdminUniversities = () => {
   const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!allowedTypes.includes(file.type)) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const invalidFile = Array.from(files).find(f => !allowedTypes.includes(f.type));
+    if (invalidFile) {
       toast({ variant: "destructive", title: "يُقبل فقط ملفات PDF أو صور (JPG, PNG, WebP)" });
       return;
     }
-    setUploading(true);
-    const fileName = `${Date.now()}_${file.name}`;
 
-    // Try upload, retry once after session refresh on auth errors
-    let result = await supabase.storage.from("university-guides").upload(fileName, file);
-    if (result.error && result.error.message?.includes("claim")) {
-      await supabase.auth.refreshSession();
-      result = await supabase.storage.from("university-guides").upload(fileName, file);
+    setUploading(true);
+    const newFiles: GuideFile[] = [];
+
+    for (const file of Array.from(files)) {
+      const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}_${file.name}`;
+      let result = await supabase.storage.from("university-guides").upload(fileName, file);
+      if (result.error && result.error.message?.includes("claim")) {
+        await supabase.auth.refreshSession();
+        result = await supabase.storage.from("university-guides").upload(fileName, file);
+      }
+
+      if (result.error) {
+        toast({ variant: "destructive", title: `فشل رفع ${file.name}: ${result.error.message}` });
+      } else {
+        const { data: pub } = supabase.storage.from("university-guides").getPublicUrl(fileName);
+        newFiles.push({
+          url: pub.publicUrl,
+          name: file.name,
+          type: file.type === "application/pdf" ? "pdf" : "image",
+          uploaded_at: new Date().toISOString(),
+        });
+      }
     }
 
-    if (result.error) {
-      toast({ variant: "destructive", title: "فشل رفع الملف: " + result.error.message });
-    } else {
-      const { data: pub } = supabase.storage.from("university-guides").getPublicUrl(fileName);
-      setGuideUrl(pub.publicUrl);
-      toast({ title: "تم رفع الملف بنجاح" });
+    if (newFiles.length > 0) {
+      setGuideFiles(prev => [...prev, ...newFiles]);
+      toast({ title: `تم رفع ${newFiles.length} ملف بنجاح` });
     }
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const removeGuide = () => setGuideUrl("");
+  const removeGuideFile = (index: number) => {
+    setGuideFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
   const addTimelinePhase = () => {
     setCoordinationTimeline([...coordinationTimeline, { phase: "", date: "" }]);
@@ -122,14 +155,8 @@ const AdminUniversities = () => {
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
 
-  const handleDragStart = (index: number) => {
-    dragItem.current = index;
-  };
-
-  const handleDragEnter = (index: number) => {
-    dragOverItem.current = index;
-  };
-
+  const handleDragStart = (index: number) => { dragItem.current = index; };
+  const handleDragEnter = (index: number) => { dragOverItem.current = index; };
   const handleDragEnd = () => {
     if (dragItem.current === null || dragOverItem.current === null) return;
     const items = [...coordinationTimeline];
@@ -149,7 +176,9 @@ const AdminUniversities = () => {
     const payload: any = {
       name_ar: nameAr, name_en: nameEn || null, code,
       is_active: isActive, display_order: displayOrder,
-      guide_url: guideUrl || null, guide_text: guideText || null,
+      guide_url: guideFiles.length > 0 ? guideFiles[0].url : null,
+      guide_text: guideText || null,
+      guide_files: guideFiles,
       coordination_timeline: coordinationTimeline.filter(p => p.phase || p.date),
       coordination_instructions: coordinationInstructions || null,
     };
@@ -220,31 +249,41 @@ const AdminUniversities = () => {
                   <Label>مفعّلة</Label>
                 </div>
 
-                {/* Guide PDF Upload */}
+                {/* Guide Files Upload */}
                 <div className="border-t pt-4 space-y-3">
                   <Label className="text-base font-semibold">دليل التنسيق والتسجيل</Label>
-                  <div className="space-y-2">
-                    <Label className="text-sm">ملف الدليل (PDF)</Label>
-                    {guideUrl ? (
-                      <div className="flex items-center gap-2 p-2 bg-muted rounded text-sm">
-                        <FileText className="w-4 h-4 text-primary shrink-0" />
-                        <a href={guideUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate flex-1">
-                          عرض الملف المرفوع
-                        </a>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={removeGuide}>
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div>
-                        <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={handleFileUpload} className="hidden" />
-                        <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-1.5">
-                          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                          {uploading ? "جاري الرفع..." : "رفع ملف PDF"}
-                        </Button>
-                      </div>
-                    )}
+                  
+                  {/* Uploaded files list */}
+                  {guideFiles.length > 0 && (
+                    <div className="space-y-2">
+                      {guideFiles.map((file, idx) => (
+                        <div key={idx} className="flex items-center gap-2 p-2 bg-muted rounded text-sm">
+                          {file.type === "image" ? (
+                            <img src={file.url} alt={file.name} className="w-10 h-10 rounded object-cover shrink-0" />
+                          ) : (
+                            <FileText className="w-5 h-5 text-primary shrink-0" />
+                          )}
+                          <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate flex-1 text-xs">
+                            {file.name}
+                          </a>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => removeGuideFile(idx)}>
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Upload button */}
+                  <div>
+                    <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple onChange={handleFileUpload} className="hidden" />
+                    <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-1.5">
+                      {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                      {uploading ? "جاري الرفع..." : "رفع ملفات (PDF أو صور)"}
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-1">يمكنك رفع أكثر من ملف دفعة واحدة</p>
                   </div>
+
                   <div className="space-y-2">
                     <Label className="text-sm">نص الدليل (للمساعد الذكي)</Label>
                     <Textarea
@@ -286,18 +325,10 @@ const AdminUniversities = () => {
                           <GripVertical className="w-4 h-4" />
                         </div>
                         <div className="flex-1 space-y-1">
-                          <Input
-                            placeholder="اسم المرحلة (مثال: المرحلة الأولى)"
-                            value={item.phase}
-                            onChange={(e) => updateTimelinePhase(idx, "phase", e.target.value)}
-                          />
+                          <Input placeholder="اسم المرحلة (مثال: المرحلة الأولى)" value={item.phase} onChange={(e) => updateTimelinePhase(idx, "phase", e.target.value)} />
                         </div>
                         <div className="flex-1 space-y-1">
-                          <Input
-                            placeholder="التاريخ (مثال: 1 - 15 سبتمبر 2025)"
-                            value={item.date}
-                            onChange={(e) => updateTimelinePhase(idx, "date", e.target.value)}
-                          />
+                          <Input placeholder="التاريخ (مثال: 1 - 15 سبتمبر 2025)" value={item.date} onChange={(e) => updateTimelinePhase(idx, "date", e.target.value)} />
                         </div>
                         <Button type="button" variant="ghost" size="icon" className="h-10 w-10 shrink-0" onClick={() => removeTimelinePhase(idx)}>
                           <X className="w-4 h-4 text-destructive" />
@@ -328,28 +359,34 @@ const AdminUniversities = () => {
         </div>
 
         <div className="space-y-2">
-          {universities.map((u) => (
-            <Card key={u.id} className={!u.is_active ? "opacity-50" : ""}>
-              <CardContent className="flex items-center justify-between py-3 px-4">
-                <div className="flex items-center gap-2">
-                  <div>
-                    <p className="font-semibold text-sm">{u.name_ar}</p>
-                    <p className="text-xs text-muted-foreground">{u.code} {u.name_en && `• ${u.name_en}`}</p>
+          {universities.map((u) => {
+            const files: GuideFile[] = Array.isArray((u as any).guide_files) ? (u as any).guide_files : [];
+            const hasFiles = files.length > 0 || !!u.guide_url;
+            return (
+              <Card key={u.id} className={!u.is_active ? "opacity-50" : ""}>
+                <CardContent className="flex items-center justify-between py-3 px-4">
+                  <div className="flex items-center gap-2">
+                    <div>
+                      <p className="font-semibold text-sm">{u.name_ar}</p>
+                      <p className="text-xs text-muted-foreground">{u.code} {u.name_en && `• ${u.name_en}`}</p>
+                    </div>
+                    {hasFiles && (
+                      <span title={`${files.length} ملف مرفق`}>
+                        <FileText className="w-4 h-4 text-primary" />
+                      </span>
+                    )}
+                    {(u as any).coordination_timeline && Array.isArray((u as any).coordination_timeline) && (u as any).coordination_timeline.length > 0 && (
+                      <span title="يوجد جدول زمني للتنسيق"><CalendarClock className="w-4 h-4 text-primary" /></span>
+                    )}
                   </div>
-                  {u.guide_url && (
-                    <span title="يوجد دليل تنسيق"><FileText className="w-4 h-4 text-primary" /></span>
-                  )}
-                  {(u as any).coordination_timeline && Array.isArray((u as any).coordination_timeline) && (u as any).coordination_timeline.length > 0 && (
-                    <span title="يوجد جدول زمني للتنسيق"><CalendarClock className="w-4 h-4 text-primary" /></span>
-                  )}
-                </div>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(u)}><Pencil className="w-4 h-4" /></Button>
-                  {isAdmin && <Button variant="ghost" size="icon" onClick={() => handleDelete(u.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(u)}><Pencil className="w-4 h-4" /></Button>
+                    {isAdmin && <Button variant="ghost" size="icon" onClick={() => handleDelete(u.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
       </PermissionGate>

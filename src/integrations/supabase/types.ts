@@ -1149,6 +1149,7 @@ export type Database = {
           coordination_timeline: Json | null
           created_at: string
           display_order: number
+          guide_files: Json
           guide_text: string | null
           guide_url: string | null
           id: string
@@ -1163,6 +1164,7 @@ export type Database = {
           coordination_timeline?: Json | null
           created_at?: string
           display_order?: number
+          guide_files?: Json
           guide_text?: string | null
           guide_url?: string | null
           id?: string
@@ -1177,6 +1179,7 @@ export type Database = {
           coordination_timeline?: Json | null
           created_at?: string
           display_order?: number
+          guide_files?: Json
           guide_text?: string | null
           guide_url?: string | null
           id?: string

@@ -30,6 +30,7 @@ const CollegeGuide = () => {
   const [loading, setLoading] = useState(true);
   const [filterUni, setFilterUni] = useState("");
   const [searchText, setSearchText] = useState("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -135,11 +136,18 @@ const CollegeGuide = () => {
     );
   }
 
-  // Universities that have guides
-  const universityGuides = universities.filter((u) => u.guide_url);
+  // Universities that have guides (check guide_files first, fallback to guide_url)
+  const universityGuides = universities.filter((u) => {
+    const files = (u as any).guide_files;
+    return (Array.isArray(files) && files.length > 0) || u.guide_url;
+  });
 
-  // Track which universities have been rendered (for showing timeline/instructions once per uni group)
-  const renderedUniTimeline = new Set<string>();
+  const getGuideFiles = (u: any): { url: string; name: string; type: string }[] => {
+    const files = u.guide_files;
+    if (Array.isArray(files) && files.length > 0) return files;
+    if (u.guide_url) return [{ url: u.guide_url, name: "دليل التنسيق", type: u.guide_url?.toLowerCase().endsWith(".pdf") ? "pdf" : "image" }];
+    return [];
+  };
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -167,29 +175,48 @@ const CollegeGuide = () => {
         {/* University Guides Section */}
         {universityGuides.length > 0 && (
           <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="p-4 space-y-2">
+            <CardContent className="p-4 space-y-3">
               <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                 <BookOpen className="w-4 h-4 text-primary" />
                 أدلة التنسيق والتسجيل
               </p>
-              <div className="flex flex-wrap gap-2">
-                {universityGuides.map((u) => (
-                  <Button
-                    key={u.id}
-                    variant="outline"
-                    size="sm"
-                    asChild
-                    className="gap-1.5 text-xs"
-                  >
-                    <a href={u.guide_url} target="_blank" rel="noopener noreferrer">
-                      <FileText className="w-3.5 h-3.5" />
-                      {u.name_ar}
-                    </a>
-                  </Button>
-                ))}
-              </div>
+              {universityGuides.map((u) => {
+                const files = getGuideFiles(u);
+                return (
+                  <div key={u.id} className="space-y-1.5">
+                    <p className="text-xs font-medium text-muted-foreground">{u.name_ar}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {files.map((file, idx) => (
+                        file.type === "pdf" ? (
+                          <Button key={idx} variant="outline" size="sm" asChild className="gap-1.5 text-xs">
+                            <a href={file.url} target="_blank" rel="noopener noreferrer">
+                              <FileText className="w-3.5 h-3.5" />
+                              {file.name}
+                            </a>
+                          </Button>
+                        ) : (
+                          <button
+                            key={idx}
+                            onClick={() => setPreviewImage(file.url)}
+                            className="w-16 h-16 rounded-md border overflow-hidden hover:ring-2 ring-primary transition-all"
+                          >
+                            <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
+                          </button>
+                        )
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
+        )}
+
+        {/* Image Preview Modal */}
+        {previewImage && (
+          <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setPreviewImage(null)}>
+            <img src={previewImage} alt="معاينة" className="max-w-full max-h-[90vh] rounded-lg" />
+          </div>
         )}
 
         {/* Filters */}
