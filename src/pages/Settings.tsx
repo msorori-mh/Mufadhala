@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, User, Moon, Sun, Bell, LogOut, Trash2, Globe, ChevronLeft } from "lucide-react";
+import { ArrowRight, User, Moon, Sun, Bell, LogOut, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,12 +15,9 @@ const Settings = () => {
   const { user, loading } = useAuth();
   const { theme, setTheme } = useTheme();
 
-  const [language, setLanguage] = useState(() => localStorage.getItem("app_language") || "ar");
   const [notifInApp, setNotifInApp] = useState(() => localStorage.getItem("notif_in_app") !== "false");
   const [notifExamResults, setNotifExamResults] = useState(() => localStorage.getItem("notif_exam_results") !== "false");
   const [notifSubscription, setNotifSubscription] = useState(() => localStorage.getItem("notif_subscription") !== "false");
-
-  useEffect(() => { localStorage.setItem("app_language", language); }, [language]);
   useEffect(() => { localStorage.setItem("notif_in_app", String(notifInApp)); }, [notifInApp]);
   useEffect(() => { localStorage.setItem("notif_exam_results", String(notifExamResults)); }, [notifExamResults]);
   useEffect(() => { localStorage.setItem("notif_subscription", String(notifSubscription)); }, [notifSubscription]);
@@ -94,15 +90,15 @@ const Settings = () => {
           </CardContent>
         </Card>
 
-        {/* Appearance & Language */}
+        {/* Appearance */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Globe className="w-4 h-4" />
-              المظهر واللغة
+              {theme === "dark" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              المظهر
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {theme === "dark" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
@@ -112,19 +108,6 @@ const Settings = () => {
                 checked={theme === "dark"}
                 onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
               />
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <span className="text-sm">اللغة</span>
-              <Select value={language} onValueChange={setLanguage}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ar">العربية</SelectItem>
-                  <SelectItem value="en">English</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </CardContent>
         </Card>
