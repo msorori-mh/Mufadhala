@@ -15,6 +15,10 @@ type University = { id: string; name_ar: string };
 type College = { id: string; name_ar: string };
 type Major = { id: string; name_ar: string };
 
+// Module-level snapshot — survives component remounts but not page reloads.
+// No async, no localStorage, no side effects. Pure in-memory safety net.
+const _textBackup = { firstName: "", lastName: "", phone: "", gpa: "" };
+
 const RegisterV2 = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
