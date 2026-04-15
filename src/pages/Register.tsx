@@ -168,7 +168,7 @@ const Register = () => {
   }, []);
 
   const handleSubmit = async () => {
-    if (!formValid || loading) return;
+    if (!formValid || loading || phoneDuplicate) return;
 
     // Read text values from DOM refs (source of truth)
     const firstName = firstNameRef.current?.value?.trim() ?? "";
