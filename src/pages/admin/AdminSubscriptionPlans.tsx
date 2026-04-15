@@ -192,25 +192,7 @@ const AdminSubscriptionPlans = () => {
 
                 {!planForm.is_free && (
                   <div className="space-y-4 rounded-md border p-3">
-                    {/* Zone B (price_zone_a in DB = المنطقة ب per user request) */}
-                    <div className="space-y-2 rounded-md border p-3 bg-muted/30">
-                      <Label className="font-semibold">المنطقة ب</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <Label className="text-xs">السعر الافتراضي ({planForm.currency})</Label>
-                          <Input type="number" min={0} value={planForm.default_price_zone_a} onChange={(e) => updateDefaultPriceZone("a", Number(e.target.value))} />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs flex items-center gap-1"><Percent className="w-3 h-3" /> نسبة الخصم</Label>
-                          <Input type="number" min={0} max={100} value={planForm.discount_zone_a} onChange={(e) => updateDiscount("a", Number(e.target.value))} />
-                        </div>
-                      </div>
-                      <p className="text-sm font-medium text-primary">
-                        السعر بعد الخصم: {calcZonePrice(planForm.default_price_zone_a, planForm.discount_zone_a).toLocaleString()} {planForm.currency}
-                      </p>
-                    </div>
-
-                    {/* Zone A (price_zone_b in DB = المنطقة أ per user request) */}
+                    {/* Zone A (price_zone_b in DB = المنطقة أ) */}
                     <div className="space-y-2 rounded-md border p-3 bg-muted/30">
                       <Label className="font-semibold">المنطقة أ</Label>
                       <div className="grid grid-cols-2 gap-2">
@@ -225,6 +207,24 @@ const AdminSubscriptionPlans = () => {
                       </div>
                       <p className="text-sm font-medium text-primary">
                         السعر بعد الخصم: {calcZonePrice(planForm.default_price_zone_b, planForm.discount_zone_b).toLocaleString()} {planForm.currency}
+                      </p>
+                    </div>
+
+                    {/* Zone B (price_zone_a in DB = المنطقة ب) */}
+                    <div className="space-y-2 rounded-md border p-3 bg-muted/30">
+                      <Label className="font-semibold">المنطقة ب</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">السعر الافتراضي ({planForm.currency})</Label>
+                          <Input type="number" min={0} value={planForm.default_price_zone_a} onChange={(e) => updateDefaultPriceZone("a", Number(e.target.value))} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs flex items-center gap-1"><Percent className="w-3 h-3" /> نسبة الخصم</Label>
+                          <Input type="number" min={0} max={100} value={planForm.discount_zone_a} onChange={(e) => updateDiscount("a", Number(e.target.value))} />
+                        </div>
+                      </div>
+                      <p className="text-sm font-medium text-primary">
+                        السعر بعد الخصم: {calcZonePrice(planForm.default_price_zone_a, planForm.discount_zone_a).toLocaleString()} {planForm.currency}
                       </p>
                     </div>
                   </div>
