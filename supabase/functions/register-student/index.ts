@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
       console.log(`Registration rejected: phone ${phone} already registered to user ${existingStudent.user_id}`);
       return jsonResponse({
         error: "هذا الرقم مسجل مسبقاً. يرجى تسجيل الدخول بدلاً من إنشاء حساب جديد.",
-      }, 409);
+      });
     } else {
       // ── NEW USER ──
       // Pass all data as metadata → trigger (handle_new_user) creates the student row
