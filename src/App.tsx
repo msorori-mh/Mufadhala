@@ -25,6 +25,7 @@ import Notifications from "./pages/Notifications";
 
 // Eager — always needed
 import MobileBottomNav from "./components/MobileBottomNav";
+import WhatsAppFAB from "./components/WhatsAppFAB";
 
 // Lazy imports — secondary pages
 
