@@ -171,49 +171,11 @@ Deno.serve(async (req) => {
     let session: { access_token: string; refresh_token: string };
 
     if (existingStudent) {
-      // ── RETURNING USER ──
-      const userId = existingStudent.user_id;
-      console.log(`Returning user: ${userId}`);
-
-      const tempPassword = `muf_${phone}_${Date.now()}`;
-      const { error: updateErr } = await supabase.auth.admin.updateUserById(userId, {
-        password: tempPassword,
-        user_metadata: {
-          first_name: first_name.trim(),
-          fourth_name: fourth_name.trim(),
-          phone,
-          governorate,
-          university_id,
-          college_id,
-          major_id: major_id || null,
-          high_school_gpa: high_school_gpa ?? null,
-        },
-      });
-      if (updateErr) {
-        console.error("updateUserById error:", updateErr);
-        return jsonResponse({ error: "فشل في تحديث بيانات الحساب. يرجى المحاولة مرة أخرى." }, 500);
-      }
-
-      // Always sync student record with latest form data
-      try {
-        await ensureStudentAccountData(supabase, userId, registrationPayload);
-      } catch (syncError) {
-        console.error("returning user ensureStudentAccountData error:", syncError);
-        // Non-fatal — continue with login
-      }
-
-      const { data: signInData, error: signInError } =
-        await supabase.auth.signInWithPassword({ email: dummyEmail, password: tempPassword });
-
-      if (signInError || !signInData.session) {
-        console.error("Sign-in error:", signInError);
-        return jsonResponse({ error: "فشل في تسجيل الدخول. يرجى المحاولة مرة أخرى." }, 500);
-      }
-
-      session = {
-        access_token: signInData.session.access_token,
-        refresh_token: signInData.session.refresh_token,
-      };
+      // ── DUPLICATE PHONE — reject registration ──
+      console.log(`Registration rejected: phone ${phone} already registered to user ${existingStudent.user_id}`);
+      return jsonResponse({
+        error: "هذا الرقم مسجل مسبقاً. يرجى تسجيل الدخول بدلاً من إنشاء حساب جديد.",
+      }, 409);
     } else {
       // ── NEW USER ──
       // Pass all data as metadata → trigger (handle_new_user) creates the student row
