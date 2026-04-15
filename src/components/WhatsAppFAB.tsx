@@ -1,9 +1,9 @@
 import { MessageCircle } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 const WhatsAppFAB = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { pathname } = useLocation();
 
   // Only show for authenticated users, hide on public/auth pages
