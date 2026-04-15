@@ -286,6 +286,10 @@ const RegisterV2 = () => {
               تسجيل الدخول
             </Link>
           </p>
+
+          <p className="text-center text-xs font-mono text-muted-foreground/60 mt-2">
+            REGISTER V2 TEST
+          </p>
         </CardContent>
       </Card>
     </div>
