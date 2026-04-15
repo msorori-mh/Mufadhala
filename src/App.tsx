@@ -65,6 +65,7 @@ const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const RegisterV2 = lazy(() => import("./pages/RegisterV2"));
 
 // Lazy load non-critical components
 const ChatWidget = lazy(() => import("./components/ChatWidget"));
@@ -131,6 +132,7 @@ function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/complete-profile" element={<Navigate to="/profile" replace />} />
+                  <Route path="/register-v2" element={<RegisterV2 />} />
                   <Route path="/admin-login" element={<AdminLogin />} />
                   <Route path="/admin-reset-password" element={<AdminResetPassword />} />
                   <Route path="/welcome" element={<Welcome />} />
