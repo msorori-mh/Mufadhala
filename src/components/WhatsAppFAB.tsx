@@ -8,7 +8,7 @@ const WhatsAppFAB = () => {
 
   // Only show for authenticated users, hide on public/auth pages
   const hiddenRoutes = ["/", "/login", "/register", "/admin-login", "/privacy-policy", "/terms-of-service"];
-  if (!session || hiddenRoutes.includes(pathname)) return null;
+  if (!user || hiddenRoutes.includes(pathname)) return null;
 
   return (
     <a
