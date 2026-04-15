@@ -360,7 +360,7 @@ const Register = () => {
             />
           </div>
 
-          <Button className="w-full" size="lg" disabled={!formValid || loading} onClick={handleSubmit}>
+          <Button className="w-full" size="lg" disabled={!formValid || loading || phoneDuplicate} onClick={handleSubmit}>
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
