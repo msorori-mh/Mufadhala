@@ -327,6 +327,7 @@ const AdminStudents = () => {
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-2">
                 <div><span className="text-muted-foreground">الاسم:</span> <span className="font-medium">{getFullName(viewing)}</span></div>
+                <div><span className="text-muted-foreground">الهاتف:</span> <span className="font-medium">{viewing.phone || "-"}</span></div>
                 <div><span className="text-muted-foreground">المعدل:</span> <span className="font-medium">{viewing.gpa || "-"}%</span></div>
                 <div><span className="text-muted-foreground">الجامعة:</span> <span className="font-medium">{getUniName(viewing.university_id)}</span></div>
                 <div><span className="text-muted-foreground">الكلية:</span> <span className="font-medium">{getCollegeName(viewing.college_id)}</span></div>
