@@ -411,9 +411,12 @@ const LessonDetail = () => {
             <Card>
               <CardContent className="py-6 px-5">
                 {lesson.summary ? (
-                  <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
-                    {lesson.summary}
-                  </div>
+                  <>
+                    <SummaryTTS text={lesson.summary} />
+                    <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
+                      {lesson.summary}
+                    </div>
+                  </>
                 ) : (
                   <p className="text-muted-foreground text-center py-8">لا يوجد ملخص بعد</p>
                 )}
