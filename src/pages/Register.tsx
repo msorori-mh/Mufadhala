@@ -198,6 +198,13 @@ const Register = () => {
         },
       });
 
+      // GPA range guard (client-side)
+      if (gpa && (parseFloat(gpa) < 60 || parseFloat(gpa) > 100)) {
+        toast({ variant: "destructive", title: "خطأ", description: "المعدل يجب أن يكون بين 60 و 100" });
+        setLoading(false);
+        return;
+      }
+
       let errorMsg = res.data?.error;
       if (!errorMsg && res.error) {
         try {
