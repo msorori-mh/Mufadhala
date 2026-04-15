@@ -115,8 +115,18 @@ const StudentPerformance = () => {
   const questions = perfData?.questions ?? [];
   const completedLessonIds = perfData?.completedLessonIds ?? new Set<string>();
   const peerAttempts = perfData?.peerAttempts ?? [];
+  const subjects = perfData?.subjects ?? [];
   const filterId = filter?.value ?? null;
   const filterType = filter?.type ?? "major";
+
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("all");
+
+  // Filtered lessons by subject
+  const filteredLessons = selectedSubjectId === "all"
+    ? lessons
+    : lessons.filter(l => l.subject_id === selectedSubjectId);
+  const filteredCompleted = filteredLessons.filter(l => completedLessonIds.has(l.id)).length;
+  const filteredCompletionPct = filteredLessons.length > 0 ? Math.round((filteredCompleted / filteredLessons.length) * 100) : 0;
 
   if (authLoading || loading) {
     return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
