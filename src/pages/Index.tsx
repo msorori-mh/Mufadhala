@@ -93,7 +93,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       </section>
 
       {/* Hero Hook */}
-      <section className="gradient-hero py-5 px-4">
+      <section className="gradient-hero py-3 md:py-5 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <p className="text-base md:text-lg text-primary-foreground/85 leading-relaxed">
             لا تترك حلمك للصدفة.. <span className="text-secondary font-bold">هندس طريقك</span> للقبول في الجامعات اليمنية
@@ -102,7 +102,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       </section>
 
       {/* AI Assistant "Qabool" */}
-      <section className="bg-background py-4 px-4">
+      <section className="bg-background py-2.5 md:py-4 px-4">
         <div className="max-w-3xl mx-auto animate-fade-in">
           <div className="flex items-center gap-3 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
             <Bot className="w-5 h-5 text-accent shrink-0" />
@@ -115,27 +115,29 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       </section>
 
       {/* Academic Core Pillars */}
-      <section id="features-section" className="bg-muted py-8 px-4">
-        <div className="max-w-5xl mx-auto grid gap-4 md:grid-cols-3">
+      <section id="features-section" className="bg-muted py-5 md:py-8 px-4">
+        <div className="max-w-5xl mx-auto grid gap-2.5 md:gap-4 md:grid-cols-3">
           {[
             { icon: BookOpen, emoji: "📚", title: "شمولية المنهج الوزاري", desc: "تغطية دقيقة لكافة المقررات الدراسية المطلوبة في اختبارات المفاضلة." },
             { icon: Brain, emoji: "🧠", title: "تعزيز الفهم بالتعليل", desc: "شرح علمي مبسط لكل سؤال يوضح لماذا هذه الإجابة هي الأصح." },
             { icon: FileCheck, emoji: "⏱️", title: "محاكاة بيئة الاختبار", desc: "اختبارات تحاكي النمط الحقيقي من حيث الدرجات وإدارة الوقت." },
           ].map((f, i) => (
-            <div key={i} className="bg-card rounded-xl border p-4 text-center animate-fade-in" style={{ animationDelay: `${i * 150}ms` }}>
-              <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-accent/10 mb-3">
-                <f.icon className="w-5 h-5 text-accent" />
+            <div key={i} className="bg-card rounded-xl border p-3 flex items-start gap-3 text-right md:block md:text-center animate-fade-in" style={{ animationDelay: `${i * 150}ms` }}>
+              <div className="inline-flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-lg bg-accent/10 shrink-0 md:mb-3">
+                <f.icon className="w-4 h-4 md:w-5 md:h-5 text-accent" />
               </div>
-              <h3 className="font-bold text-foreground text-sm mb-2">{f.emoji} {f.title}</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
+              <div>
+                <h3 className="font-bold text-foreground text-sm mb-1 md:mb-2">{f.emoji} {f.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
       {/* Value Badges */}
-      <section className="bg-background py-6 px-4">
-        <div className="max-w-5xl mx-auto grid gap-3 md:grid-cols-3">
+      <section className="bg-background py-4 md:py-6 px-4">
+        <div className="max-w-5xl mx-auto grid gap-2 md:gap-3 md:grid-cols-3">
           {[
             { icon: Shield, label: "ثقة مطلقة", desc: "خبير بنمط الأسئلة قبل دخول القاعة." },
             { icon: Focus, label: "تركيز عالٍ", desc: "ملخصات ذكية تغنيك عن تشتت الملازم." },
@@ -155,7 +157,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       </section>
 
       {/* Stats Bar */}
-      <section className="bg-primary py-6 px-4">
+      <section className="bg-primary py-4 md:py-6 px-4">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           {[
             { value: q, suffix: "+", label: "سؤال تدريبي" },
@@ -178,7 +180,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       </section>
 
       {/* Trust Note */}
-      <section className="bg-background py-6 px-4">
+      <section className="bg-background py-4 md:py-6 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <CheckCircle className="w-7 h-7 text-accent mx-auto mb-2" />
           <p className="text-foreground font-semibold leading-relaxed text-sm">
@@ -188,7 +190,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       </section>
 
       {/* Social Proof */}
-      <section className="bg-muted py-8 px-4">
+      <section className="bg-muted py-5 md:py-8 px-4">
         <div className="max-w-2xl mx-auto text-center">
           <Users className="w-7 h-7 text-primary mx-auto mb-3" />
           <p className="text-base md:text-lg font-bold text-foreground mb-4">
@@ -207,7 +209,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       </section>
 
       {/* FAQ */}
-      <section className="bg-background py-8 px-4">
+      <section className="bg-background py-5 md:py-8 px-4">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-center gap-2 mb-5">
             <HelpCircle className="w-6 h-6 text-primary" />
