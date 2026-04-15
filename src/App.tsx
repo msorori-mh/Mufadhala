@@ -16,6 +16,7 @@ import { useBottomNavVisible } from "./hooks/useBottomNavVisible";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import RegisterV2 from "./pages/RegisterV2";
 import Dashboard from "./pages/Dashboard";
 import Welcome from "./pages/Welcome";
 import LessonsList from "./pages/LessonsList";
@@ -65,7 +66,6 @@ const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const RegisterV2 = lazy(() => import("./pages/RegisterV2"));
 
 // Lazy load non-critical components
 const ChatWidget = lazy(() => import("./components/ChatWidget"));
