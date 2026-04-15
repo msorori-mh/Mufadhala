@@ -195,12 +195,34 @@ const AdminStudents = () => {
             <h1 className="text-2xl font-bold">الطلاب</h1>
             <p className="text-sm text-muted-foreground">{scopedStudents.length} طالب مسجل</p>
           </div>
-          {hasActiveFilter && (
-            <Button variant="outline" size="sm" onClick={clearFilters} className="gap-1">
-              <X className="w-4 h-4" />
-              مسح الفلاتر
+          <div className="flex items-center gap-2">
+            {hasActiveFilter && (
+              <Button variant="outline" size="sm" onClick={clearFilters} className="gap-1">
+                <X className="w-4 h-4" />
+                مسح الفلاتر
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => {
+              exportToExcel({
+                title: "قائمة الطلاب",
+                headers: ["الاسم", "الهاتف", "المحافظة", "الجامعة", "الكلية", "التخصص", "المعدل", "رقم التنسيق"],
+                rows: filtered.map((s) => [
+                  getFullName(s),
+                  s.phone || "-",
+                  s.governorate || "-",
+                  getUniName(s.university_id),
+                  getCollegeName(s.college_id),
+                  getMajorName(s.major_id),
+                  s.gpa ?? "-",
+                  s.coordination_number || "-",
+                ]),
+                summary: { "إجمالي الطلاب": filtered.length },
+              }, "students_export");
+            }} className="gap-1">
+              <Download className="w-4 h-4" />
+              تصدير Excel
             </Button>
-          )}
+          </div>
         </div>
 
         {/* Filters */}
