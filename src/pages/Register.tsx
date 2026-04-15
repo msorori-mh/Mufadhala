@@ -152,6 +152,21 @@ const Register = () => {
 
   const isPhoneValid = YEMEN_PHONE_REGEX.test(phoneValue);
 
+  // Debounced phone duplicate check
+  const checkPhoneDuplicate = useCallback((phone: string) => {
+    if (phoneCheckTimer.current) clearTimeout(phoneCheckTimer.current);
+    setPhoneDuplicate(false);
+    if (!YEMEN_PHONE_REGEX.test(phone)) return;
+    setCheckingPhone(true);
+    phoneCheckTimer.current = setTimeout(async () => {
+      try {
+        const { data } = await supabase.rpc("check_phone_exists", { _phone: phone });
+        setPhoneDuplicate(!!data);
+      } catch {}
+      setCheckingPhone(false);
+    }, 600);
+  }, []);
+
   const handleSubmit = async () => {
     if (!formValid || loading) return;
 
