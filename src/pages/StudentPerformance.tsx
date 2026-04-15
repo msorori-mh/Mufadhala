@@ -456,29 +456,73 @@ const StudentPerformance = () => {
               <span className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-primary" /> حالة إكمال الدروس
               </span>
-              <span className="text-xs font-normal text-muted-foreground">{completedLessonIds.size}/{lessons.length}</span>
+              <span className="text-xs font-normal text-muted-foreground">{filteredCompleted}/{filteredLessons.length}</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1.5">
-            {lessons.map((l) => {
-              const done = completedLessonIds.has(l.id);
-              const qCount = questions.filter((q) => q.lesson_id === l.id).length;
-              return (
-                <div key={l.id} className={`flex items-center justify-between text-sm p-2 rounded-lg ${done ? "bg-green-50 dark:bg-green-950/20" : "bg-muted/50"}`}>
-                  <div className="flex items-center gap-2 truncate max-w-[65%]">
-                    {done ? <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" /> : <XCircle className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
-                    <span className="text-foreground truncate">{l.title}</span>
+          <CardContent className="space-y-3">
+            {/* Subject filter chips */}
+            {subjects.length > 1 && (
+              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+                <button
+                  onClick={() => setSelectedSubjectId("all")}
+                  className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    selectedSubjectId === "all"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  الكل ({completedLessonIds.size}/{lessons.length})
+                </button>
+                {subjects.map(s => {
+                  const subLessons = lessons.filter(l => l.subject_id === s.id);
+                  const subCompleted = subLessons.filter(l => completedLessonIds.has(l.id)).length;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setSelectedSubjectId(s.id)}
+                      className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        selectedSubjectId === s.id
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      {s.name_ar} ({subCompleted}/{subLessons.length})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Progress bar for selected filter */}
+            <div className="space-y-1">
+              <Progress value={filteredCompletionPct} className="h-2" />
+              <p className="text-xs text-muted-foreground text-left" dir="ltr">
+                {filteredCompletionPct}%
+              </p>
+            </div>
+
+            {/* Lesson list */}
+            <div className="space-y-1.5">
+              {filteredLessons.map((l) => {
+                const done = completedLessonIds.has(l.id);
+                const qCount = questions.filter((q) => q.lesson_id === l.id).length;
+                return (
+                  <div key={l.id} className={`flex items-center justify-between text-sm p-2 rounded-lg ${done ? "bg-green-50 dark:bg-green-950/20" : "bg-muted/50"}`}>
+                    <div className="flex items-center gap-2 truncate max-w-[65%]">
+                      {done ? <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" /> : <XCircle className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+                      <span className="text-foreground truncate">{l.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{qCount} سؤال</span>
+                      <Badge variant={done ? "default" : "outline"} className="text-xs">
+                        {done ? "✓" : "—"}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{qCount} سؤال</span>
-                    <Badge variant={done ? "default" : "outline"} className="text-xs">
-                      {done ? "✓" : "—"}
-                    </Badge>
-                  </div>
-                </div>
-              );
-            })}
-            {lessons.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">لا توجد دروس</p>}
+                );
+              })}
+              {filteredLessons.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">لا توجد دروس</p>}
+            </div>
           </CardContent>
         </Card>
 
