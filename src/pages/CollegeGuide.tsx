@@ -149,55 +149,6 @@ const CollegeGuide = () => {
     return [];
   };
 
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-
-        {/* University Guides Section */}
-        {universityGuides.length > 0 && (
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="p-4 space-y-3">
-              <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                <BookOpen className="w-4 h-4 text-primary" />
-                أدلة التنسيق والتسجيل
-              </p>
-              {universityGuides.map((u) => {
-                const files = getGuideFiles(u);
-                return (
-                  <div key={u.id} className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted-foreground">{u.name_ar}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {files.map((file, idx) => (
-                        file.type === "pdf" ? (
-                          <Button key={idx} variant="outline" size="sm" asChild className="gap-1.5 text-xs">
-                            <a href={file.url} target="_blank" rel="noopener noreferrer">
-                              <FileText className="w-3.5 h-3.5" />
-                              {file.name}
-                            </a>
-                          </Button>
-                        ) : (
-                          <button
-                            key={idx}
-                            onClick={() => setPreviewImage(file.url)}
-                            className="w-16 h-16 rounded-md border overflow-hidden hover:ring-2 ring-primary transition-all"
-                          >
-                            <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
-                          </button>
-                        )
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Image Preview Modal */}
-        {previewImage && (
-          <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setPreviewImage(null)}>
-            <img src={previewImage} alt="معاينة" className="max-w-full max-h-[90vh] rounded-lg" />
-          </div>
-        )}
-
         {/* Filters */}
         <div className="flex gap-2 flex-wrap">
           <div className="relative flex-1 min-w-[200px]">
