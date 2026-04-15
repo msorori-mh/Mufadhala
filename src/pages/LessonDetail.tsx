@@ -330,6 +330,7 @@ const LessonDetail = () => {
                   <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
                     <BookOpen className="w-4 h-4" /> ملخص الدرس
                   </h3>
+                  <SummaryTTS text={lesson.summary} />
                   <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
                     {lesson.summary}
                   </div>
