@@ -543,7 +543,7 @@ const Register = () => {
                 <Input
                   value={form.firstName}
                   onChange={(e) => updateField("firstName", e.target.value)}
-                  placeholder="أحمد"
+                  placeholder=""
                 />
               </div>
               <div className="space-y-1.5">
@@ -551,7 +551,7 @@ const Register = () => {
                 <Input
                   value={form.lastName}
                   onChange={(e) => updateField("lastName", e.target.value)}
-                  placeholder="العمري"
+                  placeholder=""
                 />
               </div>
             </div>
