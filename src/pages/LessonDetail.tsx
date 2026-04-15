@@ -447,7 +447,7 @@ const LessonDetail = () => {
             </TabsContent>
           )}
 
-          <TabsContent value="quiz" className="mt-4 space-y-4">
+          <TabsContent value="quiz" className="mt-4 space-y-2">
             {questions.length === 0 ? (
               <Card>
                 <CardContent className="py-8 text-center">
@@ -481,17 +481,17 @@ const LessonDetail = () => {
 
                   return (
                     <Card key={q.id}>
-                      <CardContent className="py-4 px-4">
-                        <div className="flex items-start gap-2 mb-3">
+                      <CardContent className="py-2.5 px-3">
+                        <div className="flex items-start gap-2 mb-1.5">
                           {isTrueFalse && <Badge variant="outline" className="text-[10px] shrink-0">صح/خطأ</Badge>}
-                          <p className="font-semibold text-sm">{i + 1}. {q.question_text}</p>
+                          <p className="font-semibold text-xs">{i + 1}. {q.question_text}</p>
                         </div>
-                        <div className={isTrueFalse ? "grid grid-cols-2 gap-2" : "space-y-2"}>
+                        <div className={isTrueFalse ? "grid grid-cols-2 gap-1.5" : "space-y-1"}>
                           {options.map((opt) => {
                             const optionText = isTrueFalse ? (opt === "a" ? "صح" : "خطأ") : ((q[`option_${opt}` as keyof Question] as string) || "");
                             const isCorrectOption = q.correct_option === opt;
 
-                            let classes = "flex items-center gap-2 p-3 rounded-lg border text-sm transition-colors ";
+                            let classes = "flex items-center gap-2 p-2 rounded-lg border text-xs transition-colors ";
                             if (isRevealed && isCorrectOption) {
                               classes += "border-green-500 bg-green-50 dark:bg-green-950/30 ";
                             } else {
@@ -501,7 +501,7 @@ const LessonDetail = () => {
                             return (
                               <div key={opt} className={classes}>
                                 {!isTrueFalse && (
-                                  <span className="w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold shrink-0">
+                                  <span className="w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-bold shrink-0">
                                     {opt.toUpperCase()}
                                   </span>
                                 )}
@@ -513,16 +513,16 @@ const LessonDetail = () => {
                         </div>
 
                         {isRevealed && q.explanation && (
-                          <div className="mt-3 p-3 bg-muted rounded-lg">
-                            <p className="text-xs font-semibold text-muted-foreground mb-1">الشرح:</p>
-                            <p className="text-sm">{q.explanation}</p>
+                          <div className="mt-1.5 p-2 bg-muted rounded-lg">
+                            <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">الشرح:</p>
+                            <p className="text-xs">{q.explanation}</p>
                           </div>
                         )}
 
                         <Button
                           variant={isRevealed ? "outline" : "default"}
                           size="sm"
-                          className="mt-3 w-full gap-1"
+                          className="mt-1.5 w-auto gap-1"
                           onClick={() => toggleRevealAnswer(q.id)}
                         >
                           {isRevealed ? (
