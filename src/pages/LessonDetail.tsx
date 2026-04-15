@@ -17,6 +17,7 @@ import { saveLesson as saveLessonOffline, getLesson as getOfflineLesson, removeL
 import { trackFunnelEvent, hasTrackedEvent } from "@/lib/funnelTracking";
 import ChatWidget from "@/components/ChatWidget";
 import PaywallSheet, { usePaywall } from "@/components/PaywallSheet";
+import SummaryTTS from "@/components/SummaryTTS";
 
 interface Lesson {
   id: string;
