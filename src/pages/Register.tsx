@@ -280,15 +280,26 @@ const Register = () => {
                 defaultValue={_textBackup.phone}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, "").slice(0, 9);
-                  // For numeric filtering, we DO write back to the input
                   if (phoneRef.current) phoneRef.current.value = val;
                   setPhoneValue(val);
+                  checkPhoneDuplicate(val);
                   revalidate();
                 }}
               />
             </div>
             {phoneValue && !isPhoneValid && (
               <p className="text-xs text-destructive">رقم الجوال يجب أن يبدأ بـ 7 ويتكون من 9 أرقام</p>
+            )}
+            {isPhoneValid && checkingPhone && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> جارٍ التحقق...</p>
+            )}
+            {isPhoneValid && !checkingPhone && phoneDuplicate && (
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-destructive">هذا الرقم مسجل مسبقاً</p>
+                <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => navigate("/login")}>
+                  تسجيل الدخول
+                </Button>
+              </div>
             )}
           </div>
 
