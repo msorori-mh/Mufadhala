@@ -16,7 +16,6 @@ import { useBottomNavVisible } from "./hooks/useBottomNavVisible";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import RegisterV2 from "./pages/RegisterV2";
 import Dashboard from "./pages/Dashboard";
 import Welcome from "./pages/Welcome";
 import LessonsList from "./pages/LessonsList";
@@ -130,9 +129,9 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<RegisterV2 />} />
+                  <Route path="/register" element={<Register />} />
                   <Route path="/complete-profile" element={<Navigate to="/profile" replace />} />
-                  <Route path="/register-v2" element={<RegisterV2 />} />
+                  <Route path="/register-v2" element={<Navigate to="/register" replace />} />
                   <Route path="/admin-login" element={<AdminLogin />} />
                   <Route path="/admin-reset-password" element={<AdminResetPassword />} />
                   <Route path="/welcome" element={<Welcome />} />
