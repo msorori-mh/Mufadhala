@@ -29,7 +29,11 @@ interface ExamRow {
 }
 
 interface LessonRow {
-  id: string; title: string; major_id: string;
+  id: string; title: string; major_id: string; subject_id: string | null;
+}
+
+interface SubjectInfo {
+  id: string; name_ar: string;
 }
 
 interface QuestionRow {
