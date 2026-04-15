@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,29 +32,147 @@ interface DebugLog {
 
 function RegDebugPanel({
   form,
-  logs,
   mountCount,
   submitPhase,
-  kbState,
-  activeField,
+  reporterRef,
+  formRef,
+  lastEventRef,
 }: {
   form: RegistrationDraft;
-  logs: DebugLog[];
   mountCount: number;
   submitPhase: string;
-  kbState: string;
-  activeField: string;
+  reporterRef: { current: ((entry: DebugLog) => void) | null };
+  formRef: { current: RegistrationDraft };
+  lastEventRef: { current: string };
 }) {
   const [open, setOpen] = useState(false);
   const isNative = isNativePlatform();
   const [vh, setVh] = useState(window.innerHeight);
+  const [logs, setLogs] = useState<DebugLog[]>([]);
+  const [kbState, setKbState] = useState("hidden");
+  const [activeField, setActiveField] = useState("none");
   const vvh = (window.visualViewport?.height ?? window.innerHeight).toFixed(0);
+
+  const log = useCallback((tag: string, msg: string, critical = false) => {
+    setLogs((prev) => [...prev.slice(-100), { ts: Date.now(), tag, msg, critical }]);
+  }, []);
+
+  useEffect(() => {
+    reporterRef.current = (entry) => {
+      setLogs((prev) => [...prev.slice(-100), entry]);
+    };
+    return () => {
+      reporterRef.current = null;
+    };
+  }, [reporterRef]);
 
   useEffect(() => {
     const h = () => setVh(window.innerHeight);
     window.addEventListener("resize", h);
     return () => window.removeEventListener("resize", h);
   }, []);
+
+  useEffect(() => {
+    if (!isNative) return;
+    let cleanup: (() => void) | undefined;
+    (async () => {
+      try {
+        const { Keyboard } = await import("@capacitor/keyboard");
+        const listeners = await Promise.all([
+          Keyboard.addListener("keyboardWillShow", (info) => {
+            lastEventRef.current = "kb-willShow";
+            log("KB:willShow", `height=${info.keyboardHeight} form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
+            setKbState("showing");
+          }),
+          Keyboard.addListener("keyboardDidShow", (info) => {
+            lastEventRef.current = "kb-didShow";
+            log("KB:didShow", `height=${info.keyboardHeight}`);
+            setKbState("visible");
+          }),
+          Keyboard.addListener("keyboardWillHide", () => {
+            lastEventRef.current = "kb-willHide";
+            log("KB:willHide", `form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
+            setKbState("hiding");
+          }),
+          Keyboard.addListener("keyboardDidHide", () => {
+            lastEventRef.current = "kb-didHide";
+            log("KB:didHide", `form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
+            setKbState("hidden");
+          }),
+        ]);
+        cleanup = () => listeners.forEach((listener) => listener.remove());
+        log("KB:init", "Keyboard listeners registered");
+      } catch (e: any) {
+        log("KB:init", `FAILED: ${e.message}`);
+      }
+    })();
+    return () => cleanup?.();
+  }, [formRef, isNative, lastEventRef, log]);
+
+  useEffect(() => {
+    let prevH = window.innerHeight;
+    const onResize = () => {
+      const newH = window.innerHeight;
+      const delta = newH - prevH;
+      if (Math.abs(delta) > 5) {
+        lastEventRef.current = `resize-${delta}`;
+        log("VIEWPORT:resize", `${prevH}→${newH} (Δ${delta}) form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
+      }
+      prevH = newH;
+    };
+    window.addEventListener("resize", onResize);
+
+    const vv = window.visualViewport;
+    let prevVV = vv?.height ?? 0;
+    const onVVResize = () => {
+      const newVV = vv?.height ?? 0;
+      const delta = Math.round(newVV - prevVV);
+      if (Math.abs(delta) > 5) {
+        lastEventRef.current = `vv-resize-${delta}`;
+        log("VIEWPORT:visualViewport", `${prevVV.toFixed(0)}→${newVV.toFixed(0)} (Δ${delta})`);
+      }
+      prevVV = newVV;
+    };
+    vv?.addEventListener("resize", onVVResize);
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+      vv?.removeEventListener("resize", onVVResize);
+    };
+  }, [formRef, lastEventRef, log]);
+
+  useEffect(() => {
+    const onFocusIn = (e: FocusEvent) => {
+      const el = e.target as HTMLElement;
+      const name =
+        el.getAttribute("name") ||
+        el.getAttribute("aria-label") ||
+        el.getAttribute("placeholder") ||
+        el.tagName ||
+        "unknown";
+      lastEventRef.current = `focus-${name}`;
+      setActiveField(name.slice(0, 15));
+      log("FOCUS:in", `"${name}" form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
+    };
+    const onFocusOut = (e: FocusEvent) => {
+      const el = e.target as HTMLElement;
+      const name =
+        el.getAttribute("name") ||
+        el.getAttribute("aria-label") ||
+        el.getAttribute("placeholder") ||
+        el.tagName ||
+        "unknown";
+      lastEventRef.current = `blur-${name}`;
+      setActiveField("none");
+      log("FOCUS:out", `"${name}" form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
+    };
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+    };
+  }, [formRef, lastEventRef, log]);
 
   return (
     <div
@@ -101,11 +219,9 @@ const Register = () => {
   const formRef = useRef<RegistrationDraft>(emptyDraft); // always current
   const mountCount = useRef(0);
   const [submitPhase, setSubmitPhase] = useState("idle");
-  const [debugLogs, setDebugLogs] = useState<DebugLog[]>([]);
-  const [kbState, setKbState] = useState("hidden");
-  const [activeField, setActiveField] = useState("none");
   const lastFormSnapshot = useRef<string>("");
   const lastEventRef = useRef<string>("init");
+  const debugReporterRef = useRef<((entry: DebugLog) => void) | null>(null);
   const isNative = isNativePlatform();
 
   // ─── OVERWRITE GUARD: track which text fields user has manually typed into ───
@@ -114,28 +230,38 @@ const Register = () => {
 
   // Guarded setForm: on native, prevents non-user overwrites of touched text fields
   const setForm: typeof setFormRaw = useCallback((updater) => {
-    if (!isNative || updateSourceRef.current === "user") {
-      setFormRaw(updater);
-      return;
-    }
-    // Internal update on native → protect touched text fields
     setFormRaw((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      const guarded = { ...next };
-      for (const field of PROTECTED_TEXT_FIELDS) {
-        if (userTouchedFields.current.has(field) && prev[field] && !next[field]) {
-          // BLOCK: internal logic trying to clear a user-typed field
-          console.log(`[GUARD:BLOCKED] ${field} clear blocked! keeping "${prev[field]}"`);
-          guarded[field] = prev[field];
+      const source = updateSourceRef.current;
+      const requested = typeof updater === "function" ? updater(prev) : updater;
+      let next = requested;
+
+      if (isNative && source !== "user") {
+        const guarded = { ...requested };
+        for (const field of PROTECTED_TEXT_FIELDS) {
+          if (userTouchedFields.current.has(field) && prev[field] && !requested[field]) {
+            const msg = `${field} clear blocked! keeping "${prev[field]}" lastEvent=${lastEventRef.current}`;
+            console.log(`[GUARD:BLOCKED] ${msg}`);
+            debugReporterRef.current?.({ ts: Date.now(), tag: "GUARD:BLOCKED", msg, critical: true });
+            guarded[field] = prev[field];
+          }
         }
+        next = guarded;
       }
-      return guarded;
+
+      const changedKeys = (Object.keys(next) as (keyof RegistrationDraft)[]).filter(
+        (key) => prev[key] !== next[key],
+      );
+      const msg = `source=${source} changed=[${changedKeys.join(",") || "none"}] prev(fn="${prev.firstName}" ln="${prev.lastName}" ph="${prev.phoneNumber}") next(fn="${next.firstName}" ln="${next.lastName}" ph="${next.phoneNumber}") lastEvent=${lastEventRef.current}`;
+      console.log(`[FORM:setForm] ${msg}`);
+      debugReporterRef.current?.({ ts: Date.now(), tag: "FORM:setForm", msg, critical: changedKeys.some((key) => PROTECTED_TEXT_FIELDS.includes(key)) });
+
+      return next;
     });
   }, [isNative]);
 
   const log = useCallback((tag: string, msg: string, critical = false) => {
     console.log(`[${tag}] ${msg}`);
-    setDebugLogs((prev) => [...prev.slice(-100), { ts: Date.now(), tag, msg, critical }]);
+    debugReporterRef.current?.({ ts: Date.now(), tag, msg, critical });
   }, []);
 
   // Keep formRef in sync + detect unexpected resets
@@ -150,7 +276,7 @@ const Register = () => {
         log("CRITICAL:RESET", `firstName cleared! was="${pFn}" now="" lastEvent=${lastEventRef.current}`, true);
       }
       if (pLn && !form.lastName) {
-        log("CRITICAL:RESET", `fourthName cleared! was="${pLn}" now="" lastEvent=${lastEventRef.current}`, true);
+        log("CRITICAL:RESET", `lastName cleared! was="${pLn}" now="" lastEvent=${lastEventRef.current}`, true);
       }
       if (pPh && !form.phoneNumber) {
         log("CRITICAL:RESET", `phoneNumber cleared! was="${pPh}" now="" lastEvent=${lastEventRef.current}`, true);
@@ -166,101 +292,6 @@ const Register = () => {
     // Normalize viewport on mount — prevent stale scroll position from triggering resize
     window.scrollTo(0, 0);
     return () => log("LIFECYCLE", "Register unmounting");
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ─── PHASE 1: Keyboard events (Capacitor plugin) ───
-  useEffect(() => {
-    if (!isNative) return;
-    let cleanup: (() => void) | undefined;
-    (async () => {
-      try {
-        const { Keyboard } = await import("@capacitor/keyboard");
-        const listeners = await Promise.all([
-          Keyboard.addListener("keyboardWillShow", (info) => {
-            lastEventRef.current = "kb-willShow";
-            log("KB:willShow", `height=${info.keyboardHeight} form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
-            setKbState("showing");
-          }),
-          Keyboard.addListener("keyboardDidShow", (info) => {
-            lastEventRef.current = "kb-didShow";
-            log("KB:didShow", `height=${info.keyboardHeight}`);
-            setKbState("visible");
-          }),
-          Keyboard.addListener("keyboardWillHide", () => {
-            lastEventRef.current = "kb-willHide";
-            log("KB:willHide", `form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
-            setKbState("hiding");
-          }),
-          Keyboard.addListener("keyboardDidHide", () => {
-            lastEventRef.current = "kb-didHide";
-            log("KB:didHide", `form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
-            setKbState("hidden");
-          }),
-        ]);
-        cleanup = () => listeners.forEach((l) => l.remove());
-        log("KB:init", "Keyboard listeners registered");
-      } catch (e: any) {
-        log("KB:init", `FAILED: ${e.message}`);
-      }
-    })();
-    return () => cleanup?.();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ─── PHASE 2: Viewport / resize trace ───
-  useEffect(() => {
-    let prevH = window.innerHeight;
-    const onResize = () => {
-      const newH = window.innerHeight;
-      const delta = newH - prevH;
-      if (Math.abs(delta) > 5) {
-        lastEventRef.current = `resize-${delta}`;
-        log("VIEWPORT:resize", `${prevH}→${newH} (Δ${delta}) form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
-      }
-      prevH = newH;
-    };
-    window.addEventListener("resize", onResize);
-
-    const vv = window.visualViewport;
-    let prevVV = vv?.height ?? 0;
-    const onVVResize = () => {
-      const newVV = vv?.height ?? 0;
-      const delta = Math.round(newVV - prevVV);
-      if (Math.abs(delta) > 5) {
-        lastEventRef.current = `vv-resize-${delta}`;
-        log("VIEWPORT:visualViewport", `${prevVV.toFixed(0)}→${newVV.toFixed(0)} (Δ${delta})`);
-      }
-      prevVV = newVV;
-    };
-    vv?.addEventListener("resize", onVVResize);
-
-    return () => {
-      window.removeEventListener("resize", onResize);
-      vv?.removeEventListener("resize", onVVResize);
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ─── PHASE 3: Focus / blur trace (document level) ───
-  useEffect(() => {
-    const onFocusIn = (e: FocusEvent) => {
-      const el = e.target as HTMLElement;
-      const name = el.getAttribute("placeholder") || el.tagName || "unknown";
-      lastEventRef.current = `focus-${name}`;
-      setActiveField(name.slice(0, 15));
-      log("FOCUS:in", `"${name}" form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
-    };
-    const onFocusOut = (e: FocusEvent) => {
-      const el = e.target as HTMLElement;
-      const name = el.getAttribute("placeholder") || el.tagName || "unknown";
-      lastEventRef.current = `blur-${name}`;
-      setActiveField("none");
-      log("FOCUS:out", `"${name}" form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
-    };
-    document.addEventListener("focusin", onFocusIn);
-    document.addEventListener("focusout", onFocusOut);
-    return () => {
-      document.removeEventListener("focusin", onFocusIn);
-      document.removeEventListener("focusout", onFocusOut);
-    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Data
@@ -330,6 +361,22 @@ const Register = () => {
     },
     [log, setForm],
   );
+
+  const handleFirstNameInput = useCallback((e: FormEvent<HTMLInputElement>) => {
+    updateField("firstName", e.currentTarget.value);
+  }, [updateField]);
+
+  const handleLastNameInput = useCallback((e: FormEvent<HTMLInputElement>) => {
+    updateField("lastName", e.currentTarget.value);
+  }, [updateField]);
+
+  const handlePhoneInput = useCallback((e: FormEvent<HTMLInputElement>) => {
+    updateField("phoneNumber", e.currentTarget.value.replace(/\D/g, "").slice(0, 9));
+  }, [updateField]);
+
+  const handleHighSchoolGpaInput = useCallback((e: FormEvent<HTMLInputElement>) => {
+    updateField("highSchoolGpa", e.currentTarget.value);
+  }, [updateField]);
 
   // Check session on mount
   useEffect(() => {
@@ -541,16 +588,18 @@ const Register = () => {
               <div className="space-y-1.5">
                 <Label>الاسم الأول</Label>
                 <Input
+                  name="firstName"
                   value={form.firstName}
-                  onChange={(e) => updateField("firstName", e.target.value)}
+                  onInput={handleFirstNameInput}
                   placeholder=""
                 />
               </div>
               <div className="space-y-1.5">
                 <Label>اللقب</Label>
                 <Input
+                  name="lastName"
                   value={form.lastName}
-                  onChange={(e) => updateField("lastName", e.target.value)}
+                  onInput={handleLastNameInput}
                   placeholder=""
                 />
               </div>
@@ -561,12 +610,11 @@ const Register = () => {
               <div className="flex gap-2" dir="ltr">
                 <div className="flex items-center px-3 border rounded-md bg-muted text-sm font-mono">+967</div>
                 <Input
+                  name="phoneNumber"
                   type="tel"
                   placeholder="7XXXXXXXX"
                   value={form.phoneNumber}
-                  onChange={(e) =>
-                    updateField("phoneNumber", e.target.value.replace(/\D/g, "").slice(0, 9))
-                  }
+                  onInput={handlePhoneInput}
                   className="text-left font-mono"
                   dir="ltr"
                   maxLength={9}
@@ -606,10 +654,11 @@ const Register = () => {
                 معدل الثانوية (%) <span className="text-muted-foreground font-normal">اختياري</span>
               </Label>
               <Input
+                name="highSchoolGpa"
                 type="number"
                 placeholder="مثال: 85.5"
                 value={form.highSchoolGpa}
-                onChange={(e) => updateField("highSchoolGpa", e.target.value)}
+                onInput={handleHighSchoolGpaInput}
                 dir="ltr"
                 className="text-left"
                 min="60"
@@ -675,11 +724,11 @@ const Register = () => {
       {/* APK Debug Panel — always visible */}
       <RegDebugPanel
         form={form}
-        logs={debugLogs}
         mountCount={mountCount.current}
         submitPhase={submitPhase}
-        kbState={kbState}
-        activeField={activeField}
+        reporterRef={debugReporterRef}
+        formRef={formRef}
+        lastEventRef={lastEventRef}
       />
     </div>
   );
