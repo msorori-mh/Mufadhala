@@ -5,6 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { BookOpen, ClipboardCheck, TrendingUp, Loader2, Brain, FileCheck, Shield, Focus, WifiOff, Users, CheckCircle, Bot, Clock, Headphones, HelpCircle } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
+import { useScrollReveal, useStaggerReveal } from "@/hooks/useScrollReveal";
 
 function useCountUp(end: number, duration = 2000) {
   const [value, setValue] = useState(0);
@@ -41,6 +42,14 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
   const q = useCountUp(3000);
   const s = useCountUp(150);
   const m = useCountUp(100);
+
+  const aiRef = useScrollReveal();
+  const pillarsRef = useStaggerReveal(150);
+  const badgesRef = useStaggerReveal(120);
+  const statsRef = useScrollReveal();
+  const trustRef = useScrollReveal();
+  const socialRef = useScrollReveal();
+  const faqRef = useScrollReveal();
 
   if (checking) {
     return (
@@ -103,7 +112,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
 
       {/* AI Assistant "Qabool" */}
       <section className="bg-background py-2.5 md:py-4 px-4">
-        <div className="max-w-3xl mx-auto animate-fade-in">
+        <div ref={aiRef} className="max-w-3xl mx-auto">
           <div className="flex items-center gap-3 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
             <Bot className="w-5 h-5 text-accent shrink-0" />
             <div>
@@ -116,13 +125,13 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
 
       {/* Academic Core Pillars */}
       <section id="features-section" className="bg-muted py-5 md:py-8 px-4">
-        <div className="max-w-5xl mx-auto grid gap-2.5 md:gap-4 md:grid-cols-3">
+        <div ref={pillarsRef} className="max-w-5xl mx-auto grid gap-2.5 md:gap-4 md:grid-cols-3">
           {[
             { icon: BookOpen, emoji: "📚", title: "شمولية المنهج الوزاري", desc: "تغطية دقيقة لكافة المقررات الدراسية المطلوبة في اختبارات المفاضلة." },
             { icon: Brain, emoji: "🧠", title: "تعزيز الفهم بالتعليل", desc: "شرح علمي مبسط لكل سؤال يوضح لماذا هذه الإجابة هي الأصح." },
             { icon: FileCheck, emoji: "⏱️", title: "محاكاة بيئة الاختبار", desc: "اختبارات تحاكي النمط الحقيقي من حيث الدرجات وإدارة الوقت." },
           ].map((f, i) => (
-            <div key={i} className="bg-card rounded-xl border p-3 flex items-start gap-3 text-right md:block md:text-center animate-fade-in" style={{ animationDelay: `${i * 150}ms` }}>
+            <div key={i} data-reveal className="bg-card rounded-xl border p-3 flex items-start gap-3 text-right md:block md:text-center" style={{ animationDelay: `${i * 150}ms` }}>
               <div className="inline-flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-lg bg-accent/10 shrink-0 md:mb-3">
                 <f.icon className="w-4 h-4 md:w-5 md:h-5 text-accent" />
               </div>
@@ -137,13 +146,13 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
 
       {/* Value Badges */}
       <section className="bg-background py-4 md:py-6 px-4">
-        <div className="max-w-5xl mx-auto grid gap-2 md:gap-3 md:grid-cols-3">
+        <div ref={badgesRef} className="max-w-5xl mx-auto grid gap-2 md:gap-3 md:grid-cols-3">
           {[
             { icon: Shield, label: "ثقة مطلقة", desc: "خبير بنمط الأسئلة قبل دخول القاعة." },
             { icon: Focus, label: "تركيز عالٍ", desc: "ملخصات ذكية تغنيك عن تشتت الملازم." },
             { icon: WifiOff, label: "أوفلاين دائماً", desc: "ذاكر بدون إنترنت مستمر." },
           ].map((b, i) => (
-            <div key={i} className="flex items-center gap-3 bg-card rounded-lg border p-3 animate-fade-in" style={{ animationDelay: `${i * 120}ms` }}>
+            <div key={i} data-reveal className="flex items-center gap-3 bg-card rounded-lg border p-3">
               <div className="shrink-0 w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
                 <b.icon className="w-4 h-4 text-primary" />
               </div>
@@ -158,7 +167,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
 
       {/* Stats Bar */}
       <section className="bg-primary py-4 md:py-6 px-4">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div ref={statsRef} className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           {[
             { value: q, suffix: "+", label: "سؤال تدريبي" },
             { value: s, suffix: "+", label: "ملخص ذكي" },
@@ -181,7 +190,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
 
       {/* Trust Note */}
       <section className="bg-background py-4 md:py-6 px-4">
-        <div className="max-w-3xl mx-auto text-center">
+        <div ref={trustRef} className="max-w-3xl mx-auto text-center">
           <CheckCircle className="w-7 h-7 text-accent mx-auto mb-2" />
           <p className="text-foreground font-semibold leading-relaxed text-sm">
             محتوى مراجع ومعتمد من خبراء وأكاديميين لضمان التوافق مع معايير المفاضلة.
@@ -191,7 +200,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
 
       {/* Social Proof */}
       <section className="bg-muted py-5 md:py-8 px-4">
-        <div className="max-w-2xl mx-auto text-center">
+        <div ref={socialRef} className="max-w-2xl mx-auto text-center">
           <Users className="w-7 h-7 text-primary mx-auto mb-3" />
           <p className="text-base md:text-lg font-bold text-foreground mb-4">
             انضم إلى أكثر من <span className="text-accent">1000</span> طالب نحو كليات القمة
@@ -210,7 +219,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
 
       {/* FAQ */}
       <section className="bg-background py-5 md:py-8 px-4">
-        <div className="max-w-2xl mx-auto">
+        <div ref={faqRef} className="max-w-2xl mx-auto">
           <div className="flex items-center justify-center gap-2 mb-5">
             <HelpCircle className="w-6 h-6 text-primary" />
             <h2 className="text-lg md:text-xl font-extrabold text-foreground">الأسئلة الشائعة</h2>
