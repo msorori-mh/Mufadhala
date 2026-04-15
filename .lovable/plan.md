@@ -1,25 +1,35 @@
 
 
-## التعديلات المطلوبة
+## خطة التعديل: عرض اسم المسار الأكاديمي بدلاً من اسم الكلية أو التخصص
 
-### 1. تغيير عنوان "دروس طب بشري" إلى "دروس المسار الطبي"
+### المشكلة الحالية
+الكود الحالي في `useStudentAccess.ts` (سطر 73-94) يعمل كالتالي:
+- إذا كان الفلتر `major`: يجلب اسم التخصص من جدول `majors`
+- إذا كان الفلتر `college`: يجلب اسم المسار من `admission_tracks` عبر الكلية، لكن يرجع لاسم الكلية إذا لم يوجد مسار
 
-**المشكلة**: العنوان الحالي يأتي من اسم الكلية (`colleges.name_ar`) عبر `filterName` في `useStudentAccess`. المطلوب عرض اسم مسار القبول (`admission_tracks.name_ar`) بدلاً منه.
+**المطلوب**: في كلتا الحالتين، يجب عرض اسم **المسار الأكاديمي** (مثل "المسار الطبي"، "المسار الهندسي/الحاسوب").
 
-**التغيير في `src/hooks/useStudentAccess.ts`**:
-- تعديل استعلام `filterName` ليجلب اسم المسار عبر: `colleges.admission_track_id → admission_tracks.name_ar`
-- إذا لم يوجد مسار، يتم الرجوع لاسم الكلية كقيمة احتياطية
+### التعديل المطلوب
 
-### 2. عرض خيارات الأسئلة في عمودين (كل اختيارين في سطر)
+**ملف واحد**: `src/hooks/useStudentAccess.ts` — تعديل استعلام `filterName` (سطر 73-94)
 
-**المشكلة**: حالياً أسئلة الاختيار من متعدد (4 خيارات) تعرض كل خيار في سطر منفصل (`space-y-1`)، بينما أسئلة صح/خطأ فقط تستخدم `grid-cols-2`.
+1. **حالة `major`**: بدلاً من جلب `majors.name_ar`، نجلب المسار عبر: `major_id → majors.college_id → colleges.admission_track_id → admission_tracks.name_ar`
+2. **حالة `college`**: نفس المنطق الحالي لكن نضمن أولوية اسم المسار دائماً
 
-**التغيير في `src/pages/LessonDetail.tsx`** (سطر 489):
-- تحويل تخطيط خيارات الاختيار من متعدد من `space-y-1` إلى `grid grid-cols-2 gap-1.5` (نفس تخطيط صح/خطأ)
-- هذا يجعل كل سؤال يعرض 4 خيارات في سطرين بدلاً من 4 أسطر
-- تقليل حجم المساحة لكل سؤال بنسبة ~40%
+المنطق الجديد:
+- استخدام `student.college_id` مباشرة (متاح دائماً) لجلب اسم المسار
+- استعلام واحد: `colleges → admission_tracks(name_ar)` باستخدام `college_id`
+- الرجوع لاسم الكلية فقط كقيمة احتياطية إذا لم يوجد مسار مرتبط
 
 ### التفاصيل التقنية
-- السطر 489 في `LessonDetail.tsx`: تغيير الشرط من `isTrueFalse ? "grid grid-cols-2 gap-1.5" : "space-y-1"` إلى `"grid grid-cols-2 gap-1.5"` دائماً
-- السطر 74-85 في `useStudentAccess.ts`: تعديل الاستعلام ليجلب `admission_tracks(name_ar)` عبر العلاقة من جدول `colleges`
+```
+// بدلاً من التفريع بين major و college
+// نستخدم college_id مباشرة من بيانات الطالب
+const collegeId = student?.college_id;
+
+queryFn: fetch colleges.admission_tracks(name_ar) WHERE id = collegeId
+return trackName || collegeName || ""
+```
+
+هذا يضمن أن العنوان يعكس المسار الأكاديمي (طبي، هندسي، إلخ) بغض النظر عن نوع الفلتر.
 
