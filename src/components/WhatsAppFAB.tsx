@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 const WhatsAppFAB = () => {
-  const { session } = useAuth();
+  const { user } = useAuth();
   const { pathname } = useLocation();
 
   // Only show for authenticated users, hide on public/auth pages
