@@ -373,11 +373,12 @@ const AdminUniversities = () => {
                 </Button>
               </div>
             </DialogContent>
-          </Dialog>
+           </Dialog>
+          </div>
         </div>
 
         <div className="space-y-2">
-          {universities.map((u) => {
+          {filteredUniversities.map((u) => {
             const files: GuideFile[] = Array.isArray((u as any).guide_files) ? (u as any).guide_files : [];
             const hasFiles = files.length > 0 || !!u.guide_url;
             return (
