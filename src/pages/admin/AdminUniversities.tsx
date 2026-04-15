@@ -225,6 +225,16 @@ const AdminUniversities = () => {
             <h1 className="text-2xl font-bold">الجامعات</h1>
             <p className="text-sm text-muted-foreground">{universities.length} جامعة</p>
           </div>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="بحث..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pr-8 w-48"
+              />
+            </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 ml-1" />إضافة</Button>
