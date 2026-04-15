@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Settings, Plus, Pencil, Percent } from "lucide-react";
+import { Loader2, Save, Settings, Plus, Pencil, Percent, Trash2 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -108,6 +108,13 @@ const AdminSubscriptionPlans = () => {
     fetchPlans();
   };
 
+  const handleDelete = async (plan: Plan) => {
+    if (!confirm(`هل أنت متأكد من حذف خطة "${plan.name}"؟`)) return;
+    const { error } = await supabase.from("subscription_plans").delete().eq("id", plan.id);
+    if (error) toast({ variant: "destructive", title: error.message });
+    else { toast({ title: "تم حذف الخطة" }); fetchPlans(); }
+  };
+
   if (authLoading || loading) return <AdminLayout><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></AdminLayout>;
 
   return (
@@ -166,6 +173,9 @@ const AdminSubscriptionPlans = () => {
                           <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil className="w-4 h-4" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => toggleActive(p)}>
                             <Switch checked={p.is_active} className="pointer-events-none" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(p)} className="text-destructive hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </TableCell>
