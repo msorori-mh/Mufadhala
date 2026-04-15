@@ -82,7 +82,7 @@ const ExamSimulator = () => {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <Clock className="w-4 h-4 mt-0.5 text-primary shrink-0" />
-                  <span><strong>{EXAM_TOTAL_QUESTIONS} سؤال</strong> في <strong>50 دقيقة</strong></span>
+                  <span><strong>{EXAM_TOTAL_QUESTIONS} سؤال</strong> في <strong>50 دقيقة كحد أقصى</strong></span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Flag className="w-4 h-4 mt-0.5 text-orange-500 shrink-0" />
