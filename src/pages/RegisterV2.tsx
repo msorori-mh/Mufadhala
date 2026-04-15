@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,6 @@ import { Loader2, Rocket } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useRegisterV2Form } from "@/hooks/useRegisterV2Form";
 import { GOVERNORATES, YEMEN_PHONE_REGEX } from "@/domain/constants";
 
 type University = { id: string; name_ar: string };
@@ -19,12 +18,49 @@ type Major = { id: string; name_ar: string };
 const RegisterV2 = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { form, updateField, patchForm, clearStoredForm } = useRegisterV2Form();
 
+  // ── TEXT INPUTS: Uncontrolled (DOM owns the values) ──
+  // This is the ROOT FIX for Android WebView clearing fields.
+  // React never writes to these inputs, so no re-render or
+  // spurious WebView event can erase what the user typed.
+  const firstNameRef = useRef<HTMLInputElement>(null);
+  const lastNameRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const gpaRef = useRef<HTMLInputElement>(null);
+
+  // ── SELECT VALUES: Controlled (needed for cascading fetch logic) ──
+  const [governorate, setGovernorate] = useState("");
+  const [universityId, setUniversityId] = useState("");
+  const [collegeId, setCollegeId] = useState("");
+  const [majorId, setMajorId] = useState("");
+
+  // ── Validation state (lightweight, only for UI feedback) ──
+  const [phoneValue, setPhoneValue] = useState(""); // shadow for validation display
+  const [formValid, setFormValid] = useState(false);
   const [loading, setLoading] = useState(false);
   const [universities, setUniversities] = useState<University[]>([]);
   const [colleges, setColleges] = useState<College[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
+
+  // Revalidate form whenever anything changes
+  const revalidate = useCallback(() => {
+    const fn = firstNameRef.current?.value?.trim() ?? "";
+    const ln = lastNameRef.current?.value?.trim() ?? "";
+    const ph = phoneRef.current?.value ?? "";
+    setFormValid(
+      fn !== "" &&
+      ln !== "" &&
+      YEMEN_PHONE_REGEX.test(ph) &&
+      governorate !== "" &&
+      universityId !== "" &&
+      collegeId !== ""
+    );
+  }, [governorate, universityId, collegeId]);
+
+  // Re-check validity when select values change
+  useEffect(() => {
+    revalidate();
+  }, [revalidate]);
 
   useEffect(() => {
     supabase
@@ -38,7 +74,7 @@ const RegisterV2 = () => {
   }, []);
 
   useEffect(() => {
-    if (!form.universityId) {
+    if (!universityId) {
       setColleges([]);
       setMajors([]);
       return;
@@ -47,21 +83,24 @@ const RegisterV2 = () => {
     supabase
       .from("colleges")
       .select("id, name_ar")
-      .eq("university_id", form.universityId)
+      .eq("university_id", universityId)
       .eq("is_active", true)
       .order("display_order")
       .then(({ data }) => {
         const nextColleges = data ?? [];
         setColleges(nextColleges);
-
-        if (form.collegeId && !nextColleges.some((college) => college.id === form.collegeId)) {
-          patchForm({ collegeId: "", majorId: "" });
-        }
+        setCollegeId((prev) => {
+          if (prev && !nextColleges.some((c) => c.id === prev)) {
+            setMajorId("");
+            return "";
+          }
+          return prev;
+        });
       });
-  }, [form.universityId, form.collegeId, patchForm]);
+  }, [universityId]);
 
   useEffect(() => {
-    if (!form.collegeId) {
+    if (!collegeId) {
       setMajors([]);
       return;
     }
@@ -69,52 +108,61 @@ const RegisterV2 = () => {
     supabase
       .from("majors")
       .select("id, name_ar")
-      .eq("college_id", form.collegeId)
+      .eq("college_id", collegeId)
       .eq("is_active", true)
       .order("display_order")
       .then(({ data }) => {
         const nextMajors = data ?? [];
         setMajors(nextMajors);
-
-        if (form.majorId && !nextMajors.some((major) => major.id === form.majorId)) {
-          updateField("majorId", "");
-        }
+        setMajorId((prev) => {
+          if (prev && !nextMajors.some((m) => m.id === prev)) {
+            return "";
+          }
+          return prev;
+        });
       });
-  }, [form.collegeId, form.majorId, updateField]);
+  }, [collegeId]);
 
   const handleUniversityChange = (value: string) => {
-    patchForm({ universityId: value, collegeId: "", majorId: "" });
+    setUniversityId(value);
+    setCollegeId("");
+    setMajorId("");
   };
 
   const handleCollegeChange = (value: string) => {
-    patchForm({ collegeId: value, majorId: "" });
+    setCollegeId(value);
+    setMajorId("");
   };
 
-  const isPhoneValid = YEMEN_PHONE_REGEX.test(form.phoneNumber);
-
-  const isFormValid =
-    form.firstName.trim() !== "" &&
-    form.lastName.trim() !== "" &&
-    isPhoneValid &&
-    form.governorate !== "" &&
-    form.universityId !== "" &&
-    form.collegeId !== "";
+  const isPhoneValid = YEMEN_PHONE_REGEX.test(phoneValue);
 
   const handleSubmit = async () => {
-    if (!isFormValid || loading) return;
+    if (!formValid || loading) return;
+
+    // Read text values from DOM refs (source of truth)
+    const firstName = firstNameRef.current?.value?.trim() ?? "";
+    const lastName = lastNameRef.current?.value?.trim() ?? "";
+    const phone = phoneRef.current?.value ?? "";
+    const gpa = gpaRef.current?.value ?? "";
+
+    // Final validation guard
+    if (!firstName || !lastName || !YEMEN_PHONE_REGEX.test(phone) || !governorate || !universityId || !collegeId) {
+      toast({ variant: "destructive", title: "خطأ", description: "يرجى ملء جميع الحقول المطلوبة" });
+      return;
+    }
 
     setLoading(true);
     try {
       const res = await supabase.functions.invoke("register-student", {
         body: {
-          phone: form.phoneNumber,
-          first_name: form.firstName.trim(),
-          fourth_name: form.lastName.trim(),
-          governorate: form.governorate,
-          university_id: form.universityId,
-          college_id: form.collegeId,
-          major_id: form.majorId || null,
-          high_school_gpa: form.highSchoolGpa ? parseFloat(form.highSchoolGpa) : null,
+          phone,
+          first_name: firstName,
+          fourth_name: lastName,
+          governorate,
+          university_id: universityId,
+          college_id: collegeId,
+          major_id: majorId || null,
+          high_school_gpa: gpa ? parseFloat(gpa) : null,
         },
       });
 
@@ -133,7 +181,6 @@ const RegisterV2 = () => {
         return;
       }
 
-      clearStoredForm();
       toast({ title: "تم التسجيل بنجاح! 🎉" });
       navigate("/welcome", { replace: true });
     } catch {
@@ -154,12 +201,20 @@ const RegisterV2 = () => {
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
             <Label>الاسم الأول *</Label>
-            <Input value={form.firstName} onChange={(e) => updateField("firstName", e.target.value)} />
+            <Input
+              ref={firstNameRef}
+              defaultValue=""
+              onChange={revalidate}
+            />
           </div>
 
           <div className="space-y-1.5">
             <Label>اللقب *</Label>
-            <Input value={form.lastName} onChange={(e) => updateField("lastName", e.target.value)} />
+            <Input
+              ref={lastNameRef}
+              defaultValue=""
+              onChange={revalidate}
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -167,17 +222,21 @@ const RegisterV2 = () => {
             <div className="flex gap-2 items-center">
               <span className="text-sm text-muted-foreground shrink-0">967+</span>
               <Input
+                ref={phoneRef}
                 type="tel"
                 inputMode="numeric"
                 maxLength={9}
-                value={form.phoneNumber}
+                defaultValue=""
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, "").slice(0, 9);
-                  updateField("phoneNumber", val);
+                  // For numeric filtering, we DO write back to the input
+                  if (phoneRef.current) phoneRef.current.value = val;
+                  setPhoneValue(val);
+                  revalidate();
                 }}
               />
             </div>
-            {form.phoneNumber && !isPhoneValid && (
+            {phoneValue && !isPhoneValid && (
               <p className="text-xs text-destructive">رقم الجوال يجب أن يبدأ بـ 7 ويتكون من 9 أرقام</p>
             )}
           </div>
@@ -185,8 +244,8 @@ const RegisterV2 = () => {
           <div className="space-y-1.5">
             <Label>المحافظة *</Label>
             <NativeSelect
-              value={form.governorate}
-              onValueChange={(value) => updateField("governorate", value)}
+              value={governorate}
+              onValueChange={(value) => setGovernorate(value)}
               placeholder="اختر المحافظة"
               options={GOVERNORATES.map((g) => ({ value: g, label: g }))}
             />
@@ -195,7 +254,7 @@ const RegisterV2 = () => {
           <div className="space-y-1.5">
             <Label>الجامعة *</Label>
             <NativeSelect
-              value={form.universityId}
+              value={universityId}
               onValueChange={handleUniversityChange}
               placeholder="اختر الجامعة"
               options={universities.map((u) => ({ value: u.id, label: u.name_ar }))}
@@ -205,10 +264,10 @@ const RegisterV2 = () => {
           <div className="space-y-1.5">
             <Label>الكلية *</Label>
             <NativeSelect
-              value={form.collegeId}
+              value={collegeId}
               onValueChange={handleCollegeChange}
               placeholder="اختر الكلية"
-              disabled={!form.universityId}
+              disabled={!universityId}
               options={colleges.map((c) => ({ value: c.id, label: c.name_ar }))}
             />
           </div>
@@ -217,8 +276,8 @@ const RegisterV2 = () => {
             <div className="space-y-1.5">
               <Label>التخصص</Label>
               <NativeSelect
-                value={form.majorId}
-                onValueChange={(value) => updateField("majorId", value)}
+                value={majorId}
+                onValueChange={(value) => setMajorId(value)}
                 placeholder="اختر التخصص"
                 options={majors.map((m) => ({ value: m.id, label: m.name_ar }))}
               />
@@ -228,17 +287,18 @@ const RegisterV2 = () => {
           <div className="space-y-1.5">
             <Label>معدل الثانوية العامة</Label>
             <Input
+              ref={gpaRef}
               type="number"
               inputMode="decimal"
               step="0.01"
               min="0"
               max="100"
-              value={form.highSchoolGpa}
-              onChange={(e) => updateField("highSchoolGpa", e.target.value)}
+              defaultValue=""
+              onChange={revalidate}
             />
           </div>
 
-          <Button className="w-full" size="lg" disabled={!isFormValid || loading} onClick={handleSubmit}>
+          <Button className="w-full" size="lg" disabled={!formValid || loading} onClick={handleSubmit}>
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
@@ -256,9 +316,6 @@ const RegisterV2 = () => {
             </Link>
           </p>
 
-          <p className="text-center text-xs font-mono text-muted-foreground/60 mt-2">
-            REGISTER V2 TEST
-          </p>
         </CardContent>
       </Card>
     </div>
