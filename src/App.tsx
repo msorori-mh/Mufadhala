@@ -63,6 +63,7 @@ const AdminTracks = lazy(() => import("./pages/admin/AdminTracks"));
 const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
 const Settings = lazy(() => import("./pages/Settings"));
 const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
+const PublicDeleteAccount = lazy(() => import("./pages/PublicDeleteAccount"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -152,6 +153,7 @@ function App() {
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/delete-account" element={<DeleteAccount />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/request-delete" element={<PublicDeleteAccount />} />
                   <Route path="/terms-of-service" element={<TermsOfService />} />
                   <Route path="/admin" element={<AdminDashboard />} />
                   <Route path="/admin/universities" element={<AdminUniversities />} />
