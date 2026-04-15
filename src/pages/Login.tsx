@@ -173,6 +173,26 @@ const Login = () => {
             </>
           )}
 
+          {/* Not Registered Alert */}
+          {notRegistered && (
+            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 space-y-3">
+              <p className="text-sm text-destructive font-medium text-center">
+                لا يوجد حساب مسجل بهذا الرقم
+              </p>
+              <p className="text-xs text-muted-foreground text-center">
+                يبدو أنك لم تسجل من قبل. أنشئ حساباً جديداً للبدء.
+              </p>
+              <Button
+                className="w-full"
+                variant="default"
+                size="sm"
+                onClick={() => navigate("/register")}
+              >
+                إنشاء حساب جديد
+              </Button>
+            </div>
+          )}
+
           {/* Action Button */}
           {step === "phone" ? (
             <Button
