@@ -178,6 +178,7 @@ function App() {
                 </PageShell>
               </Suspense>
               <MobileBottomNav />
+              <WhatsAppFAB />
               <Suspense fallback={null}>
                 {!isNative && <ChatWidget />}
                 <InstallAppPrompt />
