@@ -117,7 +117,11 @@ const AdminSubscriptionPlans = () => {
       .in("status", ["active", "trial"]);
 
     if (count && count > 0) {
-      toast({ variant: "destructive", title: `لا يمكن حذف هذه الخطة — مرتبطة بـ ${count} اشتراك نشط` });
+      if (confirm(`هذه الخطة مرتبطة بـ ${count} اشتراك نشط.\nهل تريد أرشفتها (تعطيلها) بدلاً من حذفها؟`)) {
+        const { error } = await supabase.from("subscription_plans").update({ is_active: false }).eq("id", plan.id);
+        if (error) toast({ variant: "destructive", title: error.message });
+        else { toast({ title: "تم أرشفة الخطة (تعطيلها)" }); fetchPlans(); }
+      }
       return;
     }
 
