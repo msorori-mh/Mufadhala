@@ -303,6 +303,7 @@ const AdminStudents = () => {
                         {getUniName(s.university_id)} • {getMajorName(s.major_id)}
                       </p>
                       {s.governorate && <p className="text-xs text-muted-foreground">{s.governorate}</p>}
+                      {s.phone && <p className="text-xs text-muted-foreground">📱 {s.phone}</p>}
                     </div>
                     <div className="flex items-center gap-1">
                       {s.gpa && <Badge variant="secondary" className="text-xs">{s.gpa}%</Badge>}
