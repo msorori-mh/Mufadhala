@@ -149,6 +149,76 @@ const CollegeGuide = () => {
     return [];
   };
 
+  return (
+    <div className="min-h-screen bg-background" dir="rtl">
+      <header className="gradient-primary text-white px-4 py-4">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="w-6 h-6" />
+            <span className="font-bold text-lg">دليل الكليات</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white">
+              <Link to="/dashboard"><ChevronLeft className="w-4 h-4 ml-1" />الرئيسية</Link>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto px-4 py-6 md:pb-6 space-y-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">دليل الكليات والمتطلبات</h1>
+          <p className="text-sm text-muted-foreground mt-1">تعرّف على متطلبات القبول ونسب القبول لكل كلية</p>
+        </div>
+
+        {/* University Guides Section */}
+        {universityGuides.length > 0 && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-4 space-y-3">
+              <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                <BookOpen className="w-4 h-4 text-primary" />
+                أدلة التنسيق والتسجيل
+              </p>
+              {universityGuides.map((u) => {
+                const files = getGuideFiles(u);
+                return (
+                  <div key={u.id} className="space-y-1.5">
+                    <p className="text-xs font-medium text-muted-foreground">{u.name_ar}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {files.map((file, idx) => (
+                        file.type === "pdf" ? (
+                          <Button key={idx} variant="outline" size="sm" asChild className="gap-1.5 text-xs">
+                            <a href={file.url} target="_blank" rel="noopener noreferrer">
+                              <FileText className="w-3.5 h-3.5" />
+                              {file.name}
+                            </a>
+                          </Button>
+                        ) : (
+                          <button
+                            key={idx}
+                            onClick={() => setPreviewImage(file.url)}
+                            className="w-16 h-16 rounded-md border overflow-hidden hover:ring-2 ring-primary transition-all"
+                          >
+                            <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
+                          </button>
+                        )
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Image Preview Modal */}
+        {previewImage && (
+          <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setPreviewImage(null)}>
+            <img src={previewImage} alt="معاينة" className="max-w-full max-h-[90vh] rounded-lg" />
+          </div>
+        )}
+
         {/* Filters */}
         <div className="flex gap-2 flex-wrap">
           <div className="relative flex-1 min-w-[200px]">
