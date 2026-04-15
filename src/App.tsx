@@ -130,7 +130,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
+                  <Route path="/register" element={<RegisterV2 />} />
                   <Route path="/complete-profile" element={<Navigate to="/profile" replace />} />
                   <Route path="/register-v2" element={<RegisterV2 />} />
                   <Route path="/admin-login" element={<AdminLogin />} />
