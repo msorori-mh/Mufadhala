@@ -1,18 +1,19 @@
 import { MessageCircle } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 const WhatsAppFAB = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { pathname } = useLocation();
 
-  // Only show for authenticated users, hide on public/auth pages
   const hiddenRoutes = ["/", "/login", "/register", "/admin-login", "/privacy-policy", "/terms-of-service"];
   if (!user || hiddenRoutes.includes(pathname)) return null;
 
+  const message = encodeURIComponent("السلام عليكم، أحتاج مساعدة من فريق الدعم الفني لتطبيق مُفَاضَلَة 🎓");
+
   return (
     <a
-      href="https://wa.me/967780060056"
+      href={`https://wa.me/967780060056?text=${message}`}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="تواصل عبر واتساب"
