@@ -499,8 +499,7 @@ export function useExamEngine() {
   const passed = percentage >= 60;
   const attemptsUsed = pastAttempts.length;
   const canAccessFull = isStaff || hasActiveSubscription;
-  const canStartOnline =
-    (canAccessFull ? attemptsUsed < MAX_ATTEMPTS : true) && allQuestions.length > 0;
+  const canStartOnline = allQuestions.length > 0;
   const canStartOffline = isOffline && hasOfflineQuestions;
   const canStart = isOffline ? canStartOffline : canStartOnline;
   const questionsAvailable = isOffline

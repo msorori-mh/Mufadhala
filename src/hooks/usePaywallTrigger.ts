@@ -36,9 +36,9 @@ export function usePaywallTrigger({
 
     let reason: "free_limit_reached" | "engagement" | null = null;
 
-    if (completedLessons >= 2) {
+    if (completedLessons >= 10) {
       reason = "free_limit_reached";
-    } else if (questionInteractions >= 3) {
+    } else if (questionInteractions >= 20) {
       reason = "engagement";
     }
 

@@ -121,7 +121,7 @@ const LessonDetail = () => {
         }
 
         // Phase 2: Fire all secondary requests in parallel
-        const freeCount = freeCountData != null ? Number(freeCountData) : 3;
+        const freeCount = freeCountData != null ? Number(freeCountData) : 10;
         const secondaryPromises: Promise<any>[] = [];
 
         // Free check
