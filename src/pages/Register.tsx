@@ -181,7 +181,17 @@ const Register = () => {
 
       const errorMsg = res.data?.error || (res.error ? "فشل في الاتصال بالخادم" : null);
       if (errorMsg) {
-        toast({ variant: "destructive", title: "خطأ", description: errorMsg });
+        const isDuplicate = errorMsg.includes("مسجل مسبقاً");
+        toast({
+          variant: "destructive",
+          title: isDuplicate ? "الرقم مسجل مسبقاً" : "خطأ",
+          description: errorMsg,
+          action: isDuplicate ? (
+            <Button variant="outline" size="sm" onClick={() => navigate("/login")}>
+              تسجيل الدخول
+            </Button>
+          ) : undefined,
+        });
         setLoading(false);
         return;
       }
