@@ -112,6 +112,27 @@ const Settings = () => {
           </CardContent>
         </Card>
 
+        {/* About */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Info className="w-4 h-4" />
+              حول التطبيق
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">اسم المنصة</span>
+              <span className="text-sm font-medium">مُفَاضَلَة</span>
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">الإصدار</span>
+              <span className="text-sm font-medium" dir="ltr">v5.0.1</span>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Notifications */}
         <Card>
           <CardHeader className="pb-3">
