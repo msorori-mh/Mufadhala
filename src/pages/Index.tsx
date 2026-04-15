@@ -82,11 +82,8 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
             <Button size="lg" onClick={() => navigate("/register")} className="bg-secondary text-secondary-foreground hover:bg-secondary/90 text-base font-bold px-8 py-5 rounded-xl shadow-lg">
               ابدأ الآن
             </Button>
-            <Button size="lg" variant="outline" onClick={() => {
-              const el = document.getElementById("features-section");
-              el?.scrollIntoView({ behavior: "smooth" });
-            }} className="border-white/40 text-primary-foreground hover:bg-white/10 hover:text-primary-foreground text-sm px-6 py-4 rounded-xl">
-              استكشف التطبيق ↓
+            <Button size="lg" variant="outline" onClick={() => navigate("/login")} className="border-white/40 text-primary-foreground hover:bg-white/10 hover:text-primary-foreground text-sm px-6 py-4 rounded-xl">
+              لديك حساب؟ سجّل دخولك
             </Button>
           </div>
         </div>
@@ -195,9 +192,14 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
             انضم إلى أكثر من <span className="text-accent">1000</span> طالب نحو كليات القمة
             <span className="text-muted-foreground text-sm font-normal"> (الطب، الهندسة، الحاسوب)</span>
           </p>
-          <Button size="lg" onClick={() => navigate("/register")} className="bg-accent text-accent-foreground hover:bg-accent/90 font-bold px-8 py-5 rounded-xl shadow-lg">
-            سجّل مجاناً الآن
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button size="lg" onClick={() => navigate("/register")} className="bg-accent text-accent-foreground hover:bg-accent/90 font-bold px-8 py-5 rounded-xl shadow-lg">
+              سجّل مجاناً الآن
+            </Button>
+            <Button size="lg" variant="outline" onClick={() => navigate("/login")} className="text-sm px-6 py-4 rounded-xl">
+              تسجيل الدخول
+            </Button>
+          </div>
         </div>
       </section>
 
