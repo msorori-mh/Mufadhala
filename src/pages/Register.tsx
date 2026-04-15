@@ -19,7 +19,7 @@ type Major = { id: string; name_ar: string };
 // No async, no localStorage, no side effects. Pure in-memory safety net.
 const _textBackup = { firstName: "", lastName: "", phone: "", gpa: "" };
 
-const RegisterV2 = () => {
+const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -335,4 +335,4 @@ const RegisterV2 = () => {
   );
 };
 
-export default RegisterV2;
+export default Register;
