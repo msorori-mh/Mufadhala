@@ -29,7 +29,11 @@ interface ExamRow {
 }
 
 interface LessonRow {
-  id: string; title: string; major_id: string;
+  id: string; title: string; major_id: string; subject_id: string | null;
+}
+
+interface SubjectInfo {
+  id: string; name_ar: string;
 }
 
 interface QuestionRow {
@@ -60,8 +64,8 @@ const StudentPerformance = () => {
       const { subjectIds } = await resolveSubjectIds(supabase, student.college_id);
       if (subjectIds.length === 0) return null;
 
-      // Fetch deduplicated lessons + exams + progress in parallel
-      const [{ data: exams }, lessonResult, { data: prog }, { data: peers }] = await Promise.all([
+      // Fetch deduplicated lessons + exams + progress + subjects in parallel
+      const [{ data: exams }, lessonResult, { data: prog }, { data: peers }, { data: subjectsData }] = await Promise.all([
         supabase.from("exam_attempts").select("id, score, total, completed_at, major_id")
           .eq("student_id", student.id).not("completed_at", "is", null).order("completed_at", { ascending: true }),
         supabase.from("lessons").select("id, title, major_id, subject_id")
@@ -71,6 +75,7 @@ const StudentPerformance = () => {
           ? supabase.from("exam_attempts").select("score, total, student_id")
               .eq("major_id", filter.value).not("completed_at", "is", null)
           : Promise.resolve({ data: [] as any[] }),
+        supabase.from("subjects").select("id, name_ar").in("id", subjectIds).eq("is_active", true).order("display_order"),
       ]);
 
       // Deduplicate lessons
@@ -80,7 +85,7 @@ const StudentPerformance = () => {
         const key = `${l.title}::${l.subject_id}`;
         if (!seenTitles.has(key)) {
           seenTitles.add(key);
-          uniqueLessons.push({ id: l.id, title: l.title, major_id: l.major_id });
+          uniqueLessons.push({ id: l.id, title: l.title, major_id: l.major_id, subject_id: l.subject_id });
         }
       });
 
@@ -97,6 +102,7 @@ const StudentPerformance = () => {
         questions,
         completedLessonIds: new Set((prog || []).map((p: any) => p.lesson_id)),
         peerAttempts: (peers || []).filter((p: any) => p.student_id !== student.id) as { score: number; total: number }[],
+        subjects: (subjectsData || []) as SubjectInfo[],
       };
     },
     enabled: !!student && !!student.college_id,
@@ -109,8 +115,18 @@ const StudentPerformance = () => {
   const questions = perfData?.questions ?? [];
   const completedLessonIds = perfData?.completedLessonIds ?? new Set<string>();
   const peerAttempts = perfData?.peerAttempts ?? [];
+  const subjects = perfData?.subjects ?? [];
   const filterId = filter?.value ?? null;
   const filterType = filter?.type ?? "major";
+
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("all");
+
+  // Filtered lessons by subject
+  const filteredLessons = selectedSubjectId === "all"
+    ? lessons
+    : lessons.filter(l => l.subject_id === selectedSubjectId);
+  const filteredCompleted = filteredLessons.filter(l => completedLessonIds.has(l.id)).length;
+  const filteredCompletionPct = filteredLessons.length > 0 ? Math.round((filteredCompleted / filteredLessons.length) * 100) : 0;
 
   if (authLoading || loading) {
     return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
@@ -440,29 +456,73 @@ const StudentPerformance = () => {
               <span className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-primary" /> حالة إكمال الدروس
               </span>
-              <span className="text-xs font-normal text-muted-foreground">{completedLessonIds.size}/{lessons.length}</span>
+              <span className="text-xs font-normal text-muted-foreground">{filteredCompleted}/{filteredLessons.length}</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1.5">
-            {lessons.map((l) => {
-              const done = completedLessonIds.has(l.id);
-              const qCount = questions.filter((q) => q.lesson_id === l.id).length;
-              return (
-                <div key={l.id} className={`flex items-center justify-between text-sm p-2 rounded-lg ${done ? "bg-green-50 dark:bg-green-950/20" : "bg-muted/50"}`}>
-                  <div className="flex items-center gap-2 truncate max-w-[65%]">
-                    {done ? <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" /> : <XCircle className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
-                    <span className="text-foreground truncate">{l.title}</span>
+          <CardContent className="space-y-3">
+            {/* Subject filter chips */}
+            {subjects.length > 1 && (
+              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+                <button
+                  onClick={() => setSelectedSubjectId("all")}
+                  className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    selectedSubjectId === "all"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  الكل ({completedLessonIds.size}/{lessons.length})
+                </button>
+                {subjects.map(s => {
+                  const subLessons = lessons.filter(l => l.subject_id === s.id);
+                  const subCompleted = subLessons.filter(l => completedLessonIds.has(l.id)).length;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setSelectedSubjectId(s.id)}
+                      className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        selectedSubjectId === s.id
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      {s.name_ar} ({subCompleted}/{subLessons.length})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Progress bar for selected filter */}
+            <div className="space-y-1">
+              <Progress value={filteredCompletionPct} className="h-2" />
+              <p className="text-xs text-muted-foreground text-left" dir="ltr">
+                {filteredCompletionPct}%
+              </p>
+            </div>
+
+            {/* Lesson list */}
+            <div className="space-y-1.5">
+              {filteredLessons.map((l) => {
+                const done = completedLessonIds.has(l.id);
+                const qCount = questions.filter((q) => q.lesson_id === l.id).length;
+                return (
+                  <div key={l.id} className={`flex items-center justify-between text-sm p-2 rounded-lg ${done ? "bg-green-50 dark:bg-green-950/20" : "bg-muted/50"}`}>
+                    <div className="flex items-center gap-2 truncate max-w-[65%]">
+                      {done ? <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" /> : <XCircle className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+                      <span className="text-foreground truncate">{l.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{qCount} سؤال</span>
+                      <Badge variant={done ? "default" : "outline"} className="text-xs">
+                        {done ? "✓" : "—"}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{qCount} سؤال</span>
-                    <Badge variant={done ? "default" : "outline"} className="text-xs">
-                      {done ? "✓" : "—"}
-                    </Badge>
-                  </div>
-                </div>
-              );
-            })}
-            {lessons.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">لا توجد دروس</p>}
+                );
+              })}
+              {filteredLessons.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">لا توجد دروس</p>}
+            </div>
           </CardContent>
         </Card>
 
