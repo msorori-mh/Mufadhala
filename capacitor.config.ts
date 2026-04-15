@@ -18,11 +18,12 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * v4.0.0-kb-trace       (400000) - تتبع أحداث لوحة المفاتيح
  * v5.0.0-field-guard    (500000) - حماية الحقول من المسح التلقائي
  * v5.0.1-stable         (500001) - النسخة المستقرة الحالية
+ * v6.0.0-lastName       (600000) - إعادة هيكلة نموذج الأسماء (fourthName → lastName)
  * ═══════════════════════════════════════════════════════════════
  */
 
-const VERSION_NAME = 'v5.0.0-field-guard';
-const VERSION_CODE = 500000; // 5 = major, 0 = minor, 0 = patch, 00 = build
+const VERSION_NAME = 'v6.0.0-lastName';
+const VERSION_CODE = 600000; // 6 = major, 0 = minor, 0 = patch, 00 = build
 
 const config: CapacitorConfig = {
   appId: 'com.mufadhala.app',
