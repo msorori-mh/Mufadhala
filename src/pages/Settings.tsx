@@ -139,6 +139,18 @@ const Settings = () => {
                 شروط الاستخدام
               </Link>
             </div>
+            <Separator />
+            <div className="flex flex-col gap-2">
+              <span className="text-sm text-muted-foreground">الدعم الفني</span>
+              <a href="https://wa.me/967780060056" target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1.5">
+                <MessageCircle className="w-3.5 h-3.5" />
+                واتساب: 780060056
+              </a>
+              <a href="mailto:info@mufadhala.com" className="text-sm text-primary hover:underline flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5" />
+                info@mufadhala.com
+              </a>
+            </div>
           </CardContent>
         </Card>
 
