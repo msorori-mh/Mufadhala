@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, GraduationCap, Percent, CalendarClock, FileText, AlertCircle, Upload, Download } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, GraduationCap, Percent, CalendarClock, FileText, AlertCircle, Upload, Download, Search } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import * as XLSX from "xlsx";
@@ -56,7 +56,17 @@ const AdminColleges = () => {
 
   useEffect(() => { if (!authLoading) fetchData(); }, [authLoading]);
 
-  const filtered = filterUni ? colleges.filter((c) => c.university_id === filterUni) : colleges;
+  const [searchQuery, setSearchQuery] = useState("");
+  const filtered = colleges.filter((c) => {
+    if (filterUni && c.university_id !== filterUni) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      return c.name_ar.includes(searchQuery) || 
+        (c.name_en && c.name_en.toLowerCase().includes(q)) || 
+        c.code.toLowerCase().includes(q);
+    }
+    return true;
+  });
   const getUniName = (id: string) => universities.find((u) => u.id === id)?.name_ar || "";
 
   const openCreate = () => {
@@ -354,10 +364,16 @@ const AdminColleges = () => {
           </div>
         </div>
 
-        <select value={filterUni} onChange={(e) => setFilterUni(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm w-full md:w-64">
-          <option value="">جميع الجامعات</option>
-          {universities.map((u) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
-        </select>
+        <div className="flex gap-2 flex-wrap">
+          <select value={filterUni} onChange={(e) => setFilterUni(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm w-full md:w-64">
+            <option value="">جميع الجامعات</option>
+            {universities.map((u) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
+          </select>
+          <div className="relative w-full md:w-48">
+            <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input placeholder="بحث..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pr-8 h-9" />
+          </div>
+        </div>
 
         <div className="space-y-2">
           {filtered.map((c) => {
