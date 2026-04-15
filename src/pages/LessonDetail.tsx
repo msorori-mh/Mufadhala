@@ -486,7 +486,7 @@ const LessonDetail = () => {
                           {isTrueFalse && <Badge variant="outline" className="text-[10px] shrink-0">صح/خطأ</Badge>}
                           <p className="font-semibold text-xs">{i + 1}. {q.question_text}</p>
                         </div>
-                        <div className={isTrueFalse ? "grid grid-cols-2 gap-1.5" : "space-y-1"}>
+                        <div className="grid grid-cols-2 gap-1.5">
                           {options.map((opt) => {
                             const optionText = isTrueFalse ? (opt === "a" ? "صح" : "خطأ") : ((q[`option_${opt}` as keyof Question] as string) || "");
                             const isCorrectOption = q.correct_option === opt;

@@ -75,13 +75,22 @@ export function useStudentAccess(): StudentAccessResult {
     queryKey: ["filter-name", filter?.type, filter?.value],
     queryFn: async () => {
       if (!filter) return "";
-      const table = filter.type === "major" ? "majors" : "colleges";
+      if (filter.type === "major") {
+        const { data } = await supabase
+          .from("majors")
+          .select("name_ar")
+          .eq("id", filter.value)
+          .maybeSingle();
+        return data?.name_ar ?? "";
+      }
+      // For college: fetch track name via admission_track_id
       const { data } = await supabase
-        .from(table)
-        .select("name_ar")
+        .from("colleges")
+        .select("name_ar, admission_tracks(name_ar)")
         .eq("id", filter.value)
         .maybeSingle();
-      return data?.name_ar ?? "";
+      const trackName = (data?.admission_tracks as any)?.name_ar;
+      return trackName || data?.name_ar || "";
     },
     enabled: !!filter,
     staleTime: 10 * 60 * 1000,
