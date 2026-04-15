@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { clearDraft, emptyDraft, loadDraft, saveDraft } from "@/lib/registrationDraft";
+import { useCallback, useEffect, useState } from "react";
 
 export interface RegisterV2FormState {
   firstName: string;
@@ -23,78 +22,21 @@ export const emptyRegisterV2Form: RegisterV2FormState = {
   highSchoolGpa: "",
 };
 
+/**
+ * Module-level runtime snapshot — survives component remounts
+ * but NOT page reloads. No async, no localStorage, no side effects.
+ */
 let runtimeRegisterV2Form: RegisterV2FormState = emptyRegisterV2Form;
-
-const mapDraftToForm = (draft: typeof emptyDraft): RegisterV2FormState => ({
-  firstName: draft.firstName ?? "",
-  lastName: draft.fourthName ?? "",
-  phoneNumber: draft.phoneNumber ?? "",
-  governorate: draft.governorate ?? "",
-  universityId: draft.universityId ?? "",
-  collegeId: draft.collegeId ?? "",
-  majorId: draft.majorId ?? "",
-  highSchoolGpa: draft.highSchoolGpa ?? "",
-});
-
-const mapFormToDraft = (form: RegisterV2FormState) => ({
-  ...emptyDraft,
-  firstName: form.firstName,
-  fourthName: form.lastName,
-  phoneNumber: form.phoneNumber,
-  governorate: form.governorate,
-  universityId: form.universityId,
-  collegeId: form.collegeId,
-  majorId: form.majorId,
-  highSchoolGpa: form.highSchoolGpa,
-});
 
 export const useRegisterV2Form = () => {
   const [form, setForm] = useState<RegisterV2FormState>(() => runtimeRegisterV2Form);
-  const draftHydrated = useRef(false);
-  const hasUserInteracted = useRef(false);
 
+  // Keep module-level snapshot in sync
   useEffect(() => {
     runtimeRegisterV2Form = form;
   }, [form]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    loadDraft().then((draft) => {
-      if (cancelled) return;
-
-      if (draft) {
-        const draftForm = mapDraftToForm(draft);
-
-        setForm((prev) => {
-          const merged = { ...prev };
-
-          (Object.keys(draftForm) as (keyof RegisterV2FormState)[]).forEach((key) => {
-            if (!merged[key] && draftForm[key]) {
-              merged[key] = draftForm[key];
-            }
-          });
-
-          runtimeRegisterV2Form = merged;
-          return merged;
-        });
-      }
-
-      draftHydrated.current = true;
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!draftHydrated.current && !hasUserInteracted.current) return;
-    void saveDraft(mapFormToDraft(form));
-  }, [form]);
-
   const patchForm = useCallback((updates: Partial<RegisterV2FormState>) => {
-    hasUserInteracted.current = true;
     setForm((prev) => {
       const next = { ...prev, ...updates };
       runtimeRegisterV2Form = next;
@@ -109,10 +51,9 @@ export const useRegisterV2Form = () => {
     [patchForm],
   );
 
-  const clearStoredForm = useCallback(async () => {
+  const clearStoredForm = useCallback(() => {
     runtimeRegisterV2Form = emptyRegisterV2Form;
     setForm(emptyRegisterV2Form);
-    await clearDraft();
   }, []);
 
   return {
