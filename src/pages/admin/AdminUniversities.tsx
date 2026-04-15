@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, Upload, FileText, X, CalendarClock, GripVertical, Image } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Upload, FileText, X, CalendarClock, GripVertical, Image, Search } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 interface TimelinePhase {
@@ -44,7 +44,15 @@ const AdminUniversities = () => {
   const [coordinationInstructions, setCoordinationInstructions] = useState("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredUniversities = universities.filter(u =>
+    !searchQuery.trim() ||
+    u.name_ar.includes(searchQuery) ||
+    (u.name_en && u.name_en.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    u.code.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const fetchData = async () => {
     const { data } = await supabase.from("universities").select("*").order("display_order");
@@ -217,6 +225,16 @@ const AdminUniversities = () => {
             <h1 className="text-2xl font-bold">الجامعات</h1>
             <p className="text-sm text-muted-foreground">{universities.length} جامعة</p>
           </div>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="بحث..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pr-8 w-48"
+              />
+            </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 ml-1" />إضافة</Button>
@@ -355,11 +373,12 @@ const AdminUniversities = () => {
                 </Button>
               </div>
             </DialogContent>
-          </Dialog>
+           </Dialog>
+          </div>
         </div>
 
         <div className="space-y-2">
-          {universities.map((u) => {
+          {filteredUniversities.map((u) => {
             const files: GuideFile[] = Array.isArray((u as any).guide_files) ? (u as any).guide_files : [];
             const hasFiles = files.length > 0 || !!u.guide_url;
             return (
