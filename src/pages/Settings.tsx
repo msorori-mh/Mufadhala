@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, User, Moon, Sun, Bell, LogOut, Trash2 } from "lucide-react";
+import { ArrowRight, User, Moon, Sun, Bell, LogOut, Trash2, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
