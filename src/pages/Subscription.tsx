@@ -11,7 +11,7 @@ import { useStudentAccess } from "@/hooks/useStudentAccess";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, CreditCard, Upload, CheckCircle, Clock,
-  Building, ArrowLeftRight, ChevronRight, GraduationCap, Smartphone, Globe,
+  Building, ArrowLeftRight, ChevronRight, GraduationCap, Smartphone, Globe, Banknote, Monitor,
   Star, Sparkles, Tag, Timer, Info, ChevronDown, ZoomIn, Download, Copy, Check,
   Crown, Zap, Brain, BarChart3, BookOpen, ClipboardCheck, Lock, Bot, AlertTriangle
 } from "lucide-react";

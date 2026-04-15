@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Pencil, Trash2, Building, ArrowLeftRight, Smartphone, Globe, QrCode, X } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Building, ArrowLeftRight, Smartphone, Globe, QrCode, X, Banknote, Monitor } from "lucide-react";
 
 interface PaymentMethod {
   id: string;
