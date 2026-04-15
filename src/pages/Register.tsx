@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useRef, type FormEvent } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import NativeSelect from "@/components/NativeSelect";
-import { Loader2, Rocket, Bug, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Rocket } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -17,195 +17,8 @@ import {
   loadDraft,
   clearDraft,
 } from "@/lib/registrationDraft";
-import { saveNativeSession } from "@/lib/nativeSessionStorage";
-import { isNativePlatform } from "@/lib/capacitor";
 import { GOVERNORATES, YEMEN_PHONE_REGEX } from "@/domain/constants";
 import { trackFunnelEvent } from "@/lib/funnelTracking";
-
-/* ─── APK Debug Panel v4 — keyboard/viewport/focus tracing ─── */
-interface DebugLog {
-  ts: number;
-  tag: string;
-  msg: string;
-  critical?: boolean;
-}
-
-function RegDebugPanel({
-  form,
-  mountCount,
-  submitPhase,
-  reporterRef,
-  formRef,
-  lastEventRef,
-}: {
-  form: RegistrationDraft;
-  mountCount: number;
-  submitPhase: string;
-  reporterRef: { current: ((entry: DebugLog) => void) | null };
-  formRef: { current: RegistrationDraft };
-  lastEventRef: { current: string };
-}) {
-  const [open, setOpen] = useState(false);
-  const isNative = isNativePlatform();
-  const [vh, setVh] = useState(window.innerHeight);
-  const [logs, setLogs] = useState<DebugLog[]>([]);
-  const [kbState, setKbState] = useState("hidden");
-  const [activeField, setActiveField] = useState("none");
-  const vvh = (window.visualViewport?.height ?? window.innerHeight).toFixed(0);
-
-  const log = useCallback((tag: string, msg: string, critical = false) => {
-    setLogs((prev) => [...prev.slice(-100), { ts: Date.now(), tag, msg, critical }]);
-  }, []);
-
-  useEffect(() => {
-    reporterRef.current = (entry) => {
-      setLogs((prev) => [...prev.slice(-100), entry]);
-    };
-    return () => {
-      reporterRef.current = null;
-    };
-  }, [reporterRef]);
-
-  useEffect(() => {
-    const h = () => setVh(window.innerHeight);
-    window.addEventListener("resize", h);
-    return () => window.removeEventListener("resize", h);
-  }, []);
-
-  useEffect(() => {
-    if (!isNative) return;
-    let cleanup: (() => void) | undefined;
-    (async () => {
-      try {
-        const { Keyboard } = await import("@capacitor/keyboard");
-        const listeners = await Promise.all([
-          Keyboard.addListener("keyboardWillShow", (info) => {
-            lastEventRef.current = "kb-willShow";
-            log("KB:willShow", `height=${info.keyboardHeight} form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
-            setKbState("showing");
-          }),
-          Keyboard.addListener("keyboardDidShow", (info) => {
-            lastEventRef.current = "kb-didShow";
-            log("KB:didShow", `height=${info.keyboardHeight}`);
-            setKbState("visible");
-          }),
-          Keyboard.addListener("keyboardWillHide", () => {
-            lastEventRef.current = "kb-willHide";
-            log("KB:willHide", `form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
-            setKbState("hiding");
-          }),
-          Keyboard.addListener("keyboardDidHide", () => {
-            lastEventRef.current = "kb-didHide";
-            log("KB:didHide", `form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
-            setKbState("hidden");
-          }),
-        ]);
-        cleanup = () => listeners.forEach((listener) => listener.remove());
-        log("KB:init", "Keyboard listeners registered");
-      } catch (e: any) {
-        log("KB:init", `FAILED: ${e.message}`);
-      }
-    })();
-    return () => cleanup?.();
-  }, [formRef, isNative, lastEventRef, log]);
-
-  useEffect(() => {
-    let prevH = window.innerHeight;
-    const onResize = () => {
-      const newH = window.innerHeight;
-      const delta = newH - prevH;
-      if (Math.abs(delta) > 5) {
-        lastEventRef.current = `resize-${delta}`;
-        log("VIEWPORT:resize", `${prevH}→${newH} (Δ${delta}) form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
-      }
-      prevH = newH;
-    };
-    window.addEventListener("resize", onResize);
-
-    const vv = window.visualViewport;
-    let prevVV = vv?.height ?? 0;
-    const onVVResize = () => {
-      const newVV = vv?.height ?? 0;
-      const delta = Math.round(newVV - prevVV);
-      if (Math.abs(delta) > 5) {
-        lastEventRef.current = `vv-resize-${delta}`;
-        log("VIEWPORT:visualViewport", `${prevVV.toFixed(0)}→${newVV.toFixed(0)} (Δ${delta})`);
-      }
-      prevVV = newVV;
-    };
-    vv?.addEventListener("resize", onVVResize);
-
-    return () => {
-      window.removeEventListener("resize", onResize);
-      vv?.removeEventListener("resize", onVVResize);
-    };
-  }, [formRef, lastEventRef, log]);
-
-  useEffect(() => {
-    const onFocusIn = (e: FocusEvent) => {
-      const el = e.target as HTMLElement;
-      const name =
-        el.getAttribute("name") ||
-        el.getAttribute("aria-label") ||
-        el.getAttribute("placeholder") ||
-        el.tagName ||
-        "unknown";
-      lastEventRef.current = `focus-${name}`;
-      setActiveField(name.slice(0, 15));
-      log("FOCUS:in", `"${name}" form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
-    };
-    const onFocusOut = (e: FocusEvent) => {
-      const el = e.target as HTMLElement;
-      const name =
-        el.getAttribute("name") ||
-        el.getAttribute("aria-label") ||
-        el.getAttribute("placeholder") ||
-        el.tagName ||
-        "unknown";
-      lastEventRef.current = `blur-${name}`;
-      setActiveField("none");
-      log("FOCUS:out", `"${name}" form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
-    };
-    document.addEventListener("focusin", onFocusIn);
-    document.addEventListener("focusout", onFocusOut);
-    return () => {
-      document.removeEventListener("focusin", onFocusIn);
-      document.removeEventListener("focusout", onFocusOut);
-    };
-  }, [formRef, lastEventRef, log]);
-
-  return (
-    <div
-      dir="ltr"
-      className="fixed bottom-0 left-0 right-0 z-[99999] bg-black/90 text-green-400 text-[10px] font-mono"
-    >
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex justify-between items-center px-2 py-1 bg-amber-600 text-black font-bold text-xs"
-      >
-        <span>🐛 v6.0-lastName {isNative ? "[APK]" : "[WEB]"} m:{mountCount} s:{submitPhase} vh:{vh} vv:{vvh} kb:{kbState} f:{activeField}</span>
-        {open ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
-      </button>
-      {open && (
-        <div className="max-h-48 overflow-y-auto p-1 space-y-0.5">
-          <div className="text-yellow-300">
-            FORM: fn="{form.firstName}" ln="{form.lastName}" ph="{form.phoneNumber}" gov="{form.governorate}"
-          </div>
-          <div className="border-t border-green-800 mt-1 pt-1 text-green-300">
-            {logs.slice(-40).map((l, i) => (
-              <div key={i} className={l.critical ? "text-red-400 font-bold" : ""}>
-                <span className="text-gray-500">{new Date(l.ts).toLocaleTimeString()}</span>{" "}
-                <span className="text-cyan-400">[{l.tag}]</span> {l.msg}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-const PROTECTED_TEXT_FIELDS: (keyof RegistrationDraft)[] = ["firstName", "lastName", "phoneNumber"];
 
 const Register = () => {
   const navigate = useNavigate();
@@ -213,106 +26,25 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
 
-  // Unified form state — fully local, NO async hydration on native
-  const [form, setFormRaw] = useState<RegistrationDraft>(emptyDraft);
+  // Unified form state
+  const [form, setForm] = useState<RegistrationDraft>(emptyDraft);
   const draftLoaded = useRef(false);
-  const formRef = useRef<RegistrationDraft>(emptyDraft); // always current
-  const mountCount = useRef(0);
-  const [submitPhase, setSubmitPhase] = useState("idle");
-  const lastFormSnapshot = useRef<string>("");
-  const lastEventRef = useRef<string>("init");
-  const debugReporterRef = useRef<((entry: DebugLog) => void) | null>(null);
-  const isNative = isNativePlatform();
-
-  // ─── OVERWRITE GUARD: track which text fields user has manually typed into ───
-  const userTouchedFields = useRef<Set<keyof RegistrationDraft>>(new Set());
-  const updateSourceRef = useRef<"user" | "internal">("internal");
-
-  // Guarded setForm: on native, prevents non-user overwrites of touched text fields
-  const setForm: typeof setFormRaw = useCallback((updater) => {
-    setFormRaw((prev) => {
-      const source = updateSourceRef.current;
-      const requested = typeof updater === "function" ? updater(prev) : updater;
-      let next = requested;
-
-      if (isNative && source !== "user") {
-        const guarded = { ...requested };
-        for (const field of PROTECTED_TEXT_FIELDS) {
-          if (userTouchedFields.current.has(field) && prev[field] && !requested[field]) {
-            const msg = `${field} clear blocked! keeping "${prev[field]}" lastEvent=${lastEventRef.current}`;
-            console.log(`[GUARD:BLOCKED] ${msg}`);
-            debugReporterRef.current?.({ ts: Date.now(), tag: "GUARD:BLOCKED", msg, critical: true });
-            guarded[field] = prev[field];
-          }
-        }
-        next = guarded;
-      }
-
-      const changedKeys = (Object.keys(next) as (keyof RegistrationDraft)[]).filter(
-        (key) => prev[key] !== next[key],
-      );
-      const msg = `source=${source} changed=[${changedKeys.join(",") || "none"}] prev(fn="${prev.firstName}" ln="${prev.lastName}" ph="${prev.phoneNumber}") next(fn="${next.firstName}" ln="${next.lastName}" ph="${next.phoneNumber}") lastEvent=${lastEventRef.current}`;
-      console.log(`[FORM:setForm] ${msg}`);
-      debugReporterRef.current?.({ ts: Date.now(), tag: "FORM:setForm", msg, critical: changedKeys.some((key) => PROTECTED_TEXT_FIELDS.includes(key)) });
-
-      return next;
-    });
-  }, [isNative]);
-
-  const log = useCallback((tag: string, msg: string, critical = false) => {
-    console.log(`[${tag}] ${msg}`);
-    debugReporterRef.current?.({ ts: Date.now(), tag, msg, critical });
-  }, []);
-
-  // Keep formRef in sync + detect unexpected resets
-  useEffect(() => {
-    formRef.current = form;
-    const snap = `${form.firstName}|${form.lastName}|${form.phoneNumber}`;
-    const prev = lastFormSnapshot.current;
-    if (prev && prev !== snap) {
-      const [pFn, pLn, pPh] = prev.split("|");
-      // Detect if a non-empty field became empty without updateField
-      if (pFn && !form.firstName) {
-        log("CRITICAL:RESET", `firstName cleared! was="${pFn}" now="" lastEvent=${lastEventRef.current}`, true);
-      }
-      if (pLn && !form.lastName) {
-        log("CRITICAL:RESET", `lastName cleared! was="${pLn}" now="" lastEvent=${lastEventRef.current}`, true);
-      }
-      if (pPh && !form.phoneNumber) {
-        log("CRITICAL:RESET", `phoneNumber cleared! was="${pPh}" now="" lastEvent=${lastEventRef.current}`, true);
-      }
-    }
-    lastFormSnapshot.current = snap;
-  }, [form, log]);
-
-  // Mount counter + scroll normalization
-  useEffect(() => {
-    mountCount.current += 1;
-    log("LIFECYCLE", `Register mounted (count: ${mountCount.current}), isNative: ${isNative}`);
-    // Normalize viewport on mount — prevent stale scroll position from triggering resize
-    window.scrollTo(0, 0);
-    return () => log("LIFECYCLE", "Register unmounting");
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const formTouched = useRef(false);
 
   // Data
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
   const [colleges, setColleges] = useState<Tables<"colleges">[]>([]);
   const [majors, setMajors] = useState<Tables<"majors">[]>([]);
 
-  // ─── STABILIZATION: Draft restore ───
-  // On NATIVE: SKIP draft restore entirely to prevent async race conditions
-  // On WEB: restore from localStorage (synchronous, safe)
+  // Restore draft on mount — merge only empty fields if user already typed
+  // Restore draft on mount — always merge to avoid overwriting user input
   useEffect(() => {
-    if (isNative) {
-      log("FORM:draftRestore", "SKIPPED on native — stabilization mode");
-      draftLoaded.current = true;
-      return;
-    }
     let cancelled = false;
     loadDraft().then((draft) => {
       if (cancelled) return;
       if (draft) {
-        log("FORM:draftRestore", `Restored: ${JSON.stringify(draft)}`);
+        // Always use functional updater + merge to prevent race conditions
+        // where a stale promise overwrites freshly typed input
         setForm((prev) => {
           const merged = { ...prev };
           (Object.keys(draft) as (keyof RegistrationDraft)[]).forEach((key) => {
@@ -326,72 +58,34 @@ const Register = () => {
       draftLoaded.current = true;
     });
     return () => { cancelled = true; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
-  // ─── STABILIZATION: Auto-save draft ───
-  // On NATIVE: DISABLED — no Preferences writes during registration
-  // On WEB: debounced save to localStorage
-  const saveTimer = useRef<ReturnType<typeof setTimeout>>();
+  // Auto-save draft on every change (after initial load)
   useEffect(() => {
     if (!draftLoaded.current) return;
-    if (isNative) return; // STABILIZATION: no async saves on native
-    clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      saveDraft(form);
-    }, 1000); // debounce 1s
-    return () => clearTimeout(saveTimer.current);
-  }, [form, isNative]);
+    saveDraft(form);
+  }, [form]);
 
-  // Update a single field — marks source as "user" for text inputs
+  // Update a single field
   const updateField = useCallback(
     <K extends keyof RegistrationDraft>(key: K, value: RegistrationDraft[K]) => {
-      log(`FORM:updateField:${key}`, `"${value}"`);
-      // Mark text fields as user-touched
-      if (PROTECTED_TEXT_FIELDS.includes(key)) {
-        userTouchedFields.current.add(key);
-      }
-      updateSourceRef.current = "user";
-      setForm((prev) => {
-        const next = { ...prev, [key]: value };
-        log(`FORM:stateAfterUpdate:${key}`, `fn="${next.firstName}" ln="${next.lastName}" ph="${next.phoneNumber}"`);
-        return next;
-      });
-      // Reset source back to internal after microtask
-      queueMicrotask(() => { updateSourceRef.current = "internal"; });
+      formTouched.current = true;
+      setForm((prev) => ({ ...prev, [key]: value }));
     },
-    [log, setForm],
+    [],
   );
 
-  const handleFirstNameInput = useCallback((e: FormEvent<HTMLInputElement>) => {
-    updateField("firstName", e.currentTarget.value);
-  }, [updateField]);
-
-  const handleLastNameInput = useCallback((e: FormEvent<HTMLInputElement>) => {
-    updateField("lastName", e.currentTarget.value);
-  }, [updateField]);
-
-  const handlePhoneInput = useCallback((e: FormEvent<HTMLInputElement>) => {
-    updateField("phoneNumber", e.currentTarget.value.replace(/\D/g, "").slice(0, 9));
-  }, [updateField]);
-
-  const handleHighSchoolGpaInput = useCallback((e: FormEvent<HTMLInputElement>) => {
-    updateField("highSchoolGpa", e.currentTarget.value);
-  }, [updateField]);
-
-  // Check session on mount
+  // Check session on mount — clear stale draft if already logged in
   useEffect(() => {
-    log("NATIVE:initSession", "Checking session...");
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        log("NATIVE:initSession", "Session found → redirect to dashboard");
-        clearDraft();
+        clearDraft(); // Remove stale draft data
         navigate("/dashboard", { replace: true });
       } else {
-        log("NATIVE:initSession", "No session → show form");
         setCheckingSession(false);
       }
     });
-  }, [navigate, log]);
+  }, [navigate]);
 
   // Fetch universities
   useEffect(() => {
@@ -401,12 +95,9 @@ const Register = () => {
       .eq("is_active", true)
       .order("display_order")
       .then(({ data }) => {
-        if (data) {
-          setUniversities(data);
-          log("DATA", `Universities loaded: ${data.length}`);
-        }
+        if (data) setUniversities(data);
       });
-  }, [log]);
+  }, []);
 
   // Fetch colleges when university changes
   useEffect(() => {
@@ -415,7 +106,6 @@ const Register = () => {
       setMajors([]);
       return;
     }
-    const currentUni = form.universityId;
     supabase
       .from("colleges")
       .select("*")
@@ -423,19 +113,16 @@ const Register = () => {
       .eq("is_active", true)
       .order("display_order")
       .then(({ data }) => {
-        // Guard: ignore if university changed while loading
-        if (formRef.current.universityId !== currentUni) return;
         setColleges(data || []);
-        log("DATA", `Colleges loaded: ${data?.length || 0}`);
-        if (data && formRef.current.collegeId) {
-          const stillValid = data.some((c) => c.id === formRef.current.collegeId);
+        if (data && form.collegeId) {
+          const stillValid = data.some((c) => c.id === form.collegeId);
           if (!stillValid) {
             updateField("collegeId", "");
             updateField("majorId", "");
           }
         }
       });
-  }, [form.universityId, updateField, log]);
+  }, [form.universityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch majors when college changes
   useEffect(() => {
@@ -443,7 +130,6 @@ const Register = () => {
       setMajors([]);
       return;
     }
-    const currentCol = form.collegeId;
     supabase
       .from("majors")
       .select("*")
@@ -451,21 +137,19 @@ const Register = () => {
       .eq("is_active", true)
       .order("display_order")
       .then(({ data }) => {
-        if (formRef.current.collegeId !== currentCol) return;
         setMajors(data || []);
-        log("DATA", `Majors loaded: ${data?.length || 0}`);
-        if (data && formRef.current.majorId) {
-          const stillValid = data.some((m) => m.id === formRef.current.majorId);
+        if (data && form.majorId) {
+          const stillValid = data.some((m) => m.id === form.majorId);
           if (!stillValid) {
             updateField("majorId", "");
           }
         }
       });
-  }, [form.collegeId, updateField, log]);
+  }, [form.collegeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isFormValid =
     form.firstName.trim() &&
-    form.lastName.trim() &&
+    form.fourthName.trim() &&
     YEMEN_PHONE_REGEX.test(form.phoneNumber) &&
     form.governorate &&
     form.universityId &&
@@ -476,28 +160,13 @@ const Register = () => {
       toast({ variant: "destructive", title: "يرجى ملء جميع الحقول بشكل صحيح" });
       return;
     }
-
     setLoading(true);
-    setSubmitPhase("validating");
-    log("SUBMIT:start", JSON.stringify(formRef.current));
-
-    // Timeout guard — never hang silently
-    const submitTimeout = setTimeout(() => {
-      log("SUBMIT:timeout", "Submit timed out after 30s");
-      setLoading(false);
-      setSubmitPhase("timeout");
-      toast({ variant: "destructive", title: "انتهت المهلة", description: "يرجى المحاولة مرة أخرى" });
-    }, 30000);
-
     try {
-      setSubmitPhase("invoking-edge");
-      log("SUBMIT:invoke-register-student", "Calling edge function...");
-
       const res = await supabase.functions.invoke("register-student", {
         body: {
           phone: form.phoneNumber,
           first_name: form.firstName.trim(),
-          fourth_name: form.lastName.trim(),
+          fourth_name: form.fourthName.trim(),
           governorate: form.governorate,
           university_id: form.universityId,
           college_id: form.collegeId,
@@ -506,53 +175,31 @@ const Register = () => {
         },
       });
 
-      log("SUBMIT:edge-response", `status: ${res.error ? "ERROR" : "OK"}, data: ${JSON.stringify(res.data?.error || "success")}`);
-
+      // Handle edge function or backend errors
       const errorMsg = res.data?.error || (res.error ? "فشل في الاتصال بالخادم" : null);
       if (errorMsg) {
-        clearTimeout(submitTimeout);
         toast({ variant: "destructive", title: "خطأ", description: errorMsg });
         setLoading(false);
-        setSubmitPhase("error");
         return;
       }
 
-      setSubmitPhase("session-sync");
-      log("SUBMIT:session-sync", "Setting session...");
+      // Set session and verify it was established
       const { access_token, refresh_token } = res.data.session;
       const { error: sessionError } = await supabase.auth.setSession({ access_token, refresh_token });
-
       if (sessionError) {
-        clearTimeout(submitTimeout);
-        log("SUBMIT:session-sync", `ERROR: ${sessionError.message}`);
+        console.error("setSession error:", sessionError);
         toast({ variant: "destructive", title: "خطأ", description: "فشل في تثبيت الجلسة. يرجى المحاولة مرة أخرى." });
         setLoading(false);
-        setSubmitPhase("session-error");
         return;
       }
 
-      // Save session to native storage EXPLICITLY (don't rely on onAuthStateChange)
-      if (isNative) {
-        log("NATIVE:saveNativeSession", "Saving tokens to Preferences...");
-        await saveNativeSession(access_token, refresh_token);
-        log("NATIVE:saveNativeSession", "Done");
-      }
-
-      setSubmitPhase("cleanup");
-      log("SUBMIT:cleanup", "Clearing draft...");
+      // Only clear draft after confirmed session
       await clearDraft();
       trackFunnelEvent("user_registered");
-
-      clearTimeout(submitTimeout);
-      setSubmitPhase("navigating");
-      log("SUBMIT:navigate", "→ /welcome");
       toast({ title: "تم التسجيل بنجاح! 🎉" });
       navigate("/welcome", { replace: true });
-    } catch (err: any) {
-      clearTimeout(submitTimeout);
-      log("SUBMIT:error", err?.message || "unknown");
+    } catch {
       toast({ variant: "destructive", title: "خطأ", description: "حدث خطأ غير متوقع" });
-      setSubmitPhase("catch-error");
     }
     setLoading(false);
   };
@@ -588,19 +235,17 @@ const Register = () => {
               <div className="space-y-1.5">
                 <Label>الاسم الأول</Label>
                 <Input
-                  name="firstName"
                   value={form.firstName}
-                  onInput={handleFirstNameInput}
-                  placeholder=""
+                  onChange={(e) => updateField("firstName", e.target.value)}
+                  placeholder="أحمد"
                 />
               </div>
               <div className="space-y-1.5">
                 <Label>اللقب</Label>
                 <Input
-                  name="lastName"
-                  value={form.lastName}
-                  onInput={handleLastNameInput}
-                  placeholder=""
+                  value={form.fourthName}
+                  onChange={(e) => updateField("fourthName", e.target.value)}
+                  placeholder="العمري"
                 />
               </div>
             </div>
@@ -610,11 +255,12 @@ const Register = () => {
               <div className="flex gap-2" dir="ltr">
                 <div className="flex items-center px-3 border rounded-md bg-muted text-sm font-mono">+967</div>
                 <Input
-                  name="phoneNumber"
                   type="tel"
                   placeholder="7XXXXXXXX"
                   value={form.phoneNumber}
-                  onInput={handlePhoneInput}
+                  onChange={(e) =>
+                    updateField("phoneNumber", e.target.value.replace(/\D/g, "").slice(0, 9))
+                  }
                   className="text-left font-mono"
                   dir="ltr"
                   maxLength={9}
@@ -654,11 +300,10 @@ const Register = () => {
                 معدل الثانوية (%) <span className="text-muted-foreground font-normal">اختياري</span>
               </Label>
               <Input
-                name="highSchoolGpa"
                 type="number"
                 placeholder="مثال: 85.5"
                 value={form.highSchoolGpa}
-                onInput={handleHighSchoolGpaInput}
+                onChange={(e) => updateField("highSchoolGpa", e.target.value)}
                 dir="ltr"
                 className="text-left"
                 min="60"
@@ -706,6 +351,9 @@ const Register = () => {
               {loading ? "جاري التسجيل..." : "ابدأ الآن"}
             </Button>
 
+
+
+
             <p className="mt-2 text-center text-xs text-muted-foreground">
               بتسجيلك فإنك توافق على{" "}
               <Link to="/privacy-policy" className="text-primary hover:underline">
@@ -716,20 +364,10 @@ const Register = () => {
                 شروط الاستخدام
               </Link>
             </p>
-            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v6.0-lastName</p>
+            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v2.1</p>
           </CardContent>
         </Card>
       </div>
-
-      {/* APK Debug Panel — always visible */}
-      <RegDebugPanel
-        form={form}
-        mountCount={mountCount.current}
-        submitPhase={submitPhase}
-        reporterRef={debugReporterRef}
-        formRef={formRef}
-        lastEventRef={lastEventRef}
-      />
     </div>
   );
 };

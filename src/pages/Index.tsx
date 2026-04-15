@@ -62,10 +62,10 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
           <div className="inline-flex items-center justify-center w-24 h-24 mb-5 animate-float rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
             <img src={logoImg} alt="شعار مُفَاضَلَة" className="w-full h-full object-cover drop-shadow-lg" />
           </div>
-         <h1 className="text-xl md:text-3xl font-bold text-primary-foreground mb-3" style={{ lineHeight: '2.2' }}>
-            مَنَصَّتُكَ الأكاديمية لتبسيط المناهج
+         <h1 className="text-2xl md:text-4xl font-bold text-primary-foreground mb-3 leading-tight">
+            تدرب على اختبار القبول الحقيقي
             <br />
-            <span className="text-secondary">ومُحاكاة الاختبارات مع رفيقك الذكي <span className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-md font-extrabold tracking-wide">مُفاضِل</span></span>
+            <span className="text-secondary">وضمن مقعدك الجامعي</span>
           </h1>
           <div className="flex flex-wrap items-center justify-center gap-3 mb-5">
             {[
@@ -78,9 +78,15 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
               </span>
             ))}
           </div>
-          <div className="flex items-center justify-center">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button size="lg" onClick={() => navigate("/register")} className="bg-secondary text-secondary-foreground hover:bg-secondary/90 text-base font-bold px-8 py-5 rounded-xl shadow-lg">
               ابدأ الآن
+            </Button>
+            <Button size="lg" variant="outline" onClick={() => {
+              const el = document.getElementById("features-section");
+              el?.scrollIntoView({ behavior: "smooth" });
+            }} className="border-white/40 text-primary-foreground hover:bg-white/10 hover:text-primary-foreground text-sm px-6 py-4 rounded-xl">
+              استكشف التطبيق ↓
             </Button>
           </div>
         </div>
@@ -102,7 +108,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
             <Bot className="w-5 h-5 text-accent shrink-0" />
             <div>
               <span className="font-bold text-foreground text-sm">المساعد الذكي "مُفاضِل"</span>
-              <span className="text-foreground/80 text-xs mr-1 font-medium">— مساعدك الشخصي بالذكاء الاصطناعي، يتابع تقدمك ويقترح خطة مذاكرة مخصصة لنقاط ضعفك.</span>
+              <span className="text-muted-foreground text-xs mr-1">— مساعدك الشخصي بالذكاء الاصطناعي، يتابع تقدمك ويقترح خطة مذاكرة مخصصة لنقاط ضعفك.</span>
             </div>
           </div>
         </div>
@@ -112,18 +118,16 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       <section id="features-section" className="bg-muted py-8 px-4">
         <div className="max-w-5xl mx-auto grid gap-4 md:grid-cols-3">
           {[
-            { icon: BookOpen, emoji: "📚", title: "شمولية المنهج الوزاري", desc: "تغطية دقيقة لكافة المقررات الدراسية المطلوبة في اختبارات المفاضلة.", color: "text-emerald-600", bg: "bg-emerald-50" },
-            { icon: Brain, emoji: "🧠", title: "تعزيز الفهم بالتعليل", desc: "شرح علمي مبسط لكل سؤال يوضح لماذا هذه الإجابة هي الأصح.", color: "text-blue-600", bg: "bg-blue-50" },
-            { icon: FileCheck, emoji: "⏱️", title: "محاكاة بيئة الاختبار", desc: "اختبارات تحاكي النمط الحقيقي من حيث الدرجات وإدارة الوقت.", color: "text-rose-600", bg: "bg-rose-50" },
+            { icon: BookOpen, emoji: "📚", title: "شمولية المنهج الوزاري", desc: "تغطية دقيقة لكافة المقررات الدراسية المطلوبة في اختبارات المفاضلة." },
+            { icon: Brain, emoji: "🧠", title: "تعزيز الفهم بالتعليل", desc: "شرح علمي مبسط لكل سؤال يوضح لماذا هذه الإجابة هي الأصح." },
+            { icon: FileCheck, emoji: "⏱️", title: "محاكاة بيئة الاختبار", desc: "اختبارات تحاكي النمط الحقيقي من حيث الدرجات وإدارة الوقت." },
           ].map((f, i) => (
-            <div key={i} className="flex items-start gap-4 bg-card rounded-2xl border border-border/60 p-5 animate-fade-in shadow-sm hover:shadow-md transition-shadow" style={{ animationDelay: `${i * 150}ms` }} dir="rtl">
-              <div className={`shrink-0 w-12 h-12 rounded-xl ${f.bg} flex items-center justify-center`}>
-                <f.icon className={`w-6 h-6 ${f.color}`} />
+            <div key={i} className="bg-card rounded-xl border p-4 text-center animate-fade-in" style={{ animationDelay: `${i * 150}ms` }}>
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-accent/10 mb-3">
+                <f.icon className="w-5 h-5 text-accent" />
               </div>
-              <div className="min-w-0">
-                <h3 className="font-bold text-foreground text-sm mb-1">{f.emoji} {f.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
-              </div>
+              <h3 className="font-bold text-foreground text-sm mb-2">{f.emoji} {f.title}</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
             </div>
           ))}
         </div>

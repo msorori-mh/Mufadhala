@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
-import DebugPanel from "@/components/DebugPanel";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -155,8 +154,6 @@ const Settings = () => {
             </div>
           </CardContent>
         </Card>
-        {/* Debug Panel */}
-        <DebugPanel />
       </div>
     </div>
   );

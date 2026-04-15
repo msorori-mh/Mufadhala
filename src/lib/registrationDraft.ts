@@ -5,7 +5,7 @@ const DRAFT_KEY = 'registration_draft';
 
 export interface RegistrationDraft {
   firstName: string;
-  lastName: string;
+  fourthName: string;
   phoneNumber: string;
   governorate: string;
   universityId: string;
@@ -16,7 +16,7 @@ export interface RegistrationDraft {
 
 export const emptyDraft: RegistrationDraft = {
   firstName: '',
-  lastName: '',
+  fourthName: '',
   phoneNumber: '',
   governorate: '',
   universityId: '',
@@ -45,17 +45,7 @@ export async function loadDraft(): Promise<RegistrationDraft | null> {
     }
     if (json) {
       const parsed = JSON.parse(json);
-      const safe: RegistrationDraft = { ...emptyDraft };
-      for (const key of Object.keys(emptyDraft) as (keyof RegistrationDraft)[]) {
-        if (key in parsed && typeof parsed[key] === 'string') {
-          safe[key] = parsed[key];
-        }
-      }
-      // Migrate legacy "fourthName" → "lastName"
-      if (!safe.lastName && parsed.fourthName && typeof parsed.fourthName === 'string') {
-        safe.lastName = parsed.fourthName;
-      }
-      return safe;
+      return { ...emptyDraft, ...parsed };
     }
   } catch {}
   return null;
