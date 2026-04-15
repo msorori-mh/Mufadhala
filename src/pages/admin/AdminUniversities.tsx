@@ -44,7 +44,15 @@ const AdminUniversities = () => {
   const [coordinationInstructions, setCoordinationInstructions] = useState("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredUniversities = universities.filter(u =>
+    !searchQuery.trim() ||
+    u.name_ar.includes(searchQuery) ||
+    (u.name_en && u.name_en.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    u.code.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const fetchData = async () => {
     const { data } = await supabase.from("universities").select("*").order("display_order");
