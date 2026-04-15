@@ -129,8 +129,8 @@ const AdminSubscriptionPlans = () => {
                   <TableRow>
                      <TableHead>الاسم</TableHead>
                      <TableHead>المعرف</TableHead>
-                     <TableHead>منطقة ب (افتراضي / خصم / نهائي)</TableHead>
                      <TableHead>منطقة أ (افتراضي / خصم / نهائي)</TableHead>
+                     <TableHead>منطقة ب (افتراضي / خصم / نهائي)</TableHead>
                      <TableHead>الحالة</TableHead>
                      <TableHead></TableHead>
                    </TableRow>
@@ -141,23 +141,23 @@ const AdminSubscriptionPlans = () => {
                        <TableCell className="font-medium">{p.name}</TableCell>
                        <TableCell><code className="text-xs">{p.slug}</code></TableCell>
                        <TableCell>
-                         {p.is_free ? "-" : (
-                           <span className="flex items-center gap-1 text-sm">
-                             <span>{p.default_price_zone_a.toLocaleString()}</span>
-                             <Badge variant="outline" className="text-xs">{p.discount_zone_a || 0}%</Badge>
-                             <span className="font-medium">{p.price_zone_a.toLocaleString()}</span>
-                           </span>
-                         )}
-                       </TableCell>
-                       <TableCell>
-                         {p.is_free ? "-" : (
-                           <span className="flex items-center gap-1 text-sm">
-                             <span>{p.default_price_zone_b.toLocaleString()}</span>
-                             <Badge variant="outline" className="text-xs">{p.discount_zone_b || 0}%</Badge>
-                             <span className="font-medium">{p.price_zone_b.toLocaleString()}</span>
-                           </span>
-                         )}
-                       </TableCell>
+                          {p.is_free ? "-" : (
+                            <span className="flex items-center gap-1 text-sm">
+                              <span>{p.default_price_zone_b.toLocaleString()}</span>
+                              <Badge variant="outline" className="text-xs">{p.discount_zone_b || 0}%</Badge>
+                              <span className="font-medium">{p.price_zone_b.toLocaleString()}</span>
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {p.is_free ? "-" : (
+                            <span className="flex items-center gap-1 text-sm">
+                              <span>{p.default_price_zone_a.toLocaleString()}</span>
+                              <Badge variant="outline" className="text-xs">{p.discount_zone_a || 0}%</Badge>
+                              <span className="font-medium">{p.price_zone_a.toLocaleString()}</span>
+                            </span>
+                          )}
+                        </TableCell>
                       <TableCell>
                         <Badge variant={p.is_active ? "default" : "secondary"}>{p.is_active ? "نشطة" : "معطلة"}</Badge>
                       </TableCell>
