@@ -65,13 +65,13 @@ function RegDebugPanel({
         onClick={() => setOpen(!open)}
         className="w-full flex justify-between items-center px-2 py-1 bg-amber-600 text-black font-bold text-xs"
       >
-        <span>🐛 v5.0-field-guard {isNative ? "[APK]" : "[WEB]"} m:{mountCount} s:{submitPhase} vh:{vh} vv:{vvh} kb:{kbState} f:{activeField}</span>
+        <span>🐛 v6.0-lastName {isNative ? "[APK]" : "[WEB]"} m:{mountCount} s:{submitPhase} vh:{vh} vv:{vvh} kb:{kbState} f:{activeField}</span>
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
       </button>
       {open && (
         <div className="max-h-48 overflow-y-auto p-1 space-y-0.5">
           <div className="text-yellow-300">
-            FORM: fn="{form.firstName}" ln="{form.fourthName}" ph="{form.phoneNumber}" gov="{form.governorate}"
+            FORM: fn="{form.firstName}" ln="{form.lastName}" ph="{form.phoneNumber}" gov="{form.governorate}"
           </div>
           <div className="border-t border-green-800 mt-1 pt-1 text-green-300">
             {logs.slice(-40).map((l, i) => (
@@ -87,7 +87,7 @@ function RegDebugPanel({
   );
 }
 
-const PROTECTED_TEXT_FIELDS: (keyof RegistrationDraft)[] = ["firstName", "fourthName", "phoneNumber"];
+const PROTECTED_TEXT_FIELDS: (keyof RegistrationDraft)[] = ["firstName", "lastName", "phoneNumber"];
 
 const Register = () => {
   const navigate = useNavigate();
@@ -141,7 +141,7 @@ const Register = () => {
   // Keep formRef in sync + detect unexpected resets
   useEffect(() => {
     formRef.current = form;
-    const snap = `${form.firstName}|${form.fourthName}|${form.phoneNumber}`;
+    const snap = `${form.firstName}|${form.lastName}|${form.phoneNumber}`;
     const prev = lastFormSnapshot.current;
     if (prev && prev !== snap) {
       const [pFn, pLn, pPh] = prev.split("|");
@@ -149,7 +149,7 @@ const Register = () => {
       if (pFn && !form.firstName) {
         log("CRITICAL:RESET", `firstName cleared! was="${pFn}" now="" lastEvent=${lastEventRef.current}`, true);
       }
-      if (pLn && !form.fourthName) {
+      if (pLn && !form.lastName) {
         log("CRITICAL:RESET", `fourthName cleared! was="${pLn}" now="" lastEvent=${lastEventRef.current}`, true);
       }
       if (pPh && !form.phoneNumber) {
@@ -178,7 +178,7 @@ const Register = () => {
         const listeners = await Promise.all([
           Keyboard.addListener("keyboardWillShow", (info) => {
             lastEventRef.current = "kb-willShow";
-            log("KB:willShow", `height=${info.keyboardHeight} form: fn="${formRef.current.firstName}" ln="${formRef.current.fourthName}"`);
+            log("KB:willShow", `height=${info.keyboardHeight} form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
             setKbState("showing");
           }),
           Keyboard.addListener("keyboardDidShow", (info) => {
@@ -188,12 +188,12 @@ const Register = () => {
           }),
           Keyboard.addListener("keyboardWillHide", () => {
             lastEventRef.current = "kb-willHide";
-            log("KB:willHide", `form: fn="${formRef.current.firstName}" ln="${formRef.current.fourthName}"`);
+            log("KB:willHide", `form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
             setKbState("hiding");
           }),
           Keyboard.addListener("keyboardDidHide", () => {
             lastEventRef.current = "kb-didHide";
-            log("KB:didHide", `form: fn="${formRef.current.firstName}" ln="${formRef.current.fourthName}"`);
+            log("KB:didHide", `form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
             setKbState("hidden");
           }),
         ]);
@@ -214,7 +214,7 @@ const Register = () => {
       const delta = newH - prevH;
       if (Math.abs(delta) > 5) {
         lastEventRef.current = `resize-${delta}`;
-        log("VIEWPORT:resize", `${prevH}→${newH} (Δ${delta}) form: fn="${formRef.current.firstName}" ln="${formRef.current.fourthName}"`);
+        log("VIEWPORT:resize", `${prevH}→${newH} (Δ${delta}) form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
       }
       prevH = newH;
     };
@@ -246,14 +246,14 @@ const Register = () => {
       const name = el.getAttribute("placeholder") || el.tagName || "unknown";
       lastEventRef.current = `focus-${name}`;
       setActiveField(name.slice(0, 15));
-      log("FOCUS:in", `"${name}" form: fn="${formRef.current.firstName}" ln="${formRef.current.fourthName}"`);
+      log("FOCUS:in", `"${name}" form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
     };
     const onFocusOut = (e: FocusEvent) => {
       const el = e.target as HTMLElement;
       const name = el.getAttribute("placeholder") || el.tagName || "unknown";
       lastEventRef.current = `blur-${name}`;
       setActiveField("none");
-      log("FOCUS:out", `"${name}" form: fn="${formRef.current.firstName}" ln="${formRef.current.fourthName}"`);
+      log("FOCUS:out", `"${name}" form: fn="${formRef.current.firstName}" ln="${formRef.current.lastName}"`);
     };
     document.addEventListener("focusin", onFocusIn);
     document.addEventListener("focusout", onFocusOut);
@@ -322,7 +322,7 @@ const Register = () => {
       updateSourceRef.current = "user";
       setForm((prev) => {
         const next = { ...prev, [key]: value };
-        log(`FORM:stateAfterUpdate:${key}`, `fn="${next.firstName}" ln="${next.fourthName}" ph="${next.phoneNumber}"`);
+        log(`FORM:stateAfterUpdate:${key}`, `fn="${next.firstName}" ln="${next.lastName}" ph="${next.phoneNumber}"`);
         return next;
       });
       // Reset source back to internal after microtask
@@ -418,7 +418,7 @@ const Register = () => {
 
   const isFormValid =
     form.firstName.trim() &&
-    form.fourthName.trim() &&
+    form.lastName.trim() &&
     YEMEN_PHONE_REGEX.test(form.phoneNumber) &&
     form.governorate &&
     form.universityId &&
@@ -450,7 +450,7 @@ const Register = () => {
         body: {
           phone: form.phoneNumber,
           first_name: form.firstName.trim(),
-          fourth_name: form.fourthName.trim(),
+          fourth_name: form.lastName.trim(),
           governorate: form.governorate,
           university_id: form.universityId,
           college_id: form.collegeId,
@@ -549,8 +549,8 @@ const Register = () => {
               <div className="space-y-1.5">
                 <Label>اللقب</Label>
                 <Input
-                  value={form.fourthName}
-                  onChange={(e) => updateField("fourthName", e.target.value)}
+                  value={form.lastName}
+                  onChange={(e) => updateField("lastName", e.target.value)}
                   placeholder="العمري"
                 />
               </div>
@@ -667,7 +667,7 @@ const Register = () => {
                 شروط الاستخدام
               </Link>
             </p>
-            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v5.0-field-guard</p>
+            <p className="text-center text-[10px] text-muted-foreground/50 mt-1">v6.0-lastName</p>
           </CardContent>
         </Card>
       </div>
