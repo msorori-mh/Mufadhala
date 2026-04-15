@@ -65,6 +65,7 @@ const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const RegisterV2 = lazy(() => import("./pages/RegisterV2"));
 
 // Lazy load non-critical components
 const ChatWidget = lazy(() => import("./components/ChatWidget"));
