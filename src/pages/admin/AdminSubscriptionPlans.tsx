@@ -109,6 +109,18 @@ const AdminSubscriptionPlans = () => {
   };
 
   const handleDelete = async (plan: Plan) => {
+    // Check for active subscriptions linked to this plan
+    const { count } = await supabase
+      .from("subscriptions")
+      .select("id", { count: "exact", head: true })
+      .eq("plan_id", plan.id)
+      .in("status", ["active", "trial"]);
+
+    if (count && count > 0) {
+      toast({ variant: "destructive", title: `لا يمكن حذف هذه الخطة — مرتبطة بـ ${count} اشتراك نشط` });
+      return;
+    }
+
     if (!confirm(`هل أنت متأكد من حذف خطة "${plan.name}"؟`)) return;
     const { error } = await supabase.from("subscription_plans").delete().eq("id", plan.id);
     if (error) toast({ variant: "destructive", title: error.message });
