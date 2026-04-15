@@ -41,6 +41,9 @@ const Register = () => {
   const [phoneValue, setPhoneValue] = useState(""); // shadow for validation display
   const [formValid, setFormValid] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [phoneDuplicate, setPhoneDuplicate] = useState(false);
+  const [checkingPhone, setCheckingPhone] = useState(false);
+  const phoneCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Sync text values to module-level backup on every change ──
   const syncToBackup = useCallback(() => {
