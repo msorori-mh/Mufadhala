@@ -17,6 +17,7 @@ import { saveLesson as saveLessonOffline, getLesson as getOfflineLesson, removeL
 import { trackFunnelEvent, hasTrackedEvent } from "@/lib/funnelTracking";
 import ChatWidget from "@/components/ChatWidget";
 import PaywallSheet, { usePaywall } from "@/components/PaywallSheet";
+import SummaryTTS from "@/components/SummaryTTS";
 
 interface Lesson {
   id: string;
@@ -329,6 +330,7 @@ const LessonDetail = () => {
                   <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
                     <BookOpen className="w-4 h-4" /> ملخص الدرس
                   </h3>
+                  <SummaryTTS text={lesson.summary} />
                   <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
                     {lesson.summary}
                   </div>
@@ -411,9 +413,12 @@ const LessonDetail = () => {
             <Card>
               <CardContent className="py-6 px-5">
                 {lesson.summary ? (
-                  <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
-                    {lesson.summary}
-                  </div>
+                  <>
+                    <SummaryTTS text={lesson.summary} />
+                    <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
+                      {lesson.summary}
+                    </div>
+                  </>
                 ) : (
                   <p className="text-muted-foreground text-center py-8">لا يوجد ملخص بعد</p>
                 )}
