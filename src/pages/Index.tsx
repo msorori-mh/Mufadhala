@@ -94,7 +94,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
             <Button size="lg" onClick={() => navigate("/register")} className="bg-secondary text-secondary-foreground hover:bg-secondary/90 text-base font-bold px-8 py-5 rounded-xl shadow-lg">
               ابدأ الآن
             </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate("/login")} className="border-white/40 text-primary-foreground hover:bg-white/10 hover:text-primary-foreground text-sm px-6 py-4 rounded-xl">
+            <Button size="lg" variant="outline" onClick={() => navigate("/login")} className="border-white/40 text-primary-foreground hover:bg-transparent hover:text-primary-foreground text-sm px-6 py-4 rounded-xl bg-transparent">
               لديك حساب؟ سجّل دخولك
             </Button>
           </div>
