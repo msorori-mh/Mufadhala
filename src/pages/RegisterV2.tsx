@@ -133,7 +133,7 @@ const RegisterV2 = () => {
         return;
       }
 
-      await clearStoredForm();
+      clearStoredForm();
       toast({ title: "تم التسجيل بنجاح! 🎉" });
       navigate("/welcome", { replace: true });
     } catch {
