@@ -1241,6 +1241,7 @@ export type Database = {
       }
     }
     Functions: {
+      check_phone_exists: { Args: { _phone: string }; Returns: boolean }
       get_cache: { Args: { _key: string }; Returns: Json }
       get_chat_stats: {
         Args: { _days?: number }

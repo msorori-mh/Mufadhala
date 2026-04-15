@@ -41,6 +41,9 @@ const Register = () => {
   const [phoneValue, setPhoneValue] = useState(""); // shadow for validation display
   const [formValid, setFormValid] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [phoneDuplicate, setPhoneDuplicate] = useState(false);
+  const [checkingPhone, setCheckingPhone] = useState(false);
+  const phoneCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Sync text values to module-level backup on every change ──
   const syncToBackup = useCallback(() => {
@@ -149,8 +152,23 @@ const Register = () => {
 
   const isPhoneValid = YEMEN_PHONE_REGEX.test(phoneValue);
 
+  // Debounced phone duplicate check
+  const checkPhoneDuplicate = useCallback((phone: string) => {
+    if (phoneCheckTimer.current) clearTimeout(phoneCheckTimer.current);
+    setPhoneDuplicate(false);
+    if (!YEMEN_PHONE_REGEX.test(phone)) return;
+    setCheckingPhone(true);
+    phoneCheckTimer.current = setTimeout(async () => {
+      try {
+        const { data } = await supabase.rpc("check_phone_exists", { _phone: phone });
+        setPhoneDuplicate(!!data);
+      } catch {}
+      setCheckingPhone(false);
+    }, 600);
+  }, []);
+
   const handleSubmit = async () => {
-    if (!formValid || loading) return;
+    if (!formValid || loading || phoneDuplicate) return;
 
     // Read text values from DOM refs (source of truth)
     const firstName = firstNameRef.current?.value?.trim() ?? "";
@@ -262,15 +280,26 @@ const Register = () => {
                 defaultValue={_textBackup.phone}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, "").slice(0, 9);
-                  // For numeric filtering, we DO write back to the input
                   if (phoneRef.current) phoneRef.current.value = val;
                   setPhoneValue(val);
+                  checkPhoneDuplicate(val);
                   revalidate();
                 }}
               />
             </div>
             {phoneValue && !isPhoneValid && (
               <p className="text-xs text-destructive">رقم الجوال يجب أن يبدأ بـ 7 ويتكون من 9 أرقام</p>
+            )}
+            {isPhoneValid && checkingPhone && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> جارٍ التحقق...</p>
+            )}
+            {isPhoneValid && !checkingPhone && phoneDuplicate && (
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-destructive">هذا الرقم مسجل مسبقاً</p>
+                <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => navigate("/login")}>
+                  تسجيل الدخول
+                </Button>
+              </div>
             )}
           </div>
 
@@ -331,7 +360,7 @@ const Register = () => {
             />
           </div>
 
-          <Button className="w-full" size="lg" disabled={!formValid || loading} onClick={handleSubmit}>
+          <Button className="w-full" size="lg" disabled={!formValid || loading || phoneDuplicate} onClick={handleSubmit}>
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
