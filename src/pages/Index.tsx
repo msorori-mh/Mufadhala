@@ -246,10 +246,12 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
 
       <footer className="bg-card border-t py-6 px-4 text-center space-y-2">
         <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} مُفَاضَلَة | Mufadhala - جميع الحقوق محفوظة</p>
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-center gap-4 flex-wrap">
           <a href="/privacy-policy" className="text-sm text-primary hover:underline">سياسة الخصوصية</a>
           <span className="text-muted-foreground">|</span>
           <a href="/terms-of-service" className="text-sm text-primary hover:underline">شروط الاستخدام</a>
+          <span className="text-muted-foreground">|</span>
+          <a href="/request-delete" className="text-sm text-primary hover:underline">حذف الحساب</a>
         </div>
       </footer>
     </div>
