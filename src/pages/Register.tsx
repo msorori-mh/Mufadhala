@@ -342,17 +342,22 @@ const Register = () => {
             />
           </div>
 
-          {majors.length > 0 && (
-            <div className="space-y-1.5">
-              <Label>التخصص</Label>
-              <NativeSelect
-                value={majorId}
-                onValueChange={(value) => setMajorId(value)}
-                placeholder="اختر التخصص"
-                options={majors.map((m) => ({ value: m.id, label: m.name_ar }))}
-              />
-            </div>
-          )}
+          <div className="space-y-1.5">
+            <Label>التخصص</Label>
+            <NativeSelect
+              value={majorId}
+              onValueChange={(value) => setMajorId(value)}
+              placeholder={
+                !collegeId
+                  ? "اختر الكلية أولاً"
+                  : majors.length === 0
+                    ? "لا توجد تخصصات لهذه الكلية"
+                    : "اختر التخصص"
+              }
+              disabled={!collegeId || majors.length === 0}
+              options={majors.map((m) => ({ value: m.id, label: m.name_ar }))}
+            />
+          </div>
 
           <div className="space-y-1.5">
             <Label>معدل الثانوية العامة</Label>
