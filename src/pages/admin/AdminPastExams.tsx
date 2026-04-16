@@ -310,10 +310,20 @@ function QuestionsEditor({ modelId, onClose }: { modelId: string; onClose: () =>
   };
 
   return (
+    <>
     <Card>
-      <CardHeader className="flex-row items-center justify-between">
+      <CardHeader className="flex-row items-center justify-between flex-wrap gap-2">
         <CardTitle className="text-base">أسئلة النموذج ({questions.length})</CardTitle>
-        <Button variant="ghost" size="sm" onClick={onClose}><ArrowRight className="w-4 h-4 ml-1" /> رجوع</Button>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" hidden onChange={handleFileSelect} />
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="w-4 h-4 ml-1" /> استيراد من ملف
+          </Button>
+          <Button variant="ghost" size="sm" onClick={downloadTemplate}>
+            <Download className="w-4 h-4 ml-1" /> قالب فارغ
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onClose}><ArrowRight className="w-4 h-4 ml-1" /> رجوع</Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Existing questions */}
@@ -371,6 +381,62 @@ function QuestionsEditor({ modelId, onClose }: { modelId: string; onClose: () =>
         </div>
       </CardContent>
     </Card>
+
+    <Dialog open={!!importPreview} onOpenChange={(open) => !open && setImportPreview(null)}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>معاينة الاستيراد</DialogTitle>
+        </DialogHeader>
+        {importPreview && (
+          <div className="space-y-3">
+            <div className="text-xs text-muted-foreground">الملف: {importPreview.fileName}</div>
+            <div className="flex flex-wrap gap-2">
+              <Badge className="bg-secondary">صالح: {importPreview.questions.length}</Badge>
+              {importPreview.errors.length > 0 && (
+                <Badge variant="destructive">أخطاء: {importPreview.errors.length}</Badge>
+              )}
+              {importPreview.duplicateWarnings > 0 && (
+                <Badge variant="outline">مكرر داخل الملف: {importPreview.duplicateWarnings}</Badge>
+              )}
+            </div>
+
+            {importPreview.errors.length > 0 && (
+              <div className="border border-destructive/30 rounded-lg p-3 bg-destructive/5 max-h-40 overflow-y-auto">
+                <p className="text-xs font-bold text-destructive mb-2">أسطر مرفوضة:</p>
+                <ul className="text-xs space-y-1">
+                  {importPreview.errors.slice(0, 20).map((e, i) => (
+                    <li key={i}>السطر {e.row}: {e.reason}</li>
+                  ))}
+                  {importPreview.errors.length > 20 && <li>... و {importPreview.errors.length - 20} أخرى</li>}
+                </ul>
+              </div>
+            )}
+
+            {importPreview.questions.length > 0 && (
+              <div className="border rounded-lg p-3 max-h-60 overflow-y-auto space-y-2">
+                <p className="text-xs font-bold mb-1">معاينة (أول 10):</p>
+                {importPreview.questions.slice(0, 10).map((q, i) => (
+                  <div key={i} className="text-xs border-b last:border-0 pb-1.5">
+                    <span className="font-bold">{i + 1}.</span> {q.q_text}
+                    <span className="text-muted-foreground"> — الإجابة: {q.q_correct.toUpperCase()}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setImportPreview(null)} disabled={importing}>إلغاء</Button>
+          <Button
+            onClick={confirmImport}
+            disabled={importing || !importPreview || importPreview.questions.length === 0}
+          >
+            {importing ? "جاري الاستيراد..." : `استيراد ${importPreview?.questions.length || 0} سؤال`}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
