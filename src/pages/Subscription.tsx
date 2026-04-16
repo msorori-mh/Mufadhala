@@ -758,7 +758,7 @@ const Subscription = () => {
               <ChevronRight className="w-4 h-4 ml-1" /> العودة
             </Button>
             {(() => {
-              const raw = getPlanPrice(selectedPlan, studentGovernorate);
+              const raw = getPlanPriceByZone(selectedPlan, universityPricingZone);
               const final_ = promoDiscount > 0 ? Math.round(raw * (1 - promoDiscount / 100)) : raw;
               return (
                 <div className="space-y-3">
