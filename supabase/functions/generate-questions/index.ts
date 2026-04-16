@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const FREE_DAILY_LIMIT = 5;
+const FREE_DAILY_LIMIT = 10;
 const SUBSCRIBED_DAILY_LIMIT = 100;
 
 serve(async (req) => {
