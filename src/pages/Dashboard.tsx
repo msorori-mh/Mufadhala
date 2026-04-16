@@ -346,8 +346,8 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
                     { icon: BookOpen, title: "استعرض الدروس", desc: "ابدأ بمراجعة الملخصات الذكية لتخصصك", path: "/lessons", color: "text-secondary", bg: "bg-secondary/10" },
-                    { icon: ClipboardCheck, title: "خُض اختبار محاكاة", desc: "جرّب نفسك بـ 45 سؤال في 90 دقيقة", path: "/exam", color: "text-primary", bg: "bg-primary/10" },
-                    { icon: FileText, title: "نماذج الأعوام السابقة", desc: "تدرّب على نماذج القبول الحقيقية", path: "/past-exams", color: "text-accent", bg: "bg-accent/10" },
+                    { icon: FileText, title: "نماذج الأعوام السابقة", desc: "تدرّب على نماذج حقيقية مع إجاباتها النموذجية", path: "/past-exams", color: "text-accent", bg: "bg-accent/10" },
+                    { icon: ClipboardCheck, title: "خُض اختبار محاكاة", desc: "اعرف مستواك قبل يوم المفاضلة", path: "/exam", color: "text-primary", bg: "bg-primary/10" },
                     { icon: Search, title: "ابحث في المحتوى", desc: "ابحث بالمادة أو الكلية أو التخصص", path: "/search", color: "text-primary", bg: "bg-primary/10" },
                   ].map((item) => (
                     <Card key={item.path} className="cursor-pointer hover:shadow-md active:scale-[0.98] transition-all border" onClick={() => navigate(item.path)}>
