@@ -211,6 +211,14 @@ function QuestionsEditor({ modelId, onClose }: { modelId: string; onClose: () =>
   const { toast } = useToast();
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importPreview, setImportPreview] = useState<{
+    questions: ParsedQuestion[];
+    errors: ParseError[];
+    duplicateWarnings: number;
+    fileName: string;
+  } | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const { data: questions = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-model-questions", modelId],
@@ -253,6 +261,52 @@ function QuestionsEditor({ modelId, onClose }: { modelId: string; onClose: () =>
   const deleteQuestion = async (id: string) => {
     await supabase.from("past_exam_model_questions").delete().eq("id", id);
     refetch();
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const buf = await file.arrayBuffer();
+      const result = parsePastExamFile(buf);
+      if (result.questions.length === 0 && result.errors.length === 0) {
+        toast({ variant: "destructive", title: "الملف فارغ أو لا يحتوي على أسئلة" });
+      } else {
+        setImportPreview({ ...result, fileName: file.name });
+      }
+    } catch (err) {
+      toast({ variant: "destructive", title: "تعذر قراءة الملف", description: String(err) });
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const confirmImport = async () => {
+    if (!importPreview || importPreview.questions.length === 0) return;
+    setImporting(true);
+    try {
+      const baseOrder = questions.length > 0 ? Math.max(...questions.map(q => q.order_index)) + 1 : 0;
+      const rows = importPreview.questions.map((q, i) => ({
+        model_id: modelId,
+        order_index: q.order_index ?? baseOrder + i,
+        q_text: q.q_text,
+        q_option_a: q.q_option_a,
+        q_option_b: q.q_option_b,
+        q_option_c: q.q_option_c,
+        q_option_d: q.q_option_d,
+        q_correct: q.q_correct,
+        q_explanation: q.q_explanation,
+      }));
+      const { error } = await supabase.from("past_exam_model_questions").insert(rows);
+      if (error) throw error;
+      toast({ title: `تم استيراد ${rows.length} سؤال بنجاح` });
+      setImportPreview(null);
+      refetch();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "فشل الاستيراد", description: err?.message || String(err) });
+    } finally {
+      setImporting(false);
+    }
   };
 
   return (
