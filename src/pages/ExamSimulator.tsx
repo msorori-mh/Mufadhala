@@ -69,8 +69,8 @@ const ExamSimulator = () => {
           {engine.pendingResultsCount > 0 && <PendingSyncBanner count={engine.pendingResultsCount} />}
 
           <div>
-            <h1 className="text-2xl font-bold text-foreground">محاكاة اختبار {engine.majorName || "التخصص"}</h1>
-            <p className="text-sm text-muted-foreground mt-1">اختبار حقيقي بزمن محدد — بدون أي مساعدات</p>
+            <h1 className="text-2xl font-bold text-foreground">اختبر مستواك الآن</h1>
+            <p className="text-sm text-muted-foreground mt-1">مجموعة أسئلة تحاكي اختبار القبول الحقيقي — اعرف مستواك قبل يوم المفاضلة</p>
           </div>
 
           <Card className="border-primary/30 bg-primary/5">
@@ -138,10 +138,9 @@ const ExamSimulator = () => {
 
           <Button onClick={engine.startExam} disabled={!engine.canStart} className="w-full" size="lg">
             <Play className="w-5 h-5 ml-2" />
-            {engine.isOffline
-              ? (engine.hasOfflineQuestions ? "ابدأ اختبار أوفلاين" : "لا توجد أسئلة محفوظة")
-              : "ابدأ الاختبار الحقيقي"}
+            ابدأ الاختبار
           </Button>
+          <p className="text-xs text-center text-muted-foreground">تدرب الآن واكتشف نقاط قوتك وضعفك</p>
 
           {engine.pastAttempts.length > 0 && (
             <div className="space-y-2">
@@ -187,9 +186,9 @@ const ExamSimulator = () => {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
                 <Badge variant="outline" className="text-xs font-mono">
-                  {engine.currentIndex + 1} / {engine.examQuestions.length}
+                  السؤال {engine.currentIndex + 1} من {engine.examQuestions.length}
                 </Badge>
-                <span className="text-xs text-muted-foreground">أُجيب: {engine.answeredCount}</span>
+                <span className="text-xs text-muted-foreground">ركّز وخذ وقتك</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className={`flex items-center gap-1 text-xs font-mono ${engine.timeWarning ? "text-destructive animate-pulse font-bold" : "text-muted-foreground"}`}>
@@ -288,7 +287,7 @@ const ExamSimulator = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <PageHeader title="نتيجة الاختبار" backTo="/dashboard" backLabel="الرئيسية" />
+      <PageHeader title="نتيجتك" backTo="/dashboard" backLabel="الرئيسية" />
       <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
         {engine.isOfflineExam && (
           <Card className="border-orange-300 bg-orange-50 dark:bg-orange-950/20">
@@ -312,14 +311,29 @@ const ExamSimulator = () => {
         )}
 
         {/* Score Card */}
-        <Card className={engine.passed ? "border-green-500" : "border-orange-500"}>
+        <Card className={engine.percentage >= 50 ? "border-green-500" : "border-orange-500"}>
           <CardContent className="py-8 text-center">
-            {engine.passed ? <Trophy className="w-16 h-16 text-green-500 mx-auto mb-3" /> : <XCircle className="w-16 h-16 text-orange-500 mx-auto mb-3" />}
+            {engine.percentage >= 80 ? <Trophy className="w-16 h-16 text-green-500 mx-auto mb-3" /> : engine.percentage >= 50 ? <CheckCircle2 className="w-16 h-16 text-yellow-500 mx-auto mb-3" /> : <XCircle className="w-16 h-16 text-orange-500 mx-auto mb-3" />}
             <p className="text-4xl font-bold text-foreground">{engine.percentage}%</p>
             <p className="text-lg text-muted-foreground mt-1">{engine.resultScore} / {engine.resultTotal}</p>
-            <p className="text-sm mt-3">
-              {engine.passed ? "أداء ممتاز! أنت جاهز للاختبار الحقيقي 🎉" : "تحتاج مزيداً من التدريب. راجع الدروس وحاول مرة أخرى"}
-            </p>
+            <div className="mt-3 space-y-1">
+              {engine.percentage >= 80 ? (
+                <>
+                  <p className="text-sm font-semibold text-green-600">أداء ممتاز 👏</p>
+                  <p className="text-xs text-muted-foreground">أنت قريب جدًا من تحقيق نتيجة قوية في المفاضلة</p>
+                </>
+              ) : engine.percentage >= 50 ? (
+                <>
+                  <p className="text-sm font-semibold text-yellow-600">أداء جيد 👍</p>
+                  <p className="text-xs text-muted-foreground">تحتاج بعض المراجعة لرفع مستواك أكثر</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-semibold text-orange-600">تحتاج تدريب أكثر 💡</p>
+                  <p className="text-xs text-muted-foreground">ركّز على الدروس وحاول مرة أخرى</p>
+                </>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -406,10 +420,10 @@ const ExamSimulator = () => {
 
         <div className="flex gap-3">
           <Button onClick={engine.resetToIntro} className="flex-1">
-            <RotateCcw className="w-4 h-4 ml-1" />العودة
+            <RotateCcw className="w-4 h-4 ml-1" />أعد المحاولة
           </Button>
           <Button variant="outline" asChild className="flex-1">
-            <Link to="/lessons">مراجعة الدروس</Link>
+            <Link to="/past-exams">جرّب نموذجًا حقيقيًا</Link>
           </Button>
         </div>
       </main>
