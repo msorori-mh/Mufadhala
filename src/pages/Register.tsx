@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import NativeSelect from "@/components/NativeSelect";
 import { Loader2, Rocket } from "lucide-react";
-import logoImg from "@/assets/logo-new.jpg";
+import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { GOVERNORATES, YEMEN_PHONE_REGEX } from "@/domain/constants";
@@ -250,7 +250,9 @@ const Register = () => {
     <div className="min-h-screen gradient-hero flex items-center justify-center p-4" dir="rtl">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center space-y-2">
-          <img src={logoImg} alt="مُفَاضَلَة" className="w-16 h-16 mx-auto" />
+          <div className="inline-flex items-center justify-center w-24 h-24 mx-auto animate-float rounded-full overflow-hidden bg-white/20 backdrop-blur-sm -translate-x-2">
+            <img src={logoImg} alt="مُفَاضَلَة" className="w-full h-full object-cover drop-shadow-lg" />
+          </div>
           <CardTitle className="text-xl">إنشاء حساب جديد</CardTitle>
           <CardDescription>سجّل بياناتك للبدء</CardDescription>
         </CardHeader>

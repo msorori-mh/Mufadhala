@@ -82,8 +82,8 @@ const Welcome = () => {
       {/* Hero section */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-10">
         {/* Logo */}
-        <div className="w-20 h-20 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center mb-6 animate-scale-in">
-          <img src={logoImg} alt="مُفَاضَلَة" className="w-full h-full object-cover" />
+        <div className="inline-flex items-center justify-center w-24 h-24 mb-6 animate-float rounded-full overflow-hidden bg-white/20 backdrop-blur-sm -translate-x-2">
+          <img src={logoImg} alt="مُفَاضَلَة" className="w-full h-full object-cover drop-shadow-lg" />
         </div>
 
         {/* Urgency message */}

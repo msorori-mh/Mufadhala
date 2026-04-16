@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle } from "lucide-react";
+import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -60,8 +61,8 @@ const AdminLogin = () => {
     <div className="min-h-screen bg-muted flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2">
-            <Shield className="w-7 h-7 text-primary" />
+          <div className="inline-flex items-center justify-center w-24 h-24 mx-auto mb-2 animate-float rounded-full overflow-hidden bg-primary/10 backdrop-blur-sm -translate-x-2">
+            <img src={logoImg} alt="مُفَاضَلَة" className="w-full h-full object-cover drop-shadow-lg" />
           </div>
           <h1 className="text-xl font-bold">
             {forgotMode ? "استعادة كلمة المرور" : "دخول الإدارة"}
