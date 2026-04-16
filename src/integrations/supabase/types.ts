@@ -632,21 +632,42 @@ export type Database = {
           id: string
           model_id: string
           order_index: number
-          question_id: string
+          q_correct: string | null
+          q_explanation: string | null
+          q_option_a: string | null
+          q_option_b: string | null
+          q_option_c: string | null
+          q_option_d: string | null
+          q_text: string | null
+          question_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           model_id: string
           order_index?: number
-          question_id: string
+          q_correct?: string | null
+          q_explanation?: string | null
+          q_option_a?: string | null
+          q_option_b?: string | null
+          q_option_c?: string | null
+          q_option_d?: string | null
+          q_text?: string | null
+          question_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           model_id?: string
           order_index?: number
-          question_id?: string
+          q_correct?: string | null
+          q_explanation?: string | null
+          q_option_a?: string | null
+          q_option_b?: string | null
+          q_option_c?: string | null
+          q_option_d?: string | null
+          q_text?: string | null
+          question_id?: string | null
         }
         Relationships: [
           {
