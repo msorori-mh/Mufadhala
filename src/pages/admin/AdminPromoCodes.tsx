@@ -140,7 +140,12 @@ const AdminPromoCodes = () => {
               <div className="space-y-3">
                 <div className="space-y-1">
                   <Label>الكود *</Label>
-                  <Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} placeholder="STUDENT2026" />
+                  <div className="flex gap-2">
+                    <Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} placeholder="MUF7K9X2" className="flex-1" />
+                    <Button type="button" variant="outline" size="sm" onClick={() => setForm({ ...form, code: generateRandomCode() })}>
+                      <Sparkles className="w-4 h-4 ml-1" /> توليد
+                    </Button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
