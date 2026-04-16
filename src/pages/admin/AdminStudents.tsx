@@ -26,6 +26,7 @@ const AdminStudents = () => {
   const [search, setSearch] = useState("");
 
   // Filter state
+  const [filterSubscription, setFilterSubscription] = useState<"" | "subscribed" | "unsubscribed">("");
   const [filterGovernorate, setFilterGovernorate] = useState("");
   const [filterUniversityId, setFilterUniversityId] = useState("");
   const [filterCollegeId, setFilterCollegeId] = useState("");
@@ -51,19 +52,31 @@ const AdminStudents = () => {
   const [majorId, setMajorId] = useState("");
 
   const [staffUserIds, setStaffUserIds] = useState<Set<string>>(new Set());
+  const [activeSubUserIds, setActiveSubUserIds] = useState<Set<string>>(new Set());
 
   const fetchData = async () => {
-    const [{ data: s }, { data: u }, { data: c }, { data: m }, { data: roles }] = await Promise.all([
+    const [{ data: s }, { data: u }, { data: c }, { data: m }, { data: roles }, { data: subs }] = await Promise.all([
       supabase.from("students").select("*").order("created_at", { ascending: false }),
       supabase.from("universities").select("*").order("display_order"),
       supabase.from("colleges").select("*").order("display_order"),
       supabase.from("majors").select("*").order("display_order"),
       supabase.from("user_roles").select("user_id, role"),
+      supabase.from("subscriptions").select("user_id, status, expires_at, trial_ends_at"),
     ]);
     const sIds = new Set(
       (roles || []).filter((r) => r.role === "admin" || r.role === "moderator").map((r) => r.user_id)
     );
     setStaffUserIds(sIds);
+    const now = Date.now();
+    const activeIds = new Set<string>();
+    (subs || []).forEach((sub: any) => {
+      if (sub.status === "active" && (!sub.expires_at || new Date(sub.expires_at).getTime() > now)) {
+        activeIds.add(sub.user_id);
+      } else if (sub.status === "trial" && sub.trial_ends_at && new Date(sub.trial_ends_at).getTime() > now) {
+        activeIds.add(sub.user_id);
+      }
+    });
+    setActiveSubUserIds(activeIds);
     if (s) setStudents(s.filter((st) => !sIds.has(st.user_id)));
     if (u) setUniversities(u);
     if (c) setColleges(c);
@@ -109,10 +122,12 @@ const AdminStudents = () => {
   const editFilteredColleges = universityId ? colleges.filter((c) => c.university_id === universityId) : colleges;
   const editFilteredMajors = collegeId ? majors.filter((m) => m.college_id === collegeId) : majors;
 
-  const hasActiveFilter = !!(filterGovernorate || filterUniversityId || filterCollegeId || filterMajorId);
+  const hasActiveFilter = !!(filterSubscription || filterGovernorate || filterUniversityId || filterCollegeId || filterMajorId);
 
   const filtered = useMemo(() => {
     return scopedStudents.filter((s) => {
+      if (filterSubscription === "subscribed" && !activeSubUserIds.has(s.user_id)) return false;
+      if (filterSubscription === "unsubscribed" && activeSubUserIds.has(s.user_id)) return false;
       if (filterGovernorate && s.governorate !== filterGovernorate) return false;
       if (filterUniversityId && s.university_id !== filterUniversityId) return false;
       if (filterCollegeId && s.college_id !== filterCollegeId) return false;
@@ -123,9 +138,10 @@ const AdminStudents = () => {
       }
       return true;
     });
-  }, [scopedStudents, filterGovernorate, filterUniversityId, filterCollegeId, filterMajorId, search]);
+  }, [scopedStudents, filterSubscription, activeSubUserIds, filterGovernorate, filterUniversityId, filterCollegeId, filterMajorId, search]);
 
   const clearFilters = () => {
+    setFilterSubscription("");
     setFilterGovernorate("");
     setFilterUniversityId("");
     setFilterCollegeId("");
@@ -205,10 +221,11 @@ const AdminStudents = () => {
             <Button variant="outline" size="sm" onClick={() => {
               exportToExcel({
                 title: "قائمة الطلاب",
-                headers: ["الاسم", "الهاتف", "المحافظة", "الجامعة", "الكلية", "التخصص", "المعدل", "رقم التنسيق"],
+                headers: ["الاسم", "الهاتف", "حالة الاشتراك", "المحافظة", "الجامعة", "الكلية", "التخصص", "المعدل", "رقم التنسيق"],
                 rows: filtered.map((s) => [
                   getFullName(s),
                   s.phone || "-",
+                  activeSubUserIds.has(s.user_id) ? "مشترك" : "غير مشترك",
                   s.governorate || "-",
                   getUniName(s.university_id),
                   getCollegeName(s.college_id),
@@ -232,7 +249,19 @@ const AdminStudents = () => {
               <Filter className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium">فلترة الطلاب</span>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">حالة الاشتراك</Label>
+                <select
+                  value={filterSubscription}
+                  onChange={(e) => setFilterSubscription(e.target.value as "" | "subscribed" | "unsubscribed")}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                >
+                  <option value="">الكل</option>
+                  <option value="subscribed">مشترك</option>
+                  <option value="unsubscribed">غير مشترك</option>
+                </select>
+              </div>
               <div className="space-y-1">
                 <Label className="text-xs">المحافظة</Label>
                 <select
