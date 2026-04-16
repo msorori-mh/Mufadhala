@@ -25,7 +25,7 @@ import {
 import DashboardCharts from "@/components/DashboardCharts";
 import UpgradeCTABanner from "@/components/UpgradeCTABanner";
 import SmartRecommendations from "@/components/SmartRecommendations";
-import AIPracticeQuestions from "@/components/AIPracticeQuestions";
+
 import type { Tables } from "@/integrations/supabase/types";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -348,7 +348,7 @@ const Dashboard = () => {
                     { icon: BookOpen, title: "استعرض الدروس", desc: "ابدأ بمراجعة الملخصات الذكية لتخصصك", path: "/lessons", color: "text-secondary", bg: "bg-secondary/10" },
                     { icon: FileText, title: "نماذج الأعوام السابقة", desc: "تدرّب على نماذج حقيقية مع إجاباتها النموذجية", path: "/past-exams", color: "text-accent", bg: "bg-accent/10" },
                     { icon: ClipboardCheck, title: "خُض اختبار محاكاة", desc: "اعرف مستواك قبل يوم المفاضلة", path: "/exam", color: "text-primary", bg: "bg-primary/10" },
-                    { icon: Sparkles, title: "مولد الأسئلة الذكي", desc: "يقوم بتوليد أسئلة بناءً على تحليل أدائك", path: "#ai-generator", color: "text-primary", bg: "bg-primary/10" },
+                    { icon: Sparkles, title: "مولد الأسئلة الذكي", desc: "يقوم بتوليد أسئلة بناءً على تحليل أدائك", path: "/ai-generator", color: "text-primary", bg: "bg-primary/10" },
                   ].map((item) => (
                     <Card key={item.path} className="cursor-pointer hover:shadow-md active:scale-[0.98] transition-all border" onClick={() => {
                       if (item.path.startsWith("#")) {
@@ -483,12 +483,6 @@ const Dashboard = () => {
               />
             )}
 
-            {/* AI Practice Questions */}
-            {!isAdmin && (
-              <div id="ai-generator" className="scroll-mt-20">
-                <AIPracticeQuestions hasSubscription={hasActiveSubscription} />
-              </div>
-            )}
 
 
             {/* Achievements */}
