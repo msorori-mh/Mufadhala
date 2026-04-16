@@ -249,7 +249,19 @@ const AdminStudents = () => {
               <Filter className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium">فلترة الطلاب</span>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">حالة الاشتراك</Label>
+                <select
+                  value={filterSubscription}
+                  onChange={(e) => setFilterSubscription(e.target.value as "" | "subscribed" | "unsubscribed")}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                >
+                  <option value="">الكل</option>
+                  <option value="subscribed">مشترك</option>
+                  <option value="unsubscribed">غير مشترك</option>
+                </select>
+              </div>
               <div className="space-y-1">
                 <Label className="text-xs">المحافظة</Label>
                 <select
