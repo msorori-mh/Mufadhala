@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Search, Pencil, Trash2, Eye, Filter, X, Users, Download } from "lucide-react";
 import { exportToExcel } from "@/lib/exportReport";
 import type { Tables } from "@/integrations/supabase/types";
+import CascadingAcademicSelects from "@/components/CascadingAcademicSelects";
 
 const AdminStudents = () => {
   const { loading: authLoading, isAdmin, user } = useAuth("moderator");
@@ -389,27 +390,19 @@ const AdminStudents = () => {
               <div className="space-y-2"><Label>المعدل</Label><Input type="number" value={gpa} onChange={(e) => setGpa(e.target.value)} /></div>
             </div>
             <div className="space-y-2"><Label>رقم التنسيق</Label><Input value={coordinationNumber} onChange={(e) => setCoordinationNumber(e.target.value)} /></div>
-            <div className="space-y-2">
-              <Label>الجامعة</Label>
-              <select value={universityId} onChange={(e) => { setUniversityId(e.target.value); setCollegeId(""); setMajorId(""); }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="">بدون</option>
-                {universities.map((u) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label>الكلية</Label>
-              <select value={collegeId} onChange={(e) => { setCollegeId(e.target.value); setMajorId(""); }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="">بدون</option>
-                {editFilteredColleges.map((c) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label>التخصص</Label>
-              <select value={majorId} onChange={(e) => setMajorId(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="">بدون</option>
-                {editFilteredMajors.map((m) => <option key={m.id} value={m.id}>{m.name_ar}</option>)}
-              </select>
-            </div>
+            <CascadingAcademicSelects
+              universities={universities}
+              colleges={colleges}
+              majors={majors}
+              universityId={universityId}
+              collegeId={collegeId}
+              majorId={majorId}
+              onUniversityChange={setUniversityId}
+              onCollegeChange={setCollegeId}
+              onMajorChange={setMajorId}
+              emptyOptionLabel="بدون"
+              includeInactive={true}
+            />
             <Button onClick={handleSave} disabled={saving} className="w-full">{saving ? "جاري الحفظ..." : "حفظ التعديلات"}</Button>
           </div>
         </DialogContent>
