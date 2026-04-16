@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Target, Sparkles } from "lucide-react";
+import { Target } from "lucide-react";
+import { trackSubscriptionClick } from "@/lib/conversionTracking";
 
 interface Props {
   percentage: number;
@@ -16,6 +17,7 @@ const PostExamUpgrade = ({ percentage, totalQuestions, hasSubscription = false }
     if (hasSubscription) {
       navigate("/past-exams");
     } else {
+      trackSubscriptionClick("exam_simulator", { percentage, totalQuestions });
       navigate("/subscription");
     }
   };

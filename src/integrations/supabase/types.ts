@@ -191,6 +191,33 @@ export type Database = {
           },
         ]
       }
+      conversion_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json
+          source: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          source: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          source?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       deletion_logs: {
         Row: {
           created_at: string
@@ -1393,6 +1420,15 @@ export type Database = {
           today_messages: number
           today_users: number
           total_messages: number
+          unique_users: number
+        }[]
+      }
+      get_conversion_funnel_stats: {
+        Args: { _days?: number }
+        Returns: {
+          conversions: number
+          source: string
+          total_clicks: number
           unique_users: number
         }[]
       }

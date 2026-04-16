@@ -7,6 +7,7 @@ import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { trackSubscriptionClick } from "@/lib/conversionTracking";
 
 type ContentPart =
   | { type: "text"; text: string }
@@ -413,7 +414,7 @@ const ChatWidget = React.forwardRef<HTMLDivElement, ChatWidgetProps>(({ lessonCo
                     <p className="text-xs text-muted-foreground">
                       وصلت للحد المجاني ({FREE_DAILY_LIMIT} رسائل يومياً)
                     </p>
-                    <a href="/subscription" className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+                    <a href="/subscription" onClick={() => trackSubscriptionClick("chat_widget", { reason: "limit_reached" })} className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
                       <Sparkles className="w-3 h-3" />
                       فعّل الاشتراك للحصول على {dailyLimit} رسالة يومياً
                     </a>
@@ -482,7 +483,7 @@ const ChatWidget = React.forwardRef<HTMLDivElement, ChatWidgetProps>(({ lessonCo
                     {getRemainingMessages(effectiveLimit)} رسالة متبقية اليوم
                   </p>
                   {!hasSubscription && (
-                    <a href="/subscription" className="text-[10px] text-primary hover:underline flex items-center gap-0.5">
+                    <a href="/subscription" onClick={() => trackSubscriptionClick("chat_widget", { reason: "footer_link" })} className="text-[10px] text-primary hover:underline flex items-center gap-0.5">
                       <Lock className="w-2.5 h-2.5" />
                       {dailyLimit} رسالة للمشتركين
                     </a>

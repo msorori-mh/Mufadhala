@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import {
   GraduationCap, LayoutDashboard, Building2, BookOpen, Users, UserCog,
   LogOut, ChevronDown, ChevronUp, BarChart3, FileText,
-  CreditCard, Wallet, ListChecks, DollarSign, ClipboardCheck, ArrowRight, ArrowLeft, Tag, FlaskConical, ScrollText, UserCircle, Route,
+  CreditCard, Wallet, ListChecks, DollarSign, ClipboardCheck, ArrowRight, ArrowLeft, Tag, FlaskConical, ScrollText, UserCircle, Route, Target,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,6 +43,7 @@ const reportSubItems: NavItem[] = [
   { path: "/admin/reports/subscriptions", label: "الاشتراكات", icon: ListChecks },
   { path: "/admin/reports/exams", label: "الاختبارات", icon: ClipboardCheck },
   { path: "/admin/reports/comparison", label: "مقارنة الفترات", icon: BarChart3 },
+  { path: "/admin/conversion-funnel", label: "قمع التحويل", icon: Target },
 ];
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {

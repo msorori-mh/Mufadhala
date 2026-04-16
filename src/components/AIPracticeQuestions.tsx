@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useStudentAccess } from "@/hooks/useStudentAccess";
 import FreeLimitMessage from "@/components/FreeLimitMessage";
+import { trackSubscriptionClick } from "@/lib/conversionTracking";
 
 interface AIQuestion {
   question_text: string;
@@ -212,7 +213,7 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
             <Button
               size="lg"
               className="w-full text-base font-bold"
-              onClick={() => navigate("/subscription")}
+              onClick={() => { trackSubscriptionClick("ai_generator"); navigate("/subscription"); }}
             >
               اشترك الآن
             </Button>

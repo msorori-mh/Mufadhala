@@ -14,6 +14,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import PostExamUpgrade from "@/components/PostExamUpgrade";
 import FreeLimitMessage from "@/components/FreeLimitMessage";
 import AIPerformanceAnalysis from "@/components/AIPerformanceAnalysis";
+import { trackSubscriptionClick } from "@/lib/conversionTracking";
 import {
   useTrueExamEngine,
   formatTime,
@@ -89,7 +90,7 @@ const ExamSimulator = () => {
   if (engine.phase === "intro") {
     // Show free limit if first attempt already used
     if (engine.freeAttemptUsed) {
-      return <FreeLimitMessage />;
+      return <FreeLimitMessage source="exam_simulator" />;
     }
 
     return (
@@ -113,7 +114,7 @@ const ExamSimulator = () => {
                     className="text-xs text-muted-foreground hover:text-foreground shrink-0 mt-0.5"
                   >✕</button>
                 </div>
-                <Button size="sm" className="w-full mt-3 gap-2" onClick={() => navigate("/subscription")}>
+                <Button size="sm" className="w-full mt-3 gap-2" onClick={() => { trackSubscriptionClick("exam_simulator", { reason: "usage_banner" }); navigate("/subscription"); }}>
                   <Target className="w-4 h-4" />
                   ابدأ التدريب الآن
                 </Button>
