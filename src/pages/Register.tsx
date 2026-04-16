@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import NativeSelect from "@/components/NativeSelect";
+import CascadingAcademicSelects from "@/components/CascadingAcademicSelects";
 import { Loader2, Rocket } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,8 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { GOVERNORATES, YEMEN_PHONE_REGEX } from "@/domain/constants";
 
 type University = { id: string; name_ar: string };
-type College = { id: string; name_ar: string };
-type Major = { id: string; name_ar: string };
+type College = { id: string; name_ar: string; university_id: string };
+type Major = { id: string; name_ar: string; college_id: string };
 
 // Module-level snapshot — survives component remounts but not page reloads.
 // No async, no localStorage, no side effects. Pure in-memory safety net.
@@ -79,77 +80,18 @@ const Register = () => {
     revalidate();
   }, [revalidate]);
 
+  // Load universities, colleges, majors once (cascading filtering done by component)
   useEffect(() => {
-    supabase
-      .from("universities")
-      .select("id, name_ar")
-      .eq("is_active", true)
-      .order("display_order")
-      .then(({ data }) => {
-        if (data) setUniversities(data);
-      });
+    Promise.all([
+      supabase.from("universities").select("id, name_ar").eq("is_active", true).order("display_order"),
+      supabase.from("colleges").select("id, name_ar, university_id").eq("is_active", true).order("display_order"),
+      supabase.from("majors").select("id, name_ar, college_id").eq("is_active", true).order("display_order"),
+    ]).then(([u, c, m]) => {
+      if (u.data) setUniversities(u.data);
+      if (c.data) setColleges(c.data as College[]);
+      if (m.data) setMajors(m.data as Major[]);
+    });
   }, []);
-
-  useEffect(() => {
-    if (!universityId) {
-      setColleges([]);
-      setMajors([]);
-      return;
-    }
-
-    supabase
-      .from("colleges")
-      .select("id, name_ar")
-      .eq("university_id", universityId)
-      .eq("is_active", true)
-      .order("display_order")
-      .then(({ data }) => {
-        const nextColleges = data ?? [];
-        setColleges(nextColleges);
-        setCollegeId((prev) => {
-          if (prev && !nextColleges.some((c) => c.id === prev)) {
-            setMajorId("");
-            return "";
-          }
-          return prev;
-        });
-      });
-  }, [universityId]);
-
-  useEffect(() => {
-    if (!collegeId) {
-      setMajors([]);
-      return;
-    }
-
-    supabase
-      .from("majors")
-      .select("id, name_ar")
-      .eq("college_id", collegeId)
-      .eq("is_active", true)
-      .order("display_order")
-      .then(({ data }) => {
-        const nextMajors = data ?? [];
-        setMajors(nextMajors);
-        setMajorId((prev) => {
-          if (prev && !nextMajors.some((m) => m.id === prev)) {
-            return "";
-          }
-          return prev;
-        });
-      });
-  }, [collegeId]);
-
-  const handleUniversityChange = (value: string) => {
-    setUniversityId(value);
-    setCollegeId("");
-    setMajorId("");
-  };
-
-  const handleCollegeChange = (value: string) => {
-    setCollegeId(value);
-    setMajorId("");
-  };
 
   const isPhoneValid = YEMEN_PHONE_REGEX.test(phoneValue);
 
@@ -321,43 +263,19 @@ const Register = () => {
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label>الجامعة *</Label>
-            <NativeSelect
-              value={universityId}
-              onValueChange={handleUniversityChange}
-              placeholder="اختر الجامعة"
-              options={universities.map((u) => ({ value: u.id, label: u.name_ar }))}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>الكلية *</Label>
-            <NativeSelect
-              value={collegeId}
-              onValueChange={handleCollegeChange}
-              placeholder="اختر الكلية"
-              disabled={!universityId}
-              options={colleges.map((c) => ({ value: c.id, label: c.name_ar }))}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>التخصص</Label>
-            <NativeSelect
-              value={majorId}
-              onValueChange={(value) => setMajorId(value)}
-              placeholder={
-                !collegeId
-                  ? "اختر الكلية أولاً"
-                  : majors.length === 0
-                    ? "لا توجد تخصصات لهذه الكلية"
-                    : "اختر التخصص"
-              }
-              disabled={!collegeId || majors.length === 0}
-              options={majors.map((m) => ({ value: m.id, label: m.name_ar }))}
-            />
-          </div>
+          <CascadingAcademicSelects
+            universities={universities}
+            colleges={colleges}
+            majors={majors}
+            universityId={universityId}
+            collegeId={collegeId}
+            majorId={majorId}
+            onUniversityChange={setUniversityId}
+            onCollegeChange={setCollegeId}
+            onMajorChange={setMajorId}
+            required
+            labels={{ major: "التخصص" }}
+          />
 
           <div className="space-y-1.5">
             <Label>معدل الثانوية العامة</Label>
