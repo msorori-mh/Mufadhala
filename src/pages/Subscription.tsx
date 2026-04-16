@@ -384,7 +384,7 @@ const Subscription = () => {
     );
   }
 
-  const zoneName = universityPricingZone === "a" ? "المنطقة أ (العملة القديمة)" : universityPricingZone === "b" ? "المنطقة ب (العملة الجديدة)" : null;
+
 
   return (
     <div className="min-h-screen bg-background">
