@@ -111,21 +111,7 @@ const AdminStudents = () => {
     return Array.from(set).sort();
   }, [scopedStudents]);
 
-  // Cascading filter lists
-  const filterCollegesList = filterUniversityId
-    ? colleges.filter((c) => c.university_id === filterUniversityId)
-    : colleges;
-  const filterMajorsList = filterCollegeId
-    ? majors.filter((m) => m.college_id === filterCollegeId)
-    : filterUniversityId
-      ? majors.filter((m) =>
-          colleges.some((c) => c.id === m.college_id && c.university_id === filterUniversityId)
-        )
-      : majors;
-
-  // Edit dialog cascading
-  const editFilteredColleges = universityId ? colleges.filter((c) => c.university_id === universityId) : colleges;
-  const editFilteredMajors = collegeId ? majors.filter((m) => m.college_id === collegeId) : majors;
+  // (Cascading filtering for both filters and edit dialog is handled inside CascadingAcademicSelects)
 
   const hasActiveFilter = !!(filterSubscription || filterGovernorate || filterUniversityId || filterCollegeId || filterMajorId);
 
@@ -278,38 +264,23 @@ const AdminStudents = () => {
                   {governorates.map((g) => <option key={g} value={g}>{g}</option>)}
                 </select>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">الجامعة</Label>
-                <select
-                  value={filterUniversityId}
-                  onChange={(e) => { setFilterUniversityId(e.target.value); setFilterCollegeId(""); setFilterMajorId(""); }}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-                >
-                  <option value="">الكل</option>
-                  {universities.map((u) => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">الكلية</Label>
-                <select
-                  value={filterCollegeId}
-                  onChange={(e) => { setFilterCollegeId(e.target.value); setFilterMajorId(""); }}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-                >
-                  <option value="">الكل</option>
-                  {filterCollegesList.map((c) => <option key={c.id} value={c.id}>{c.name_ar}</option>)}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">التخصص</Label>
-                <select
-                  value={filterMajorId}
-                  onChange={(e) => setFilterMajorId(e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-                >
-                  <option value="">الكل</option>
-                  {filterMajorsList.map((m) => <option key={m.id} value={m.id}>{m.name_ar}</option>)}
-                </select>
+              <div className="space-y-1 md:col-span-3">
+                <CascadingAcademicSelects
+                  universities={universities}
+                  colleges={colleges}
+                  majors={majors}
+                  universityId={filterUniversityId}
+                  collegeId={filterCollegeId}
+                  majorId={filterMajorId}
+                  onUniversityChange={setFilterUniversityId}
+                  onCollegeChange={setFilterCollegeId}
+                  onMajorChange={setFilterMajorId}
+                  layout="grid"
+                  emptyOptionLabel="الكل"
+                  includeInactive
+                  labels={{ university: "الجامعة", college: "الكلية", major: "التخصص" }}
+                  placeholders={{ university: "الكل", college: "الكل", major: "الكل" }}
+                />
               </div>
             </div>
           </CardContent>

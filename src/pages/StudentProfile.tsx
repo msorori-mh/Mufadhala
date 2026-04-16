@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { GraduationCap, ArrowRight, User, School, Phone, Save, Loader2, Pencil, ShieldCheck, Send } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import CascadingAcademicSelects from "@/components/CascadingAcademicSelects";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -72,30 +73,20 @@ const StudentProfile = () => {
         setMajorId(studentData.major_id || "");
       }
 
-      const { data: uniData } = await supabase
-        .from("universities").select("*").eq("is_active", true).order("display_order");
+      // Load all academic reference data once (cascading filtering is done by component)
+      const [{ data: uniData }, { data: colData }, { data: majData }] = await Promise.all([
+        supabase.from("universities").select("*").eq("is_active", true).order("display_order"),
+        supabase.from("colleges").select("*").eq("is_active", true).order("display_order"),
+        supabase.from("majors").select("*").eq("is_active", true).order("display_order"),
+      ]);
       if (uniData) setUniversities(uniData);
+      if (colData) setColleges(colData);
+      if (majData) setMajors(majData);
 
       setLoading(false);
     };
     init();
   }, [authLoading, user, navigate]);
-
-  // Fetch colleges when university changes
-  useEffect(() => {
-    if (!universityId) { setColleges([]); return; }
-    supabase.from("colleges").select("*")
-      .eq("university_id", universityId).eq("is_active", true).order("display_order")
-      .then(({ data }) => { if (data) setColleges(data); });
-  }, [universityId]);
-
-  // Fetch majors when college changes
-  useEffect(() => {
-    if (!collegeId) { setMajors([]); return; }
-    supabase.from("majors").select("*")
-      .eq("college_id", collegeId).eq("is_active", true).order("display_order")
-      .then(({ data }) => { if (data) setMajors(data); });
-  }, [collegeId]);
 
   // OTP cooldown timer
   useEffect(() => {
@@ -432,44 +423,18 @@ const StudentProfile = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs">الجامعة</Label>
-              <Select value={universityId} onValueChange={(v) => { setUniversityId(v); setCollegeId(""); setMajorId(""); }}>
-                <SelectTrigger><SelectValue placeholder="اختر الجامعة" /></SelectTrigger>
-                <SelectContent>
-                  {universities.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>{u.name_ar}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">الكلية</Label>
-              <Select value={collegeId} onValueChange={(v) => { setCollegeId(v); setMajorId(""); }} disabled={!universityId}>
-                <SelectTrigger><SelectValue placeholder={!universityId ? "اختر الجامعة أولاً" : "اختر الكلية"} /></SelectTrigger>
-                <SelectContent>
-                  {colleges.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name_ar}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {majors.length > 0 && (
-              <div className="space-y-1.5">
-                <Label className="text-xs">التخصص <span className="text-muted-foreground">(اختياري)</span></Label>
-                <Select value={majorId} onValueChange={setMajorId} disabled={!collegeId}>
-                  <SelectTrigger><SelectValue placeholder="اختر التخصص" /></SelectTrigger>
-                  <SelectContent>
-                    {majors.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>{m.name_ar}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
+            <CascadingAcademicSelects
+              universities={universities}
+              colleges={colleges}
+              majors={majors}
+              universityId={universityId}
+              collegeId={collegeId}
+              majorId={majorId}
+              onUniversityChange={setUniversityId}
+              onCollegeChange={setCollegeId}
+              onMajorChange={setMajorId}
+              labels={{ major: "التخصص (اختياري)" }}
+            />
           </CardContent>
         </Card>
 
