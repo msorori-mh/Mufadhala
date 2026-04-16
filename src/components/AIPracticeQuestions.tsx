@@ -89,29 +89,38 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
     }
   }, [subjectOptions, subject]);
 
-  // Fetch current usage on mount
+  // Fetch current usage on mount — scoped to the signed-in user + today only.
+  // Daily limit value itself is owned by the backend (returned in generate response);
+  // here we only count to render the initial "remaining" before the first generation.
   const { data: usageData } = useQuery({
     queryKey: ["ai-generation-usage-today"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return 0;
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
       const { count } = await supabase
         .from("ai_generation_usage")
         .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
         .gte("generated_at", todayStart.toISOString());
       return count ?? 0;
     },
     staleTime: 30 * 1000,
   });
 
+  // Initial render of remaining/limit before any generate call.
+  // Uses a soft client-side fallback that mirrors the backend defaults,
+  // but the authoritative values (limit, remaining) always come from the
+  // edge function response and override these on first generate.
   useEffect(() => {
-    if (usageData !== undefined) {
-      const limit = hasSubscription ? 100 : 5;
-      setDailyLimit(limit);
-      setRemaining(Math.max(0, limit - usageData));
-      setLimitReached(usageData >= limit);
+    if (usageData !== undefined && dailyLimit === null) {
+      const fallbackLimit = hasSubscription ? 100 : 5;
+      setDailyLimit(fallbackLimit);
+      setRemaining(Math.max(0, fallbackLimit - usageData));
+      setLimitReached(usageData >= fallbackLimit);
     }
-  }, [usageData, hasSubscription]);
+  }, [usageData, hasSubscription, dailyLimit]);
 
   const generate = async () => {
     if (limitReached) return;
