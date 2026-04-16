@@ -131,13 +131,6 @@ const Welcome = () => {
           </p>
         </div>
 
-        {/* Skip */}
-        <button
-          onClick={handleSkip}
-          className="mt-6 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          تصفح لوحة التحكم
-        </button>
       </div>
     </div>
   );
