@@ -10,4 +10,4 @@ type: feature
 - Training mode: one question at a time, check answer, see explanation, no timer
 - Payment: is_paid models locked for non-subscribers, redirects to /subscription
 - Admin: /admin/past-exams - CRUD models + inline question editor
-- Admin permission: "content" moderator permission
+- Admin permission: "past_exams" (dedicated, separate from "content")

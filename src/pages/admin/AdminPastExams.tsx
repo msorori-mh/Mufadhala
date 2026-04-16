@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
+import PermissionGate from "@/components/admin/PermissionGate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ import { parsePastExamFile, downloadTemplate, type ParsedQuestion, type ParseErr
 type Model = Tables<"past_exam_models">;
 
 const AdminPastExams = () => {
-  useAuth("admin");
+  useAuth("moderator");
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -114,6 +115,7 @@ const AdminPastExams = () => {
 
   return (
     <AdminLayout>
+      <PermissionGate permission="past_exams">
       <div className="space-y-5">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">نماذج الأعوام السابقة</h1>
@@ -202,6 +204,7 @@ const AdminPastExams = () => {
           </div>
         )}
       </div>
+      </PermissionGate>
     </AdminLayout>
   );
 };

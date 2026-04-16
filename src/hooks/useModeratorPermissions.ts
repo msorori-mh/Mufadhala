@@ -8,7 +8,8 @@ export type ModeratorPermission =
   | "payment_methods"
   | "subscriptions"
   | "reports"
-  | "universities";
+  | "universities"
+  | "past_exams";
 
 export const PERMISSION_LABELS: Record<ModeratorPermission, string> = {
   content: "المحتوى التعليمي",
@@ -18,6 +19,7 @@ export const PERMISSION_LABELS: Record<ModeratorPermission, string> = {
   subscriptions: "إعدادات الاشتراك",
   reports: "التقارير",
   universities: "الجامعات والكليات والتخصصات",
+  past_exams: "نماذج الاختبارات السابقة",
 };
 
 export const ALL_PERMISSIONS: ModeratorPermission[] = [
@@ -28,6 +30,7 @@ export const ALL_PERMISSIONS: ModeratorPermission[] = [
   "subscriptions",
   "reports",
   "universities",
+  "past_exams",
 ];
 
 export const useModeratorPermissions = (
