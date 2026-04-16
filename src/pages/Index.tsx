@@ -72,16 +72,16 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
             <img src={logoImg} alt="شعار مُفَاضَلَة" className="w-full h-full object-cover drop-shadow-lg" />
           </div>
          <h1 className="text-[1.05rem] md:text-2xl lg:text-3xl font-bold text-primary-foreground mb-3 leading-snug">
-            <span className="bg-gradient-to-l from-yellow-300 via-yellow-200 to-yellow-400 bg-clip-text text-transparent font-extrabold drop-shadow-sm">مفاضلة</span>
-            {" .. منصتك الأكاديمية لتبسيط المناهج"}
-            <br />
-            {"ومحاكاة الاختبار مع رفيقك الذكي "}
-            <span className="bg-gradient-to-l from-emerald-300 via-green-200 to-emerald-400 bg-clip-text text-transparent font-extrabold drop-shadow-sm">مُفَاضِل</span>
+            استعد لاختبار القبول بذكاء
           </h1>
+          <p className="text-sm md:text-base text-primary-foreground/85 leading-relaxed mb-5">
+            كل ما تحتاجه لاجتياز المفاضلة: تلخيص ذكي، تدريب فعّال ونماذج حقيقية
+          </p>
           <div className="flex flex-wrap items-center justify-center gap-3 mb-5">
             {[
-              { emoji: "📝", text: "محاكاة الاختبار الحقيقي" },
-              { emoji: "📚", text: "بنك أسئلة شامل" },
+              { emoji: "📘", text: "ملخصات ذكية" },
+              { emoji: "🎯", text: "نماذج الأعوام السابقة" },
+              { emoji: "🧠", text: "محاكي اختبار فعلي" },
               { emoji: "📊", text: "تحليل الأداء" },
             ].map((b) => (
               <span key={b.text} className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1.5 text-sm text-primary-foreground">
@@ -94,20 +94,25 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
               ابدأ الآن
             </Button>
             <Button size="lg" variant="outline" onClick={() => navigate("/login")} className="border-white/40 text-primary-foreground hover:bg-transparent hover:text-primary-foreground text-sm px-6 py-4 rounded-xl bg-transparent">
-              لديك حساب؟ سجّل دخولك
+              تسجيل الدخول
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Hero Hook */}
-      <section className="gradient-hero py-3 md:py-5 px-4">
-        <div className="max-w-3xl mx-auto text-center">
-          <p className="text-base md:text-lg text-primary-foreground/85 leading-relaxed">
-            لا تترك حلمك للصدفة.. <span className="text-secondary font-bold">هندس طريقك</span> للقبول في الجامعات اليمنية
-          </p>
-        </div>
-      </section>
+      {/* Speech Bubble */}
+      {showBubble && (
+        <section className="gradient-hero py-3 md:py-5 px-4">
+          <div className="max-w-3xl mx-auto flex justify-center">
+            <button
+              onClick={() => { setShowBubble(false); navigate("/exam-simulator"); }}
+              className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-primary-foreground rounded-full px-5 py-2.5 text-sm font-bold shadow-lg animate-float cursor-pointer hover:bg-white/30 transition-colors"
+            >
+              جرّب مستواك الآن 🚀
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* AI Assistant "Qabool" */}
       <section className="bg-background py-2.5 md:py-4 px-4">
