@@ -1,13 +1,20 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
+import { trackSubscriptionClick, type ConversionSource } from "@/lib/conversionTracking";
 
 interface FreeLimitMessageProps {
   className?: string;
+  source?: ConversionSource;
 }
 
-const FreeLimitMessage = ({ className = "" }: FreeLimitMessageProps) => {
+const FreeLimitMessage = ({ className = "", source }: FreeLimitMessageProps) => {
   const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (source) trackSubscriptionClick(source);
+    navigate("/subscription");
+  };
 
   return (
     <div className={`min-h-screen bg-background flex items-center justify-center ${className}`} dir="rtl">
@@ -24,7 +31,7 @@ const FreeLimitMessage = ({ className = "" }: FreeLimitMessageProps) => {
         <Button
           size="lg"
           className="w-full text-base font-bold"
-          onClick={() => navigate("/subscription")}
+          onClick={handleClick}
         >
           اشترك الآن
         </Button>
