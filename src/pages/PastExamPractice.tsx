@@ -175,7 +175,7 @@ const PastExamPractice = () => {
             const isCorrect = opt.key === question.q_correct;
             const isSelected = opt.key === selectedOption;
             let borderClass = "border-border";
-            if (revealed && isCorrect) borderClass = "border-green-500 bg-green-500/10";
+            if (revealed && isCorrect) borderClass = "border-secondary bg-secondary/10";
             else if (revealed && isSelected && !isCorrect) borderClass = "border-destructive bg-destructive/10";
             else if (isSelected) borderClass = "border-primary bg-primary/5";
 
@@ -190,7 +190,7 @@ const PastExamPractice = () => {
                   {opt.key.toUpperCase()}
                 </span>
                 <span className="flex-1 text-sm">{opt.text}</span>
-                {revealed && isCorrect && <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />}
+                {revealed && isCorrect && <CheckCircle2 className="w-5 h-5 text-secondary shrink-0" />}
                 {revealed && isSelected && !isCorrect && <XCircle className="w-5 h-5 text-destructive shrink-0" />}
               </button>
             );

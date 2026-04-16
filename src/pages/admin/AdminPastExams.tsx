@@ -184,7 +184,7 @@ const AdminPastExams = () => {
                   <div className="flex items-center gap-1.5 shrink-0">
                     {m.is_paid && <Badge variant="secondary" className="text-[10px]">مدفوع</Badge>}
                     {m.is_published ? (
-                      <Badge className="text-[10px] bg-green-600">منشور</Badge>
+                      <Badge className="text-[10px] bg-secondary">منشور</Badge>
                     ) : (
                       <Badge variant="outline" className="text-[10px]">مسودة</Badge>
                     )}
