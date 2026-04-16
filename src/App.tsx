@@ -56,6 +56,7 @@ const AdminReportsComparison = lazy(() => import("./pages/admin/AdminReportsComp
 const AdminConversionFunnel = lazy(() => import("./pages/admin/AdminConversionFunnel"));
 const AdminContent = lazy(() => import("./pages/admin/AdminContent"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminPermissionsOverview = lazy(() => import("./pages/admin/AdminPermissionsOverview"));
 const AdminSubscriptionPlans = lazy(() => import("./pages/admin/AdminSubscriptionPlans"));
 const AdminPaymentMethods = lazy(() => import("./pages/admin/AdminPaymentMethods"));
 const AdminPayments = lazy(() => import("./pages/admin/AdminPayments"));
@@ -176,6 +177,7 @@ function App() {
                   <Route path="/admin/conversion-funnel" element={<AdminConversionFunnel />} />
                   <Route path="/admin/content" element={<AdminContent />} />
                   <Route path="/admin/users" element={<AdminUsers />} />
+                  <Route path="/admin/permissions-overview" element={<AdminPermissionsOverview />} />
                   <Route path="/admin/subscription-plans" element={<AdminSubscriptionPlans />} />
                   <Route path="/admin/payment-methods" element={<AdminPaymentMethods />} />
                   <Route path="/admin/promo-codes" element={<AdminPromoCodes />} />
