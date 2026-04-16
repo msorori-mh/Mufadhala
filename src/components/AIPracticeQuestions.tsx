@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useStudentAccess } from "@/hooks/useStudentAccess";
+import FreeLimitMessage from "@/components/FreeLimitMessage";
 
 interface AIQuestion {
   question_text: string;
@@ -23,7 +24,7 @@ interface AIQuestion {
   explanation: string;
 }
 
-// Map DB subject codes → generator subject keys (used in the edge function prompt)
+// Map DB subject codes → generator subject keys
 const DB_CODE_TO_GENERATOR: Record<string, { value: string; label: string }> = {
   Bio: { value: "biology", label: "أحياء" },
   chemistry: { value: "chemistry", label: "كيمياء" },
@@ -47,7 +48,7 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
   const navigate = useNavigate();
   const { subjectIds } = useStudentAccess();
 
-  // Fetch the student's track subjects from DB and map to generator subjects
+  // Fetch the student's track subjects from DB
   const { data: subjectRows } = useQuery({
     queryKey: ["ai-generator-subjects", subjectIds],
     queryFn: async () => {
@@ -77,6 +78,9 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
   const [showResults, setShowResults] = useState(false);
   const [loading, setLoading] = useState(false);
   const [expandedExplanation, setExpandedExplanation] = useState<number | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
+  const [dailyLimit, setDailyLimit] = useState<number | null>(null);
+  const [limitReached, setLimitReached] = useState(false);
 
   // Default subject = first available track subject
   useEffect(() => {
@@ -85,11 +89,32 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
     }
   }, [subjectOptions, subject]);
 
-  const generate = async () => {
-    if (!hasSubscription) {
-      toast.error("هذه الميزة متاحة للمشتركين فقط");
-      return;
+  // Fetch current usage on mount
+  const { data: usageData } = useQuery({
+    queryKey: ["ai-generation-usage-today"],
+    queryFn: async () => {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const { count } = await supabase
+        .from("ai_generation_usage")
+        .select("*", { count: "exact", head: true })
+        .gte("generated_at", todayStart.toISOString());
+      return count ?? 0;
+    },
+    staleTime: 30 * 1000,
+  });
+
+  useEffect(() => {
+    if (usageData !== undefined) {
+      const limit = hasSubscription ? 100 : 5;
+      setDailyLimit(limit);
+      setRemaining(Math.max(0, limit - usageData));
+      setLimitReached(usageData >= limit);
     }
+  }, [usageData, hasSubscription]);
+
+  const generate = async () => {
+    if (limitReached) return;
 
     setLoading(true);
     setQuestions([]);
@@ -102,10 +127,26 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
       });
 
       if (error) {
-        toast.error("حدث خطأ في توليد الأسئلة");
-        console.error(error);
+        // Check if it's a limit error from the edge function
+        if (error.message?.includes("daily_limit_reached") || (data && data.error === "daily_limit_reached")) {
+          setLimitReached(true);
+          setRemaining(0);
+        } else {
+          toast.error("حدث خطأ في توليد الأسئلة");
+          console.error(error);
+        }
+      } else if (data?.error === "daily_limit_reached") {
+        setLimitReached(true);
+        setRemaining(0);
       } else if (data?.questions) {
         setQuestions(data.questions);
+        // Update remaining from response
+        if (data.remaining !== undefined) {
+          setRemaining(data.remaining);
+          if (data.remaining <= 0 && !hasSubscription) {
+            setLimitReached(true);
+          }
+        }
       } else {
         toast.error("لم يتم توليد أسئلة");
       }
@@ -133,6 +174,44 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
     : 0;
   const percentage = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
 
+  // Show limit reached full-screen message
+  if (limitReached && !hasSubscription && questions.length === 0) {
+    return (
+      <Card>
+        <CardHeader className="pb-2 pt-3 px-4">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Brain className="w-4 h-4 text-primary" />
+            مولّد الأسئلة الذكي
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/30 text-primary">
+              <Sparkles className="w-2.5 h-2.5 ml-0.5" />
+              AI
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          <div className="text-center py-6 space-y-4">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <Lock className="w-8 h-8 text-primary" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-base font-bold text-foreground">وصلت للحد المجاني لتوليد الأسئلة</h3>
+              <p className="text-sm text-muted-foreground">
+                لو تريد تدريب أكثر — اشترك الآن
+              </p>
+            </div>
+            <Button
+              size="lg"
+              className="w-full text-base font-bold"
+              onClick={() => navigate("/subscription")}
+            >
+              اشترك الآن
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader className="pb-2 pt-3 px-4">
@@ -152,6 +231,16 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-3 space-y-3">
+        {/* Remaining usage indicator for free users */}
+        {!hasSubscription && remaining !== null && dailyLimit !== null && questions.length === 0 && !loading && (
+          <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border">
+            <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              المتبقي: <span className="font-bold text-foreground">{remaining}</span> / {dailyLimit} توليد اليوم
+            </p>
+          </div>
+        )}
+
         {/* Generator controls */}
         {questions.length === 0 && !loading && (
           <>
@@ -159,7 +248,7 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
               اختر المادة ومستوى الصعوبة وسيقوم الذكاء الاصطناعي بتوليد أسئلة تدريبية مشابهة لاختبار المفاضلة
             </p>
 
-            {/* Subject selection — limited to student's track subjects */}
+            {/* Subject selection */}
             {subjectOptions.length === 0 ? (
               <div className="flex items-start gap-2 p-3 rounded-md border border-amber-200 bg-amber-50/60 dark:bg-amber-950/10 dark:border-amber-900/40">
                 <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
@@ -202,17 +291,10 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
               </div>
             </div>
 
-            {hasSubscription ? (
-              <Button onClick={generate} className="w-full gap-2" disabled={!subject || subjectOptions.length === 0}>
-                <Sparkles className="w-4 h-4" />
-                توليد 5 أسئلة
-              </Button>
-            ) : (
-              <Button onClick={() => navigate("/subscription")} variant="outline" className="w-full gap-2">
-                <Lock className="w-4 h-4" />
-                فعّل الاشتراك لاستخدام المولّد
-              </Button>
-            )}
+            <Button onClick={generate} className="w-full gap-2" disabled={!subject || subjectOptions.length === 0}>
+              <Sparkles className="w-4 h-4" />
+              توليد 5 أسئلة
+            </Button>
           </>
         )}
 
