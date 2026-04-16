@@ -28,7 +28,8 @@ import MobileBottomNav from "./components/MobileBottomNav";
 import WhatsAppFAB from "./components/WhatsAppFAB";
 
 // Lazy imports — secondary pages
-
+const PastExams = lazy(() => import("./pages/PastExams"));
+const PastExamPractice = lazy(() => import("./pages/PastExamPractice"));
 
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminResetPassword = lazy(() => import("./pages/AdminResetPassword"));
@@ -60,6 +61,7 @@ const AdminPromoCodes = lazy(() => import("./pages/admin/AdminPromoCodes"));
 const AdminSubjects = lazy(() => import("./pages/admin/AdminSubjects"));
 const AdminDeletionLogs = lazy(() => import("./pages/admin/AdminDeletionLogs"));
 const AdminTracks = lazy(() => import("./pages/admin/AdminTracks"));
+const AdminPastExams = lazy(() => import("./pages/admin/AdminPastExams"));
 const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
 const Settings = lazy(() => import("./pages/Settings"));
 const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
