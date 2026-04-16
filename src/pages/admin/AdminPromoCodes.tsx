@@ -89,7 +89,7 @@ const AdminPromoCodes = () => {
               <h1 className="text-2xl font-bold flex items-center gap-2"><Tag className="w-6 h-6" /> أكواد الخصم</h1>
               <p className="text-sm text-muted-foreground">إنشاء وإدارة أكواد الخصم الترويجية</p>
             </div>
-            <Button size="sm" onClick={() => setDialogOpen(true)}><Plus className="w-4 h-4 ml-1" /> كود جديد</Button>
+            <Button size="sm" onClick={() => { setForm({ code: generateRandomCode(), discount_percent: 10, max_uses: "", expires_at: "" }); setDialogOpen(true); }}><Plus className="w-4 h-4 ml-1" /> كود جديد</Button>
           </div>
 
           <Card>
