@@ -1390,6 +1390,21 @@ export type Database = {
           title: string
         }[]
       }
+      get_top_repeated_questions: {
+        Args: { _limit?: number; _university_id?: string }
+        Returns: {
+          correct_option: string
+          explanation: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_id: string
+          question_text: string
+          question_type: string
+          repeat_count: number
+        }[]
+      }
       has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
       has_permission: {
         Args: { _permission: string; _user_id: string }
