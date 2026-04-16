@@ -157,6 +157,60 @@ const AdminDashboard = () => {
     staleTime: 60 * 1000,
   });
 
+  // AI Generator usage stats
+  const { data: aiGenStats } = useQuery({
+    queryKey: ["ai-gen-usage-stats"],
+    queryFn: async () => {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const [totalRes, todayRes, subjectsRes, dailyRes] = await Promise.all([
+        supabase.from("ai_generation_usage").select("id", { count: "exact", head: true }),
+        supabase.from("ai_generation_usage").select("id", { count: "exact", head: true })
+          .gte("generated_at", todayStart.toISOString()),
+        supabase.from("ai_generation_usage").select("subject"),
+        supabase.from("ai_generation_usage").select("generated_at")
+          .gte("generated_at", new Date(Date.now() - 30 * 86400000).toISOString()),
+      ]);
+
+      // Count by subject
+      const subjectCounts: Record<string, number> = {};
+      (subjectsRes.data || []).forEach((r: any) => {
+        const s = r.subject || "غير محدد";
+        subjectCounts[s] = (subjectCounts[s] || 0) + 1;
+      });
+      const topSubjects = Object.entries(subjectCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([name, count]) => ({ name: SUBJECT_LABELS[name] || name, count }));
+
+      // Daily breakdown for chart
+      const dayMap = new Map<string, number>();
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        dayMap.set(d.toISOString().slice(0, 10), 0);
+      }
+      (dailyRes.data || []).forEach((r: any) => {
+        const day = r.generated_at?.slice(0, 10);
+        if (day && dayMap.has(day)) dayMap.set(day, dayMap.get(day)! + 1);
+      });
+      const daily = Array.from(dayMap.entries()).map(([date, count]) => ({
+        date: new Date(date).toLocaleDateString("ar-EG", { month: "short", day: "numeric" }),
+        count,
+      }));
+
+      return {
+        total: totalRes.count || 0,
+        today: todayRes.count || 0,
+        topSubjects,
+        daily,
+      };
+    },
+    enabled: !authLoading && isAdmin,
+    staleTime: 60 * 1000,
+  });
+
   const chartData = useMemo(() => {
     if (!chatStats?.daily_breakdown) return [];
     const breakdown = typeof chatStats.daily_breakdown === "string"
