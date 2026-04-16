@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
   Brain, Sparkles, Loader2, CheckCircle2, XCircle,
-  RotateCcw, ChevronDown, ChevronUp, Lock,
+  RotateCcw, ChevronDown, ChevronUp, Lock, AlertCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useStudentAccess } from "@/hooks/useStudentAccess";
 
 interface AIQuestion {
   question_text: string;
@@ -21,14 +23,15 @@ interface AIQuestion {
   explanation: string;
 }
 
-const SUBJECT_OPTIONS = [
-  { value: "biology", label: "أحياء" },
-  { value: "chemistry", label: "كيمياء" },
-  { value: "physics", label: "فيزياء" },
-  { value: "math", label: "رياضيات" },
-  { value: "english", label: "إنجليزي" },
-  { value: "iq", label: "ذكاء" },
-];
+// Map DB subject codes → generator subject keys (used in the edge function prompt)
+const DB_CODE_TO_GENERATOR: Record<string, { value: string; label: string }> = {
+  Bio: { value: "biology", label: "أحياء" },
+  chemistry: { value: "chemistry", label: "كيمياء" },
+  physics: { value: "physics", label: "فيزياء" },
+  math: { value: "math", label: "رياضيات" },
+  english: { value: "english", label: "إنجليزي" },
+  computer: { value: "computer", label: "حاسوب" },
+};
 
 const DIFFICULTY_OPTIONS = [
   { value: "easy", label: "سهل", emoji: "🟢" },
