@@ -20,7 +20,7 @@ import { getDailyTip, dailyTips } from "@/data/dailyTips";
 import {
   GraduationCap, LogOut, UserCircle, Bell, Shield, BookOpen,
   ClipboardCheck, Trophy, TrendingUp, Target, BarChart3, CreditCard, Search,
-  Building2, ChevronLeft, Lightbulb, RefreshCw,
+  Building2, ChevronLeft, Lightbulb, RefreshCw, FileText,
 } from "lucide-react";
 import DashboardCharts from "@/components/DashboardCharts";
 import UpgradeCTABanner from "@/components/UpgradeCTABanner";
@@ -186,6 +186,7 @@ const Dashboard = () => {
     { path: isAdmin ? "/admin/content" : "/lessons", title: "المحتوى التعليمي", desc: isAdmin ? "إدارة الدروس والأسئلة" : "تدرّب على الدروس والأسئلة", icon: BookOpen, color: "border-r-secondary", iconColor: "text-secondary", bgColor: "bg-secondary/10" },
     { path: "/exam", title: "محاكاة الاختبار", desc: "45 سؤال في 90 دقيقة", icon: ClipboardCheck, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" },
     ...(!isAdmin ? [{ path: "/subscription", title: "الاشتراك", desc: "إدارة اشتراكك والدفع", icon: CreditCard, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10" }] : []),
+    { path: "/past-exams", title: "نماذج سابقة", desc: "تدرّب على اختبارات القبول السابقة", icon: FileText, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10" },
     { path: "/college-guide", title: "دليل الكليات", desc: "متطلبات القبول ونسب القبول والمواعيد", icon: Building2, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" },
     { path: "/exam-history", title: "سجل الاختبارات", desc: "عرض محاولاتك السابقة", icon: Trophy, color: "border-r-secondary", iconColor: "text-secondary", bgColor: "bg-secondary/10" },
     { path: "/search", title: "البحث المتقدم", desc: "ابحث في الدروس والأسئلة بالتخصص والكلية", icon: Search, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10" },
