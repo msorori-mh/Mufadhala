@@ -22,7 +22,6 @@ interface Lesson {
   title: string;
   content: string;
   summary: string;
-  is_free: boolean;
   major_id: string;
   presentation_url: string | null;
   grade_level: number | null;
@@ -85,7 +84,7 @@ const LessonDetail = () => {
       if (isOffline) {
         // Load from cache
         if (cached) {
-          setLesson({ id: cached.id, title: cached.title, content: cached.content, summary: cached.summary, is_free: cached.is_free, major_id: "", presentation_url: null, grade_level: null, subject_id: null });
+          setLesson({ id: cached.id, title: cached.title, content: cached.content, summary: cached.summary, major_id: "", presentation_url: null, grade_level: null, subject_id: null });
           setQuestions(cached.questions as Question[]);
           setIsFromCache(true);
         }
@@ -95,7 +94,7 @@ const LessonDetail = () => {
 
       // Fetch lesson, questions, student in parallel
       const [{ data: l }, { data: q }, { data: s }] = await Promise.all([
-        supabase.from("lessons").select("id, title, content, summary, is_free, major_id, presentation_url, grade_level, subject_id").eq("id", id).maybeSingle(),
+        supabase.from("lessons").select("id, title, content, summary, major_id, presentation_url, grade_level, subject_id").eq("id", id).maybeSingle(),
         supabase.from("questions").select("*").eq("lesson_id", id).order("display_order"),
         supabase.from("students").select("id").eq("user_id", user.id).maybeSingle(),
       ]);
@@ -163,7 +162,6 @@ const LessonDetail = () => {
         title: lesson.title,
         content: lesson.content,
         summary: lesson.summary,
-        is_free: lesson.is_free,
         questions: questions,
         savedAt: new Date().toISOString(),
       };

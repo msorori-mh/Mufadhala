@@ -82,7 +82,7 @@ export async function fetchLessonsBySubjects(
   if (subjectIds.length === 0) return [];
   const { data } = await supabase
     .from("lessons")
-    .select("id, title, summary, display_order, is_free, subject_id, grade_level, major_id, college_id")
+    .select("id, title, summary, display_order, subject_id, grade_level, major_id, college_id")
     .in("subject_id", subjectIds)
     .eq("is_published", true)
     .order("display_order");

@@ -9,7 +9,6 @@ export interface OfflineLesson {
   title: string;
   content: string;
   summary: string;
-  is_free: boolean;
   questions: OfflineQuestion[];
   savedAt: string;
 }
