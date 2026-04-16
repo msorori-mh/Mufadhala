@@ -28,6 +28,18 @@ function useCountUp(end: number, duration = 2000) {
 const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
+  const [showBubble, setShowBubble] = useState(false);
+
+  // Show bubble only on first visit
+  useEffect(() => {
+    const seen = localStorage.getItem("landing_bubble_seen");
+    if (!seen) {
+      setShowBubble(true);
+      localStorage.setItem("landing_bubble_seen", "true");
+      const timer = setTimeout(() => setShowBubble(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
