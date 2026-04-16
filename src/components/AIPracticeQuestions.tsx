@@ -149,7 +149,8 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
         setRemaining(0);
       } else if (data?.questions) {
         setQuestions(data.questions);
-        // Update remaining from response
+        // Backend is the single source of truth for limit + remaining
+        if (data.limit !== undefined) setDailyLimit(data.limit);
         if (data.remaining !== undefined) {
           setRemaining(data.remaining);
           if (data.remaining <= 0 && !hasSubscription) {
