@@ -596,7 +596,16 @@ const Subscription = () => {
                 })}
               </div>
 
-              {/* Comparison table */}
+              {/* Urgency + Motivational */}
+              <div className="text-center space-y-2">
+                <p className="text-xs font-bold text-destructive flex items-center justify-center gap-1">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  المقاعد محدودة والمنافسة عالية
+                </p>
+                <p className="text-[11px] text-muted-foreground">كل يوم تدريب يقرّبك من مقعدك الجامعي</p>
+                <p className="text-[11px] text-muted-foreground/70">يمكنك تجربة بعض المحتوى مجانًا</p>
+              </div>
+
               {paidPlans.length >= 2 && (
                 <Collapsible>
                   <CollapsibleTrigger asChild>
