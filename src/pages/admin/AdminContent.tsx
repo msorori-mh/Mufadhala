@@ -853,11 +853,6 @@ const AdminContent = () => {
                           <Badge variant={l.is_published ? "default" : "secondary"} className="text-[10px]">
                             {l.is_published ? "منشور" : "مسودة"}
                           </Badge>
-                          {l.is_free && (
-                            <Badge variant="outline" className="text-[10px] border-green-500 text-green-600 gap-0.5">
-                              <Sparkles className="w-2.5 h-2.5" /> مجاني
-                            </Badge>
-                          )}
                           <Badge variant="outline" className="text-[10px]">
                             {questions.filter((q) => q.lesson_id === l.id).length} سؤال
                           </Badge>
