@@ -3,16 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useStudentAccess } from "@/hooks/useStudentAccess";
-import { fetchLessonsBySubjects } from "@/lib/contentFilter";
 import { Rocket, Users, AlertTriangle } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 
 
 const Welcome = () => {
   const navigate = useNavigate();
-  const { user, student, loading, subjectIds, canAccessContent } = useStudentAccess();
-  const [firstLessonId, setFirstLessonId] = useState<string | null>(null);
-  const [resolving, setResolving] = useState(true);
+  const { user, student, loading } = useStudentAccess();
 
   const studentName = student?.first_name || "";
   const [collegeName, setCollegeName] = useState("");
@@ -58,30 +55,11 @@ const Welcome = () => {
       });
   }, [student?.college_id]);
 
-  // Resolve first lesson
-  useEffect(() => {
-    if (subjectIds.length === 0) {
-      setResolving(false);
-      return;
-    }
-    fetchLessonsBySubjects(supabase, subjectIds).then((lessons) => {
-      if (lessons.length > 0) {
-        const sorted = [...lessons].sort((a, b) => a.display_order - b.display_order);
-        setFirstLessonId(sorted[0].id);
-      }
-      setResolving(false);
-    });
-  }, [subjectIds]);
-
   const handleStart = () => {
     if (student?.id) {
       localStorage.setItem(`welcomed_${student.id}`, "true");
     }
-    if (firstLessonId) {
-      navigate(`/lessons/${firstLessonId}`);
-    } else {
-      navigate("/lessons");
-    }
+    navigate("/dashboard");
   };
 
   const handleSkip = () => {
@@ -138,12 +116,11 @@ const Welcome = () => {
         {/* CTA */}
         <Button
           onClick={handleStart}
-          disabled={resolving}
           size="lg"
           className="w-full max-w-xs py-6 text-lg font-bold gap-3 shadow-lg"
         >
           <Rocket className="w-5 h-5" />
-          ابدأ أول درس الآن
+          استكشف المنصة
         </Button>
 
         {/* Urgency microcopy */}
