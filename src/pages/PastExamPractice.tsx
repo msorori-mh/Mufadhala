@@ -9,7 +9,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, CheckCircle2, XCircle, Lock } from "lucide-react";
+import { ArrowRight, CheckCircle2, XCircle, Lock, RotateCcw, Trophy, ArrowLeft } from "lucide-react";
+
+const OPTION_LABELS: Record<string, string> = { a: "أ", b: "ب", c: "ج", d: "د" };
 
 const PastExamPractice = () => {
   const { modelId } = useParams<{ modelId: string }>();
@@ -58,8 +60,12 @@ const PastExamPractice = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background p-4 space-y-4" dir="rtl">
-        <Skeleton className="h-10 w-2/3" />
-        <Skeleton className="h-40 w-full rounded-xl" />
+        <Skeleton className="h-12 w-full rounded-xl" />
+        <Skeleton className="h-4 w-full rounded" />
+        <Skeleton className="h-32 w-full rounded-xl mt-4" />
+        <div className="space-y-3 mt-4">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+        </div>
       </div>
     );
   }
@@ -67,13 +73,15 @@ const PastExamPractice = () => {
   if (locked) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
-        <div className="text-center px-6 space-y-4">
-          <Lock className="w-16 h-16 mx-auto text-muted-foreground" />
-          <h2 className="text-lg font-bold">هذا النموذج متاح للمشتركين فقط</h2>
-          <p className="text-sm text-muted-foreground">اشترك للوصول إلى جميع النماذج السابقة</p>
-          <div className="flex gap-3 justify-center">
-            <Button onClick={() => navigate("/subscription")}>اشترك الآن</Button>
-            <Button variant="outline" onClick={() => navigate("/past-exams")}>رجوع</Button>
+        <div className="text-center px-6 space-y-4 max-w-xs">
+          <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto">
+            <Lock className="w-10 h-10 text-muted-foreground" />
+          </div>
+          <h2 className="text-xl font-bold">هذا النموذج متاح للمشتركين فقط</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">اشترك للوصول إلى جميع نماذج الأعوام السابقة والتدرّب عليها</p>
+          <div className="flex flex-col gap-2.5 pt-2">
+            <Button size="lg" className="w-full text-base" onClick={() => navigate("/subscription")}>اشترك الآن</Button>
+            <Button variant="outline" size="lg" className="w-full" onClick={() => navigate("/past-exams")}>رجوع</Button>
           </div>
         </div>
       </div>
@@ -93,7 +101,7 @@ const PastExamPractice = () => {
 
   const question = questions[currentIndex];
   const total = questions.length;
-  const progressPct = ((currentIndex + 1) / total) * 100;
+  const progressPct = ((currentIndex + (revealed ? 1 : 0)) / total) * 100;
   const options = [
     { key: "a", text: question.q_option_a },
     { key: "b", text: question.q_option_b },
@@ -121,20 +129,27 @@ const PastExamPractice = () => {
 
   if (finished) {
     const pct = Math.round((score / total) * 100);
+    const isGood = pct >= 70;
     return (
       <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
-        <div className="text-center px-6 space-y-4 max-w-sm">
-          <div className="text-5xl font-bold text-primary">{pct}%</div>
-          <p className="text-lg font-semibold">
-            أجبت {score} من {total} بشكل صحيح
-          </p>
+        <div className="text-center px-6 space-y-5 max-w-sm w-full">
+          <div className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center ${isGood ? "bg-secondary/15" : "bg-primary/10"}`}>
+            <Trophy className={`w-12 h-12 ${isGood ? "text-secondary" : "text-primary"}`} />
+          </div>
+          <div>
+            <div className={`text-5xl font-bold ${isGood ? "text-secondary" : "text-primary"}`}>{pct}%</div>
+            <p className="text-lg font-semibold mt-2">
+              أجبت {score} من {total} بشكل صحيح
+            </p>
+          </div>
           <p className="text-sm text-muted-foreground">{model?.title}</p>
-          <div className="flex gap-3 justify-center">
-            <Button onClick={() => { setCurrentIndex(0); setSelectedOption(null); setRevealed(false); setScore(0); setFinished(false); }}>
+          <div className="flex flex-col gap-2.5 pt-2">
+            <Button size="lg" className="w-full text-base gap-2" onClick={() => { setCurrentIndex(0); setSelectedOption(null); setRevealed(false); setScore(0); setFinished(false); }}>
+              <RotateCcw className="w-4 h-4" />
               أعد المحاولة
             </Button>
-            <Button variant="outline" onClick={() => navigate("/past-exams")}>
-              رجوع
+            <Button variant="outline" size="lg" className="w-full" onClick={() => navigate("/past-exams")}>
+              رجوع للنماذج
             </Button>
           </div>
         </div>
@@ -144,54 +159,83 @@ const PastExamPractice = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-card border-b border-border px-4 py-3">
-        <div className="flex items-center gap-3 max-w-3xl mx-auto">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/past-exams")}>
-            <ArrowRight className="w-5 h-5" />
-          </Button>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate">{model?.title}</p>
-            <p className="text-xs text-muted-foreground">
-              السؤال {currentIndex + 1} من {total}
-            </p>
+      {/* Sticky header with progress */}
+      <header className="sticky top-0 z-30 bg-card border-b border-border">
+        <div className="px-4 py-3 max-w-3xl mx-auto">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="shrink-0 -mr-2" onClick={() => navigate("/past-exams")}>
+              <ArrowRight className="w-5 h-5" />
+            </Button>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold truncate">{model?.title}</p>
+            </div>
+            <Badge variant="outline" className="text-xs font-bold shrink-0 gap-1">
+              <CheckCircle2 className="w-3 h-3" />
+              {score}/{currentIndex + (revealed ? 1 : 0)}
+            </Badge>
           </div>
-          <Badge variant="outline" className="text-xs shrink-0">{score}/{currentIndex + (revealed ? 1 : 0)}</Badge>
         </div>
-        <Progress value={progressPct} className="h-1 mt-2 max-w-3xl mx-auto" />
+        <Progress value={progressPct} className="h-1.5 rounded-none" />
       </header>
 
-      {/* Question */}
-      <main className="max-w-3xl mx-auto px-4 py-5 space-y-4">
-        <Card>
+      {/* Question area */}
+      <main className="max-w-3xl mx-auto px-4 py-5 space-y-5">
+        {/* Question number badge */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+              {currentIndex + 1}
+            </span>
+            <span className="text-sm font-medium text-muted-foreground">
+              السؤال {currentIndex + 1} من {total}
+            </span>
+          </div>
+        </div>
+
+        {/* Question text */}
+        <Card className="border-2">
           <CardContent className="p-5">
-            <p className="text-base font-semibold leading-relaxed">{question.q_text}</p>
+            <p className="text-base font-bold leading-[1.9] text-foreground">{question.q_text}</p>
           </CardContent>
         </Card>
 
         {/* Options */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           {options.map((opt) => {
             const isCorrect = opt.key === question.q_correct;
             const isSelected = opt.key === selectedOption;
-            let borderClass = "border-border";
-            if (revealed && isCorrect) borderClass = "border-secondary bg-secondary/10";
-            else if (revealed && isSelected && !isCorrect) borderClass = "border-destructive bg-destructive/10";
-            else if (isSelected) borderClass = "border-primary bg-primary/5";
+
+            let containerClass = "border-border bg-card hover:border-primary/40 active:scale-[0.98]";
+            let labelBg = "bg-muted text-muted-foreground";
+            let iconNode: React.ReactNode = null;
+
+            if (revealed && isCorrect) {
+              containerClass = "border-secondary bg-secondary/10";
+              labelBg = "bg-secondary text-secondary-foreground";
+              iconNode = <CheckCircle2 className="w-6 h-6 text-secondary shrink-0" />;
+            } else if (revealed && isSelected && !isCorrect) {
+              containerClass = "border-destructive bg-destructive/10";
+              labelBg = "bg-destructive text-destructive-foreground";
+              iconNode = <XCircle className="w-6 h-6 text-destructive shrink-0" />;
+            } else if (revealed) {
+              containerClass = "border-border bg-card opacity-60";
+            } else if (isSelected) {
+              containerClass = "border-primary bg-primary/5 ring-2 ring-primary/20";
+              labelBg = "bg-primary text-primary-foreground";
+            }
 
             return (
               <button
                 key={opt.key}
                 disabled={revealed}
                 onClick={() => setSelectedOption(opt.key)}
-                className={`w-full text-right p-4 rounded-xl border-2 transition-all ${borderClass} flex items-center gap-3`}
+                className={`w-full text-right rounded-2xl border-2 transition-all duration-150 flex items-center gap-3 p-4 min-h-[60px] ${containerClass}`}
               >
-                <span className="w-7 h-7 rounded-full border-2 border-current flex items-center justify-center text-xs font-bold shrink-0">
-                  {opt.key.toUpperCase()}
+                <span className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 transition-colors ${labelBg}`}>
+                  {OPTION_LABELS[opt.key] || opt.key.toUpperCase()}
                 </span>
-                <span className="flex-1 text-sm">{opt.text}</span>
-                {revealed && isCorrect && <CheckCircle2 className="w-5 h-5 text-secondary shrink-0" />}
-                {revealed && isSelected && !isCorrect && <XCircle className="w-5 h-5 text-destructive shrink-0" />}
+                <span className="flex-1 text-[15px] leading-relaxed font-medium">{opt.text}</span>
+                {iconNode}
               </button>
             );
           })}
@@ -199,23 +243,38 @@ const PastExamPractice = () => {
 
         {/* Explanation */}
         {revealed && question.q_explanation && (
-          <Card className="border-primary/30 bg-primary/5">
-            <CardContent className="p-4">
-              <p className="text-xs font-bold text-primary mb-1">الشرح:</p>
-              <p className="text-sm text-foreground leading-relaxed">{question.q_explanation}</p>
+          <Card className="border-2 border-primary/20 bg-primary/5">
+            <CardContent className="p-4 space-y-1.5">
+              <p className="text-xs font-bold text-primary flex items-center gap-1.5">
+                💡 الشرح
+              </p>
+              <p className="text-sm text-foreground leading-[1.9]">{question.q_explanation}</p>
             </CardContent>
           </Card>
         )}
 
-        {/* Action */}
-        <div className="flex gap-3">
+        {/* Action button — large, mobile-friendly */}
+        <div className="pt-1 pb-6">
           {!revealed ? (
-            <Button className="flex-1" disabled={!selectedOption} onClick={handleCheck}>
+            <Button
+              size="lg"
+              className="w-full text-base h-14 rounded-2xl font-bold"
+              disabled={!selectedOption}
+              onClick={handleCheck}
+            >
               تحقق من الإجابة
             </Button>
           ) : (
-            <Button className="flex-1" onClick={handleNext}>
-              {currentIndex + 1 >= total ? "عرض النتيجة" : "السؤال التالي"}
+            <Button
+              size="lg"
+              className="w-full text-base h-14 rounded-2xl font-bold gap-2"
+              onClick={handleNext}
+            >
+              {currentIndex + 1 >= total ? (
+                <>عرض النتيجة <Trophy className="w-5 h-5" /></>
+              ) : (
+                <>السؤال التالي <ArrowLeft className="w-5 h-5" /></>
+              )}
             </Button>
           )}
         </div>
