@@ -457,13 +457,13 @@ const Subscription = () => {
         {step === "plans" && !isActive && !isPending && (() => {
           if (plans.length === 0) return <p className="text-center text-muted-foreground py-8">لا توجد خطط اشتراك متاحة حالياً</p>;
           
-          if (!studentGovernorate) {
+          if (!studentData?.university_id || !universityPricingZone) {
             return (
               <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-900">
                 <CardContent className="py-6 text-center space-y-3">
                   <GraduationCap className="w-10 h-10 text-yellow-600 mx-auto" />
-                  <h2 className="text-lg font-bold text-yellow-700 dark:text-yellow-400">يرجى إكمال بياناتك الشخصية أولاً</h2>
-                  <p className="text-sm text-yellow-600 dark:text-yellow-500">نحتاج لمعرفة محافظتك لتحديد سعر الاشتراك المناسب</p>
+                  <h2 className="text-lg font-bold text-yellow-700 dark:text-yellow-400">يرجى اختيار جامعتك أولاً</h2>
+                  <p className="text-sm text-yellow-600 dark:text-yellow-500">نحتاج لمعرفة جامعتك لتحديد سعر الاشتراك المناسب</p>
                   <Button onClick={() => navigate("/profile")} className="mt-2">إكمال البيانات الشخصية</Button>
                 </CardContent>
               </Card>
