@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { NativeSelect } from "@/components/NativeSelect";
+import NativeSelect from "@/components/NativeSelect";
 import { ArrowRight, FileText, Lock, ChevronLeft, Calendar } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 
@@ -16,7 +16,7 @@ const PastExams = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: student } = useStudentData(user?.id);
-  const { hasActiveSubscription } = useSubscription(user?.id);
+  const { isActive: hasActiveSubscription } = useSubscription(user?.id);
 
   const [selectedUniversityId, setSelectedUniversityId] = useState<string>("");
 

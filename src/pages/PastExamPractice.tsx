@@ -15,7 +15,7 @@ const PastExamPractice = () => {
   const { modelId } = useParams<{ modelId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { hasActiveSubscription } = useSubscription(user?.id);
+  const { isActive: hasActiveSubscription } = useSubscription(user?.id);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
