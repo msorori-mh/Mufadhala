@@ -398,7 +398,20 @@ const AdminPastExams = () => {
                     </Badge>
                     {m.is_paid && <Badge variant="secondary" className="text-[10px]">مدفوع</Badge>}
                     {m.is_published ? (
-                      <Badge className="text-[10px] bg-secondary">منشور</Badge>
+                      <>
+                        <Badge className="text-[10px] bg-secondary">منشور</Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-[11px] px-2 gap-1"
+                          title="إرجاع إلى مسودة"
+                          disabled={unpublishingId === m.id}
+                          onClick={() => handleUnpublish(m)}
+                        >
+                          <EyeOff className="w-3 h-3" />
+                          {unpublishingId === m.id ? "..." : "إلغاء النشر"}
+                        </Button>
+                      </>
                     ) : (
                       <Badge variant="outline" className="text-[10px]">مسودة</Badge>
                     )}
