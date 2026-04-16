@@ -285,8 +285,11 @@ const AdminPastExams = () => {
           <p className="text-center text-muted-foreground py-8">لا توجد نماذج بعد</p>
         ) : (
           <div className="space-y-2">
-            {models.map((m) => (
-              <Card key={m.id} className="hover:shadow-sm transition-shadow">
+            {models.map((m) => {
+              const qCount = questionCounts[m.id] || 0;
+              const isEmpty = qCount === 0;
+              return (
+              <Card key={m.id} className={`hover:shadow-sm transition-shadow ${isEmpty ? "border-destructive/30" : ""}`}>
                 <CardContent className="flex items-center gap-3 p-4">
                   <FileText className="w-5 h-5 text-primary shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -296,6 +299,13 @@ const AdminPastExams = () => {
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge
+                      variant={isEmpty ? "destructive" : "outline"}
+                      className="text-[10px]"
+                      title={isEmpty ? "نموذج فارغ — لا يمكن نشره" : `${qCount} سؤال`}
+                    >
+                      {isEmpty ? "فارغ" : `${qCount} سؤال`}
+                    </Badge>
                     {m.is_paid && <Badge variant="secondary" className="text-[10px]">مدفوع</Badge>}
                     {m.is_published ? (
                       <Badge className="text-[10px] bg-secondary">منشور</Badge>
