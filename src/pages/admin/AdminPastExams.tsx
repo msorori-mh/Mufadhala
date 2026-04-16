@@ -204,6 +204,7 @@ const AdminPastExams = () => {
           </div>
         )}
       </div>
+      </PermissionGate>
     </AdminLayout>
   );
 };
