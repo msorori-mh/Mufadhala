@@ -498,13 +498,7 @@ const Subscription = () => {
 
               <div className="text-center">
                 <h2 className="text-xl font-bold text-foreground">اختر خطتك المناسبة</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {universityName && <>{universityName} — {zoneName}</>}
-                </p>
-                <p className="text-[11px] text-muted-foreground/70 mt-1 flex items-center justify-center gap-1">
-                  <Info className="w-3 h-3" />
-                  يتم تحديد السعر حسب الجامعة المختارة وليس المحافظة
-                </p>
+               {universityName && <p className="text-sm text-muted-foreground mt-1">{universityName}</p>}
               </div>
 
               {/* Plan cards */}
@@ -637,36 +631,6 @@ const Subscription = () => {
               )}
 
               {/* Zone info */}
-              <Collapsible>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="w-full flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground">
-                    <Info className="w-4 h-4" />
-                    <span>تعرف على تسعيرة المناطق</span>
-                    <ChevronDown className="w-4 h-4 transition-transform [[data-state=open]_&]:rotate-180" />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <Card className="mt-2">
-                    <CardContent className="py-4 px-4 space-y-4">
-                      <p className="text-xs text-muted-foreground">يتم تحديد المنطقة تلقائياً بناءً على الجامعة التي اخترتها.</p>
-                      <div className={`rounded-lg p-3 border ${universityPricingZone === "a" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border"}`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-semibold text-sm">المنطقة أ (العملة القديمة)</span>
-                          {universityPricingZone === "a" && <Badge variant="default">منطقة جامعتك</Badge>}
-                        </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{ZONE_A_GOVERNORATES.join(" · ")}</p>
-                      </div>
-                      <div className={`rounded-lg p-3 border ${universityPricingZone === "b" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border"}`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-semibold text-sm">المنطقة ب (العملة الجديدة)</span>
-                          {universityPricingZone === "b" && <Badge variant="default">منطقة جامعتك</Badge>}
-                        </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{ZONE_B_GOVERNORATES.join(" · ")}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </CollapsibleContent>
-              </Collapsible>
 
               {/* Promo code */}
               <Card>
