@@ -22,7 +22,7 @@ import { parsePastExamFile, downloadTemplate, type ParsedQuestion, type ParseErr
 type Model = Tables<"past_exam_models">;
 
 const AdminPastExams = () => {
-  useAuth("admin");
+  useAuth("moderator");
   const { toast } = useToast();
   const qc = useQueryClient();
 
