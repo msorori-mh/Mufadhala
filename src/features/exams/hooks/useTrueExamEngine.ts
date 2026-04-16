@@ -396,7 +396,8 @@ export function useTrueExamEngine() {
   const passed = percentage >= 60;
   const attemptsUsed = pastAttempts.length;
   const canAccessFull = isStaff || hasActiveSubscription;
-  const canStart = allQuestions.length > 0 || (isOffline && hasOfflineQuestions);
+  const freeAttemptUsed = !hasActiveSubscription && !isStaff && pastAttempts.filter(a => a.completed_at).length >= 1;
+  const canStart = (allQuestions.length > 0 || (isOffline && hasOfflineQuestions)) && !freeAttemptUsed;
   const questionsAvailable = isOffline ? offlineQuestionCount : Math.min(allQuestions.length, EXAM_TOTAL_QUESTIONS);
 
   return {
@@ -407,7 +408,7 @@ export function useTrueExamEngine() {
     selectedOption, answers, answeredCount, unansweredCount,
     totalTimeLeft, questionTimeLeft, timeWarning, totalWarning, progress,
     resultScore, resultTotal, percentage, passed, correctCount, wrongCount,
-    canAccessFull, attemptsUsed, canStart, questionsAvailable,
+    canAccessFull, attemptsUsed, canStart, freeAttemptUsed, questionsAvailable,
     startExam, selectOption, confirmAnswer, finishExam, downloadForOffline, resetToIntro, toast,
   };
 }
