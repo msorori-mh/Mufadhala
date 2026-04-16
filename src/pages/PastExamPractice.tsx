@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, CheckCircle2, XCircle, Lock, RotateCcw, Trophy, ArrowLeft } from "lucide-react";
+import { trackSubscriptionClick } from "@/lib/conversionTracking";
 
 const OPTION_LABELS: Record<string, string> = { a: "أ", b: "ب", c: "ج", d: "د" };
 
@@ -97,7 +98,7 @@ const PastExamPractice = () => {
           <h2 className="text-xl font-bold">هذا النموذج متاح للمشتركين فقط</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">اشترك للوصول إلى جميع نماذج الأعوام السابقة والتدرّب عليها</p>
           <div className="flex flex-col gap-2.5 pt-2">
-            <Button size="lg" className="w-full text-base" onClick={() => navigate("/subscription")}>اشترك الآن</Button>
+            <Button size="lg" className="w-full text-base" onClick={() => { trackSubscriptionClick("past_exams", { model_id: modelId, reason: "practice_locked" }); navigate("/subscription"); }}>اشترك الآن</Button>
             <Button variant="outline" size="lg" className="w-full" onClick={() => navigate("/past-exams")}>رجوع</Button>
           </div>
         </div>

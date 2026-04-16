@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
+import { trackSubscriptionClick } from "@/lib/conversionTracking";
 
 interface ExamQuestion {
   id: string;
@@ -31,6 +32,7 @@ const AIPerformanceAnalysis = ({ questions, answers, percentage, hasSubscription
 
   const generateAnalysis = async () => {
     if (!hasSubscription) {
+      trackSubscriptionClick("ai_performance", { percentage });
       navigate("/subscription");
       return;
     }
