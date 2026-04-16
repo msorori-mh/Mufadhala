@@ -60,6 +60,10 @@ const Subscription = () => {
   const [loading, setLoading] = useState(true);
   const studentGovernorate = studentData?.governorate ?? null;
 
+  // University-based pricing zone (trusted source)
+  const [universityPricingZone, setUniversityPricingZone] = useState<PriceZone>(null);
+  const [universityName, setUniversityName] = useState<string | null>(null);
+
   const [step, setStep] = useState<"plans" | "method" | "upload">("plans");
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
