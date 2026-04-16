@@ -115,7 +115,7 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
   // edge function response and override these on first generate.
   useEffect(() => {
     if (usageData !== undefined && dailyLimit === null) {
-      const fallbackLimit = hasSubscription ? 100 : 5;
+      const fallbackLimit = hasSubscription ? 100 : 10;
       setDailyLimit(fallbackLimit);
       setRemaining(Math.max(0, fallbackLimit - usageData));
       setLimitReached(usageData >= fallbackLimit);
