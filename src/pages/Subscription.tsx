@@ -291,7 +291,9 @@ const Subscription = () => {
       return;
     }
 
-    const rawPrice = getPlanPrice(selectedPlan, studentGovernorate);
+    // PRICING: Use university zone (trusted), NOT governorate
+    const pricingZone = universityPricingZone;
+    const rawPrice = getPlanPriceByZone(selectedPlan, pricingZone);
     const finalPrice = promoDiscount > 0 ? Math.round(rawPrice * (1 - promoDiscount / 100)) : rawPrice;
 
     const { data: newSub, error: subErr } = await supabase.from("subscriptions").insert({
@@ -315,6 +317,11 @@ const Subscription = () => {
       currency: selectedPlan.currency,
       receipt_url: filePath,
       status: "pending",
+      // Pricing snapshot — immutable record for validation
+      pricing_zone: pricingZone,
+      expected_amount: finalPrice,
+      pricing_source: "university",
+      university_id: studentData?.university_id ?? null,
     };
     if (promoId) paymentPayload.promo_code_id = promoId;
 
