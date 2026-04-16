@@ -17,7 +17,7 @@ const PostExamUpgrade = ({ percentage, totalQuestions }: Props) => {
       <CardContent className="py-5 px-4 space-y-4">
         <div className="text-center">
           <h3 className="font-bold text-foreground">
-            {percentage >= 60 ? "أداء رائع! هل تريد التفوق أكثر؟ 🚀" : "لا تقلق، التدريب المكثف يصنع الفرق! 💪"}
+            افتح جميع النماذج ودرّب نفسك بشكل أقوى
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
             اشترك الآن واحصل على تحليل أداء مفصّل وتدريب غير محدود
@@ -47,7 +47,7 @@ const PostExamUpgrade = ({ percentage, totalQuestions }: Props) => {
         <div className="flex flex-col gap-2">
           <Button onClick={() => navigate("/subscription")} className="w-full gap-2">
             <Sparkles className="w-4 h-4" />
-            اشترك الآن وابدأ التدريب الحقيقي
+            اشترك الآن
           </Button>
           <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground">
             <Badge variant="outline" className="text-[10px] px-1.5 py-0">✓ أكثر من 10,000 طالب</Badge>
