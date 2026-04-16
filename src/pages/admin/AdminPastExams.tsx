@@ -29,6 +29,23 @@ const AdminPastExams = () => {
   const [editingModel, setEditingModel] = useState<Model | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showQuestions, setShowQuestions] = useState<string | null>(null);
+  const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
+
+  const resetForm = () => {
+    setEditingModel(null);
+    setTitle("");
+    setUniversityId("");
+    setYear(new Date().getFullYear());
+    setIsPaid(false);
+    setIsPublished(false);
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    resetForm();
+    setJustCreatedId(null);
+    setShowQuestions(null);
+  };
 
   // Form state
   const [title, setTitle] = useState("");
@@ -58,14 +75,10 @@ const AdminPastExams = () => {
   });
 
   const openCreate = () => {
-    setEditingModel(null);
-    setTitle("");
-    setUniversityId("");
-    setYear(new Date().getFullYear());
-    setIsPaid(false);
-    setIsPublished(false);
+    resetForm();
     setShowForm(true);
     setShowQuestions(null);
+    setJustCreatedId(null);
   };
 
   const openEdit = (m: Model) => {
@@ -77,6 +90,7 @@ const AdminPastExams = () => {
     setIsPublished(m.is_published);
     setShowForm(true);
     setShowQuestions(null);
+    setJustCreatedId(null); // editing must NOT show "created" banner
   };
 
   const handleSave = async () => {
@@ -87,27 +101,34 @@ const AdminPastExams = () => {
     setSaving(true);
     try {
       if (editingModel) {
-        await supabase.from("past_exam_models").update({
+        const { error } = await supabase.from("past_exam_models").update({
           title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: isPublished,
         }).eq("id", editingModel.id);
+        if (error) throw error;
         toast({ title: "تم تحديث النموذج" });
         qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
         setShowForm(false);
+        resetForm();
+        // Editing: do NOT show success banner, do NOT auto-open questions editor
       } else {
         const { data: created, error } = await supabase.from("past_exam_models").insert({
           title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: isPublished,
         }).select("id").single();
         if (error) throw error;
+        if (!created?.id) throw new Error("no id returned");
         toast({ title: "تم إنشاء النموذج", description: "الآن أضف الأسئلة" });
         qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
         setShowForm(false);
-        // Auto-open questions editor for the newly created model
-        if (created?.id) setShowQuestions(created.id);
+        resetForm();
+        setJustCreatedId(created.id);
+        setShowQuestions(created.id);
       }
-    } catch {
-      toast({ variant: "destructive", title: "حدث خطأ" });
+    } catch (err: any) {
+      // Save failed: keep admin inside the form, do NOT open questions editor
+      toast({ variant: "destructive", title: "حدث خطأ أثناء الحفظ", description: err?.message || "يرجى المحاولة مرة أخرى" });
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const handleDelete = async (id: string) => {
@@ -115,6 +136,8 @@ const AdminPastExams = () => {
     await supabase.from("past_exam_model_questions").delete().eq("model_id", id);
     await supabase.from("past_exam_models").delete().eq("id", id);
     qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
+    if (showQuestions === id) setShowQuestions(null);
+    if (justCreatedId === id) setJustCreatedId(null);
     toast({ title: "تم الحذف" });
   };
 
@@ -167,21 +190,23 @@ const AdminPastExams = () => {
                 <Button onClick={handleSave} disabled={saving}>
                   <Save className="w-4 h-4 ml-1" />{saving ? "جاري الحفظ..." : "حفظ"}
                 </Button>
-                <Button variant="outline" onClick={() => setShowForm(false)}>إلغاء</Button>
+                <Button variant="outline" onClick={handleCancel}>إلغاء</Button>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Success banner + Questions Editor */}
+        {/* Success banner — ONLY after creating a brand-new model */}
+        {showQuestions && justCreatedId === showQuestions && (
+          <div className="rounded-lg border border-secondary/40 bg-secondary/10 p-3 text-sm flex items-center gap-2">
+            <span className="font-bold text-secondary">✓ تم إنشاء النموذج</span>
+            <span className="text-muted-foreground">— الخطوة 2 من 2: أضف الأسئلة يدوياً أو استورد من ملف Excel</span>
+          </div>
+        )}
+
+        {/* Questions Editor */}
         {showQuestions && (
-          <>
-            <div className="rounded-lg border border-secondary/40 bg-secondary/10 p-3 text-sm flex items-center gap-2">
-              <span className="font-bold text-secondary">✓ تم إنشاء النموذج</span>
-              <span className="text-muted-foreground">— الخطوة 2 من 2: أضف الأسئلة يدوياً أو استورد من ملف Excel</span>
-            </div>
-            <QuestionsEditor modelId={showQuestions} onClose={() => setShowQuestions(null)} />
-          </>
+          <QuestionsEditor modelId={showQuestions} onClose={() => { setShowQuestions(null); setJustCreatedId(null); }} />
         )}
 
         {/* Models List */}
@@ -208,7 +233,7 @@ const AdminPastExams = () => {
                     ) : (
                       <Badge variant="outline" className="text-[10px]">مسودة</Badge>
                     )}
-                    <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setShowQuestions(m.id); }}>الأسئلة</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setJustCreatedId(null); setShowQuestions(m.id); }}>الأسئلة</Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>تعديل</Button>
                     <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(m.id)}>
                       <Trash2 className="w-4 h-4" />
