@@ -255,14 +255,38 @@ const Dashboard = () => {
                 <Link to="/admin"><Shield className="w-4 h-4 sm:ml-1" /><span className="hidden sm:inline">الإدارة</span></Link>
               </Button>
             )}
-            {!isStaff && (
-              <Button variant="ghost" size="icon" asChild className="text-white hover:bg-white/20 hover:text-white" title="الإعدادات">
-                <Link to="/settings"><SettingsIcon className="w-4 h-4" /></Link>
-              </Button>
-            )}
-            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-white hover:bg-white/20 hover:text-white">
-              <LogOut className="w-4 h-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white" title="حسابي">
+                  <UserCircle className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>حسابي</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {!isStaff && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="cursor-pointer">
+                      <UserCircle className="w-4 h-4 ml-2" />
+                      الملف الشخصي
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {!isStaff && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings" className="cursor-pointer">
+                      <SettingsIcon className="w-4 h-4 ml-2" />
+                      الإعدادات
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {!isStaff && <DropdownMenuSeparator />}
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
+                  <LogOut className="w-4 h-4 ml-2" />
+                  تسجيل الخروج
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
