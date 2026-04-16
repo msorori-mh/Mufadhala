@@ -26,6 +26,7 @@ const AdminStudents = () => {
   const [search, setSearch] = useState("");
 
   // Filter state
+  const [filterSubscription, setFilterSubscription] = useState<"" | "subscribed" | "unsubscribed">("");
   const [filterGovernorate, setFilterGovernorate] = useState("");
   const [filterUniversityId, setFilterUniversityId] = useState("");
   const [filterCollegeId, setFilterCollegeId] = useState("");
