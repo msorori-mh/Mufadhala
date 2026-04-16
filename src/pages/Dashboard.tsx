@@ -15,7 +15,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import MotivationalBanner from "@/components/MotivationalBanner";
 import AchievementsBadges from "@/components/AchievementsBadges";
 
-import EngagementModal from "@/components/EngagementModal";
+
 import { getDailyTip, dailyTips } from "@/data/dailyTips";
 import {
   GraduationCap, LogOut, UserCircle, Bell, Shield, BookOpen,
@@ -482,14 +482,6 @@ const Dashboard = () => {
               <AIPracticeQuestions hasSubscription={hasActiveSubscription} />
             )}
 
-            {/* Engagement Modal */}
-            {!isAdmin && (
-              <EngagementModal
-                completedLessons={completedLessons}
-                examAttempts={totalExams}
-                hasSubscription={hasActiveSubscription}
-              />
-            )}
 
             {/* Achievements */}
             <AchievementsBadges stats={{ totalExams, avgScore, bestScore, completedLessons, totalLessons: lessonCount }} />

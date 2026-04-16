@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import PaywallSheet, { usePaywall } from "@/components/PaywallSheet";
-import { usePaywallTrigger } from "@/hooks/usePaywallTrigger";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchLessonsBySubjects } from "@/lib/contentFilter";
 import { useStudentAccess } from "@/hooks/useStudentAccess";
@@ -109,7 +108,6 @@ const LessonsList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSubjectFilter, setActiveSubjectFilter] = useState<string>("all");
   const { paywallProps, showPaywall } = usePaywall();
-  const [questionInteractions] = useState(0);
   const authLoading = accessLoading;
 
   useEffect(() => {
@@ -193,14 +191,6 @@ const LessonsList = () => {
   const subjects = lessonsData?.subjects || [];
   const questionCounts = lessonsData?.questionCounts || {};
   const completedLessons = lessonsData?.completedLessons || new Set<string>();
-
-  // Auto-trigger paywall after engagement thresholds
-  usePaywallTrigger({
-    completedLessons: completedLessons.size,
-    questionInteractions,
-    hasSubscription: !!hasSubscription,
-    onTrigger: (reason) => showPaywall(reason),
-  });
 
   // Fetch free lessons count setting from cache
   const { data: freeLessonsCount } = useQuery({
