@@ -495,9 +495,25 @@ const Subscription = () => {
               {/* Conversion boosters */}
               <ConversionBoosters />
 
-              <div className="text-center">
-                <h2 className="text-xl font-bold text-foreground">استمتع بوصول غير محدود</h2>
-               {universityName && <p className="text-sm text-muted-foreground mt-1">{universityName}</p>}
+              <div className="text-center space-y-2">
+                <h2 className="text-xl font-bold text-foreground">ادخل المفاضلة وأنت مستعد</h2>
+                <p className="text-sm text-muted-foreground">درّب نفسك على نماذج حقيقية واختبر مستواك قبل يوم القبول</p>
+                {universityName && <p className="text-xs text-muted-foreground">{universityName}</p>}
+              </div>
+
+              {/* Benefits */}
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { emoji: "🔓", text: "الوصول الكامل لجميع نماذج الأعوام السابقة" },
+                  { emoji: "🧠", text: "تدريب غير محدود على محاكي الاختبار" },
+                  { emoji: "📊", text: "تحليل دقيق لمستواك وتقدمك" },
+                  { emoji: "🎯", text: "التركيز على الأسئلة الأقرب لاختبارات القبول" },
+                ].map((b, i) => (
+                  <div key={i} className="flex items-start gap-2 bg-muted/50 rounded-lg p-2.5 text-xs text-foreground">
+                    <span className="text-sm shrink-0">{b.emoji}</span>
+                    <span>{b.text}</span>
+                  </div>
+                ))}
               </div>
 
               {/* Plan cards */}
@@ -571,7 +587,7 @@ const Subscription = () => {
                               handleSelectPlan(plan);
                             }}
                           >
-                            {plan.is_free ? "تفعيل" : isPopular ? "اشترك الآن" : "اختيار"}
+                            {plan.is_free ? "تفعيل" : "اشترك الآن"}
                           </Button>
                         </div>
                       </CardContent>
