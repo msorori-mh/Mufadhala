@@ -104,7 +104,23 @@ const Subscription = () => {
     fetchAll();
   }, [authLoading, user]);
 
-  // Auto-poll subscription status every 20s when pending
+  // Fetch university pricing zone (trusted source for pricing)
+  useEffect(() => {
+    if (!studentData?.university_id) return;
+    supabase
+      .from("universities")
+      .select("pricing_zone, name_ar")
+      .eq("id", studentData.university_id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setUniversityPricingZone(getZoneFromUniversity((data as any).pricing_zone));
+          setUniversityName(data.name_ar);
+        }
+      });
+  }, [studentData?.university_id]);
+
+
   const prevSubStatusRef = useRef<string | null>(null);
   useEffect(() => {
     if (!user || !subscription || subscription.status !== "pending") return;
