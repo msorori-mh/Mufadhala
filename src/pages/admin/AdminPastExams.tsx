@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, ArrowRight, FileText, Save, Upload, Download } from "lucide-react";
+import { Plus, Trash2, ArrowRight, FileText, Save, Upload, Download, Copy } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { parsePastExamFile, downloadTemplate, type ParsedQuestion, type ParseError } from "@/services/pastExamImport";
 
