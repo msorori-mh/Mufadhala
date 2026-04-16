@@ -283,14 +283,80 @@ const AdminPastExams = () => {
           <QuestionsEditor modelId={showQuestions} onClose={() => { setShowQuestions(null); setJustCreatedId(null); }} />
         )}
 
+        {/* Filters */}
+        {!isLoading && models.length > 0 && (
+          <Card>
+            <CardContent className="p-3 grid grid-cols-1 sm:grid-cols-4 gap-2 items-end">
+              <div className="space-y-1">
+                <Label className="text-xs">الجامعة</Label>
+                <NativeSelect
+                  value={filterUniversityId}
+                  onValueChange={setFilterUniversityId}
+                  placeholder="كل الجامعات"
+                  options={[{ value: "", label: "كل الجامعات" }, ...universities.map((u) => ({ value: u.id, label: u.name_ar }))]}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">السنة</Label>
+                <NativeSelect
+                  value={filterYear}
+                  onValueChange={setFilterYear}
+                  placeholder="كل السنوات"
+                  options={[
+                    { value: "", label: "كل السنوات" },
+                    ...Array.from(new Set(models.map((m) => m.year)))
+                      .sort((a, b) => b - a)
+                      .map((y) => ({ value: String(y), label: String(y) })),
+                  ]}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">الحالة</Label>
+                <NativeSelect
+                  value={filterStatus}
+                  onValueChange={setFilterStatus}
+                  placeholder="الكل"
+                  options={[
+                    { value: "", label: "الكل" },
+                    { value: "published", label: "منشور" },
+                    { value: "draft", label: "مسودة" },
+                    { value: "empty", label: "فارغ (بدون أسئلة)" },
+                  ]}
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setFilterUniversityId(""); setFilterYear(""); setFilterStatus(""); }}
+                disabled={!filterUniversityId && !filterYear && !filterStatus}
+              >
+                إعادة تعيين
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Models List */}
         {isLoading ? (
           <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}</div>
         ) : models.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">لا توجد نماذج بعد</p>
-        ) : (
+        ) : (() => {
+          const filtered = models.filter((m) => {
+            if (filterUniversityId && m.university_id !== filterUniversityId) return false;
+            if (filterYear && String(m.year) !== filterYear) return false;
+            if (filterStatus === "published" && !m.is_published) return false;
+            if (filterStatus === "draft" && m.is_published) return false;
+            if (filterStatus === "empty" && (questionCounts[m.id] || 0) > 0) return false;
+            return true;
+          });
+          if (filtered.length === 0) {
+            return <p className="text-center text-muted-foreground py-8">لا توجد نماذج تطابق الفلاتر</p>;
+          }
+          return (
           <div className="space-y-2">
-            {models.map((m) => {
+            <p className="text-xs text-muted-foreground">عرض {filtered.length} من {models.length}</p>
+            {filtered.map((m) => {
               const qCount = questionCounts[m.id] || 0;
               const isEmpty = qCount === 0;
               return (
@@ -331,7 +397,8 @@ const AdminPastExams = () => {
               );
             })}
           </div>
-        )}
+          );
+        })()}
       </div>
       </PermissionGate>
     </AdminLayout>
