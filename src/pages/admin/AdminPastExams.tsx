@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, ArrowRight, FileText, Save, Upload, Download, Copy } from "lucide-react";
+import { Plus, Trash2, ArrowRight, FileText, Save, Upload, Download, Copy, EyeOff } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { parsePastExamFile, downloadTemplate, type ParsedQuestion, type ParseError } from "@/services/pastExamImport";
 
@@ -171,6 +171,25 @@ const AdminPastExams = () => {
     if (showQuestions === id) setShowQuestions(null);
     if (justCreatedId === id) setJustCreatedId(null);
     toast({ title: "تم الحذف" });
+  };
+
+  const [unpublishingId, setUnpublishingId] = useState<string | null>(null);
+  const handleUnpublish = async (m: Model) => {
+    if (!confirm(`إرجاع النموذج "${m.title}" إلى مسودة؟ سيختفي عن الطلاب فوراً.`)) return;
+    setUnpublishingId(m.id);
+    try {
+      const { error } = await supabase
+        .from("past_exam_models")
+        .update({ is_published: false })
+        .eq("id", m.id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
+      toast({ title: "تم إرجاع النموذج إلى مسودة" });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر إلغاء النشر", description: err?.message || "حدث خطأ" });
+    } finally {
+      setUnpublishingId(null);
+    }
   };
 
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
@@ -379,7 +398,20 @@ const AdminPastExams = () => {
                     </Badge>
                     {m.is_paid && <Badge variant="secondary" className="text-[10px]">مدفوع</Badge>}
                     {m.is_published ? (
-                      <Badge className="text-[10px] bg-secondary">منشور</Badge>
+                      <>
+                        <Badge className="text-[10px] bg-secondary">منشور</Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-[11px] px-2 gap-1"
+                          title="إرجاع إلى مسودة"
+                          disabled={unpublishingId === m.id}
+                          onClick={() => handleUnpublish(m)}
+                        >
+                          <EyeOff className="w-3 h-3" />
+                          {unpublishingId === m.id ? "..." : "إلغاء النشر"}
+                        </Button>
+                      </>
                     ) : (
                       <Badge variant="outline" className="text-[10px]">مسودة</Badge>
                     )}
