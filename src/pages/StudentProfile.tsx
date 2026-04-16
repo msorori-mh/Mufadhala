@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { GraduationCap, ArrowRight, User, School, Phone, Save, Loader2, Pencil, ShieldCheck, Send } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import CascadingAcademicSelects from "@/components/CascadingAcademicSelects";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -72,30 +73,20 @@ const StudentProfile = () => {
         setMajorId(studentData.major_id || "");
       }
 
-      const { data: uniData } = await supabase
-        .from("universities").select("*").eq("is_active", true).order("display_order");
+      // Load all academic reference data once (cascading filtering is done by component)
+      const [{ data: uniData }, { data: colData }, { data: majData }] = await Promise.all([
+        supabase.from("universities").select("*").eq("is_active", true).order("display_order"),
+        supabase.from("colleges").select("*").eq("is_active", true).order("display_order"),
+        supabase.from("majors").select("*").eq("is_active", true).order("display_order"),
+      ]);
       if (uniData) setUniversities(uniData);
+      if (colData) setColleges(colData);
+      if (majData) setMajors(majData);
 
       setLoading(false);
     };
     init();
   }, [authLoading, user, navigate]);
-
-  // Fetch colleges when university changes
-  useEffect(() => {
-    if (!universityId) { setColleges([]); return; }
-    supabase.from("colleges").select("*")
-      .eq("university_id", universityId).eq("is_active", true).order("display_order")
-      .then(({ data }) => { if (data) setColleges(data); });
-  }, [universityId]);
-
-  // Fetch majors when college changes
-  useEffect(() => {
-    if (!collegeId) { setMajors([]); return; }
-    supabase.from("majors").select("*")
-      .eq("college_id", collegeId).eq("is_active", true).order("display_order")
-      .then(({ data }) => { if (data) setMajors(data); });
-  }, [collegeId]);
 
   // OTP cooldown timer
   useEffect(() => {
