@@ -431,6 +431,7 @@ function QuestionsEditor({ modelId, onClose }: { modelId: string; onClose: () =>
       toast({ title: `تم استيراد ${rows.length} سؤال بنجاح` });
       setImportPreview(null);
       refetch();
+      qc.invalidateQueries({ queryKey: ["admin-past-exam-question-counts"] });
     } catch (err: any) {
       toast({ variant: "destructive", title: "فشل الاستيراد", description: err?.message || String(err) });
     } finally {
