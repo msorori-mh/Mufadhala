@@ -499,7 +499,11 @@ const Subscription = () => {
               <div className="text-center">
                 <h2 className="text-xl font-bold text-foreground">اختر خطتك المناسبة</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {zoneName && <>{zoneName} — {studentGovernorate}</>}
+                  {universityName && <>{universityName} — {zoneName}</>}
+                </p>
+                <p className="text-[11px] text-muted-foreground/70 mt-1 flex items-center justify-center gap-1">
+                  <Info className="w-3 h-3" />
+                  يتم تحديد السعر حسب الجامعة المختارة وليس المحافظة
                 </p>
               </div>
 
