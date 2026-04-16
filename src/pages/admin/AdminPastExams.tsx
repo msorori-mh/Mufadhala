@@ -115,6 +115,7 @@ const AdminPastExams = () => {
 
   return (
     <AdminLayout>
+      <PermissionGate permission="past_exams">
       <div className="space-y-5">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">نماذج الأعوام السابقة</h1>
