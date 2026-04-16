@@ -1,19 +1,43 @@
+## خطة: اعتماد الشعار المتحرك من الصفحة الرئيسية في جميع شاشات الدخول
 
+### الوضع الحالي
 
-# تعديل شاشة الترحيب لتوجيه المستخدم الجديد إلى لوحة التحكم
+- **الصفحة الرئيسية (Index.tsx)**: تعرض الشعار داخل دائرة متحركة بتأثير `animate-float` مع خلفية شفافة:
+  ```html
+  <div class="inline-flex items-center justify-center w-24 h-24 mb-5 animate-float rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
+    <img src={logoImg} class="w-full h-full object-cover drop-shadow-lg" />
+  </div>
+  ```
+- **Login.tsx**: شعار ثابت صغير `w-16 h-16` بدون حركة
+- **Register.tsx**: شعار ثابت صغير `w-16 h-16` بدون حركة (يستخدم `logo-new.jpg`)
+- **AdminLogin.tsx**: لا يوجد شعار — يستخدم أيقونة Shield فقط
 
-## المشكلة
-حالياً زر "ابدأ أول درس الآن" في شاشة الترحيب يوجّه الطالب مباشرة لأول درس، بينما المطلوب توجيهه للصفحة الرئيسية (Dashboard) ليتعرف على ميزات المنصة أولاً.
+### التعديلات المطلوبة
 
-## التغييرات — ملف واحد فقط: `src/pages/Welcome.tsx`
+**1. Login.tsx** — استبدال الشعار الثابت بالشعار المتحرك:
 
-1. **تعديل `handleStart`** — التوجيه إلى `/dashboard` بدلاً من `/lessons/${firstLessonId}`
-2. **حذف الكود غير المطلوب** — إزالة state الخاص بـ `firstLessonId` و `resolving`، وإزالة useEffect الذي يجلب أول درس (`fetchLessonsBySubjects`)، وإزالة import الدالة
-3. **تحديث نص الزر** — من "ابدأ أول درس الآن" إلى "استكشف المنصة"
-4. **إزالة `disabled={resolving}`** من الزر لأنه لم يعد هناك انتظار
+- تغيير `<img>` إلى نفس wrapper الدائرة المتحركة من Index.tsx
 
-### ملاحظة
-- لا يوجد أي تأثير على أداء التطبيق — فقط نزيل كود جلب الدروس الذي لم يعد مطلوباً (تقليل طلبات قاعدة البيانات)
-- باقي منطق الشاشة يبقى كما هو (التحقق من الدخول، عرض اسم الكلية، زر التخطي)
-- تحديث الذاكرة (`mem://features/activation-welcome-screen`)
+**2. Register.tsx** — نفس التعديل:
 
+- تغيير import من `logo-new.jpg` إلى `logo.png`
+- استبدال الشعار بالنسخة المتحركة
+
+**3. AdminLogin.tsx** — استبدال أيقونة Shield بالشعار المتحرك:
+
+- إضافة import للشعار
+- استبدال div أيقونة Shield بالشعار المتحرك
+
+**4. Welcome.tsx** — التأكد من نفس الشكل المتحرك
+
+### الشكل الموحد للشعار في جميع الشاشات
+
+```html
+<div class="inline-flex items-center justify-center w-24 h-24 mb-5 animate-float rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
+  <img src={logoImg} alt="مُفَاضَلَة" class="w-full h-full object-cover drop-shadow-lg" />
+</div>
+```
+
+> ملاحظة: سيتم تعديل لون الخلفية حسب سياق كل شاشة (مثلاً `bg-primary/10` في AdminLogin بدل `bg-white/20`).
+>
+> ملاحظة اضافة: هل بالإمكان تحريك الدائرة شمالا حركة واحدة، مع ابقاء ماداخلها كما هو 
