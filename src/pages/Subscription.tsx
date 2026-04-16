@@ -496,7 +496,7 @@ const Subscription = () => {
               <ConversionBoosters />
 
               <div className="text-center">
-                <h2 className="text-xl font-bold text-foreground">فعّل الخطة الأقوى</h2>
+                <h2 className="text-xl font-bold text-foreground">اختر خطتك المناسبة</h2>
                {universityName && <p className="text-sm text-muted-foreground mt-1">{universityName}</p>}
               </div>
 

@@ -626,92 +626,6 @@ export type Database = {
         }
         Relationships: []
       }
-      past_exam_model_questions: {
-        Row: {
-          created_at: string
-          id: string
-          model_id: string
-          order_index: number
-          question_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          model_id: string
-          order_index?: number
-          question_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          model_id?: string
-          order_index?: number
-          question_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "past_exam_model_questions_model_id_fkey"
-            columns: ["model_id"]
-            isOneToOne: false
-            referencedRelation: "past_exam_models"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "past_exam_model_questions_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "questions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      past_exam_models: {
-        Row: {
-          created_at: string
-          duration_minutes: number | null
-          id: string
-          is_paid: boolean
-          is_published: boolean
-          title: string
-          track: string | null
-          university_id: string
-          updated_at: string
-          year: number
-        }
-        Insert: {
-          created_at?: string
-          duration_minutes?: number | null
-          id?: string
-          is_paid?: boolean
-          is_published?: boolean
-          title: string
-          track?: string | null
-          university_id: string
-          updated_at?: string
-          year: number
-        }
-        Update: {
-          created_at?: string
-          duration_minutes?: number | null
-          id?: string
-          is_paid?: boolean
-          is_published?: boolean
-          title?: string
-          track?: string | null
-          university_id?: string
-          updated_at?: string
-          year?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "past_exam_models_university_id_fkey"
-            columns: ["university_id"]
-            isOneToOne: false
-            referencedRelation: "universities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       payment_methods: {
         Row: {
           account_name: string | null
@@ -1388,21 +1302,6 @@ export type Database = {
           major_id: string
           summary: string
           title: string
-        }[]
-      }
-      get_top_repeated_questions: {
-        Args: { _limit?: number; _university_id?: string }
-        Returns: {
-          correct_option: string
-          explanation: string
-          option_a: string
-          option_b: string
-          option_c: string
-          option_d: string
-          question_id: string
-          question_text: string
-          question_type: string
-          repeat_count: number
         }[]
       }
       has_active_subscription: { Args: { _user_id: string }; Returns: boolean }

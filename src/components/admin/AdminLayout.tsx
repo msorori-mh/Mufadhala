@@ -34,7 +34,6 @@ const mainNavItems: NavItem[] = [
   { path: "/admin/payments", label: "طلبات الدفع", icon: CreditCard, permission: "payments" },
   { path: "/admin/deletion-logs", label: "سجل الحذف", icon: ScrollText, permission: "admin_only" },
   { path: "/admin/tracks", label: "المسارات الأكاديمية", icon: Route, permission: "admin_only" },
-  { path: "/admin/past-exams", label: "نماذج سابقة", icon: ScrollText, permission: "content" },
 ];
 
 const reportSubItems: NavItem[] = [
