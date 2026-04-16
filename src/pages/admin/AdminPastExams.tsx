@@ -190,21 +190,23 @@ const AdminPastExams = () => {
                 <Button onClick={handleSave} disabled={saving}>
                   <Save className="w-4 h-4 ml-1" />{saving ? "جاري الحفظ..." : "حفظ"}
                 </Button>
-                <Button variant="outline" onClick={() => setShowForm(false)}>إلغاء</Button>
+                <Button variant="outline" onClick={handleCancel}>إلغاء</Button>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Success banner + Questions Editor */}
+        {/* Success banner — ONLY after creating a brand-new model */}
+        {showQuestions && justCreatedId === showQuestions && (
+          <div className="rounded-lg border border-secondary/40 bg-secondary/10 p-3 text-sm flex items-center gap-2">
+            <span className="font-bold text-secondary">✓ تم إنشاء النموذج</span>
+            <span className="text-muted-foreground">— الخطوة 2 من 2: أضف الأسئلة يدوياً أو استورد من ملف Excel</span>
+          </div>
+        )}
+
+        {/* Questions Editor */}
         {showQuestions && (
-          <>
-            <div className="rounded-lg border border-secondary/40 bg-secondary/10 p-3 text-sm flex items-center gap-2">
-              <span className="font-bold text-secondary">✓ تم إنشاء النموذج</span>
-              <span className="text-muted-foreground">— الخطوة 2 من 2: أضف الأسئلة يدوياً أو استورد من ملف Excel</span>
-            </div>
-            <QuestionsEditor modelId={showQuestions} onClose={() => setShowQuestions(null)} />
-          </>
+          <QuestionsEditor modelId={showQuestions} onClose={() => { setShowQuestions(null); setJustCreatedId(null); }} />
         )}
 
         {/* Models List */}
