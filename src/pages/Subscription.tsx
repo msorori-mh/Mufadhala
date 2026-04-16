@@ -703,7 +703,7 @@ const Subscription = () => {
               <CardContent className="py-3 text-center">
                 <p className="text-sm font-semibold">{selectedPlan.name}</p>
                 {(() => {
-                  const raw = getPlanPrice(selectedPlan, studentGovernorate);
+                  const raw = getPlanPriceByZone(selectedPlan, universityPricingZone);
                   const final_ = promoDiscount > 0 ? Math.round(raw * (1 - promoDiscount / 100)) : raw;
                   return (
                     <div className="mt-1">
