@@ -63,6 +63,7 @@ const AdminTracks = lazy(() => import("./pages/admin/AdminTracks"));
 const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
 const AdminPastExams = lazy(() => import("./pages/admin/AdminPastExams"));
 const PastExams = lazy(() => import("./pages/PastExams"));
+const TopQuestions = lazy(() => import("./pages/TopQuestions"));
 const Settings = lazy(() => import("./pages/Settings"));
 const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
 const PublicDeleteAccount = lazy(() => import("./pages/PublicDeleteAccount"));
