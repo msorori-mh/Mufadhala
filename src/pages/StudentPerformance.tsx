@@ -450,6 +450,9 @@ const StudentPerformance = () => {
           </Card>
         )}
 
+        {/* Past exam attempts stats */}
+        <PastExamStatsCard studentId={student?.id} />
+
         {/* Lesson Completion List */}
         <Card>
           <CardHeader className="pb-2">
