@@ -15,6 +15,7 @@ import { useOfflineStatus } from "@/hooks/useOfflineStatus";
 import { saveLesson as saveLessonOffline, getLesson as getOfflineLesson, removeLesson as removeOfflineLesson, type OfflineLesson } from "@/lib/offlineStorage";
 import { trackFunnelEvent, hasTrackedEvent } from "@/lib/funnelTracking";
 import ChatWidget from "@/components/ChatWidget";
+import SummaryPDFDownload from "@/components/SummaryPDFDownload";
 
 
 interface Lesson {
@@ -333,10 +334,14 @@ const LessonDetail = () => {
               <CardContent className="py-6 px-5">
                 {lesson.summary ? (
                   <>
+                    <div className="flex justify-end mb-3">
+                      <SummaryPDFDownload title={lesson.title} text={lesson.summary} />
+                    </div>
                     <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
                       {lesson.summary}
                     </div>
                   </>
+
                 ) : (
                   <p className="text-muted-foreground text-center py-8">لا يوجد ملخص بعد</p>
                 )}
