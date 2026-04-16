@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
   Brain, Sparkles, Loader2, CheckCircle2, XCircle,
-  RotateCcw, ChevronDown, ChevronUp, Lock,
+  RotateCcw, ChevronDown, ChevronUp, Lock, AlertCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useStudentAccess } from "@/hooks/useStudentAccess";
 
 interface AIQuestion {
   question_text: string;
@@ -21,14 +23,15 @@ interface AIQuestion {
   explanation: string;
 }
 
-const SUBJECT_OPTIONS = [
-  { value: "biology", label: "أحياء" },
-  { value: "chemistry", label: "كيمياء" },
-  { value: "physics", label: "فيزياء" },
-  { value: "math", label: "رياضيات" },
-  { value: "english", label: "إنجليزي" },
-  { value: "iq", label: "ذكاء" },
-];
+// Map DB subject codes → generator subject keys (used in the edge function prompt)
+const DB_CODE_TO_GENERATOR: Record<string, { value: string; label: string }> = {
+  Bio: { value: "biology", label: "أحياء" },
+  chemistry: { value: "chemistry", label: "كيمياء" },
+  physics: { value: "physics", label: "فيزياء" },
+  math: { value: "math", label: "رياضيات" },
+  english: { value: "english", label: "إنجليزي" },
+  computer: { value: "computer", label: "حاسوب" },
+};
 
 const DIFFICULTY_OPTIONS = [
   { value: "easy", label: "سهل", emoji: "🟢" },
@@ -42,13 +45,45 @@ interface Props {
 
 const AIPracticeQuestions = ({ hasSubscription }: Props) => {
   const navigate = useNavigate();
-  const [subject, setSubject] = useState("biology");
+  const { subjectIds } = useStudentAccess();
+
+  // Fetch the student's track subjects from DB and map to generator subjects
+  const { data: subjectRows } = useQuery({
+    queryKey: ["ai-generator-subjects", subjectIds],
+    queryFn: async () => {
+      if (!subjectIds || subjectIds.length === 0) return [];
+      const { data } = await supabase
+        .from("subjects")
+        .select("id, code")
+        .in("id", subjectIds)
+        .eq("is_active", true);
+      return data ?? [];
+    },
+    enabled: subjectIds.length > 0,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const subjectOptions = useMemo(() => {
+    if (!subjectRows) return [];
+    return subjectRows
+      .map((r: any) => DB_CODE_TO_GENERATOR[r.code])
+      .filter(Boolean);
+  }, [subjectRows]);
+
+  const [subject, setSubject] = useState("");
   const [difficulty, setDifficulty] = useState("medium");
   const [questions, setQuestions] = useState<AIQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [showResults, setShowResults] = useState(false);
   const [loading, setLoading] = useState(false);
   const [expandedExplanation, setExpandedExplanation] = useState<number | null>(null);
+
+  // Default subject = first available track subject
+  useEffect(() => {
+    if (!subject && subjectOptions.length > 0) {
+      setSubject(subjectOptions[0].value);
+    }
+  }, [subjectOptions, subject]);
 
   const generate = async () => {
     if (!hasSubscription) {
@@ -124,22 +159,31 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
               اختر المادة ومستوى الصعوبة وسيقوم الذكاء الاصطناعي بتوليد أسئلة تدريبية مشابهة لاختبار المفاضلة
             </p>
 
-            {/* Subject selection */}
-            <div>
-              <p className="text-xs font-semibold text-foreground mb-1.5">المادة</p>
-              <div className="flex flex-wrap gap-1.5">
-                {SUBJECT_OPTIONS.map((s) => (
-                  <Badge
-                    key={s.value}
-                    variant={subject === s.value ? "default" : "outline"}
-                    className="cursor-pointer text-xs"
-                    onClick={() => setSubject(s.value)}
-                  >
-                    {s.label}
-                  </Badge>
-                ))}
+            {/* Subject selection — limited to student's track subjects */}
+            {subjectOptions.length === 0 ? (
+              <div className="flex items-start gap-2 p-3 rounded-md border border-amber-200 bg-amber-50/60 dark:bg-amber-950/10 dark:border-amber-900/40">
+                <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-800 dark:text-amber-300">
+                  أكمل بياناتك الأكاديمية (الجامعة والكلية) لتظهر المواد الخاصة بمسارك.
+                </p>
               </div>
-            </div>
+            ) : (
+              <div>
+                <p className="text-xs font-semibold text-foreground mb-1.5">المادة</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {subjectOptions.map((s) => (
+                    <Badge
+                      key={s.value}
+                      variant={subject === s.value ? "default" : "outline"}
+                      className="cursor-pointer text-xs"
+                      onClick={() => setSubject(s.value)}
+                    >
+                      {s.label}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Difficulty selection */}
             <div>
@@ -159,7 +203,7 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
             </div>
 
             {hasSubscription ? (
-              <Button onClick={generate} className="w-full gap-2">
+              <Button onClick={generate} className="w-full gap-2" disabled={!subject || subjectOptions.length === 0}>
                 <Sparkles className="w-4 h-4" />
                 توليد 5 أسئلة
               </Button>
