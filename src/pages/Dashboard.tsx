@@ -485,7 +485,9 @@ const Dashboard = () => {
 
             {/* AI Practice Questions */}
             {!isAdmin && (
-              <AIPracticeQuestions hasSubscription={hasActiveSubscription} />
+              <div id="ai-generator" className="scroll-mt-20">
+                <AIPracticeQuestions hasSubscription={hasActiveSubscription} />
+              </div>
             )}
 
 
