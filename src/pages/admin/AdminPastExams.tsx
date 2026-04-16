@@ -381,6 +381,7 @@ function QuestionsEditor({ modelId, onClose }: { modelId: string; onClose: () =>
     });
     setNewQ({ q_text: "", q_option_a: "", q_option_b: "", q_option_c: "", q_option_d: "", q_correct: "a", q_explanation: "" });
     refetch();
+    qc.invalidateQueries({ queryKey: ["admin-past-exam-question-counts"] });
     toast({ title: "تمت إضافة السؤال" });
     setSaving(false);
   };
@@ -388,6 +389,7 @@ function QuestionsEditor({ modelId, onClose }: { modelId: string; onClose: () =>
   const deleteQuestion = async (id: string) => {
     await supabase.from("past_exam_model_questions").delete().eq("id", id);
     refetch();
+    qc.invalidateQueries({ queryKey: ["admin-past-exam-question-counts"] });
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
