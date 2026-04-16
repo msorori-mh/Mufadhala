@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, lazy, Suspense } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
@@ -13,7 +13,9 @@ import { useStudentAccess } from "@/hooks/useStudentAccess";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import ThemeToggle from "@/components/ThemeToggle";
 import MotivationalBanner from "@/components/MotivationalBanner";
-import AchievementsBadges from "@/components/AchievementsBadges";
+
+// Lazy-load below-fold heavy components
+const AchievementsBadges = lazy(() => import("@/components/AchievementsBadges"));
 
 
 import { getDailyTip, dailyTips } from "@/data/dailyTips";
@@ -486,7 +488,9 @@ const Dashboard = () => {
 
 
             {/* Achievements */}
-            <AchievementsBadges stats={{ totalExams, avgScore, bestScore, completedLessons, totalLessons: lessonCount }} />
+            <Suspense fallback={<Skeleton className="h-32 w-full rounded-lg" />}>
+              <AchievementsBadges stats={{ totalExams, avgScore, bestScore, completedLessons, totalLessons: lessonCount }} />
+            </Suspense>
 
             {/* Charts Row */}
             {totalExams >= 2 && (

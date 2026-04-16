@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { BookOpen, ClipboardCheck, TrendingUp, Loader2, Brain, FileCheck, Shield, Focus, WifiOff, Users, CheckCircle, Bot, Clock, Headphones, HelpCircle, FileText, Sparkles } from "lucide-react";
 import logoImg from "@/assets/logo.png";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { useScrollReveal, useStaggerReveal } from "@/hooks/useScrollReveal";
 
 function useCountUp(end: number, duration = 2000) {
@@ -27,7 +27,7 @@ function useCountUp(end: number, duration = 2000) {
 
 const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
   const navigate = useNavigate();
-  const [checking, setChecking] = useState(true);
+  const { user, loading: authLoading } = useAuthContext();
   const [showBubble, setShowBubble] = useState(false);
 
   // Show bubble on every visit, auto-hide after 10s
@@ -37,15 +37,14 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Redirect logged-in users — uses shared AuthContext (no extra getSession call)
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/dashboard", { replace: true });
-      } else {
-        setChecking(false);
-      }
-    });
-  }, [navigate]);
+    if (!authLoading && user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [authLoading, user, navigate]);
+
+  const checking = authLoading;
 
   const q = useCountUp(3000);
   const s = useCountUp(150);
