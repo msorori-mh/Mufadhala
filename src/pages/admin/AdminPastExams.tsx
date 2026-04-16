@@ -31,6 +31,11 @@ const AdminPastExams = () => {
   const [showQuestions, setShowQuestions] = useState<string | null>(null);
   const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
 
+  // Filters
+  const [filterUniversityId, setFilterUniversityId] = useState<string>("");
+  const [filterYear, setFilterYear] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<string>(""); // "", "published", "draft"
+
   const resetForm = () => {
     setEditingModel(null);
     setTitle("");
