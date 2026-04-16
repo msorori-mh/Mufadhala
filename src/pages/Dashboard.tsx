@@ -33,7 +33,6 @@ import {
   Building2, ChevronLeft, Lightbulb, RefreshCw, FileText, Sparkles, Settings as SettingsIcon,
 } from "lucide-react";
 import DashboardCharts from "@/components/DashboardCharts";
-import UpgradeCTABanner from "@/components/UpgradeCTABanner";
 import SmartRecommendations from "@/components/SmartRecommendations";
 
 import type { Tables } from "@/integrations/supabase/types";
@@ -201,7 +200,6 @@ const Dashboard = () => {
     { path: "/search", title: "البحث المتقدم", desc: "ابحث في الدروس والأسئلة بالتخصص والكلية", icon: Search, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10" },
     { path: "/performance", title: "تحليل الأداء", desc: "مقارنة بالزملاء ونقاط القوة والضعف", icon: BarChart3, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" },
     { path: "/leaderboard", title: "لوحة المتصدرين", desc: "ترتيب الأوائل على مستوى الجمهورية", icon: Trophy, color: "border-r-secondary", iconColor: "text-secondary", bgColor: "bg-secondary/10" },
-    ...(!isAdmin ? [{ path: "/subscription", title: "الاشتراك", desc: "إدارة اشتراكك والدفع", icon: CreditCard, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10" }] : []),
     { path: "/notifications", title: "الإشعارات", desc: "آخر التحديثات", icon: Bell, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10", badge: unreadCount },
   ];
 
@@ -439,12 +437,6 @@ const Dashboard = () => {
             {!isAdmin && (
               <DailyTipCard />
             )}
-
-            {/* Upgrade CTA for free users who engaged */}
-            {!isAdmin && !hasActiveSubscription && (
-              <UpgradeCTABanner completedLessons={completedLessons} totalLessons={lessonCount} />
-            )}
-
 
             {totalExams > 0 && (
               <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
