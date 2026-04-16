@@ -224,12 +224,11 @@ const AdminPastExams = () => {
           <div className="flex items-center gap-3 flex-wrap">
             <NativeSelect
               value={filterUniId}
-              onChange={(e) => setFilterUniId(e.target.value)}
+              onValueChange={setFilterUniId}
+              placeholder="كل الجامعات"
               className="max-w-xs"
-            >
-              <option value="">كل الجامعات</option>
-              {universities.map(u => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
-            </NativeSelect>
+              options={[{ value: "", label: "كل الجامعات" }, ...universities.map(u => ({ value: u.id, label: u.name_ar }))]}
+            />
           </div>
 
           {/* Models list */}
@@ -293,10 +292,12 @@ const AdminPastExams = () => {
                 </div>
                 <div>
                   <Label>الجامعة *</Label>
-                  <NativeSelect value={form.university_id} onChange={e => setForm(p => ({ ...p, university_id: e.target.value }))}>
-                    <option value="">اختر الجامعة</option>
-                    {universities.map(u => <option key={u.id} value={u.id}>{u.name_ar}</option>)}
-                  </NativeSelect>
+                  <NativeSelect
+                    value={form.university_id}
+                    onValueChange={v => setForm(p => ({ ...p, university_id: v }))}
+                    placeholder="اختر الجامعة"
+                    options={universities.map(u => ({ value: u.id, label: u.name_ar }))}
+                  />
                 </div>
                 <div>
                   <Label>السنة *</Label>
