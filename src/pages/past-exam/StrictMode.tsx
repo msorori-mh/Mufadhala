@@ -30,6 +30,8 @@ const formatTime = (seconds: number) => {
 
 const StrictMode = ({ model, questions, onBackToSelect }: Props) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: student } = useStudentData(user?.id);
   const total = questions.length;
   const durationSec = (model.duration_minutes ?? 0) * 60;
 
@@ -42,6 +44,7 @@ const StrictMode = ({ model, questions, onBackToSelect }: Props) => {
   const [confirmSubmit, setConfirmSubmit] = useState(false);
   const warned5Ref = useRef(false);
   const warned1Ref = useRef(false);
+  const savedRef = useRef(false);
 
   // Countdown
   useEffect(() => {
