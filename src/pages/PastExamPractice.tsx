@@ -31,12 +31,29 @@ const PastExamPractice = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("past_exam_models")
-        .select("id, title, year, is_paid, is_published")
+        .select("id, title, year, is_paid, is_published, university_id")
         .eq("id", modelId!)
         .single();
       return data;
     },
     enabled: !!modelId,
+  });
+
+  // Check if this is the first (free) model for its university
+  const { data: isFirstFreeModel } = useQuery({
+    queryKey: ["is-first-free-model", model?.university_id, modelId],
+    queryFn: async () => {
+      if (!model?.university_id) return false;
+      const { data: models } = await supabase
+        .from("past_exam_models")
+        .select("id, year")
+        .eq("university_id", model.university_id)
+        .eq("is_published", true)
+        .order("year", { ascending: true })
+        .limit(1);
+      return models?.[0]?.id === modelId;
+    },
+    enabled: !!model?.university_id && !!modelId,
   });
 
   // Fetch questions
@@ -55,7 +72,7 @@ const PastExamPractice = () => {
   });
 
   const isLoading = modelLoading || questionsLoading;
-  const locked = model?.is_paid && !hasActiveSubscription;
+  const locked = !isFirstFreeModel && !hasActiveSubscription;
 
   if (isLoading) {
     return (
