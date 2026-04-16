@@ -22,7 +22,7 @@ import { getDailyTip, dailyTips } from "@/data/dailyTips";
 import {
   GraduationCap, LogOut, UserCircle, Bell, Shield, BookOpen,
   ClipboardCheck, Trophy, TrendingUp, Target, BarChart3, CreditCard, Search,
-  Building2, ChevronLeft, Lightbulb, RefreshCw, FileText, Sparkles,
+  Building2, ChevronLeft, Lightbulb, RefreshCw, FileText, Sparkles, Settings as SettingsIcon,
 } from "lucide-react";
 import DashboardCharts from "@/components/DashboardCharts";
 import UpgradeCTABanner from "@/components/UpgradeCTABanner";
@@ -245,6 +245,11 @@ const Dashboard = () => {
             {isStaff && (
               <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white">
                 <Link to="/admin"><Shield className="w-4 h-4 sm:ml-1" /><span className="hidden sm:inline">الإدارة</span></Link>
+              </Button>
+            )}
+            {!isStaff && (
+              <Button variant="ghost" size="icon" asChild className="text-white hover:bg-white/20 hover:text-white" title="الإعدادات">
+                <Link to="/settings"><SettingsIcon className="w-4 h-4" /></Link>
               </Button>
             )}
             <Button variant="ghost" size="icon" onClick={handleLogout} className="text-white hover:bg-white/20 hover:text-white">
