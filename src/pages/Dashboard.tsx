@@ -13,6 +13,14 @@ import { useStudentAccess } from "@/hooks/useStudentAccess";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import ThemeToggle from "@/components/ThemeToggle";
 import MotivationalBanner from "@/components/MotivationalBanner";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 
 // Lazy-load below-fold heavy components
 const AchievementsBadges = lazy(() => import("@/components/AchievementsBadges"));
