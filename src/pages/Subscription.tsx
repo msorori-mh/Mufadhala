@@ -18,7 +18,6 @@ import {
 import ThemeToggle from "@/components/ThemeToggle";
 import ConversionBoosters from "@/components/ConversionBoosters";
 import { getZone, getPlanPrice, getZoneFromUniversity, getPlanPriceByZone, PriceZone } from "@/domain/pricing";
-import { ZONE_A_GOVERNORATES, ZONE_B_GOVERNORATES } from "@/domain/constants";
 import { trackFunnelEvent } from "@/lib/funnelTracking";
 
 interface Plan {
