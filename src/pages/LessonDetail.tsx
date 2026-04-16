@@ -334,10 +334,14 @@ const LessonDetail = () => {
               <CardContent className="py-6 px-5">
                 {lesson.summary ? (
                   <>
+                    <div className="flex justify-end mb-3">
+                      <SummaryPDFDownload title={lesson.title} text={lesson.summary} />
+                    </div>
                     <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
                       {lesson.summary}
                     </div>
                   </>
+
                 ) : (
                   <p className="text-muted-foreground text-center py-8">لا يوجد ملخص بعد</p>
                 )}
