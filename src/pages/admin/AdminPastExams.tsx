@@ -74,6 +74,23 @@ const AdminPastExams = () => {
     },
   });
 
+  // Fetch question counts per model
+  const { data: questionCounts = {} } = useQuery({
+    queryKey: ["admin-past-exam-question-counts", models.map(m => m.id).join(",")],
+    enabled: models.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("past_exam_model_questions")
+        .select("model_id")
+        .in("model_id", models.map(m => m.id));
+      const counts: Record<string, number> = {};
+      (data || []).forEach((row: any) => {
+        counts[row.model_id] = (counts[row.model_id] || 0) + 1;
+      });
+      return counts;
+    },
+  });
+
   const openCreate = () => {
     resetForm();
     setShowForm(true);
@@ -101,6 +118,15 @@ const AdminPastExams = () => {
     setSaving(true);
     try {
       if (editingModel) {
+        // Block publishing empty models
+        if (isPublished && !editingModel.is_published) {
+          const currentCount = questionCounts[editingModel.id] || 0;
+          if (currentCount === 0) {
+            toast({ variant: "destructive", title: "لا يمكن نشر نموذج فارغ", description: "أضف الأسئلة أولاً قبل النشر" });
+            setSaving(false);
+            return;
+          }
+        }
         const { error } = await supabase.from("past_exam_models").update({
           title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: isPublished,
         }).eq("id", editingModel.id);
@@ -111,12 +137,13 @@ const AdminPastExams = () => {
         resetForm();
         // Editing: do NOT show success banner, do NOT auto-open questions editor
       } else {
+        // New model: never allow publishing on creation (no questions yet)
         const { data: created, error } = await supabase.from("past_exam_models").insert({
-          title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: isPublished,
+          title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: false,
         }).select("id").single();
         if (error) throw error;
         if (!created?.id) throw new Error("no id returned");
-        toast({ title: "تم إنشاء النموذج", description: "الآن أضف الأسئلة" });
+        toast({ title: "تم إنشاء النموذج", description: "الآن أضف الأسئلة ثم انشره" });
         qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
         setShowForm(false);
         resetForm();
@@ -258,8 +285,11 @@ const AdminPastExams = () => {
           <p className="text-center text-muted-foreground py-8">لا توجد نماذج بعد</p>
         ) : (
           <div className="space-y-2">
-            {models.map((m) => (
-              <Card key={m.id} className="hover:shadow-sm transition-shadow">
+            {models.map((m) => {
+              const qCount = questionCounts[m.id] || 0;
+              const isEmpty = qCount === 0;
+              return (
+              <Card key={m.id} className={`hover:shadow-sm transition-shadow ${isEmpty ? "border-destructive/30" : ""}`}>
                 <CardContent className="flex items-center gap-3 p-4">
                   <FileText className="w-5 h-5 text-primary shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -269,6 +299,13 @@ const AdminPastExams = () => {
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge
+                      variant={isEmpty ? "destructive" : "outline"}
+                      className="text-[10px]"
+                      title={isEmpty ? "نموذج فارغ — لا يمكن نشره" : `${qCount} سؤال`}
+                    >
+                      {isEmpty ? "فارغ" : `${qCount} سؤال`}
+                    </Badge>
                     {m.is_paid && <Badge variant="secondary" className="text-[10px]">مدفوع</Badge>}
                     {m.is_published ? (
                       <Badge className="text-[10px] bg-secondary">منشور</Badge>
@@ -286,7 +323,8 @@ const AdminPastExams = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -343,6 +381,7 @@ function QuestionsEditor({ modelId, onClose }: { modelId: string; onClose: () =>
     });
     setNewQ({ q_text: "", q_option_a: "", q_option_b: "", q_option_c: "", q_option_d: "", q_correct: "a", q_explanation: "" });
     refetch();
+    qc.invalidateQueries({ queryKey: ["admin-past-exam-question-counts"] });
     toast({ title: "تمت إضافة السؤال" });
     setSaving(false);
   };
@@ -350,6 +389,7 @@ function QuestionsEditor({ modelId, onClose }: { modelId: string; onClose: () =>
   const deleteQuestion = async (id: string) => {
     await supabase.from("past_exam_model_questions").delete().eq("id", id);
     refetch();
+    qc.invalidateQueries({ queryKey: ["admin-past-exam-question-counts"] });
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -391,6 +431,7 @@ function QuestionsEditor({ modelId, onClose }: { modelId: string; onClose: () =>
       toast({ title: `تم استيراد ${rows.length} سؤال بنجاح` });
       setImportPreview(null);
       refetch();
+      qc.invalidateQueries({ queryKey: ["admin-past-exam-question-counts"] });
     } catch (err: any) {
       toast({ variant: "destructive", title: "فشل الاستيراد", description: err?.message || String(err) });
     } finally {
