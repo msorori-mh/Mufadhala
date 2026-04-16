@@ -323,7 +323,8 @@ const AdminPastExams = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
