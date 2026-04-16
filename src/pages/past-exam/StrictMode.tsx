@@ -10,6 +10,9 @@ import {
 import { Timer, ArrowRight, ArrowLeft, CheckCircle2, XCircle, MinusCircle, RotateCcw, Trophy, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { OPTION_LABELS, type PastExamQuestion, type PastExamModelInfo } from "./types";
+import { useAuth } from "@/hooks/useAuth";
+import { useStudentData } from "@/hooks/useStudentData";
+import { savePastExamAttempt } from "@/lib/pastExamAttempts";
 
 type Phase = "intro" | "active" | "finished";
 
