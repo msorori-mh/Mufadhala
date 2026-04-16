@@ -11,12 +11,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Loader2, Check, X, ShieldCheck, Search, Users } from "lucide-react";
+import { Loader2, Check, X, ShieldCheck, Search, Users, Globe, MapPin } from "lucide-react";
+
+interface ScopeLabel {
+  type: "global" | "university" | "college" | "major";
+  label: string;
+}
 
 interface ModeratorRow {
   user_id: string;
   display_name: string;
   permissions: Set<ModeratorPermission>;
+  scopes: ScopeLabel[];
 }
 
 const AdminPermissionsOverview = () => {
@@ -44,7 +50,14 @@ const AdminPermissionsOverview = () => {
         return;
       }
 
-      const [{ data: students }, { data: perms }] = await Promise.all([
+      const [
+        { data: students },
+        { data: perms },
+        { data: scopes },
+        { data: universities },
+        { data: colleges },
+        { data: majors },
+      ] = await Promise.all([
         supabase
           .from("students")
           .select("user_id, first_name, second_name, third_name, fourth_name, phone")
@@ -53,6 +66,13 @@ const AdminPermissionsOverview = () => {
           .from("moderator_permissions")
           .select("user_id, permission")
           .in("user_id", moderatorIds),
+        supabase
+          .from("moderator_scopes")
+          .select("user_id, scope_type, scope_id, is_global")
+          .in("user_id", moderatorIds),
+        supabase.from("universities").select("id, name_ar"),
+        supabase.from("colleges").select("id, name_ar"),
+        supabase.from("majors").select("id, name_ar"),
       ]);
 
       const nameMap = new Map<string, string>();
@@ -70,10 +90,30 @@ const AdminPermissionsOverview = () => {
         permMap.get(p.user_id)!.add(p.permission as ModeratorPermission);
       });
 
+      const uMap = new Map((universities || []).map((u: any) => [u.id, u.name_ar]));
+      const cMap = new Map((colleges || []).map((c: any) => [c.id, c.name_ar]));
+      const mMap = new Map((majors || []).map((m: any) => [m.id, m.name_ar]));
+
+      const scopeMap = new Map<string, ScopeLabel[]>();
+      (scopes || []).forEach((s: any) => {
+        if (!scopeMap.has(s.user_id)) scopeMap.set(s.user_id, []);
+        const list = scopeMap.get(s.user_id)!;
+        if (s.is_global || s.scope_type === "global") {
+          list.push({ type: "global", label: "كل الجامعات" });
+        } else if (s.scope_type === "university") {
+          list.push({ type: "university", label: uMap.get(s.scope_id) || "جامعة?" });
+        } else if (s.scope_type === "college") {
+          list.push({ type: "college", label: cMap.get(s.scope_id) || "كلية?" });
+        } else if (s.scope_type === "major") {
+          list.push({ type: "major", label: mMap.get(s.scope_id) || "تخصص?" });
+        }
+      });
+
       const built: ModeratorRow[] = moderatorIds.map((id) => ({
         user_id: id,
         display_name: nameMap.get(id) || id.slice(0, 8),
         permissions: permMap.get(id) || new Set(),
+        scopes: scopeMap.get(id) || [],
       }));
 
       built.sort((a, b) => b.permissions.size - a.permissions.size);
@@ -110,7 +150,7 @@ const AdminPermissionsOverview = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">مصفوفة صلاحيات المشرفين</h1>
-            <p className="text-sm text-muted-foreground">نظرة شاملة على من يملك أي صلاحية</p>
+            <p className="text-sm text-muted-foreground">نظرة شاملة على من يملك أي صلاحية ونطاقه الأكاديمي</p>
           </div>
         </div>
 
@@ -175,6 +215,7 @@ const AdminPermissionsOverview = () => {
                       <TableHead className="text-right sticky right-0 bg-card z-10 min-w-[180px]">
                         المشرف
                       </TableHead>
+                      <TableHead className="text-right min-w-[200px]">النطاق الأكاديمي</TableHead>
                       {ALL_PERMISSIONS.map((p) => (
                         <TableHead key={p} className="text-center text-xs whitespace-nowrap">
                           {PERMISSION_LABELS[p]}
@@ -188,6 +229,33 @@ const AdminPermissionsOverview = () => {
                       <TableRow key={row.user_id}>
                         <TableCell className="font-medium sticky right-0 bg-card">
                           {row.display_name}
+                        </TableCell>
+                        <TableCell>
+                          {row.scopes.length === 0 ? (
+                            <Badge variant="outline" className="text-muted-foreground">
+                              <X className="w-3 h-3 ml-1" />
+                              بدون نطاق
+                            </Badge>
+                          ) : row.scopes.some((s) => s.type === "global") ? (
+                            <Badge className="bg-primary/15 text-primary hover:bg-primary/20">
+                              <Globe className="w-3 h-3 ml-1" />
+                              عام (كل الجامعات)
+                            </Badge>
+                          ) : (
+                            <div className="flex flex-wrap gap-1 max-w-[280px]">
+                              {row.scopes.map((s, i) => (
+                                <Badge
+                                  key={i}
+                                  variant="secondary"
+                                  className="text-xs"
+                                  title={`${s.type === "university" ? "جامعة" : s.type === "college" ? "كلية" : "تخصص"}: ${s.label}`}
+                                >
+                                  <MapPin className="w-3 h-3 ml-1" />
+                                  {s.label}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
                         </TableCell>
                         {ALL_PERMISSIONS.map((p) => {
                           const has = row.permissions.has(p);
