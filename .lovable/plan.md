@@ -1,21 +1,43 @@
 
 
 ## الهدف
-إضافة زر "تحميل الملخص كـ PDF" في صفحة الدرس لتحميل ملخص الدرس بصيغة PDF بدلاً من ميزة الاستماع المحذوفة.
+إضافة فلتر "حالة الاشتراك" قبل فلتر المحافظة في صفحة الطلاب بلوحة تحكم الأدمن، يفلتر بين: الكل / مشترك / غير مشترك. يعمل بالتوازي مع باقي الفلاتر.
+
+## الملف المُعدَّل
+`src/pages/admin/AdminStudents.tsx`
 
 ## التنفيذ
 
-### 1) مكوّن جديد `src/components/SummaryPDFDownload.tsx`
-- زر بسيط: "تحميل الملخص PDF" مع أيقونة `Download`.
-- عند الضغط: يفتح نافذة طباعة HTML مخصّصة بدعم RTL وخط Cairo (متوافقة مع منطق التصدير المعتمد في `mem://technical/pdf-export-logic`).
-- المحتوى: عنوان الدرس + الملخص + اسم المنصة (Mufadhala) + التاريخ.
-- المستخدم يختار "Save as PDF" من نافذة الطباعة (يعمل على Web). على Android WebView، يستخدم نفس آلية الطباعة المتاحة.
+### 1) جلب بيانات الاشتراكات
+داخل `fetchData`، أضف استعلاماً لجلب الاشتراكات النشطة (نفس منطق `has_active_subscription`):
+```ts
+supabase.from("subscriptions").select("user_id, status, expires_at, trial_ends_at")
+```
+ثم احسب مجموعة `activeSubUserIds: Set<string>` تضم المستخدمين الذين لديهم اشتراك إما:
+- `status = 'active'` و(`expires_at` فارغ أو في المستقبل)، أو
+- `status = 'trial'` و`trial_ends_at` في المستقبل.
 
-### 2) تعديل `src/pages/LessonDetail.tsx`
-- استيراد `SummaryPDFDownload` ووضعه في نفس المكان الذي كان فيه `SummaryTTS` سابقاً (ضمن قسم الملخص).
-- يتلقى `text` (الملخص) و`title` (عنوان الدرس).
+### 2) state جديد للفلتر
+```ts
+const [filterSubscription, setFilterSubscription] = useState<"" | "subscribed" | "unsubscribed">("");
+```
+
+### 3) منطق الفلترة في `filtered`
+أضف قبل فحص المحافظة:
+```ts
+if (filterSubscription === "subscribed" && !activeSubUserIds.has(s.user_id)) return false;
+if (filterSubscription === "unsubscribed" && activeSubUserIds.has(s.user_id)) return false;
+```
+
+### 4) الواجهة
+- في شبكة الفلاتر: تغيير `md:grid-cols-4` إلى `md:grid-cols-5`.
+- إضافة `<select>` جديد **قبل** فلتر المحافظة بالخيارات: الكل / مشترك / غير مشترك.
+- تحديث `hasActiveFilter` و`clearFilters` ليشملا `filterSubscription`.
+
+### 5) تصدير Excel
+إضافة عمود "حالة الاشتراك" (مشترك/غير مشترك) في صفوف التصدير ليعكس الحالة الحالية.
 
 ## ما لن يُمَس
-- منطق الدرس، الأسئلة، التقدّم، التقييمات.
-- لن أُضيف أي تبعيات npm جديدة (نستخدم `window.print` فقط).
+- منطق RLS، جلب الطلاب، أدوار الموظفين، تعديل/حذف الطلاب.
+- حدود مولّد الأسئلة، التسعير، أو أي شيء خارج صفحة الطلاب.
 
