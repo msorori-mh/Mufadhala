@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowRight, User, Moon, Sun, Bell, LogOut, Trash2, Info, MessageCircle, Mail, Headphones, Phone, Clock, HelpCircle } from "lucide-react";
+import { ArrowRight, User, Moon, Sun, Bell, LogOut, Trash2, Info, MessageCircle, Mail } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -139,69 +139,17 @@ const Settings = () => {
                 شروط الاستخدام
               </Link>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Technical Support */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Headphones className="w-4 h-4" />
-              الدعم الفني
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <a
-              href={`https://wa.me/967780060056?text=${encodeURIComponent("السلام عليكم، أحتاج مساعدة من فريق الدعم الفني لتطبيق مُفَاضَلَة 🎓")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 p-3 rounded-lg bg-[#25D366]/10 border border-[#25D366]/20 hover:bg-[#25D366]/20 transition-colors"
-            >
-              <div className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center shrink-0">
-                <MessageCircle className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">واتساب</p>
-                <p className="text-xs text-muted-foreground" dir="ltr">+967 780 060 056</p>
-              </div>
-            </a>
-
-            <a
-              href="tel:+967780060056"
-              className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-colors"
-            >
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <Phone className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">اتصال مباشر</p>
-                <p className="text-xs text-muted-foreground" dir="ltr">+967 780 060 056</p>
-              </div>
-            </a>
-
-            <a
-              href="mailto:info@mufadhala.com"
-              className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-colors"
-            >
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <Mail className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">البريد الإلكتروني</p>
-                <p className="text-xs text-muted-foreground">info@mufadhala.com</p>
-              </div>
-            </a>
-
             <Separator />
-
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="w-3.5 h-3.5" />
-              <span className="text-xs">أوقات الدعم: السبت - الخميس، 8 صباحاً - 10 مساءً</span>
-            </div>
-
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <HelpCircle className="w-3.5 h-3.5" />
-              <span className="text-xs">يمكنك أيضاً استخدام المساعد الذكي داخل التطبيق للإجابة الفورية</span>
+            <div className="flex flex-col gap-2">
+              <span className="text-sm text-muted-foreground">الدعم الفني</span>
+              <a href={`https://wa.me/967780060056?text=${encodeURIComponent("السلام عليكم، أحتاج مساعدة من فريق الدعم الفني لتطبيق مُفَاضَلَة 🎓")}`} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1.5">
+                <MessageCircle className="w-3.5 h-3.5" />
+                واتساب: 780060056
+              </a>
+              <a href="mailto:info@mufadhala.com" className="text-sm text-primary hover:underline flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5" />
+                info@mufadhala.com
+              </a>
             </div>
           </CardContent>
         </Card>
