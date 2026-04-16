@@ -23,6 +23,16 @@ const AI_MODELS = [
   { value: "openai/gpt-5", label: "GPT-5 (دقيق جداً - مكلف)" },
 ];
 
+const SUBJECT_LABELS: Record<string, string> = {
+  biology: "أحياء",
+  chemistry: "كيمياء",
+  english: "إنجليزي",
+  math: "رياضيات",
+  physics: "فيزياء",
+  computer: "حاسوب",
+  iq: "ذكاء",
+};
+
 const AdminDashboard = () => {
   const { loading: authLoading, isAdmin } = useAuth("moderator");
   const { toast } = useToast();
