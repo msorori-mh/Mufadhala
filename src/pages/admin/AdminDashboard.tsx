@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { Building2, BookOpen, Users, Loader2, MessageCircle, Save, Bot, Type, FileText, BarChart3, TrendingUp, UserCheck, Unlock, Clock, ClipboardCheck, CreditCard, DollarSign, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { Building2, BookOpen, Users, Loader2, MessageCircle, Save, Bot, Type, FileText, BarChart3, TrendingUp, UserCheck, Unlock, Clock, ClipboardCheck, CreditCard, DollarSign, CheckCircle2, XCircle, AlertTriangle, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -22,6 +22,16 @@ const AI_MODELS = [
   { value: "openai/gpt-5-mini", label: "GPT-5 Mini (متوازن)" },
   { value: "openai/gpt-5", label: "GPT-5 (دقيق جداً - مكلف)" },
 ];
+
+const SUBJECT_LABELS: Record<string, string> = {
+  biology: "أحياء",
+  chemistry: "كيمياء",
+  english: "إنجليزي",
+  math: "رياضيات",
+  physics: "فيزياء",
+  computer: "حاسوب",
+  iq: "ذكاء",
+};
 
 const AdminDashboard = () => {
   const { loading: authLoading, isAdmin } = useAuth("moderator");
@@ -152,6 +162,60 @@ const AdminDashboard = () => {
       const { data, error } = await supabase.rpc("get_chat_stats", { _days: 30 });
       if (error) throw error;
       return data?.[0] || null;
+    },
+    enabled: !authLoading && isAdmin,
+    staleTime: 60 * 1000,
+  });
+
+  // AI Generator usage stats
+  const { data: aiGenStats } = useQuery({
+    queryKey: ["ai-gen-usage-stats"],
+    queryFn: async () => {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const [totalRes, todayRes, subjectsRes, dailyRes] = await Promise.all([
+        supabase.from("ai_generation_usage").select("id", { count: "exact", head: true }),
+        supabase.from("ai_generation_usage").select("id", { count: "exact", head: true })
+          .gte("generated_at", todayStart.toISOString()),
+        supabase.from("ai_generation_usage").select("subject"),
+        supabase.from("ai_generation_usage").select("generated_at")
+          .gte("generated_at", new Date(Date.now() - 30 * 86400000).toISOString()),
+      ]);
+
+      // Count by subject
+      const subjectCounts: Record<string, number> = {};
+      (subjectsRes.data || []).forEach((r: any) => {
+        const s = r.subject || "غير محدد";
+        subjectCounts[s] = (subjectCounts[s] || 0) + 1;
+      });
+      const topSubjects = Object.entries(subjectCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([name, count]) => ({ name: SUBJECT_LABELS[name] || name, count }));
+
+      // Daily breakdown for chart
+      const dayMap = new Map<string, number>();
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        dayMap.set(d.toISOString().slice(0, 10), 0);
+      }
+      (dailyRes.data || []).forEach((r: any) => {
+        const day = r.generated_at?.slice(0, 10);
+        if (day && dayMap.has(day)) dayMap.set(day, dayMap.get(day)! + 1);
+      });
+      const daily = Array.from(dayMap.entries()).map(([date, count]) => ({
+        date: new Date(date).toLocaleDateString("ar-EG", { month: "short", day: "numeric" }),
+        count,
+      }));
+
+      return {
+        total: totalRes.count || 0,
+        today: todayRes.count || 0,
+        topSubjects,
+        daily,
+      };
     },
     enabled: !authLoading && isAdmin,
     staleTime: 60 * 1000,
@@ -470,6 +534,70 @@ const AdminDashboard = () => {
                           formatter={(value: number, name: string) => [value, name === "messages" ? "رسائل" : "مستخدمين"]}
                         />
                         <Bar dataKey="messages" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} name="messages" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* AI Generator Stats — admin only */}
+        {isAdmin && aiGenStats && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Sparkles className="w-5 h-5 text-primary" />
+                إحصائيات مولد الأسئلة الذكي
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 grid-cols-2">
+                <div className="rounded-lg bg-primary/5 p-3 text-center">
+                  <p className="text-2xl font-bold text-primary">{aiGenStats.total}</p>
+                  <p className="text-[11px] text-muted-foreground">إجمالي التوليدات</p>
+                </div>
+                <div className="rounded-lg bg-accent/10 p-3 text-center">
+                  <p className="text-2xl font-bold text-accent">{aiGenStats.today}</p>
+                  <p className="text-[11px] text-muted-foreground">توليدات اليوم</p>
+                </div>
+              </div>
+
+              {aiGenStats.topSubjects.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">أكثر المواد استخداماً</p>
+                  <div className="space-y-2">
+                    {aiGenStats.topSubjects.map((s) => (
+                      <div key={s.name} className="flex items-center gap-2">
+                        <span className="text-sm text-foreground w-20 shrink-0">{s.name}</span>
+                        <div className="flex-1 bg-muted rounded-full h-2.5 overflow-hidden">
+                          <div
+                            className="h-full bg-primary rounded-full transition-all"
+                            style={{ width: `${Math.min(100, (s.count / aiGenStats.total) * 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-muted-foreground w-10 text-left">{s.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {aiGenStats.daily.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">التوليدات اليومية (آخر 30 يوم)</p>
+                  <div className="h-48 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={aiGenStats.daily}>
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                        <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                        <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                        <Tooltip
+                          contentStyle={{ fontSize: 12, direction: "rtl" }}
+                          formatter={(value: number) => [value, "توليدات"]}
+                        />
+                        <Bar dataKey="count" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} name="count" />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
