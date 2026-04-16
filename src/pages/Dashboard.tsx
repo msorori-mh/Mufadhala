@@ -29,7 +29,7 @@ const AchievementsBadges = lazy(() => import("@/components/AchievementsBadges"))
 import { getDailyTip, dailyTips } from "@/data/dailyTips";
 import {
   GraduationCap, LogOut, UserCircle, Bell, Shield, BookOpen,
-  ClipboardCheck, Trophy, TrendingUp, Target, BarChart3, CreditCard, Search,
+  ClipboardCheck, Trophy, TrendingUp, Target, BarChart3, Search,
   Building2, ChevronLeft, Lightbulb, RefreshCw, FileText, Sparkles, Settings as SettingsIcon,
 } from "lucide-react";
 import DashboardCharts from "@/components/DashboardCharts";
