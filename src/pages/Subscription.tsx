@@ -513,9 +513,9 @@ const Subscription = () => {
                   const isPopular = popularPlan?.id === plan.id && !plan.is_free;
                   const style = getPlanStyle(plan.slug);
                   const PlanIcon = style.icon;
-                  const price = getPlanPrice(plan, studentGovernorate);
+                  const price = getPlanPriceByZone(plan, universityPricingZone);
                   const finalPrice = promoDiscount > 0 ? Math.round(price * (1 - promoDiscount / 100)) : price;
-                  const zone = getZone(studentGovernorate);
+                  const zone = universityPricingZone;
                   const zoneDiscount = zone === "a" ? plan.discount_zone_a : zone === "b" ? plan.discount_zone_b : 0;
 
                   return (
