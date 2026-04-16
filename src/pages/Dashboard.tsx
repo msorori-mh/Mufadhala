@@ -25,7 +25,7 @@ import {
 import DashboardCharts from "@/components/DashboardCharts";
 import UpgradeCTABanner from "@/components/UpgradeCTABanner";
 import SmartRecommendations from "@/components/SmartRecommendations";
-import AIPracticeQuestions from "@/components/AIPracticeQuestions";
+
 import type { Tables } from "@/integrations/supabase/types";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useSubscription } from "@/hooks/useSubscription";
