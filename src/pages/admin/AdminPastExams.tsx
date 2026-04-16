@@ -277,6 +277,9 @@ const AdminPastExams = () => {
                     )}
                     <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setJustCreatedId(null); setShowQuestions(m.id); }}>الأسئلة</Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>تعديل</Button>
+                    <Button variant="ghost" size="icon" title="نسخ النموذج" disabled={duplicatingId === m.id} onClick={() => handleDuplicate(m)}>
+                      <Copy className="w-4 h-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(m.id)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
