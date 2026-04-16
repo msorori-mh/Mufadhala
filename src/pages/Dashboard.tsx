@@ -14,7 +14,7 @@ import { useUnreadCount } from "@/hooks/useUnreadCount";
 import ThemeToggle from "@/components/ThemeToggle";
 import MotivationalBanner from "@/components/MotivationalBanner";
 import AchievementsBadges from "@/components/AchievementsBadges";
-import WelcomeDialog from "@/components/WelcomeDialog";
+
 import EngagementModal from "@/components/EngagementModal";
 import { getDailyTip, dailyTips } from "@/data/dailyTips";
 import {
@@ -230,7 +230,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      {user && <WelcomeDialog userId={user.id} />}
+      
       {/* Header */}
       <header className="gradient-primary text-white px-4 py-3 md:py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
