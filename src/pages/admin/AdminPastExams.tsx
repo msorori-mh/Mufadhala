@@ -74,6 +74,23 @@ const AdminPastExams = () => {
     },
   });
 
+  // Fetch question counts per model
+  const { data: questionCounts = {} } = useQuery({
+    queryKey: ["admin-past-exam-question-counts", models.map(m => m.id).join(",")],
+    enabled: models.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("past_exam_model_questions")
+        .select("model_id")
+        .in("model_id", models.map(m => m.id));
+      const counts: Record<string, number> = {};
+      (data || []).forEach((row: any) => {
+        counts[row.model_id] = (counts[row.model_id] || 0) + 1;
+      });
+      return counts;
+    },
+  });
+
   const openCreate = () => {
     resetForm();
     setShowForm(true);
