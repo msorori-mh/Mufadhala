@@ -118,6 +118,15 @@ const AdminPastExams = () => {
     setSaving(true);
     try {
       if (editingModel) {
+        // Block publishing empty models
+        if (isPublished && !editingModel.is_published) {
+          const currentCount = questionCounts[editingModel.id] || 0;
+          if (currentCount === 0) {
+            toast({ variant: "destructive", title: "لا يمكن نشر نموذج فارغ", description: "أضف الأسئلة أولاً قبل النشر" });
+            setSaving(false);
+            return;
+          }
+        }
         const { error } = await supabase.from("past_exam_models").update({
           title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: isPublished,
         }).eq("id", editingModel.id);
@@ -128,12 +137,13 @@ const AdminPastExams = () => {
         resetForm();
         // Editing: do NOT show success banner, do NOT auto-open questions editor
       } else {
+        // New model: never allow publishing on creation (no questions yet)
         const { data: created, error } = await supabase.from("past_exam_models").insert({
-          title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: isPublished,
+          title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: false,
         }).select("id").single();
         if (error) throw error;
         if (!created?.id) throw new Error("no id returned");
-        toast({ title: "تم إنشاء النموذج", description: "الآن أضف الأسئلة" });
+        toast({ title: "تم إنشاء النموذج", description: "الآن أضف الأسئلة ثم انشره" });
         qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
         setShowForm(false);
         resetForm();
