@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { Building2, BookOpen, Users, Loader2, MessageCircle, Save, Bot, Type, FileText, BarChart3, TrendingUp, UserCheck, Unlock, Clock, ClipboardCheck, CreditCard, DollarSign, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { Building2, BookOpen, Users, Loader2, MessageCircle, Save, Bot, Type, FileText, BarChart3, TrendingUp, UserCheck, Unlock, Clock, ClipboardCheck, CreditCard, DollarSign, CheckCircle2, XCircle, AlertTriangle, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
