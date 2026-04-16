@@ -5,7 +5,7 @@ import { ArrowRight, FileText } from "lucide-react";
 
 const TermsOfService = () => {
   const navigate = useNavigate();
-  const lastUpdated = "2025-01-10";
+  const lastUpdated = "2026-04-16";
 
   return (
     <div className="min-h-screen bg-background">
@@ -95,19 +95,55 @@ const TermsOfService = () => {
             content: "تخضع هذه الشروط وتُفسّر وفقاً للقوانين المعمول بها في الجمهورية اليمنية. أي نزاع ينشأ عن استخدام التطبيق يخضع للاختصاص القضائي للمحاكم المختصة."
           },
           {
+            title: "الخصوصية وحماية البيانات",
+            content: `نحن ملتزمون بحماية بياناتك الشخصية وفقاً لأعلى المعايير. للاطلاع على تفاصيل البيانات التي نجمعها وأغراض استخدامها وإجراءات الحماية المطبقة، يرجى مراجعة [سياسة الخصوصية](/privacy-policy) الخاصة بنا.
+
+• تتطابق سياسة الخصوصية تماماً مع **نموذج أمان البيانات (Data Safety Form)** المُقدَّم لمتجر Google Play.
+• يتم تشفير جميع البيانات أثناء النقل عبر **HTTPS / TLS 1.2+**.
+• يمكنك طلب حذف حسابك وبياناتك في أي وقت من خلال صفحة [حذف الحساب](/delete-account) أو عبر البريد الإلكتروني.
+• لا نبيع بياناتك الشخصية لأي طرف ثالث إطلاقاً.
+• باستخدامك للتطبيق، فإنك توافق على ممارسات جمع ومعالجة البيانات الموضحة في سياسة الخصوصية ونموذج Data Safety.`
+          },
+          {
             title: "تواصل معنا",
-            content: `إذا كانت لديك أي أسئلة حول شروط الاستخدام، يمكنك التواصل معنا عبر:
+            content: `إذا كانت لديك أي أسئلة حول شروط الاستخدام أو سياسة الخصوصية، يمكنك التواصل معنا عبر:
 
 • **البريد الإلكتروني**: support@mufadhala.com
-• **داخل التطبيق**: من خلال نظام المحادثة المباشرة.`
+• **داخل التطبيق**: من خلال نظام المحادثة المباشرة.
+• **سياسة الخصوصية**: [اضغط هنا للاطلاع](/privacy-policy)`
           },
         ].map((section, i) => (
           <div key={i}>
             <h2 className="text-xl font-bold text-foreground mb-3">{section.title}</h2>
             <div className="text-muted-foreground leading-relaxed whitespace-pre-line text-sm md:text-base">
-              {section.content.split("**").map((part, j) =>
-                j % 2 === 1 ? <strong key={j} className="text-foreground">{part}</strong> : part
-              )}
+              {section.content.split("**").map((part, j) => {
+                const renderWithLinks = (text: string, keyPrefix: string) => {
+                  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+                  const nodes: React.ReactNode[] = [];
+                  let lastIdx = 0;
+                  let match;
+                  let k = 0;
+                  while ((match = linkRegex.exec(text)) !== null) {
+                    if (match.index > lastIdx) nodes.push(text.slice(lastIdx, match.index));
+                    nodes.push(
+                      <a
+                        key={`${keyPrefix}-${k++}`}
+                        href={match[2]}
+                        onClick={(e) => { e.preventDefault(); navigate(match![2]); }}
+                        className="text-primary underline hover:text-primary/80 font-medium"
+                      >
+                        {match[1]}
+                      </a>
+                    );
+                    lastIdx = match.index + match[0].length;
+                  }
+                  if (lastIdx < text.length) nodes.push(text.slice(lastIdx));
+                  return nodes;
+                };
+                return j % 2 === 1
+                  ? <strong key={j} className="text-foreground">{renderWithLinks(part, `b-${j}`)}</strong>
+                  : <React.Fragment key={j}>{renderWithLinks(part, `t-${j}`)}</React.Fragment>;
+              })}
             </div>
           </div>
         ))}
