@@ -371,9 +371,7 @@ const ExamSimulator = () => {
           hasSubscription={engine.hasActiveSubscription}
         />
 
-        {!engine.hasActiveSubscription && (
-          <PostExamUpgrade percentage={engine.percentage} totalQuestions={engine.examQuestions.length} />
-        )}
+        <PostExamUpgrade percentage={engine.percentage} totalQuestions={engine.examQuestions.length} hasSubscription={engine.hasActiveSubscription} />
 
         {/* Full Review Report */}
         <div className="space-y-2">
