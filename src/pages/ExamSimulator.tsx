@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import PostExamUpgrade from "@/components/PostExamUpgrade";
+import FreeLimitMessage from "@/components/FreeLimitMessage";
 import AIPerformanceAnalysis from "@/components/AIPerformanceAnalysis";
 import {
   useTrueExamEngine,
@@ -86,6 +87,11 @@ const ExamSimulator = () => {
 
   // ── INTRO PHASE ──────────────────────────────────────────
   if (engine.phase === "intro") {
+    // Show free limit if first attempt already used
+    if (engine.freeAttemptUsed) {
+      return <FreeLimitMessage />;
+    }
+
     return (
       <div className="min-h-screen bg-background">
         <PageHeader title="محاكاة الاختبار" backTo="/dashboard" backLabel="الرئيسية" />
