@@ -116,7 +116,11 @@ const AdminStudents = () => {
     : colleges;
   const filterMajorsList = filterCollegeId
     ? majors.filter((m) => m.college_id === filterCollegeId)
-    : majors;
+    : filterUniversityId
+      ? majors.filter((m) =>
+          colleges.some((c) => c.id === m.college_id && c.university_id === filterUniversityId)
+        )
+      : majors;
 
   // Edit dialog cascading
   const editFilteredColleges = universityId ? colleges.filter((c) => c.university_id === universityId) : colleges;
