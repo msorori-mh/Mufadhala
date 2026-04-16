@@ -247,6 +247,11 @@ const Dashboard = () => {
                 <Link to="/admin"><Shield className="w-4 h-4 sm:ml-1" /><span className="hidden sm:inline">الإدارة</span></Link>
               </Button>
             )}
+            {!isStaff && (
+              <Button variant="ghost" size="icon" asChild className="text-white hover:bg-white/20 hover:text-white" title="الإعدادات">
+                <Link to="/settings"><SettingsIcon className="w-4 h-4" /></Link>
+              </Button>
+            )}
             <Button variant="ghost" size="icon" onClick={handleLogout} className="text-white hover:bg-white/20 hover:text-white">
               <LogOut className="w-4 h-4" />
             </Button>
