@@ -543,6 +543,70 @@ const AdminDashboard = () => {
           </Card>
         )}
 
+        {/* AI Generator Stats — admin only */}
+        {isAdmin && aiGenStats && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Sparkles className="w-5 h-5 text-primary" />
+                إحصائيات مولد الأسئلة الذكي
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 grid-cols-2">
+                <div className="rounded-lg bg-primary/5 p-3 text-center">
+                  <p className="text-2xl font-bold text-primary">{aiGenStats.total}</p>
+                  <p className="text-[11px] text-muted-foreground">إجمالي التوليدات</p>
+                </div>
+                <div className="rounded-lg bg-accent/10 p-3 text-center">
+                  <p className="text-2xl font-bold text-accent">{aiGenStats.today}</p>
+                  <p className="text-[11px] text-muted-foreground">توليدات اليوم</p>
+                </div>
+              </div>
+
+              {aiGenStats.topSubjects.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">أكثر المواد استخداماً</p>
+                  <div className="space-y-2">
+                    {aiGenStats.topSubjects.map((s) => (
+                      <div key={s.name} className="flex items-center gap-2">
+                        <span className="text-sm text-foreground w-20 shrink-0">{s.name}</span>
+                        <div className="flex-1 bg-muted rounded-full h-2.5 overflow-hidden">
+                          <div
+                            className="h-full bg-primary rounded-full transition-all"
+                            style={{ width: `${Math.min(100, (s.count / aiGenStats.total) * 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-muted-foreground w-10 text-left">{s.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {aiGenStats.daily.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">التوليدات اليومية (آخر 30 يوم)</p>
+                  <div className="h-48 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={aiGenStats.daily}>
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                        <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                        <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                        <Tooltip
+                          contentStyle={{ fontSize: 12, direction: "rtl" }}
+                          formatter={(value: number) => [value, "توليدات"]}
+                        />
+                        <Bar dataKey="count" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} name="count" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Chat Settings — admin only */}
         {isAdmin && (
           <Card>
