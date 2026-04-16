@@ -22,7 +22,7 @@ import { getDailyTip, dailyTips } from "@/data/dailyTips";
 import {
   GraduationCap, LogOut, UserCircle, Bell, Shield, BookOpen,
   ClipboardCheck, Trophy, TrendingUp, Target, BarChart3, CreditCard, Search,
-  Building2, ChevronLeft, Lightbulb, RefreshCw, FileText, Sparkles,
+  Building2, ChevronLeft, Lightbulb, RefreshCw, FileText, Sparkles, Settings as SettingsIcon,
 } from "lucide-react";
 import DashboardCharts from "@/components/DashboardCharts";
 import UpgradeCTABanner from "@/components/UpgradeCTABanner";
