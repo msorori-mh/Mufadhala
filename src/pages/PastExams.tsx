@@ -52,6 +52,13 @@ const PastExams = () => {
     enabled: !!effectiveUniversityId,
   });
 
+  // Determine the first model (by year asc, then order) as the free one
+  const firstFreeModelId = useMemo(() => {
+    if (models.length === 0) return null;
+    const sorted = [...models].sort((a, b) => a.year - b.year);
+    return sorted[0]?.id ?? null;
+  }, [models]);
+
   // Group models by year
   const modelsByYear = useMemo(() => {
     const map: Record<number, typeof models> = {};
@@ -134,7 +141,8 @@ const PastExams = () => {
                 </div>
                 <div className="space-y-2">
                   {items.map((model) => {
-                    const locked = model.is_paid && !hasActiveSubscription;
+                    const isFirstFree = model.id === firstFreeModelId;
+                    const locked = !isFirstFree && !hasActiveSubscription;
                     return (
                       <Card
                         key={model.id}
