@@ -1,27 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Trash2, AlertTriangle, Loader2 } from "lucide-react";
+import { ArrowRight, Trash2, AlertTriangle, Loader2, Phone, ShieldCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
-const normalizeConfirmationText = (value: string) =>
-  value
-    .normalize("NFKC")
-    .replace(/[\u200E\u200F\u061C]/g, "")
-    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+type Step = "phone" | "otp" | "confirm";
 
 const DeleteAccount = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [confirmText, setConfirmText] = useState("");
+  const [step, setStep] = useState<Step>("phone");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  // Load phone from student profile
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("students")
+      .select("phone")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.phone) {
+          const p = data.phone.startsWith("+967") ? data.phone.slice(4) : data.phone;
+          setPhone(p);
+        }
+      });
+  }, [user]);
+
+  // Cooldown timer
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   if (loading) {
     return (
@@ -36,22 +59,57 @@ const DeleteAccount = () => {
     return null;
   }
 
-  const isConfirmed = normalizeConfirmationText(confirmText) === "حذف حسابي";
+  const fullPhone = phone.startsWith("+") ? phone : `+967${phone.replace(/^0+/, "")}`;
+
+  const handleSendOtp = async () => {
+    if (!phone || phone.replace(/\D/g, "").length < 9) {
+      toast.error("يرجى إدخال رقم هاتف صالح");
+      return;
+    }
+    setSending(true);
+    try {
+      const { error } = await supabase.functions.invoke("send-otp", {
+        body: { phone: fullPhone },
+      });
+      if (error) throw error;
+      toast.success("تم إرسال رمز التحقق إلى هاتفك");
+      setStep("otp");
+      setCooldown(60);
+    } catch (err: any) {
+      const msg = err?.message || "فشل إرسال رمز التحقق";
+      toast.error(msg);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) {
+      toast.error("يرجى إدخال الرمز المكون من 6 أرقام");
+      return;
+    }
+    setVerifying(true);
+    try {
+      const { error } = await supabase.functions.invoke("verify-otp", {
+        body: { phone: fullPhone, code: otp },
+      });
+      if (error) throw error;
+      toast.success("تم التحقق بنجاح");
+      setStep("confirm");
+    } catch {
+      toast.error("رمز التحقق غير صحيح أو منتهي الصلاحية");
+      setOtp("");
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("يرجى تسجيل الدخول مرة أخرى.");
-        navigate("/login", { replace: true });
-        return;
-      }
-
       const { error } = await supabase.functions.invoke("delete-account", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: { phone: fullPhone, code: otp },
       });
-
       if (error) throw error;
 
       await supabase.auth.signOut();
@@ -113,60 +171,162 @@ const DeleteAccount = () => {
           </CardContent>
         </Card>
 
-        {/* Confirmation */}
-        <Card>
-          <CardContent className="p-6 space-y-4">
-            <h3 className="font-bold text-foreground">تأكيد الحذف</h3>
-            <p className="text-sm text-muted-foreground">
-              للتأكيد، اكتب <span className="font-bold text-destructive">"حذف حسابي"</span> في الحقل أدناه:
-            </p>
-            <Input
-              value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value)}
-              placeholder="اكتب: حذف حسابي"
-              className="text-center"
-              dir="rtl"
-            />
+        {/* Step indicator */}
+        <div className="flex items-center justify-center gap-2">
+          {(["phone", "otp", "confirm"] as Step[]).map((s, i) => (
+            <div key={s} className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                step === s ? "bg-destructive text-destructive-foreground" :
+                (["phone", "otp", "confirm"].indexOf(step) > i ? "bg-destructive/20 text-destructive" : "bg-muted text-muted-foreground")
+              }`}>
+                {i + 1}
+              </div>
+              {i < 2 && <div className={`w-8 h-0.5 ${["phone", "otp", "confirm"].indexOf(step) > i ? "bg-destructive/40" : "bg-muted"}`} />}
+            </div>
+          ))}
+        </div>
 
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
+        {/* Step 1: Phone */}
+        {step === "phone" && (
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <Phone className="w-5 h-5 text-destructive" />
+                <h3 className="font-bold text-foreground">التحقق من هويتك</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                أدخل رقم هاتفك المسجل لإرسال رمز تحقق
+              </p>
+              <div className="flex gap-2 items-center" dir="ltr">
+                <span className="text-sm text-muted-foreground font-mono bg-muted px-2 py-2 rounded">+967</span>
+                <Input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                  placeholder="7XXXXXXXX"
+                  className="text-left font-mono"
+                  dir="ltr"
+                  maxLength={9}
+                />
+              </div>
+              <Button
+                variant="destructive"
+                className="w-full gap-2"
+                onClick={handleSendOtp}
+                disabled={sending || phone.length < 9}
+              >
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Phone className="w-4 h-4" />}
+                إرسال رمز التحقق
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 2: OTP */}
+        {step === "otp" && (
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <ShieldCheck className="w-5 h-5 text-destructive" />
+                <h3 className="font-bold text-foreground">إدخال رمز التحقق</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                تم إرسال رمز مكون من 6 أرقام إلى <span className="font-mono font-bold" dir="ltr">{fullPhone}</span>
+              </p>
+
+              <div className="flex justify-center" dir="ltr">
+                <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                  <InputOTPGroup>
+                    {[0, 1, 2, 3, 4, 5].map((i) => (
+                      <InputOTPSlot key={i} index={i} />
+                    ))}
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+
+              <Button
+                variant="destructive"
+                className="w-full gap-2"
+                onClick={handleVerifyOtp}
+                disabled={verifying || otp.length !== 6}
+              >
+                {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                تحقق من الرمز
+              </Button>
+
+              <div className="flex items-center justify-between">
                 <Button
-                  variant="destructive"
-                  className="w-full gap-2"
-                  disabled={!isConfirmed || deleting}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setStep("phone"); setOtp(""); }}
                 >
-                  {deleting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-4 h-4" />
-                  )}
-                  حذف حسابي نهائياً
+                  تغيير الرقم
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent dir="rtl">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>تأكيد نهائي</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    هل أنت متأكد تماماً؟ سيتم تسجيل خروجك فوراً وحذف جميع بياناتك نهائياً من النظام.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter className="flex-row-reverse gap-2">
-                  <AlertDialogCancel>تراجع</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDelete}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSendOtp}
+                  disabled={cooldown > 0 || sending}
+                >
+                  {cooldown > 0 ? `إعادة الإرسال (${cooldown}ث)` : "إعادة إرسال الرمز"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 3: Final Confirm */}
+        {step === "confirm" && (
+          <Card className="border-destructive/30">
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <Trash2 className="w-5 h-5 text-destructive" />
+                <h3 className="font-bold text-foreground">تأكيد الحذف النهائي</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                تم التحقق من هويتك بنجاح. اضغط على الزر أدناه لحذف حسابك نهائياً.
+              </p>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    className="w-full gap-2"
+                    disabled={deleting}
                   >
-                    نعم، احذف حسابي
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </CardContent>
-        </Card>
+                    {deleting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                    حذف حسابي نهائياً
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent dir="rtl">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>تأكيد نهائي</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      هل أنت متأكد تماماً؟ سيتم تسجيل خروجك فوراً وحذف جميع بياناتك نهائياً من النظام.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="flex-row-reverse gap-2">
+                    <AlertDialogCancel>تراجع</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      نعم، احذف حسابي
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Contact note */}
         <p className="text-xs text-center text-muted-foreground px-4">
-          إذا كنت تواجه مشكلة وتريد المساعدة بدلاً من حذف حسابك، تواصل معنا عبر إذا كنت تواجه مشكلة وتريد المساعدة بدلاً من حذف حسابك، تواصل معنا عبر المساعد الذكي "مُفَاضَلَة" في التطبيق. في التطبيق.
+          إذا كنت تواجه مشكلة وتريد المساعدة بدلاً من حذف حسابك، تواصل معنا عبر المساعد الذكي "مُفَاضَلَة" في التطبيق.
         </p>
       </div>
     </div>
