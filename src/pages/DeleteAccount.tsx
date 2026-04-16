@@ -9,6 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
+const normalizeConfirmationText = (value: string) =>
+  value
+    .normalize("NFKC")
+    .replace(/[\u200E\u200F\u061C]/g, "")
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
 const DeleteAccount = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
@@ -28,7 +36,7 @@ const DeleteAccount = () => {
     return null;
   }
 
-  const isConfirmed = confirmText === "حذف حسابي";
+  const isConfirmed = normalizeConfirmationText(confirmText) === "حذف حسابي";
 
   const handleDelete = async () => {
     setDeleting(true);
