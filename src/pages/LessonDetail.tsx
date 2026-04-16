@@ -15,7 +15,7 @@ import { useOfflineStatus } from "@/hooks/useOfflineStatus";
 import { saveLesson as saveLessonOffline, getLesson as getOfflineLesson, removeLesson as removeOfflineLesson, type OfflineLesson } from "@/lib/offlineStorage";
 import { trackFunnelEvent, hasTrackedEvent } from "@/lib/funnelTracking";
 import ChatWidget from "@/components/ChatWidget";
-import SummaryTTS from "@/components/SummaryTTS";
+
 
 interface Lesson {
   id: string;
@@ -333,7 +333,6 @@ const LessonDetail = () => {
               <CardContent className="py-6 px-5">
                 {lesson.summary ? (
                   <>
-                    <SummaryTTS text={lesson.summary} />
                     <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
                       {lesson.summary}
                     </div>
