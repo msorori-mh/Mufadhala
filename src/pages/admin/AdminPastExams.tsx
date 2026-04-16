@@ -141,6 +141,48 @@ const AdminPastExams = () => {
     toast({ title: "تم الحذف" });
   };
 
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const handleDuplicate = async (m: Model) => {
+    if (!confirm(`نسخ النموذج "${m.title}" مع جميع أسئلته؟`)) return;
+    setDuplicatingId(m.id);
+    try {
+      // 1. Create new model as draft copy
+      const { data: created, error: e1 } = await supabase.from("past_exam_models").insert({
+        title: `${m.title} (نسخة)`,
+        university_id: m.university_id,
+        year: m.year,
+        is_paid: m.is_paid,
+        is_published: false, // always start as draft
+        duration_minutes: m.duration_minutes,
+        track: m.track,
+      }).select("id").single();
+      if (e1) throw e1;
+      if (!created?.id) throw new Error("لم يتم إنشاء النموذج");
+
+      // 2. Fetch source questions
+      const { data: srcQs, error: e2 } = await supabase
+        .from("past_exam_model_questions")
+        .select("q_text, q_option_a, q_option_b, q_option_c, q_option_d, q_correct, q_explanation, order_index")
+        .eq("model_id", m.id)
+        .order("order_index");
+      if (e2) throw e2;
+
+      // 3. Insert copies linked to new model
+      if (srcQs && srcQs.length > 0) {
+        const rows = srcQs.map((q) => ({ ...q, model_id: created.id }));
+        const { error: e3 } = await supabase.from("past_exam_model_questions").insert(rows);
+        if (e3) throw e3;
+      }
+
+      qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
+      toast({ title: "تم نسخ النموذج", description: `تم نسخ ${srcQs?.length || 0} سؤال — النسخة كمسودة` });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر نسخ النموذج", description: err?.message || "حدث خطأ" });
+    } finally {
+      setDuplicatingId(null);
+    }
+  };
+
   return (
     <AdminLayout>
       <PermissionGate permission="past_exams">
