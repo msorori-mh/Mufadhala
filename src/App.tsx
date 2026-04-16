@@ -154,6 +154,7 @@ function App() {
                   <Route path="/achievements" element={<Achievements />} />
                   <Route path="/college-guide" element={<CollegeGuide />} />
                   <Route path="/past-exams" element={<PastExams />} />
+                  <Route path="/top-questions" element={<TopQuestions />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/delete-account" element={<DeleteAccount />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
