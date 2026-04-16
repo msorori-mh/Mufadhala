@@ -26,6 +26,29 @@ const ExamSimulator = () => {
   const navigate = useNavigate();
   const engine = useTrueExamEngine();
 
+  // Repeated-usage banner: track completed sessions, show after 3+
+  const [showUsageBanner, setShowUsageBanner] = useState(false);
+  const [sessionCountChecked, setSessionCountChecked] = useState(false);
+
+  useEffect(() => {
+    if (engine.phase === "result") {
+      // Increment completed session count
+      const key = "simulator_completed_sessions";
+      const count = parseInt(sessionStorage.getItem(key) || "0", 10) + 1;
+      sessionStorage.setItem(key, String(count));
+    }
+  }, [engine.phase]);
+
+  useEffect(() => {
+    if (sessionCountChecked) return;
+    const count = parseInt(sessionStorage.getItem("simulator_completed_sessions") || "0", 10);
+    const dismissed = sessionStorage.getItem("usage_banner_dismissed");
+    if (count >= 3 && !engine.hasActiveSubscription && !dismissed) {
+      setShowUsageBanner(true);
+    }
+    setSessionCountChecked(true);
+  }, [engine.hasActiveSubscription, sessionCountChecked]);
+
   // ── Loading ──────────────────────────────────────────────
   if (engine.loading) {
     return (
