@@ -423,44 +423,18 @@ const StudentProfile = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs">الجامعة</Label>
-              <Select value={universityId} onValueChange={(v) => { setUniversityId(v); setCollegeId(""); setMajorId(""); }}>
-                <SelectTrigger><SelectValue placeholder="اختر الجامعة" /></SelectTrigger>
-                <SelectContent>
-                  {universities.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>{u.name_ar}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">الكلية</Label>
-              <Select value={collegeId} onValueChange={(v) => { setCollegeId(v); setMajorId(""); }} disabled={!universityId}>
-                <SelectTrigger><SelectValue placeholder={!universityId ? "اختر الجامعة أولاً" : "اختر الكلية"} /></SelectTrigger>
-                <SelectContent>
-                  {colleges.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name_ar}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {majors.length > 0 && (
-              <div className="space-y-1.5">
-                <Label className="text-xs">التخصص <span className="text-muted-foreground">(اختياري)</span></Label>
-                <Select value={majorId} onValueChange={setMajorId} disabled={!collegeId}>
-                  <SelectTrigger><SelectValue placeholder="اختر التخصص" /></SelectTrigger>
-                  <SelectContent>
-                    {majors.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>{m.name_ar}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
+            <CascadingAcademicSelects
+              universities={universities}
+              colleges={colleges}
+              majors={majors}
+              universityId={universityId}
+              collegeId={collegeId}
+              majorId={majorId}
+              onUniversityChange={setUniversityId}
+              onCollegeChange={setCollegeId}
+              onMajorChange={setMajorId}
+              labels={{ major: "التخصص (اختياري)" }}
+            />
           </CardContent>
         </Card>
 
