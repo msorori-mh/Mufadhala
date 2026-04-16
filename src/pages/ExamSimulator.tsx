@@ -1,4 +1,6 @@
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Target } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +25,29 @@ import {
 const ExamSimulator = () => {
   const navigate = useNavigate();
   const engine = useTrueExamEngine();
+
+  // Repeated-usage banner: track completed sessions, show after 3+
+  const [showUsageBanner, setShowUsageBanner] = useState(false);
+  const [sessionCountChecked, setSessionCountChecked] = useState(false);
+
+  useEffect(() => {
+    if (engine.phase === "result") {
+      // Increment completed session count
+      const key = "simulator_completed_sessions";
+      const count = parseInt(sessionStorage.getItem(key) || "0", 10) + 1;
+      sessionStorage.setItem(key, String(count));
+    }
+  }, [engine.phase]);
+
+  useEffect(() => {
+    if (sessionCountChecked) return;
+    const count = parseInt(sessionStorage.getItem("simulator_completed_sessions") || "0", 10);
+    const dismissed = sessionStorage.getItem("usage_banner_dismissed");
+    if (count >= 3 && !engine.hasActiveSubscription && !dismissed) {
+      setShowUsageBanner(true);
+    }
+    setSessionCountChecked(true);
+  }, [engine.hasActiveSubscription, sessionCountChecked]);
 
   // ── Loading ──────────────────────────────────────────────
   if (engine.loading) {
@@ -67,6 +92,28 @@ const ExamSimulator = () => {
         <main className="max-w-2xl mx-auto px-4 py-6 md:pb-6 space-y-6">
           {engine.isOffline && <OfflineBanner />}
           {engine.pendingResultsCount > 0 && <PendingSyncBanner count={engine.pendingResultsCount} />}
+
+          {/* Repeated-usage inline banner */}
+          {showUsageBanner && (
+            <Card className="border-accent/30 bg-accent/5">
+              <CardContent className="py-4 px-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-foreground">مستواك يتحسن 👏</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">جرّب نماذج حقيقية لنتيجة أقوى</p>
+                  </div>
+                  <button
+                    onClick={() => { setShowUsageBanner(false); sessionStorage.setItem("usage_banner_dismissed", "1"); }}
+                    className="text-xs text-muted-foreground hover:text-foreground shrink-0 mt-0.5"
+                  >✕</button>
+                </div>
+                <Button size="sm" className="w-full mt-3 gap-2" onClick={() => navigate("/subscription")}>
+                  <Target className="w-4 h-4" />
+                  ابدأ التدريب الآن
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           <div>
             <h1 className="text-2xl font-bold text-foreground">اختبر مستواك الآن</h1>
@@ -371,9 +418,7 @@ const ExamSimulator = () => {
           hasSubscription={engine.hasActiveSubscription}
         />
 
-        {!engine.hasActiveSubscription && (
-          <PostExamUpgrade percentage={engine.percentage} totalQuestions={engine.examQuestions.length} />
-        )}
+        <PostExamUpgrade percentage={engine.percentage} totalQuestions={engine.examQuestions.length} hasSubscription={engine.hasActiveSubscription} />
 
         {/* Full Review Report */}
         <div className="space-y-2">
