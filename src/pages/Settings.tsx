@@ -169,6 +169,68 @@ const Settings = () => {
           </CardContent>
         </Card>
 
+        {/* FAQ */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <HelpCircle className="w-4 h-4" />
+              الأسئلة الشائعة
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="q1">
+                <AccordionTrigger className="text-sm text-right">كيف أبدأ الاستفادة من المنصة؟</AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground">
+                  بعد إكمال بياناتك في الملف الشخصي، توجّه للوحة التحكم وابدأ بمشاهدة الدروس المتاحة لتخصصك، ثم جرّب اختبار نهاية الدرس لتقييم فهمك.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="q2">
+                <AccordionTrigger className="text-sm text-right">ما الفرق بين الحساب المجاني والمشترك؟</AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground">
+                  الحساب المجاني يتيح لك الوصول إلى عدد محدود من الدروس والأسئلة يومياً. الاشتراك يفتح كامل المحتوى ومحاكي الاختبار الحقيقي ومولّد الأسئلة الذكي بدون حدود.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="q3">
+                <AccordionTrigger className="text-sm text-right">كيف أشترك في المنصة؟</AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground">
+                  من القائمة الرئيسية اختر "الاشتراك"، اختر الباقة المناسبة، حوّل المبلغ عبر إحدى طرق الدفع المعروضة، ثم ارفع صورة سند التحويل وسيتم تفعيل اشتراكك خلال وقت قصير.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="q4">
+                <AccordionTrigger className="text-sm text-right">لم يتم تفعيل اشتراكي بعد الدفع، ماذا أفعل؟</AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground">
+                  تأكد من رفع صورة واضحة لسند التحويل. يتم مراجعة السندات يدوياً خلال ساعات قليلة. إذا تأخر التفعيل أكثر من 24 ساعة، تواصل معنا عبر واتساب من قسم "تواصل معنا" أدناه.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="q5">
+                <AccordionTrigger className="text-sm text-right">كيف يعمل محاكي الاختبار الحقيقي؟</AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground">
+                  محاكي الاختبار يقدم 50 سؤالاً خلال 50 دقيقة بدون إظهار الإجابات الصحيحة أثناء الاختبار، لمحاكاة ظروف اختبار القبول الفعلي. تظهر النتيجة التفصيلية بعد التسليم.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="q6">
+                <AccordionTrigger className="text-sm text-right">هل يمكنني استخدام التطبيق بدون إنترنت؟</AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground">
+                  نعم، يدعم التطبيق وضع الأوفلاين للدروس التي تم تصفحها سابقاً. تحتاج إلى الإنترنت في المرة الأولى فقط لتحميل المحتوى ولاحقاً لمزامنة نتائج اختباراتك.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="q7">
+                <AccordionTrigger className="text-sm text-right">كيف أغيّر رقم جوالي أو بياناتي؟</AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground">
+                  من إعدادات الحساب اضغط "تعديل الملف الشخصي". تغيير رقم الجوال يتطلب التحقق عبر رمز يصلك على الرقم الجديد.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="q8">
+                <AccordionTrigger className="text-sm text-right">كيف أحذف حسابي؟</AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground">
+                  من قسم "إدارة الحساب" في الأعلى اضغط "حذف الحساب" واتبع الخطوات. يرجى الانتباه أن هذا الإجراء نهائي ولا يمكن التراجع عنه.
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </CardContent>
+        </Card>
+
         {/* Contact Us — last section */}
         <Card>
           <CardHeader className="pb-3">
