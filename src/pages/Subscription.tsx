@@ -385,9 +385,7 @@ const Subscription = () => {
     );
   }
 
-  const zoneName = studentGovernorate
-    ? getZone(studentGovernorate) === "a" ? "المنطقة أ" : "المنطقة ب"
-    : null;
+  const zoneName = universityPricingZone === "a" ? "المنطقة أ (العملة القديمة)" : universityPricingZone === "b" ? "المنطقة ب (العملة الجديدة)" : null;
 
   return (
     <div className="min-h-screen bg-background">
