@@ -39,12 +39,23 @@ const PastExamStatsCard = ({ studentId }: Props) => {
 
   if (isLoading || !data || data.attempts.length === 0) return null;
 
-  const { attempts, models } = data;
+  type AttemptRow = {
+    id: string;
+    mode: string;
+    score: number;
+    total: number;
+    blank_count: number;
+    elapsed_seconds: number;
+    completed_at: string;
+    model_id: string;
+  };
+  const attempts = data.attempts as AttemptRow[];
+  const models = data.models as Map<string, { id: string; title: string; year: number }>;
   const strictAttempts = attempts.filter((a) => a.mode === "strict");
   const trainingAttempts = attempts.filter((a) => a.mode === "training");
   const totalAttempts = attempts.length;
   const avgPct = Math.round(
-    attempts.reduce((sum, a) => sum + (a.total > 0 ? (a.score / a.total) * 100 : 0), 0) / totalAttempts
+    attempts.reduce((sum: number, a) => sum + (a.total > 0 ? (a.score / a.total) * 100 : 0), 0) / totalAttempts
   );
   const bestPct = Math.round(
     Math.max(...attempts.map((a) => (a.total > 0 ? (a.score / a.total) * 100 : 0)))
