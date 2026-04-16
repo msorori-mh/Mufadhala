@@ -111,21 +111,7 @@ const AdminStudents = () => {
     return Array.from(set).sort();
   }, [scopedStudents]);
 
-  // Cascading filter lists
-  const filterCollegesList = filterUniversityId
-    ? colleges.filter((c) => c.university_id === filterUniversityId)
-    : colleges;
-  const filterMajorsList = filterCollegeId
-    ? majors.filter((m) => m.college_id === filterCollegeId)
-    : filterUniversityId
-      ? majors.filter((m) =>
-          colleges.some((c) => c.id === m.college_id && c.university_id === filterUniversityId)
-        )
-      : majors;
-
-  // Edit dialog cascading
-  const editFilteredColleges = universityId ? colleges.filter((c) => c.university_id === universityId) : colleges;
-  const editFilteredMajors = collegeId ? majors.filter((m) => m.college_id === collegeId) : majors;
+  // (Cascading filtering for both filters and edit dialog is handled inside CascadingAcademicSelects)
 
   const hasActiveFilter = !!(filterSubscription || filterGovernorate || filterUniversityId || filterCollegeId || filterMajorId);
 
