@@ -16,7 +16,6 @@ export interface ImportLesson {
   summary: string;
   display_order: number;
   is_published: boolean;
-  is_free: boolean;
   grade_level: number | null;
   sourceRow: number;
 }
@@ -196,7 +195,6 @@ export function validateLessons(rows: any[][]): { lessons: ImportLesson[]; error
       summary: row[4] ? String(row[4]) : "",
       display_order: displayOrder,
       is_published: parseBool(row[6]),
-      is_free: parseBool(row[7]),
       grade_level: gradeLevel,
       sourceRow: i + 1,
     });
@@ -412,7 +410,6 @@ export async function executeImport(opts: {
       summary: lesson.summary,
       display_order: lesson.display_order,
       is_published: lesson.is_published,
-      is_free: lesson.is_free,
       grade_level: lesson.grade_level,
       subject_id: resolvedSubjectId,
       college_id: null,

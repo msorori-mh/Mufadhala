@@ -27,7 +27,6 @@ interface Lesson {
   title: string;
   summary: string;
   display_order: number;
-  is_free: boolean;
   subject_id?: string | null;
   grade_level?: number | null;
 }
@@ -123,7 +122,7 @@ const LessonsList = () => {
       const saved = await getAllSavedLessons();
       return saved.map(l => ({
         id: l.id, major_id: "", title: l.title, summary: l.summary,
-        display_order: 0, is_free: l.is_free,
+        display_order: 0,
       })) as Lesson[];
     },
     enabled: isOffline,
@@ -146,7 +145,7 @@ const LessonsList = () => {
       const subjects: SubjectInfo[] = (subsResult.data || []) as SubjectInfo[];
       const enrichedLessons = (lessons || []).map((l: any) => ({
         id: l.id, major_id: l.major_id || "", title: l.title, summary: l.summary,
-        display_order: l.display_order, is_free: l.is_free,
+        display_order: l.display_order,
         subject_id: l.subject_id || null, grade_level: l.grade_level || null,
       })) as Lesson[];
 

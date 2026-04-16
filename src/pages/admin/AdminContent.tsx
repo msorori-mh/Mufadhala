@@ -35,7 +35,6 @@ interface Lesson {
   summary: string;
   display_order: number;
   is_published: boolean;
-  is_free: boolean;
   created_at: string;
   presentation_url: string | null;
   grade_level: number | null;
@@ -125,7 +124,7 @@ const AdminContent = () => {
   const [lessonSummary, setLessonSummary] = useState("");
   const [lessonOrder, setLessonOrder] = useState(0);
   const [lessonPublished, setLessonPublished] = useState(false);
-  const [lessonFree, setLessonFree] = useState(false);
+  
   const [lessonSubjectId, setLessonSubjectId] = useState("");
   const [lessonPresentationFile, setLessonPresentationFile] = useState<File | null>(null);
   const [lessonPresentationUrl, setLessonPresentationUrl] = useState("");
@@ -236,7 +235,7 @@ const AdminContent = () => {
     setLessonSummary("");
     setLessonOrder(filteredLessons.length);
     setLessonPublished(false);
-    setLessonFree(false);
+    
     setLessonSubjectId(filterSubject || "");
     setLessonPresentationFile(null);
     setLessonPresentationUrl("");
@@ -256,7 +255,7 @@ const AdminContent = () => {
     setLessonSummary(l.summary);
     setLessonOrder(l.display_order);
     setLessonPublished(l.is_published);
-    setLessonFree(l.is_free);
+    
     setLessonSubjectId(l.subject_id || "");
     setLessonPresentationFile(null);
     setLessonPresentationUrl(l.presentation_url || "");
@@ -421,7 +420,6 @@ const AdminContent = () => {
       subject_id: lessonSubjectId,
       display_order: lessonOrder,
       is_published: lessonPublished,
-      is_free: lessonFree,
       presentation_url: presentationUrl || null,
       grade_level: lessonGradeLevel,
       // Shared content — no college/major ownership
@@ -663,7 +661,7 @@ const AdminContent = () => {
       return;
     }
     const wb = XLSX.utils.book_new();
-    const header = ["كود الدرس", "المادة", "عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", "مجاني (نعم/لا)", "الصف الدراسي", "رابط العرض التقديمي"];
+    const header = ["كود الدرس", "المادة", "عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور (نعم/لا)", "الصف الدراسي", "رابط العرض التقديمي"];
     const rows = exportData.map(l => [
       l.lesson_code || "",
       l.subject_id ? (subjects.find(s => s.id === l.subject_id)?.name_ar || "") : "",
@@ -672,7 +670,6 @@ const AdminContent = () => {
       l.summary,
       l.display_order,
       l.is_published ? "نعم" : "لا",
-      l.is_free ? "نعم" : "لا",
       l.grade_level || "",
       l.presentation_url || "",
     ]);
@@ -856,11 +853,6 @@ const AdminContent = () => {
                           <Badge variant={l.is_published ? "default" : "secondary"} className="text-[10px]">
                             {l.is_published ? "منشور" : "مسودة"}
                           </Badge>
-                          {l.is_free && (
-                            <Badge variant="outline" className="text-[10px] border-green-500 text-green-600 gap-0.5">
-                              <Sparkles className="w-2.5 h-2.5" /> مجاني
-                            </Badge>
-                          )}
                           <Badge variant="outline" className="text-[10px]">
                             {questions.filter((q) => q.lesson_id === l.id).length} سؤال
                           </Badge>
@@ -1016,13 +1008,6 @@ const AdminContent = () => {
               <div className="flex items-center gap-2 pt-6">
                 <Switch checked={lessonPublished} onCheckedChange={setLessonPublished} />
                 <Label>منشور</Label>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 p-3 rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900">
-              <Switch checked={lessonFree} onCheckedChange={setLessonFree} />
-              <div>
-                <Label className="text-sm">درس مجاني</Label>
-                <p className="text-xs text-muted-foreground">يمكن للطلاب الوصول للمحتوى الكامل بدون اشتراك</p>
               </div>
             </div>
 
