@@ -159,22 +159,31 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
               اختر المادة ومستوى الصعوبة وسيقوم الذكاء الاصطناعي بتوليد أسئلة تدريبية مشابهة لاختبار المفاضلة
             </p>
 
-            {/* Subject selection */}
-            <div>
-              <p className="text-xs font-semibold text-foreground mb-1.5">المادة</p>
-              <div className="flex flex-wrap gap-1.5">
-                {SUBJECT_OPTIONS.map((s) => (
-                  <Badge
-                    key={s.value}
-                    variant={subject === s.value ? "default" : "outline"}
-                    className="cursor-pointer text-xs"
-                    onClick={() => setSubject(s.value)}
-                  >
-                    {s.label}
-                  </Badge>
-                ))}
+            {/* Subject selection — limited to student's track subjects */}
+            {subjectOptions.length === 0 ? (
+              <div className="flex items-start gap-2 p-3 rounded-md border border-amber-200 bg-amber-50/60 dark:bg-amber-950/10 dark:border-amber-900/40">
+                <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-800 dark:text-amber-300">
+                  أكمل بياناتك الأكاديمية (الجامعة والكلية) لتظهر المواد الخاصة بمسارك.
+                </p>
               </div>
-            </div>
+            ) : (
+              <div>
+                <p className="text-xs font-semibold text-foreground mb-1.5">المادة</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {subjectOptions.map((s) => (
+                    <Badge
+                      key={s.value}
+                      variant={subject === s.value ? "default" : "outline"}
+                      className="cursor-pointer text-xs"
+                      onClick={() => setSubject(s.value)}
+                    >
+                      {s.label}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Difficulty selection */}
             <div>
