@@ -221,10 +221,11 @@ const AdminStudents = () => {
             <Button variant="outline" size="sm" onClick={() => {
               exportToExcel({
                 title: "قائمة الطلاب",
-                headers: ["الاسم", "الهاتف", "المحافظة", "الجامعة", "الكلية", "التخصص", "المعدل", "رقم التنسيق"],
+                headers: ["الاسم", "الهاتف", "حالة الاشتراك", "المحافظة", "الجامعة", "الكلية", "التخصص", "المعدل", "رقم التنسيق"],
                 rows: filtered.map((s) => [
                   getFullName(s),
                   s.phone || "-",
+                  activeSubUserIds.has(s.user_id) ? "مشترك" : "غير مشترك",
                   s.governorate || "-",
                   getUniName(s.university_id),
                   getCollegeName(s.college_id),
