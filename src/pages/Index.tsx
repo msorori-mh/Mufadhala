@@ -30,15 +30,11 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
   const [checking, setChecking] = useState(true);
   const [showBubble, setShowBubble] = useState(false);
 
-  // Show bubble only on first visit
+  // Show bubble on every visit, auto-hide after 10s
   useEffect(() => {
-    const seen = localStorage.getItem("landing_bubble_seen");
-    if (!seen) {
-      setShowBubble(true);
-      localStorage.setItem("landing_bubble_seen", "true");
-      const timer = setTimeout(() => setShowBubble(false), 5000);
-      return () => clearTimeout(timer);
-    }
+    setShowBubble(true);
+    const timer = setTimeout(() => setShowBubble(false), 10000);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
