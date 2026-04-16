@@ -103,7 +103,7 @@ const Welcome = () => {
 
         {collegeName && (
           <p className="text-base text-primary font-semibold text-center mb-1">
-            كلية {collegeName} تنتظرك
+            {collegeName.startsWith("كلية") ? collegeName : `كلية ${collegeName}`} تنتظرك
           </p>
         )}
 
