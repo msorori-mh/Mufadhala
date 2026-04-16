@@ -173,6 +173,25 @@ const AdminPastExams = () => {
     toast({ title: "تم الحذف" });
   };
 
+  const [unpublishingId, setUnpublishingId] = useState<string | null>(null);
+  const handleUnpublish = async (m: Model) => {
+    if (!confirm(`إرجاع النموذج "${m.title}" إلى مسودة؟ سيختفي عن الطلاب فوراً.`)) return;
+    setUnpublishingId(m.id);
+    try {
+      const { error } = await supabase
+        .from("past_exam_models")
+        .update({ is_published: false })
+        .eq("id", m.id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
+      toast({ title: "تم إرجاع النموذج إلى مسودة" });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر إلغاء النشر", description: err?.message || "حدث خطأ" });
+    } finally {
+      setUnpublishingId(null);
+    }
+  };
+
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const handleDuplicate = async (m: Model) => {
     if (!confirm(`نسخ النموذج "${m.title}" مع جميع أسئلته؟`)) return;
