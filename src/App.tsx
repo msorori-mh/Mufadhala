@@ -152,6 +152,8 @@ function App() {
                   <Route path="/leaderboard" element={<Leaderboard />} />
                   <Route path="/achievements" element={<Achievements />} />
                   <Route path="/college-guide" element={<CollegeGuide />} />
+                  <Route path="/past-exams" element={<PastExams />} />
+                  <Route path="/past-exams/:modelId" element={<PastExamPractice />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/delete-account" element={<DeleteAccount />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -177,6 +179,7 @@ function App() {
                   <Route path="/admin/subjects" element={<AdminSubjects />} />
                   <Route path="/admin/deletion-logs" element={<AdminDeletionLogs />} />
                   <Route path="/admin/tracks" element={<AdminTracks />} />
+                  <Route path="/admin/past-exams" element={<AdminPastExams />} />
                   <Route path="/admin/profile" element={<AdminProfile />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
