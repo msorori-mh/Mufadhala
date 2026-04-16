@@ -15,7 +15,7 @@ const PastExamStatsCard = ({ studentId }: Props) => {
     queryKey: ["past-exam-attempts-stats", studentId],
     queryFn: async () => {
       if (!studentId) return null;
-      const { data: attempts } = await supabase
+      const { data: attempts } = await (supabase as any)
         .from("past_exam_attempts")
         .select("id, mode, score, total, blank_count, elapsed_seconds, completed_at, model_id")
         .eq("student_id", studentId)
@@ -24,13 +24,13 @@ const PastExamStatsCard = ({ studentId }: Props) => {
 
       if (!attempts || attempts.length === 0) return { attempts: [], models: new Map() };
 
-      const modelIds = Array.from(new Set(attempts.map((a) => a.model_id)));
+      const modelIds = Array.from(new Set(attempts.map((a: any) => a.model_id)));
       const { data: models } = await supabase
         .from("past_exam_models")
         .select("id, title, year")
-        .in("id", modelIds);
+        .in("id", modelIds as string[]);
 
-      const modelMap = new Map((models || []).map((m) => [m.id, m]));
+      const modelMap = new Map((models || []).map((m: any) => [m.id, m]));
       return { attempts, models: modelMap };
     },
     enabled: !!studentId,
