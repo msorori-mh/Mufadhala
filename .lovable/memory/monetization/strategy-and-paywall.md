@@ -7,6 +7,7 @@ type: feature
 
 ### 1. Lessons & Questions → ALL FREE
 - No restrictions on lessons or lesson questions
+- PaywallSheet component DELETED — no lock logic remains in LessonsList or LessonDetail
 
 ### 2. Past Exam Models
 - First model per university (earliest year) → FREE
@@ -24,5 +25,3 @@ type: feature
 - FreeLimitMessage component shows: "وصلت للحد المجاني / لو تريد ترفع مستواك أكثر — اشترك الآن"
 - Clean centered layout, no aggressive popups
 - Button navigates to /subscription
-
-### 5. Old paywall system (usePaywallTrigger, PaywallSheet, EngagementModal) still exists but superseded by this strategy

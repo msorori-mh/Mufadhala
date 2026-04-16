@@ -7,12 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
-import PaywallSheet, { usePaywall } from "@/components/PaywallSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchLessonsBySubjects } from "@/lib/contentFilter";
 import { useStudentAccess } from "@/hooks/useStudentAccess";
-import { useSubscription } from "@/hooks/useSubscription";
-import { GraduationCap, BookOpen, ArrowRight, ChevronLeft, ChevronDown, ChevronUp, Loader2, CheckCircle2, Search, X, Lock, Sparkles, Download, WifiOff } from "lucide-react";
+import { GraduationCap, BookOpen, ArrowRight, ChevronLeft, ChevronDown, ChevronUp, Loader2, CheckCircle2, Search, X, Download, WifiOff } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useOfflineStatus } from "@/hooks/useOfflineStatus";
 import { getSavedLessonIds, getAllSavedLessons } from "@/lib/offlineStorage";
@@ -63,15 +61,14 @@ const GradeLevelSection = ({ label, count, completedCount, questionCount, childr
   );
 };
 
-/** Auto-refetch view when college_id is missing (race condition recovery).
- *  Retries up to 3 times with increasing delay to handle trigger latency. */
+/** Auto-refetch view when college_id is missing (race condition recovery). */
 const NoCollegeView = ({ refetch }: { refetch: () => void }) => {
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
 
   useEffect(() => {
     if (retryCount < maxRetries) {
-      const delay = (retryCount + 1) * 1500; // 1.5s, 3s, 4.5s
+      const delay = (retryCount + 1) * 1500;
       const timer = setTimeout(() => {
         refetch();
         setRetryCount((c) => c + 1);
@@ -101,13 +98,11 @@ const NoCollegeView = ({ refetch }: { refetch: () => void }) => {
 
 const LessonsList = () => {
   const { user, student, isAdmin, isModerator, canAccessContent, isLegacyCorrupted, loading: accessLoading, refetchStudent, subjectIds, filterName } = useStudentAccess();
-  const { isActive: hasSubscription, loading: subLoading, planId, allowedMajorIds } = useSubscription(user?.id);
   const navigate = useNavigate();
   const isOffline = useOfflineStatus();
   const [savedOfflineIds, setSavedOfflineIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSubjectFilter, setActiveSubjectFilter] = useState<string>("all");
-  const { paywallProps, showPaywall } = usePaywall();
   const authLoading = accessLoading;
 
   useEffect(() => {
@@ -135,7 +130,6 @@ const LessonsList = () => {
     staleTime: Infinity,
   });
 
-  // ── NEW: Subject-based lesson fetching ────────────────
   const collegeId = student?.college_id;
   const studentId = student?.id;
 
@@ -144,7 +138,6 @@ const LessonsList = () => {
     queryFn: async () => {
       if (subjectIds.length === 0) return { majorName: "", lessons: [] as Lesson[], subjects: [] as SubjectInfo[], questionCounts: {} as Record<string, number>, completedLessons: new Set<string>() };
 
-      // Fetch deduplicated lessons by subjects + subject info in parallel
       const [lessons, subsResult] = await Promise.all([
         fetchLessonsBySubjects(supabase, subjectIds),
         supabase.from("subjects").select("id, name_ar, code").in("id", subjectIds).order("display_order"),
@@ -157,7 +150,6 @@ const LessonsList = () => {
         subject_id: l.subject_id || null, grade_level: l.grade_level || null,
       })) as Lesson[];
 
-      // Fetch question counts and progress in parallel
       const lessonIds = enrichedLessons.map(l => l.id);
       if (lessonIds.length === 0) return { lessons: enrichedLessons, majorName: filterName, subjects, questionCounts: {}, completedLessons: new Set<string>() };
 
@@ -191,55 +183,6 @@ const LessonsList = () => {
   const subjects = lessonsData?.subjects || [];
   const questionCounts = lessonsData?.questionCounts || {};
   const completedLessons = lessonsData?.completedLessons || new Set<string>();
-
-  // Fetch free lessons count setting from cache
-  const { data: freeLessonsCount } = useQuery({
-    queryKey: ["free-lessons-count"],
-    queryFn: async () => {
-      const { data } = await supabase.rpc("get_cache", { _key: "free_lessons_count" });
-      return data != null ? Number(data) : 10;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const FREE_COUNT = freeLessonsCount ?? 10;
-
-  // Compute which lessons are free: first N per subject (by display_order)
-  const freeLessonIds = useMemo(() => {
-    const ids = new Set<string>();
-    const bySubject = new Map<string | null, Lesson[]>();
-    lessons.forEach(l => {
-      const key = l.subject_id || null;
-      if (!bySubject.has(key)) bySubject.set(key, []);
-      bySubject.get(key)!.push(l);
-    });
-    bySubject.forEach(group => {
-      const sorted = [...group].sort((a, b) => a.display_order - b.display_order);
-      sorted.slice(0, FREE_COUNT).forEach(l => ids.add(l.id));
-    });
-    // Also include any lesson with is_free=true from DB
-    lessons.forEach(l => { if (l.is_free) ids.add(l.id); });
-    return ids;
-  }, [lessons, FREE_COUNT]);
-
-  // Compute free lessons remaining per subject
-  const freeCountBySubject = useMemo(() => {
-    const result = new Map<string | null, { total: number; free: number; remaining: number }>();
-    const bySubject = new Map<string | null, Lesson[]>();
-    lessons.forEach(l => {
-      const key = l.subject_id || null;
-      if (!bySubject.has(key)) bySubject.set(key, []);
-      bySubject.get(key)!.push(l);
-    });
-    bySubject.forEach((group, key) => {
-      const sorted = [...group].sort((a, b) => a.display_order - b.display_order);
-      const freeInSubject = sorted.slice(0, FREE_COUNT).length;
-      const totalInSubject = sorted.length;
-      const remaining = Math.max(0, FREE_COUNT - freeInSubject);
-      result.set(key, { total: totalInSubject, free: freeInSubject, remaining });
-    });
-    return result;
-  }, [lessons, FREE_COUNT]);
 
   const lessonsStillLoading = !isOffline && lessonsLoading;
 
@@ -388,45 +331,6 @@ const LessonsList = () => {
               </div>
             )}
 
-            {/* Free lessons remaining counter */}
-            {!isOffline && !hasSubscription && lessons.length > 0 && !searchQuery && (
-              <Card className="mb-5 border-green-200 bg-green-50/50 dark:bg-green-950/10 dark:border-green-900/50">
-                <CardContent className="py-3 px-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sparkles className="w-4 h-4 text-green-600" />
-                    <span className="text-sm font-semibold text-green-700 dark:text-green-400">الدروس المجانية</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {subjects.map(s => {
-                      const info = freeCountBySubject.get(s.id);
-                      if (!info) return null;
-                      const freeUsed = Math.min(info.free, info.total);
-                      return (
-                        <div key={s.id} className="flex items-center gap-1.5 text-xs bg-background rounded-md px-2.5 py-1.5 border">
-                          <span className="text-muted-foreground">{s.name_ar}:</span>
-                          <span className="font-bold text-green-600 dark:text-green-400">{freeUsed}</span>
-                          <span className="text-muted-foreground">/ {FREE_COUNT}</span>
-                        </div>
-                      );
-                    })}
-                    {(() => {
-                      const info = freeCountBySubject.get(null);
-                      if (!info) return null;
-                      const freeUsed = Math.min(info.free, info.total);
-                      return (
-                        <div className="flex items-center gap-1.5 text-xs bg-background rounded-md px-2.5 py-1.5 border">
-                          <span className="text-muted-foreground">غير مصنف:</span>
-                          <span className="font-bold text-green-600 dark:text-green-400">{freeUsed}</span>
-                          <span className="text-muted-foreground">/ {FREE_COUNT}</span>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mt-2">أول {FREE_COUNT} دروس من كل مادة متاحة مجاناً بالكامل</p>
-                </CardContent>
-              </Card>
-            )}
-
             {!isOffline && lessons.length > 0 && !searchQuery && (
               <Card className="mb-5">
                 <CardContent className="py-4 px-4 space-y-2">
@@ -466,44 +370,28 @@ const LessonsList = () => {
             )}
 
             {(() => {
-              // Check if we should group by grade level (when filtering by subject or "all" with subjects)
               const hasGradeLevels = filteredLessons.some(l => l.grade_level);
               const shouldGroup = !searchQuery && !isOffline && hasGradeLevels && activeSubjectFilter !== "all";
 
               const renderLessonCard = (lesson: Lesson) => {
                 const done = completedLessons.has(lesson.id);
                 const originalIndex = lessons.findIndex(l => l.id === lesson.id);
-                const hasPaidAccess = hasSubscription && !!planId && (!allowedMajorIds || allowedMajorIds.length === 0 || allowedMajorIds.includes(lesson.major_id));
-                const isFree = freeLessonIds.has(lesson.id);
-                const isLocked = !isOffline && !isFree && !hasPaidAccess;
                 const isSavedOffline = savedOfflineIds.has(lesson.id);
                 return (
                   <div
                     key={lesson.id}
                     className="block"
-                    onClick={(e) => {
-                      if (isLocked) {
-                        e.preventDefault();
-                        showPaywall("locked_lesson", lesson.title, true);
-                      } else {
-                        navigate(`/lessons/${lesson.id}`);
-                      }
-                    }}
+                    onClick={() => navigate(`/lessons/${lesson.id}`)}
                   >
-                    <Card className={`hover:shadow-md transition-shadow cursor-pointer border-r-4 ${done ? "border-r-green-500" : isLocked ? "border-r-muted-foreground/30" : "border-r-primary"}`}>
+                    <Card className={`hover:shadow-md transition-shadow cursor-pointer border-r-4 ${done ? "border-r-green-500" : "border-r-primary"}`}>
                       <CardContent className="py-4 px-4">
                         <div className="flex items-center justify-between">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className={`w-7 h-7 rounded-full text-sm font-bold flex items-center justify-center shrink-0 ${done ? "bg-green-100 text-green-600 dark:bg-green-950/30" : isLocked ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"}`}>
-                                {done ? <CheckCircle2 className="w-4 h-4" /> : isLocked ? <Lock className="w-3.5 h-3.5" /> : originalIndex + 1}
+                              <span className={`w-7 h-7 rounded-full text-sm font-bold flex items-center justify-center shrink-0 ${done ? "bg-green-100 text-green-600 dark:bg-green-950/30" : "bg-primary/10 text-primary"}`}>
+                                {done ? <CheckCircle2 className="w-4 h-4" /> : originalIndex + 1}
                               </span>
                               <p className="font-semibold text-foreground">{lesson.title}</p>
-                              {isFree && !hasSubscription && !isOffline && (
-                                <Badge variant="outline" className="text-xs border-green-500 text-green-600 gap-0.5">
-                                  <Sparkles className="w-3 h-3" /> مجاني
-                                </Badge>
-                              )}
                               {isSavedOffline && !isOffline && (
                                 <Download className="w-3.5 h-3.5 text-primary shrink-0" />
                               )}
@@ -520,18 +408,9 @@ const LessonsList = () => {
                                   مكتمل
                                 </Badge>
                               )}
-                              {isLocked && (
-                                <Badge variant="outline" className="text-xs text-muted-foreground">
-                                  يتطلب اشتراك
-                                </Badge>
-                              )}
                             </div>
                           </div>
-                          {isLocked ? (
-                            <Lock className="w-5 h-5 text-muted-foreground shrink-0 mr-2" />
-                          ) : (
-                            <ArrowRight className="w-5 h-5 text-muted-foreground shrink-0 mr-2" />
-                          )}
+                          <ArrowRight className="w-5 h-5 text-muted-foreground shrink-0 mr-2" />
                         </div>
                       </CardContent>
                     </Card>
@@ -540,7 +419,6 @@ const LessonsList = () => {
               };
 
               if (shouldGroup) {
-                // Group by grade level
                 const gradeGroups: { grade: number | null; label: string; lessons: Lesson[] }[] = [];
                 const grades = [1, 2, 3];
                 for (const g of grades) {
@@ -576,9 +454,6 @@ const LessonsList = () => {
           </>
         )}
       </main>
-
-      {/* Paywall Sheet */}
-      <PaywallSheet {...paywallProps} />
     </div>
   );
 };

@@ -6,8 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useSubscription } from "@/hooks/useSubscription";
-import { ChevronLeft, ChevronRight, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check, Lock, Star, Download, Trash2, WifiOff, Eye, EyeOff, Presentation, Sparkles, Brain } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check, Star, Download, Trash2, WifiOff, Eye, EyeOff, Presentation, Brain } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import LessonReviews from "@/components/LessonReviews";
 import { toast } from "sonner";
@@ -16,7 +15,6 @@ import { useOfflineStatus } from "@/hooks/useOfflineStatus";
 import { saveLesson as saveLessonOffline, getLesson as getOfflineLesson, removeLesson as removeOfflineLesson, type OfflineLesson } from "@/lib/offlineStorage";
 import { trackFunnelEvent, hasTrackedEvent } from "@/lib/funnelTracking";
 import ChatWidget from "@/components/ChatWidget";
-import PaywallSheet, { usePaywall } from "@/components/PaywallSheet";
 import SummaryTTS from "@/components/SummaryTTS";
 
 interface Lesson {
@@ -60,10 +58,7 @@ const LessonDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading, isStaff } = useAuth();
   const navigate = useNavigate();
-  const { isActive: hasActiveSubscription, loading: subLoading, planId, allowedMajorIds } = useSubscription(user?.id);
-  const [planCoversLesson, setPlanCoversLesson] = useState(false);
   const isOffline = useOfflineStatus();
-  const paywallActions = usePaywall();
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -79,8 +74,6 @@ const LessonDetail = () => {
 
   // Reveal answer state
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
-
-  const [isDynamicallyFree, setIsDynamicallyFree] = useState(false);
 
   useEffect(() => {
     if (authLoading || !id || !user) return;
@@ -100,42 +93,19 @@ const LessonDetail = () => {
         return;
       }
 
-      // Phase 1: Fetch lesson, questions, student, and free-count in parallel
-      const [{ data: l }, { data: q }, { data: s }, { data: freeCountData }] = await Promise.all([
+      // Fetch lesson, questions, student in parallel
+      const [{ data: l }, { data: q }, { data: s }] = await Promise.all([
         supabase.from("lessons").select("id, title, content, summary, is_free, major_id, presentation_url, grade_level, subject_id").eq("id", id).maybeSingle(),
         supabase.from("questions").select("*").eq("lesson_id", id).order("display_order"),
         supabase.from("students").select("id").eq("user_id", user.id).maybeSingle(),
-        supabase.rpc("get_cache", { _key: "free_lessons_count" }),
       ]);
 
       if (q) setQuestions(q as Question[]);
 
       if (l) {
         setLesson(l as Lesson);
-        // Check if the subscription plan covers this lesson's major
-        if (planId) {
-          if (!allowedMajorIds || allowedMajorIds.length === 0) {
-            setPlanCoversLesson(true);
-          } else {
-            setPlanCoversLesson(allowedMajorIds.includes(l.major_id));
-          }
-        }
 
-        // Phase 2: Fire all secondary requests in parallel
-        const freeCount = freeCountData != null ? Number(freeCountData) : 10;
         const secondaryPromises: Promise<any>[] = [];
-
-        // Free check
-        if (l.major_id && l.subject_id) {
-          secondaryPromises.push(
-            Promise.resolve(supabase.from("lessons").select("id").eq("major_id", l.major_id).eq("subject_id", l.subject_id).eq("is_published", true).order("display_order").limit(freeCount))
-              .then(({ data: sibs }) => {
-                if (sibs && sibs.some((sb: any) => sb.id === id)) setIsDynamicallyFree(true);
-              })
-          );
-        } else if (l.is_free) {
-          setIsDynamicallyFree(true);
-        }
 
         // Siblings for prev/next
         if (l.major_id) {
@@ -182,7 +152,7 @@ const LessonDetail = () => {
       }
     };
     fetchData();
-  }, [authLoading, id, user, isOffline, planId, allowedMajorIds]);
+  }, [authLoading, id, user, isOffline]);
 
   const handleSaveOffline = async () => {
     if (!lesson || !id) return;
@@ -247,27 +217,13 @@ const LessonDetail = () => {
     }
   }, [lesson, id, authLoading, loading]);
 
-  // Auto-show paywall when landing on locked lesson
-  useEffect(() => {
-    if (!lesson || loading || subLoading || authLoading) return;
-    const access = isStaff || (hasActiveSubscription && planCoversLesson) || isDynamicallyFree || lesson.is_free || isFromCache;
-    if (!access && id) {
-      trackFunnelEvent("paywall_viewed", { lesson_id: id });
-      // Auto-open paywall sheet after a brief delay
-      const t = setTimeout(() => paywallActions.showPaywall("locked_lesson", lesson.title, true), 800);
-      return () => clearTimeout(t);
-    }
-  }, [lesson, loading, subLoading, authLoading, isStaff, hasActiveSubscription, planCoversLesson, isDynamicallyFree, isFromCache, id]);
-
-  if (authLoading || loading || subLoading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
-
-  const canAccess = isStaff || (hasActiveSubscription && planCoversLesson) || isDynamicallyFree || (lesson?.is_free === true) || isFromCache;
 
   if (!lesson) {
     return (
@@ -292,7 +248,7 @@ const LessonDetail = () => {
           </div>
           <div className="flex items-center gap-1">
             {/* Offline save/remove button */}
-            {canAccess && !isOffline && (
+            {!isOffline && (
               isSavedOffline ? (
                 <Button variant="ghost" size="sm" onClick={handleRemoveOffline} className="text-white hover:bg-white/20 hover:text-white gap-1">
                   <Trash2 className="w-4 h-4" />
@@ -322,41 +278,6 @@ const LessonDetail = () => {
       )}
 
       <main className="max-w-4xl mx-auto px-4 py-6 md:pb-6">
-        {!canAccess ? (
-          <div className="space-y-4">
-            {lesson.summary && (
-              <Card>
-                <CardContent className="py-6 px-5">
-                  <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
-                    <BookOpen className="w-4 h-4" /> ملخص الدرس
-                  </h3>
-                  <SummaryTTS text={lesson.summary} />
-                  <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
-                    {lesson.summary}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            <Card className="border-primary/30 bg-gradient-to-b from-primary/5 to-background">
-              <CardContent className="py-8 text-center space-y-4">
-                <Lock className="w-12 h-12 text-primary mx-auto mb-2" />
-                <h2 className="text-lg font-bold text-foreground">أنت على بعد خطوة من الوصول الكامل</h2>
-                <p className="text-sm text-muted-foreground">
-                  {hasActiveSubscription && !planCoversLesson
-                    ? "باقتك الحالية لا تغطي هذا التخصص. يمكنك ترقية اشتراكك"
-                    : "يمكنك قراءة الملخص مجاناً. اشترك للوصول الكامل"}
-                </p>
-                <Button className="px-6 py-5 text-base font-bold gap-2" onClick={() => paywallActions.showPaywall("locked_lesson", lesson.title, true)}>
-                  <Sparkles className="w-4 h-4" />
-                  عرض الخطط والأسعار
-                </Button>
-                <p className="text-[10px] text-muted-foreground">دفعة واحدة فقط • وصول كامل طوال الموسم</p>
-              </CardContent>
-            </Card>
-            <PaywallSheet {...paywallActions.paywallProps} />
-          </div>
-        ) : (
-          <>
         {/* Completion button */}
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -579,12 +500,10 @@ const LessonDetail = () => {
           </div>
         )}
         {/* Floating AI Tutor for lesson context */}
-        {canAccess && !isFromCache && lesson && (
+        {!isFromCache && lesson && (
           <ChatWidget
             lessonContext={{ title: lesson.title, summary: lesson.summary }}
           />
-        )}
-        </>
         )}
       </main>
     </div>
