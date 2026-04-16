@@ -72,7 +72,6 @@ const ExamSimulator = () => {
             <h1 className="text-2xl font-bold text-foreground">اختبر مستواك الآن</h1>
             <p className="text-sm text-muted-foreground mt-1">مجموعة أسئلة تحاكي اختبار القبول الحقيقي — اعرف مستواك قبل يوم المفاضلة</p>
           </div>
-          </div>
 
           <Card className="border-primary/30 bg-primary/5">
             <CardContent className="py-5 space-y-4">
