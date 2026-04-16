@@ -367,7 +367,6 @@ export type Database = {
           display_order: number
           grade_level: number | null
           id: string
-          is_free: boolean
           is_published: boolean
           lesson_code: string | null
           major_id: string | null
@@ -384,7 +383,6 @@ export type Database = {
           display_order?: number
           grade_level?: number | null
           id?: string
-          is_free?: boolean
           is_published?: boolean
           lesson_code?: string | null
           major_id?: string | null
@@ -401,7 +399,6 @@ export type Database = {
           display_order?: number
           grade_level?: number | null
           id?: string
-          is_free?: boolean
           is_published?: boolean
           lesson_code?: string | null
           major_id?: string | null
@@ -1394,7 +1391,6 @@ export type Database = {
         Returns: {
           display_order: number
           id: string
-          is_free: boolean
           major_id: string
           summary: string
           title: string
@@ -1405,7 +1401,6 @@ export type Database = {
         Returns: {
           display_order: number
           id: string
-          is_free: boolean
           major_id: string
           summary: string
           title: string
@@ -1438,7 +1433,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_free_lesson: { Args: { _lesson_id: string }; Returns: boolean }
       refresh_leaderboard: { Args: never; Returns: undefined }
       set_cache: {
         Args: { _key: string; _ttl_seconds?: number; _value: Json }
