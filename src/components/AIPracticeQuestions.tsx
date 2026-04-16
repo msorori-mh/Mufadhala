@@ -203,7 +203,7 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
             </div>
 
             {hasSubscription ? (
-              <Button onClick={generate} className="w-full gap-2">
+              <Button onClick={generate} className="w-full gap-2" disabled={!subject || subjectOptions.length === 0}>
                 <Sparkles className="w-4 h-4" />
                 توليد 5 أسئلة
               </Button>
