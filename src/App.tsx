@@ -61,6 +61,8 @@ const AdminSubjects = lazy(() => import("./pages/admin/AdminSubjects"));
 const AdminDeletionLogs = lazy(() => import("./pages/admin/AdminDeletionLogs"));
 const AdminTracks = lazy(() => import("./pages/admin/AdminTracks"));
 const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
+const AdminPastExams = lazy(() => import("./pages/admin/AdminPastExams"));
+const PastExams = lazy(() => import("./pages/PastExams"));
 const Settings = lazy(() => import("./pages/Settings"));
 const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
 const PublicDeleteAccount = lazy(() => import("./pages/PublicDeleteAccount"));
@@ -150,6 +152,7 @@ function App() {
                   <Route path="/leaderboard" element={<Leaderboard />} />
                   <Route path="/achievements" element={<Achievements />} />
                   <Route path="/college-guide" element={<CollegeGuide />} />
+                  <Route path="/past-exams" element={<PastExams />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/delete-account" element={<DeleteAccount />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -176,6 +179,7 @@ function App() {
                   <Route path="/admin/deletion-logs" element={<AdminDeletionLogs />} />
                   <Route path="/admin/tracks" element={<AdminTracks />} />
                   <Route path="/admin/profile" element={<AdminProfile />} />
+                  <Route path="/admin/past-exams" element={<AdminPastExams />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 </PageShell>
