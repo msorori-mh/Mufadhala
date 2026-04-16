@@ -11,7 +11,16 @@ import { useAuth } from "@/hooks/useAuth";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Tag } from "lucide-react";
+import { Loader2, Plus, Tag, Sparkles } from "lucide-react";
+
+const generateRandomCode = () => {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let suffix = "";
+  for (let i = 0; i < 5; i++) {
+    suffix += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `MUF${suffix}`;
+};
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -80,7 +89,7 @@ const AdminPromoCodes = () => {
               <h1 className="text-2xl font-bold flex items-center gap-2"><Tag className="w-6 h-6" /> أكواد الخصم</h1>
               <p className="text-sm text-muted-foreground">إنشاء وإدارة أكواد الخصم الترويجية</p>
             </div>
-            <Button size="sm" onClick={() => setDialogOpen(true)}><Plus className="w-4 h-4 ml-1" /> كود جديد</Button>
+            <Button size="sm" onClick={() => { setForm({ code: generateRandomCode(), discount_percent: 10, max_uses: "", expires_at: "" }); setDialogOpen(true); }}><Plus className="w-4 h-4 ml-1" /> كود جديد</Button>
           </div>
 
           <Card>
@@ -131,7 +140,12 @@ const AdminPromoCodes = () => {
               <div className="space-y-3">
                 <div className="space-y-1">
                   <Label>الكود *</Label>
-                  <Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} placeholder="STUDENT2026" />
+                  <div className="flex gap-2">
+                    <Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} placeholder="MUF7K9X2" className="flex-1" />
+                    <Button type="button" variant="outline" size="sm" onClick={() => setForm({ ...form, code: generateRandomCode() })}>
+                      <Sparkles className="w-4 h-4 ml-1" /> توليد
+                    </Button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
