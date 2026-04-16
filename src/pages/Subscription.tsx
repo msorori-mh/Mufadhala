@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import ConversionBoosters from "@/components/ConversionBoosters";
-import { getZone, getPlanPrice } from "@/domain/pricing";
+import { getZone, getPlanPrice, getZoneFromUniversity, getPlanPriceByZone, PriceZone } from "@/domain/pricing";
 import { ZONE_A_GOVERNORATES, ZONE_B_GOVERNORATES } from "@/domain/constants";
 import { trackFunnelEvent } from "@/lib/funnelTracking";
 
@@ -60,6 +60,10 @@ const Subscription = () => {
   const [loading, setLoading] = useState(true);
   const studentGovernorate = studentData?.governorate ?? null;
 
+  // University-based pricing zone (trusted source)
+  const [universityPricingZone, setUniversityPricingZone] = useState<PriceZone>(null);
+  const [universityName, setUniversityName] = useState<string | null>(null);
+
   const [step, setStep] = useState<"plans" | "method" | "upload">("plans");
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
@@ -100,7 +104,23 @@ const Subscription = () => {
     fetchAll();
   }, [authLoading, user]);
 
-  // Auto-poll subscription status every 20s when pending
+  // Fetch university pricing zone (trusted source for pricing)
+  useEffect(() => {
+    if (!studentData?.university_id) return;
+    supabase
+      .from("universities")
+      .select("pricing_zone, name_ar")
+      .eq("id", studentData.university_id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setUniversityPricingZone(getZoneFromUniversity((data as any).pricing_zone));
+          setUniversityName(data.name_ar);
+        }
+      });
+  }, [studentData?.university_id]);
+
+
   const prevSubStatusRef = useRef<string | null>(null);
   useEffect(() => {
     if (!user || !subscription || subscription.status !== "pending") return;
@@ -271,7 +291,9 @@ const Subscription = () => {
       return;
     }
 
-    const rawPrice = getPlanPrice(selectedPlan, studentGovernorate);
+    // PRICING: Use university zone (trusted), NOT governorate
+    const pricingZone = universityPricingZone;
+    const rawPrice = getPlanPriceByZone(selectedPlan, pricingZone);
     const finalPrice = promoDiscount > 0 ? Math.round(rawPrice * (1 - promoDiscount / 100)) : rawPrice;
 
     const { data: newSub, error: subErr } = await supabase.from("subscriptions").insert({
@@ -295,6 +317,11 @@ const Subscription = () => {
       currency: selectedPlan.currency,
       receipt_url: filePath,
       status: "pending",
+      // Pricing snapshot — immutable record for validation
+      pricing_zone: pricingZone,
+      expected_amount: finalPrice,
+      pricing_source: "university",
+      university_id: studentData?.university_id ?? null,
     };
     if (promoId) paymentPayload.promo_code_id = promoId;
 
@@ -358,9 +385,7 @@ const Subscription = () => {
     );
   }
 
-  const zoneName = studentGovernorate
-    ? getZone(studentGovernorate) === "a" ? "المنطقة أ" : "المنطقة ب"
-    : null;
+  const zoneName = universityPricingZone === "a" ? "المنطقة أ (العملة القديمة)" : universityPricingZone === "b" ? "المنطقة ب (العملة الجديدة)" : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -430,13 +455,13 @@ const Subscription = () => {
         {step === "plans" && !isActive && !isPending && (() => {
           if (plans.length === 0) return <p className="text-center text-muted-foreground py-8">لا توجد خطط اشتراك متاحة حالياً</p>;
           
-          if (!studentGovernorate) {
+          if (!studentData?.university_id || !universityPricingZone) {
             return (
               <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-900">
                 <CardContent className="py-6 text-center space-y-3">
                   <GraduationCap className="w-10 h-10 text-yellow-600 mx-auto" />
-                  <h2 className="text-lg font-bold text-yellow-700 dark:text-yellow-400">يرجى إكمال بياناتك الشخصية أولاً</h2>
-                  <p className="text-sm text-yellow-600 dark:text-yellow-500">نحتاج لمعرفة محافظتك لتحديد سعر الاشتراك المناسب</p>
+                  <h2 className="text-lg font-bold text-yellow-700 dark:text-yellow-400">يرجى اختيار جامعتك أولاً</h2>
+                  <p className="text-sm text-yellow-600 dark:text-yellow-500">نحتاج لمعرفة جامعتك لتحديد سعر الاشتراك المناسب</p>
                   <Button onClick={() => navigate("/profile")} className="mt-2">إكمال البيانات الشخصية</Button>
                 </CardContent>
               </Card>
@@ -474,7 +499,11 @@ const Subscription = () => {
               <div className="text-center">
                 <h2 className="text-xl font-bold text-foreground">اختر خطتك المناسبة</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {zoneName && <>{zoneName} — {studentGovernorate}</>}
+                  {universityName && <>{universityName} — {zoneName}</>}
+                </p>
+                <p className="text-[11px] text-muted-foreground/70 mt-1 flex items-center justify-center gap-1">
+                  <Info className="w-3 h-3" />
+                  يتم تحديد السعر حسب الجامعة المختارة وليس المحافظة
                 </p>
               </div>
 
@@ -484,9 +513,9 @@ const Subscription = () => {
                   const isPopular = popularPlan?.id === plan.id && !plan.is_free;
                   const style = getPlanStyle(plan.slug);
                   const PlanIcon = style.icon;
-                  const price = getPlanPrice(plan, studentGovernorate);
+                  const price = getPlanPriceByZone(plan, universityPricingZone);
                   const finalPrice = promoDiscount > 0 ? Math.round(price * (1 - promoDiscount / 100)) : price;
-                  const zone = getZone(studentGovernorate);
+                  const zone = universityPricingZone;
                   const zoneDiscount = zone === "a" ? plan.discount_zone_a : zone === "b" ? plan.discount_zone_b : 0;
 
                   return (
@@ -619,17 +648,18 @@ const Subscription = () => {
                 <CollapsibleContent>
                   <Card className="mt-2">
                     <CardContent className="py-4 px-4 space-y-4">
-                      <div className={`rounded-lg p-3 border ${getZone(studentGovernorate) === "a" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border"}`}>
+                      <p className="text-xs text-muted-foreground">يتم تحديد المنطقة تلقائياً بناءً على الجامعة التي اخترتها.</p>
+                      <div className={`rounded-lg p-3 border ${universityPricingZone === "a" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border"}`}>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-semibold text-sm">المنطقة أ</span>
-                          {getZone(studentGovernorate) === "a" && <Badge variant="default">منطقتك</Badge>}
+                          <span className="font-semibold text-sm">المنطقة أ (العملة القديمة)</span>
+                          {universityPricingZone === "a" && <Badge variant="default">منطقة جامعتك</Badge>}
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">{ZONE_A_GOVERNORATES.join(" · ")}</p>
                       </div>
-                      <div className={`rounded-lg p-3 border ${getZone(studentGovernorate) === "b" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border"}`}>
+                      <div className={`rounded-lg p-3 border ${universityPricingZone === "b" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border"}`}>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-semibold text-sm">المنطقة ب</span>
-                          {getZone(studentGovernorate) === "b" && <Badge variant="default">منطقتك</Badge>}
+                          <span className="font-semibold text-sm">المنطقة ب (العملة الجديدة)</span>
+                          {universityPricingZone === "b" && <Badge variant="default">منطقة جامعتك</Badge>}
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">{ZONE_B_GOVERNORATES.join(" · ")}</p>
                       </div>
@@ -673,7 +703,7 @@ const Subscription = () => {
               <CardContent className="py-3 text-center">
                 <p className="text-sm font-semibold">{selectedPlan.name}</p>
                 {(() => {
-                  const raw = getPlanPrice(selectedPlan, studentGovernorate);
+                  const raw = getPlanPriceByZone(selectedPlan, universityPricingZone);
                   const final_ = promoDiscount > 0 ? Math.round(raw * (1 - promoDiscount / 100)) : raw;
                   return (
                     <div className="mt-1">
@@ -728,7 +758,7 @@ const Subscription = () => {
               <ChevronRight className="w-4 h-4 ml-1" /> العودة
             </Button>
             {(() => {
-              const raw = getPlanPrice(selectedPlan, studentGovernorate);
+              const raw = getPlanPriceByZone(selectedPlan, universityPricingZone);
               const final_ = promoDiscount > 0 ? Math.round(raw * (1 - promoDiscount / 100)) : raw;
               return (
                 <div className="space-y-3">
