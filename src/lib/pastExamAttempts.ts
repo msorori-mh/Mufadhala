@@ -12,7 +12,7 @@ export interface SavePastExamAttemptParams {
 }
 
 export const savePastExamAttempt = async (params: SavePastExamAttemptParams) => {
-  const { error } = await supabase.from("past_exam_attempts").insert({
+  const { error } = await (supabase as any).from("past_exam_attempts").insert({
     student_id: params.studentId,
     model_id: params.modelId,
     mode: params.mode,
