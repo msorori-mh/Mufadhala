@@ -678,12 +678,15 @@ export type Database = {
           created_at: string
           currency: string
           duplicate_count: number
+          expected_amount: number | null
           extracted_amount: number | null
           extracted_date: string | null
           extracted_reference: string | null
           fraud_status: string
           id: string
           payment_method_id: string | null
+          pricing_source: string | null
+          pricing_zone: string | null
           promo_code_id: string | null
           receipt_hash: string | null
           receipt_url: string | null
@@ -691,6 +694,7 @@ export type Database = {
           reviewed_by: string | null
           status: string
           subscription_id: string | null
+          university_id: string | null
           user_id: string
         }
         Insert: {
@@ -699,12 +703,15 @@ export type Database = {
           created_at?: string
           currency?: string
           duplicate_count?: number
+          expected_amount?: number | null
           extracted_amount?: number | null
           extracted_date?: string | null
           extracted_reference?: string | null
           fraud_status?: string
           id?: string
           payment_method_id?: string | null
+          pricing_source?: string | null
+          pricing_zone?: string | null
           promo_code_id?: string | null
           receipt_hash?: string | null
           receipt_url?: string | null
@@ -712,6 +719,7 @@ export type Database = {
           reviewed_by?: string | null
           status?: string
           subscription_id?: string | null
+          university_id?: string | null
           user_id: string
         }
         Update: {
@@ -720,12 +728,15 @@ export type Database = {
           created_at?: string
           currency?: string
           duplicate_count?: number
+          expected_amount?: number | null
           extracted_amount?: number | null
           extracted_date?: string | null
           extracted_reference?: string | null
           fraud_status?: string
           id?: string
           payment_method_id?: string | null
+          pricing_source?: string | null
+          pricing_zone?: string | null
           promo_code_id?: string | null
           receipt_hash?: string | null
           receipt_url?: string | null
@@ -733,6 +744,7 @@ export type Database = {
           reviewed_by?: string | null
           status?: string
           subscription_id?: string | null
+          university_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -1156,6 +1168,7 @@ export type Database = {
           is_active: boolean
           name_ar: string
           name_en: string | null
+          pricing_zone: string
           updated_at: string
         }
         Insert: {
@@ -1171,6 +1184,7 @@ export type Database = {
           is_active?: boolean
           name_ar: string
           name_en?: string | null
+          pricing_zone?: string
           updated_at?: string
         }
         Update: {
@@ -1186,6 +1200,7 @@ export type Database = {
           is_active?: boolean
           name_ar?: string
           name_en?: string | null
+          pricing_zone?: string
           updated_at?: string
         }
         Relationships: []
