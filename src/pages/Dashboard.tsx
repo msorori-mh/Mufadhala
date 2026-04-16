@@ -20,7 +20,7 @@ import { getDailyTip, dailyTips } from "@/data/dailyTips";
 import {
   GraduationCap, LogOut, UserCircle, Bell, Shield, BookOpen,
   ClipboardCheck, Trophy, TrendingUp, Target, BarChart3, CreditCard, Search,
-  Building2, ChevronLeft, Lightbulb, RefreshCw, FileText,
+  Building2, ChevronLeft, Lightbulb, RefreshCw, FileText, Sparkles,
 } from "lucide-react";
 import DashboardCharts from "@/components/DashboardCharts";
 import UpgradeCTABanner from "@/components/UpgradeCTABanner";
@@ -348,9 +348,15 @@ const Dashboard = () => {
                     { icon: BookOpen, title: "استعرض الدروس", desc: "ابدأ بمراجعة الملخصات الذكية لتخصصك", path: "/lessons", color: "text-secondary", bg: "bg-secondary/10" },
                     { icon: FileText, title: "نماذج الأعوام السابقة", desc: "تدرّب على نماذج حقيقية مع إجاباتها النموذجية", path: "/past-exams", color: "text-accent", bg: "bg-accent/10" },
                     { icon: ClipboardCheck, title: "خُض اختبار محاكاة", desc: "اعرف مستواك قبل يوم المفاضلة", path: "/exam", color: "text-primary", bg: "bg-primary/10" },
-                    { icon: Search, title: "ابحث في المحتوى", desc: "ابحث بالمادة أو الكلية أو التخصص", path: "/search", color: "text-primary", bg: "bg-primary/10" },
+                    { icon: Sparkles, title: "مولد الأسئلة الذكي", desc: "يقوم بتوليد أسئلة بناءً على تحليل أدائك", path: "#ai-generator", color: "text-primary", bg: "bg-primary/10" },
                   ].map((item) => (
-                    <Card key={item.path} className="cursor-pointer hover:shadow-md active:scale-[0.98] transition-all border" onClick={() => navigate(item.path)}>
+                    <Card key={item.path} className="cursor-pointer hover:shadow-md active:scale-[0.98] transition-all border" onClick={() => {
+                      if (item.path.startsWith("#")) {
+                        document.getElementById(item.path.slice(1))?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      } else {
+                        navigate(item.path);
+                      }
+                    }}>
                       <CardContent className="flex items-center gap-3 p-4">
                         <div className={`w-11 h-11 rounded-lg ${item.bg} flex items-center justify-center shrink-0`}>
                           <item.icon className={`w-5 h-5 ${item.color}`} />
@@ -479,7 +485,9 @@ const Dashboard = () => {
 
             {/* AI Practice Questions */}
             {!isAdmin && (
-              <AIPracticeQuestions hasSubscription={hasActiveSubscription} />
+              <div id="ai-generator" className="scroll-mt-20">
+                <AIPracticeQuestions hasSubscription={hasActiveSubscription} />
+              </div>
             )}
 
 
