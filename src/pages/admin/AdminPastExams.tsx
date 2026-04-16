@@ -91,14 +91,19 @@ const AdminPastExams = () => {
           title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: isPublished,
         }).eq("id", editingModel.id);
         toast({ title: "تم تحديث النموذج" });
+        qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
+        setShowForm(false);
       } else {
-        await supabase.from("past_exam_models").insert({
+        const { data: created, error } = await supabase.from("past_exam_models").insert({
           title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: isPublished,
-        });
-        toast({ title: "تم إنشاء النموذج" });
+        }).select("id").single();
+        if (error) throw error;
+        toast({ title: "تم إنشاء النموذج", description: "الآن أضف الأسئلة" });
+        qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
+        setShowForm(false);
+        // Auto-open questions editor for the newly created model
+        if (created?.id) setShowQuestions(created.id);
       }
-      qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
-      setShowForm(false);
     } catch {
       toast({ variant: "destructive", title: "حدث خطأ" });
     }
