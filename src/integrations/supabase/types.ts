@@ -47,6 +47,30 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_generation_usage: {
+        Row: {
+          difficulty: string | null
+          generated_at: string
+          id: string
+          subject: string | null
+          user_id: string
+        }
+        Insert: {
+          difficulty?: string | null
+          generated_at?: string
+          id?: string
+          subject?: string | null
+          user_id: string
+        }
+        Update: {
+          difficulty?: string | null
+          generated_at?: string
+          id?: string
+          subject?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_cache: {
         Row: {
           created_at: string

@@ -1,10 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+const FREE_DAILY_LIMIT = 5;
+const SUBSCRIBED_DAILY_LIMIT = 100;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -21,6 +25,69 @@ serve(async (req) => {
       );
     }
 
+    // Auth: extract user from JWT
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "غير مصرح" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // Verify JWT and get user
+    const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "غير مصرح" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const userId = user.id;
+
+    // Check subscription status
+    const { data: hasActiveSub } = await supabase.rpc("has_active_subscription", { _user_id: userId });
+    const dailyLimit = hasActiveSub ? SUBSCRIBED_DAILY_LIMIT : FREE_DAILY_LIMIT;
+
+    // Count today's usage
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const { count: usageCount, error: countError } = await supabase
+      .from("ai_generation_usage")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("generated_at", todayStart.toISOString());
+
+    if (countError) {
+      console.error("Usage count error:", countError);
+    }
+
+    const currentUsage = usageCount ?? 0;
+
+    if (currentUsage >= dailyLimit) {
+      return new Response(
+        JSON.stringify({
+          error: "daily_limit_reached",
+          message: hasActiveSub
+            ? "وصلت للحد اليومي لتوليد الأسئلة. حاول مرة أخرى غداً."
+            : "وصلت للحد المجاني لتوليد الأسئلة",
+          remaining: 0,
+          limit: dailyLimit,
+          hasSubscription: !!hasActiveSub,
+        }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Proceed with generation
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
@@ -140,8 +207,19 @@ serve(async (req) => {
       );
     }
 
+    // Record usage (service_role bypasses RLS)
+    await supabase.from("ai_generation_usage").insert({
+      user_id: userId,
+      subject,
+      difficulty,
+    });
+
     const questions = JSON.parse(toolCall.function.arguments);
-    return new Response(JSON.stringify(questions), {
+
+    // Add remaining count to response
+    const remaining = Math.max(0, dailyLimit - currentUsage - 1);
+
+    return new Response(JSON.stringify({ ...questions, remaining, limit: dailyLimit }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
