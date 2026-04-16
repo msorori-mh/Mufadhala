@@ -124,14 +124,19 @@ const AdminPastExams = () => {
       <div className="space-y-5">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">نماذج الأعوام السابقة</h1>
-          <Button size="sm" onClick={openCreate}><Plus className="w-4 h-4 ml-1" /> نموذج جديد</Button>
+          {!showForm && (
+            <Button size="sm" onClick={openCreate}><Plus className="w-4 h-4 ml-1" /> نموذج جديد</Button>
+          )}
         </div>
 
         {/* Model Form */}
         {showForm && (
-          <Card>
+          <Card className="border-primary/40 ring-1 ring-primary/20">
             <CardHeader>
-              <CardTitle className="text-base">{editingModel ? "تعديل النموذج" : "نموذج جديد"}</CardTitle>
+              <CardTitle className="text-base">{editingModel ? "تعديل النموذج" : "نموذج جديد — الخطوة 1 من 2: بيانات النموذج"}</CardTitle>
+              {!editingModel && (
+                <p className="text-xs text-muted-foreground">بعد الحفظ سننقلك مباشرة لإضافة الأسئلة.</p>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -168,9 +173,15 @@ const AdminPastExams = () => {
           </Card>
         )}
 
-        {/* Questions Editor */}
+        {/* Success banner + Questions Editor */}
         {showQuestions && (
-          <QuestionsEditor modelId={showQuestions} onClose={() => setShowQuestions(null)} />
+          <>
+            <div className="rounded-lg border border-secondary/40 bg-secondary/10 p-3 text-sm flex items-center gap-2">
+              <span className="font-bold text-secondary">✓ تم إنشاء النموذج</span>
+              <span className="text-muted-foreground">— الخطوة 2 من 2: أضف الأسئلة يدوياً أو استورد من ملف Excel</span>
+            </div>
+            <QuestionsEditor modelId={showQuestions} onClose={() => setShowQuestions(null)} />
+          </>
         )}
 
         {/* Models List */}
