@@ -11,7 +11,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Loader2, Check, X, ShieldCheck, Search, Users, Globe, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Check, X, ShieldCheck, Search, Users, Globe, MapPin, Download } from "lucide-react";
+import { toast } from "sonner";
 
 interface ScopeLabel {
   type: "global" | "university" | "college" | "major";
@@ -131,6 +133,47 @@ const AdminPermissionsOverview = () => {
   const fullyEmpowered = rows.filter((r) => r.permissions.size === ALL_PERMISSIONS.length).length;
   const noPerms = rows.filter((r) => r.permissions.size === 0).length;
 
+  const exportCSV = () => {
+    if (filtered.length === 0) {
+      toast.error("لا توجد بيانات للتصدير");
+      return;
+    }
+    const escape = (v: string) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const headers = [
+      "المشرف",
+      "النطاق الأكاديمي",
+      ...ALL_PERMISSIONS.map((p) => PERMISSION_LABELS[p]),
+      "إجمالي الصلاحيات",
+    ];
+    const lines = [headers.map(escape).join(",")];
+    filtered.forEach((row) => {
+      const scopeText = row.scopes.length === 0
+        ? "بدون نطاق"
+        : row.scopes.some((s) => s.type === "global")
+          ? "عام (كل الجامعات)"
+          : row.scopes.map((s) => s.label).join(" | ");
+      const permCells = ALL_PERMISSIONS.map((p) => (row.permissions.has(p) ? "نعم" : "لا"));
+      lines.push(
+        [row.display_name, scopeText, ...permCells, `${row.permissions.size}/${ALL_PERMISSIONS.length}`]
+          .map(escape)
+          .join(",")
+      );
+    });
+    // BOM for Excel UTF-8 + Arabic support
+    const csv = "\uFEFF" + lines.join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const ts = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `permissions-matrix-${ts}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`تم تصدير ${filtered.length} مشرف`);
+  };
+
   if (authLoading || loading) {
     return (
       <AdminLayout>
@@ -144,14 +187,20 @@ const AdminPermissionsOverview = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <ShieldCheck className="w-5 h-5 text-primary" />
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">مصفوفة صلاحيات المشرفين</h1>
+              <p className="text-sm text-muted-foreground">نظرة شاملة على من يملك أي صلاحية ونطاقه الأكاديمي</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">مصفوفة صلاحيات المشرفين</h1>
-            <p className="text-sm text-muted-foreground">نظرة شاملة على من يملك أي صلاحية ونطاقه الأكاديمي</p>
-          </div>
+          <Button onClick={exportCSV} variant="outline" className="gap-2">
+            <Download className="w-4 h-4" />
+            تصدير CSV
+          </Button>
         </div>
 
         {/* Stats */}
