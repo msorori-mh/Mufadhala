@@ -55,37 +55,34 @@ export function useStudentAccess(): StudentAccessResult {
     [student?.major_id, student?.college_id],
   );
 
-  // ── OFFICIAL: Resolve subject IDs via admission_tracks ──
+  // ── OFFICIAL: Resolve subject IDs + filter name in ONE query ──
   const collegeId = student?.college_id;
-  const { data: subjectResult } = useQuery({
-    queryKey: ["track-subject-ids", collegeId],
+  const { data: collegeData } = useQuery({
+    queryKey: ["college-track-data", collegeId],
     queryFn: async () => {
-      if (!collegeId) return { subjectIds: [] as string[], resolvedVia: "none" as const };
-      return resolveSubjectIds(supabase, collegeId);
+      if (!collegeId) return { subjectIds: [] as string[], resolvedVia: "none" as const, filterName: "" };
+      // Parallel: resolve subjects + get filter name
+      const [subjectResult, nameRes] = await Promise.all([
+        resolveSubjectIds(supabase, collegeId),
+        supabase
+          .from("colleges")
+          .select("name_ar, admission_tracks(name_ar)")
+          .eq("id", collegeId)
+          .maybeSingle(),
+      ]);
+      const trackName = (nameRes.data?.admission_tracks as any)?.name_ar;
+      return {
+        ...subjectResult,
+        filterName: trackName || nameRes.data?.name_ar || "",
+      };
     },
     enabled: !!collegeId,
     staleTime: 10 * 60 * 1000,
   });
 
-  const subjectIds = subjectResult?.subjectIds ?? [];
-  const resolvedVia = subjectResult?.resolvedVia ?? "pending";
-
-  // Fetch filter name — always resolve via college → admission_track name
-  const { data: filterName = "" } = useQuery({
-    queryKey: ["filter-name", collegeId],
-    queryFn: async () => {
-      if (!collegeId) return "";
-      const { data } = await supabase
-        .from("colleges")
-        .select("name_ar, admission_tracks(name_ar)")
-        .eq("id", collegeId)
-        .maybeSingle();
-      const trackName = (data?.admission_tracks as any)?.name_ar;
-      return trackName || data?.name_ar || "";
-    },
-    enabled: !!collegeId,
-    staleTime: 10 * 60 * 1000,
-  });
+  const subjectIds = collegeData?.subjectIds ?? [];
+  const resolvedVia = collegeData?.resolvedVia ?? "pending";
+  const filterName = collegeData?.filterName ?? "";
 
   // ── Decision logic ─────────────────────────────────────
   const loading = authLoading || (!!user && studentLoading);
