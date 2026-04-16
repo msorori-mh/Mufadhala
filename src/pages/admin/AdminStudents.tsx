@@ -52,19 +52,31 @@ const AdminStudents = () => {
   const [majorId, setMajorId] = useState("");
 
   const [staffUserIds, setStaffUserIds] = useState<Set<string>>(new Set());
+  const [activeSubUserIds, setActiveSubUserIds] = useState<Set<string>>(new Set());
 
   const fetchData = async () => {
-    const [{ data: s }, { data: u }, { data: c }, { data: m }, { data: roles }] = await Promise.all([
+    const [{ data: s }, { data: u }, { data: c }, { data: m }, { data: roles }, { data: subs }] = await Promise.all([
       supabase.from("students").select("*").order("created_at", { ascending: false }),
       supabase.from("universities").select("*").order("display_order"),
       supabase.from("colleges").select("*").order("display_order"),
       supabase.from("majors").select("*").order("display_order"),
       supabase.from("user_roles").select("user_id, role"),
+      supabase.from("subscriptions").select("user_id, status, expires_at, trial_ends_at"),
     ]);
     const sIds = new Set(
       (roles || []).filter((r) => r.role === "admin" || r.role === "moderator").map((r) => r.user_id)
     );
     setStaffUserIds(sIds);
+    const now = Date.now();
+    const activeIds = new Set<string>();
+    (subs || []).forEach((sub: any) => {
+      if (sub.status === "active" && (!sub.expires_at || new Date(sub.expires_at).getTime() > now)) {
+        activeIds.add(sub.user_id);
+      } else if (sub.status === "trial" && sub.trial_ends_at && new Date(sub.trial_ends_at).getTime() > now) {
+        activeIds.add(sub.user_id);
+      }
+    });
+    setActiveSubUserIds(activeIds);
     if (s) setStudents(s.filter((st) => !sIds.has(st.user_id)));
     if (u) setUniversities(u);
     if (c) setColleges(c);
