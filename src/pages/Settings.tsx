@@ -112,6 +112,57 @@ const Settings = () => {
           </CardContent>
         </Card>
 
+        {/* Technical Support */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              الدعم الفني
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-muted-foreground">تواصل معنا عبر أي من القنوات التالية وسنرد عليك في أقرب وقت</p>
+            <a
+              href={`https://wa.me/967780060056?text=${encodeURIComponent("السلام عليكم، أحتاج مساعدة من فريق الدعم الفني لتطبيق مُفَاضَلَة 🎓")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 p-3 rounded-lg border bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900 hover:bg-green-100 dark:hover:bg-green-950/50 transition-colors"
+            >
+              <div className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                <MessageCircle className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <span className="text-sm font-medium block">واتساب</span>
+                <span className="text-xs text-muted-foreground" dir="ltr">+967 780 060 056</span>
+              </div>
+            </a>
+            <a
+              href="mailto:info@mufadhala.com"
+              className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors"
+            >
+              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Mail className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <span className="text-sm font-medium block">البريد الإلكتروني</span>
+                <span className="text-xs text-muted-foreground" dir="ltr">info@mufadhala.com</span>
+              </div>
+            </a>
+            <a
+              href="tel:+967780060056"
+              className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors"
+            >
+              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Phone className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <span className="text-sm font-medium block">اتصال مباشر</span>
+                <span className="text-xs text-muted-foreground" dir="ltr">+967 780 060 056</span>
+              </div>
+            </a>
+          </CardContent>
+        </Card>
+
         {/* About */}
         <Card>
           <CardHeader className="pb-3">
@@ -138,18 +189,6 @@ const Settings = () => {
               <Link to="/terms-of-service" className="text-sm text-primary hover:underline">
                 شروط الاستخدام
               </Link>
-            </div>
-            <Separator />
-            <div className="flex flex-col gap-2">
-              <span className="text-sm text-muted-foreground">الدعم الفني</span>
-              <a href={`https://wa.me/967780060056?text=${encodeURIComponent("السلام عليكم، أحتاج مساعدة من فريق الدعم الفني لتطبيق مُفَاضَلَة 🎓")}`} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1.5">
-                <MessageCircle className="w-3.5 h-3.5" />
-                واتساب: 780060056
-              </a>
-              <a href="mailto:info@mufadhala.com" className="text-sm text-primary hover:underline flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5" />
-                info@mufadhala.com
-              </a>
             </div>
           </CardContent>
         </Card>
