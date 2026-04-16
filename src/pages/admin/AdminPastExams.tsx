@@ -29,6 +29,23 @@ const AdminPastExams = () => {
   const [editingModel, setEditingModel] = useState<Model | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showQuestions, setShowQuestions] = useState<string | null>(null);
+  const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
+
+  const resetForm = () => {
+    setEditingModel(null);
+    setTitle("");
+    setUniversityId("");
+    setYear(new Date().getFullYear());
+    setIsPaid(false);
+    setIsPublished(false);
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    resetForm();
+    setJustCreatedId(null);
+    setShowQuestions(null);
+  };
 
   // Form state
   const [title, setTitle] = useState("");
