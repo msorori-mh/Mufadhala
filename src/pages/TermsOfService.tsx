@@ -116,9 +116,34 @@ const TermsOfService = () => {
           <div key={i}>
             <h2 className="text-xl font-bold text-foreground mb-3">{section.title}</h2>
             <div className="text-muted-foreground leading-relaxed whitespace-pre-line text-sm md:text-base">
-              {section.content.split("**").map((part, j) =>
-                j % 2 === 1 ? <strong key={j} className="text-foreground">{part}</strong> : part
-              )}
+              {section.content.split("**").map((part, j) => {
+                const renderWithLinks = (text: string, keyPrefix: string) => {
+                  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+                  const nodes: React.ReactNode[] = [];
+                  let lastIdx = 0;
+                  let match;
+                  let k = 0;
+                  while ((match = linkRegex.exec(text)) !== null) {
+                    if (match.index > lastIdx) nodes.push(text.slice(lastIdx, match.index));
+                    nodes.push(
+                      <a
+                        key={`${keyPrefix}-${k++}`}
+                        href={match[2]}
+                        onClick={(e) => { e.preventDefault(); navigate(match![2]); }}
+                        className="text-primary underline hover:text-primary/80 font-medium"
+                      >
+                        {match[1]}
+                      </a>
+                    );
+                    lastIdx = match.index + match[0].length;
+                  }
+                  if (lastIdx < text.length) nodes.push(text.slice(lastIdx));
+                  return nodes;
+                };
+                return j % 2 === 1
+                  ? <strong key={j} className="text-foreground">{renderWithLinks(part, `b-${j}`)}</strong>
+                  : <React.Fragment key={j}>{renderWithLinks(part, `t-${j}`)}</React.Fragment>;
+              })}
             </div>
           </div>
         ))}
