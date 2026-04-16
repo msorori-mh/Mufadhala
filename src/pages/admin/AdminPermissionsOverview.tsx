@@ -11,12 +11,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Loader2, Check, X, ShieldCheck, Search, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Check, X, ShieldCheck, Search, Users, Globe, MapPin, Download } from "lucide-react";
+import { toast } from "sonner";
+
+interface ScopeLabel {
+  type: "global" | "university" | "college" | "major";
+  label: string;
+}
 
 interface ModeratorRow {
   user_id: string;
   display_name: string;
   permissions: Set<ModeratorPermission>;
+  scopes: ScopeLabel[];
 }
 
 const AdminPermissionsOverview = () => {
@@ -44,7 +52,14 @@ const AdminPermissionsOverview = () => {
         return;
       }
 
-      const [{ data: students }, { data: perms }] = await Promise.all([
+      const [
+        { data: students },
+        { data: perms },
+        { data: scopes },
+        { data: universities },
+        { data: colleges },
+        { data: majors },
+      ] = await Promise.all([
         supabase
           .from("students")
           .select("user_id, first_name, second_name, third_name, fourth_name, phone")
@@ -53,6 +68,13 @@ const AdminPermissionsOverview = () => {
           .from("moderator_permissions")
           .select("user_id, permission")
           .in("user_id", moderatorIds),
+        supabase
+          .from("moderator_scopes")
+          .select("user_id, scope_type, scope_id, is_global")
+          .in("user_id", moderatorIds),
+        supabase.from("universities").select("id, name_ar"),
+        supabase.from("colleges").select("id, name_ar"),
+        supabase.from("majors").select("id, name_ar"),
       ]);
 
       const nameMap = new Map<string, string>();
@@ -70,10 +92,30 @@ const AdminPermissionsOverview = () => {
         permMap.get(p.user_id)!.add(p.permission as ModeratorPermission);
       });
 
+      const uMap = new Map((universities || []).map((u: any) => [u.id, u.name_ar]));
+      const cMap = new Map((colleges || []).map((c: any) => [c.id, c.name_ar]));
+      const mMap = new Map((majors || []).map((m: any) => [m.id, m.name_ar]));
+
+      const scopeMap = new Map<string, ScopeLabel[]>();
+      (scopes || []).forEach((s: any) => {
+        if (!scopeMap.has(s.user_id)) scopeMap.set(s.user_id, []);
+        const list = scopeMap.get(s.user_id)!;
+        if (s.is_global || s.scope_type === "global") {
+          list.push({ type: "global", label: "كل الجامعات" });
+        } else if (s.scope_type === "university") {
+          list.push({ type: "university", label: uMap.get(s.scope_id) || "جامعة?" });
+        } else if (s.scope_type === "college") {
+          list.push({ type: "college", label: cMap.get(s.scope_id) || "كلية?" });
+        } else if (s.scope_type === "major") {
+          list.push({ type: "major", label: mMap.get(s.scope_id) || "تخصص?" });
+        }
+      });
+
       const built: ModeratorRow[] = moderatorIds.map((id) => ({
         user_id: id,
         display_name: nameMap.get(id) || id.slice(0, 8),
         permissions: permMap.get(id) || new Set(),
+        scopes: scopeMap.get(id) || [],
       }));
 
       built.sort((a, b) => b.permissions.size - a.permissions.size);
@@ -91,6 +133,47 @@ const AdminPermissionsOverview = () => {
   const fullyEmpowered = rows.filter((r) => r.permissions.size === ALL_PERMISSIONS.length).length;
   const noPerms = rows.filter((r) => r.permissions.size === 0).length;
 
+  const exportCSV = () => {
+    if (filtered.length === 0) {
+      toast.error("لا توجد بيانات للتصدير");
+      return;
+    }
+    const escape = (v: string) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const headers = [
+      "المشرف",
+      "النطاق الأكاديمي",
+      ...ALL_PERMISSIONS.map((p) => PERMISSION_LABELS[p]),
+      "إجمالي الصلاحيات",
+    ];
+    const lines = [headers.map(escape).join(",")];
+    filtered.forEach((row) => {
+      const scopeText = row.scopes.length === 0
+        ? "بدون نطاق"
+        : row.scopes.some((s) => s.type === "global")
+          ? "عام (كل الجامعات)"
+          : row.scopes.map((s) => s.label).join(" | ");
+      const permCells = ALL_PERMISSIONS.map((p) => (row.permissions.has(p) ? "نعم" : "لا"));
+      lines.push(
+        [row.display_name, scopeText, ...permCells, `${row.permissions.size}/${ALL_PERMISSIONS.length}`]
+          .map(escape)
+          .join(",")
+      );
+    });
+    // BOM for Excel UTF-8 + Arabic support
+    const csv = "\uFEFF" + lines.join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const ts = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `permissions-matrix-${ts}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`تم تصدير ${filtered.length} مشرف`);
+  };
+
   if (authLoading || loading) {
     return (
       <AdminLayout>
@@ -104,14 +187,20 @@ const AdminPermissionsOverview = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <ShieldCheck className="w-5 h-5 text-primary" />
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">مصفوفة صلاحيات المشرفين</h1>
+              <p className="text-sm text-muted-foreground">نظرة شاملة على من يملك أي صلاحية ونطاقه الأكاديمي</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">مصفوفة صلاحيات المشرفين</h1>
-            <p className="text-sm text-muted-foreground">نظرة شاملة على من يملك أي صلاحية</p>
-          </div>
+          <Button onClick={exportCSV} variant="outline" className="gap-2">
+            <Download className="w-4 h-4" />
+            تصدير CSV
+          </Button>
         </div>
 
         {/* Stats */}
@@ -175,6 +264,7 @@ const AdminPermissionsOverview = () => {
                       <TableHead className="text-right sticky right-0 bg-card z-10 min-w-[180px]">
                         المشرف
                       </TableHead>
+                      <TableHead className="text-right min-w-[200px]">النطاق الأكاديمي</TableHead>
                       {ALL_PERMISSIONS.map((p) => (
                         <TableHead key={p} className="text-center text-xs whitespace-nowrap">
                           {PERMISSION_LABELS[p]}
@@ -188,6 +278,33 @@ const AdminPermissionsOverview = () => {
                       <TableRow key={row.user_id}>
                         <TableCell className="font-medium sticky right-0 bg-card">
                           {row.display_name}
+                        </TableCell>
+                        <TableCell>
+                          {row.scopes.length === 0 ? (
+                            <Badge variant="outline" className="text-muted-foreground">
+                              <X className="w-3 h-3 ml-1" />
+                              بدون نطاق
+                            </Badge>
+                          ) : row.scopes.some((s) => s.type === "global") ? (
+                            <Badge className="bg-primary/15 text-primary hover:bg-primary/20">
+                              <Globe className="w-3 h-3 ml-1" />
+                              عام (كل الجامعات)
+                            </Badge>
+                          ) : (
+                            <div className="flex flex-wrap gap-1 max-w-[280px]">
+                              {row.scopes.map((s, i) => (
+                                <Badge
+                                  key={i}
+                                  variant="secondary"
+                                  className="text-xs"
+                                  title={`${s.type === "university" ? "جامعة" : s.type === "college" ? "كلية" : "تخصص"}: ${s.label}`}
+                                >
+                                  <MapPin className="w-3 h-3 ml-1" />
+                                  {s.label}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
                         </TableCell>
                         {ALL_PERMISSIONS.map((p) => {
                           const has = row.permissions.has(p);
