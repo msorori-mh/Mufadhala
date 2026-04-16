@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Search, Pencil, Trash2, Eye, Filter, X, Users, Download } from "lucide-react";
 import { exportToExcel } from "@/lib/exportReport";
 import type { Tables } from "@/integrations/supabase/types";
+import CascadingAcademicSelects from "@/components/CascadingAcademicSelects";
 
 const AdminStudents = () => {
   const { loading: authLoading, isAdmin, user } = useAuth("moderator");
