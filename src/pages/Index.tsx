@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { BookOpen, ClipboardCheck, TrendingUp, Loader2, Brain, FileCheck, Shield, Focus, WifiOff, Users, CheckCircle, Bot, Clock, Headphones, HelpCircle } from "lucide-react";
+import { BookOpen, ClipboardCheck, TrendingUp, Loader2, Brain, FileCheck, Shield, Focus, WifiOff, Users, CheckCircle, Bot, Clock, Headphones, HelpCircle, FileText, Sparkles } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useScrollReveal, useStaggerReveal } from "@/hooks/useScrollReveal";
@@ -140,6 +140,9 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
             { icon: BookOpen, emoji: "📚", title: "شمولية المنهج الوزاري", desc: "تغطية دقيقة لكافة المقررات الدراسية المطلوبة في اختبارات المفاضلة." },
             { icon: Brain, emoji: "🧠", title: "تعزيز الفهم بالتعليل", desc: "شرح علمي مبسط لكل سؤال يوضح لماذا هذه الإجابة هي الأصح." },
             { icon: FileCheck, emoji: "⏱️", title: "محاكاة بيئة الاختبار", desc: "اختبارات تحاكي النمط الحقيقي من حيث الدرجات وإدارة الوقت." },
+            { icon: FileText, emoji: "📝", title: "نماذج اختبارات سابقة", desc: "مع إجابات نموذجية." },
+            { icon: Bot, emoji: "🤖", title: "مساعد مفاضلة الذكي", desc: "مساعد ذكاء اصطناعي للإجابة عن أي شيء." },
+            { icon: Sparkles, emoji: "✨", title: "مولد الأسئلة الذكي", desc: "يقوم بتوليد أسئلة بناءً على تحليل الأداء الخاص بك." },
           ].map((f, i) => (
             <div key={i} data-reveal className="bg-card rounded-xl border p-3 flex items-start gap-3 text-right md:block md:text-center" style={{ animationDelay: `${i * 150}ms` }}>
               <div className="inline-flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-lg bg-accent/10 shrink-0 md:mb-3">
