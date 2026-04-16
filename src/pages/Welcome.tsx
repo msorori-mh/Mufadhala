@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useStudentAccess } from "@/hooks/useStudentAccess";
 import { Rocket, Users, AlertTriangle } from "lucide-react";
-import logoImg from "@/assets/logo.png";
+import logoImg from "@/assets/logo.jpg";
 
 
 const Welcome = () => {

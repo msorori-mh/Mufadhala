@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import NativeSelect from "@/components/NativeSelect";
 import { Loader2, Rocket } from "lucide-react";
-import logoImg from "@/assets/logo-new.jpg";
+import logoImg from "@/assets/logo.jpg";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { GOVERNORATES, YEMEN_PHONE_REGEX } from "@/domain/constants";
