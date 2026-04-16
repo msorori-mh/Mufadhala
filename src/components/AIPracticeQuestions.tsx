@@ -45,13 +45,45 @@ interface Props {
 
 const AIPracticeQuestions = ({ hasSubscription }: Props) => {
   const navigate = useNavigate();
-  const [subject, setSubject] = useState("biology");
+  const { subjectIds } = useStudentAccess();
+
+  // Fetch the student's track subjects from DB and map to generator subjects
+  const { data: subjectRows } = useQuery({
+    queryKey: ["ai-generator-subjects", subjectIds],
+    queryFn: async () => {
+      if (!subjectIds || subjectIds.length === 0) return [];
+      const { data } = await supabase
+        .from("subjects")
+        .select("id, code")
+        .in("id", subjectIds)
+        .eq("is_active", true);
+      return data ?? [];
+    },
+    enabled: subjectIds.length > 0,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const subjectOptions = useMemo(() => {
+    if (!subjectRows) return [];
+    return subjectRows
+      .map((r: any) => DB_CODE_TO_GENERATOR[r.code])
+      .filter(Boolean);
+  }, [subjectRows]);
+
+  const [subject, setSubject] = useState("");
   const [difficulty, setDifficulty] = useState("medium");
   const [questions, setQuestions] = useState<AIQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [showResults, setShowResults] = useState(false);
   const [loading, setLoading] = useState(false);
   const [expandedExplanation, setExpandedExplanation] = useState<number | null>(null);
+
+  // Default subject = first available track subject
+  useEffect(() => {
+    if (!subject && subjectOptions.length > 0) {
+      setSubject(subjectOptions[0].value);
+    }
+  }, [subjectOptions, subject]);
 
   const generate = async () => {
     if (!hasSubscription) {
