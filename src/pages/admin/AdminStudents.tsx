@@ -122,10 +122,12 @@ const AdminStudents = () => {
   const editFilteredColleges = universityId ? colleges.filter((c) => c.university_id === universityId) : colleges;
   const editFilteredMajors = collegeId ? majors.filter((m) => m.college_id === collegeId) : majors;
 
-  const hasActiveFilter = !!(filterGovernorate || filterUniversityId || filterCollegeId || filterMajorId);
+  const hasActiveFilter = !!(filterSubscription || filterGovernorate || filterUniversityId || filterCollegeId || filterMajorId);
 
   const filtered = useMemo(() => {
     return scopedStudents.filter((s) => {
+      if (filterSubscription === "subscribed" && !activeSubUserIds.has(s.user_id)) return false;
+      if (filterSubscription === "unsubscribed" && activeSubUserIds.has(s.user_id)) return false;
       if (filterGovernorate && s.governorate !== filterGovernorate) return false;
       if (filterUniversityId && s.university_id !== filterUniversityId) return false;
       if (filterCollegeId && s.college_id !== filterCollegeId) return false;
@@ -136,9 +138,10 @@ const AdminStudents = () => {
       }
       return true;
     });
-  }, [scopedStudents, filterGovernorate, filterUniversityId, filterCollegeId, filterMajorId, search]);
+  }, [scopedStudents, filterSubscription, activeSubUserIds, filterGovernorate, filterUniversityId, filterCollegeId, filterMajorId, search]);
 
   const clearFilters = () => {
+    setFilterSubscription("");
     setFilterGovernorate("");
     setFilterUniversityId("");
     setFilterCollegeId("");
