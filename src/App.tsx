@@ -25,7 +25,7 @@ import Notifications from "./pages/Notifications";
 
 // Eager — always needed
 import MobileBottomNav from "./components/MobileBottomNav";
-import WhatsAppFAB from "./components/WhatsAppFAB";
+
 
 // Lazy imports — secondary pages
 const PastExams = lazy(() => import("./pages/PastExams"));
@@ -186,7 +186,7 @@ function App() {
                 </PageShell>
               </Suspense>
               <MobileBottomNav />
-              <WhatsAppFAB />
+              
               <Suspense fallback={null}>
                 {!isNative && <ChatWidget />}
                 <InstallAppPrompt />
