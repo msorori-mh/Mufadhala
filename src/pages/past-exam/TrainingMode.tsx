@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,6 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ArrowRight, CheckCircle2, XCircle, RotateCcw, Trophy, ArrowLeft } from "lucide-react";
 import { OPTION_LABELS, type PastExamQuestion, type PastExamModelInfo } from "./types";
+import { useAuth } from "@/hooks/useAuth";
+import { useStudentData } from "@/hooks/useStudentData";
+import { savePastExamAttempt } from "@/lib/pastExamAttempts";
 
 interface Props {
   model: PastExamModelInfo;
@@ -15,11 +18,32 @@ interface Props {
 
 const TrainingMode = ({ model, questions, onBackToSelect }: Props) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: student } = useStudentData(user?.id);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [score, setScore] = useState(0);
   const [finished, setFinished] = useState(false);
+  const startedAtRef = useRef<number>(Date.now());
+  const savedRef = useRef(false);
+
+  // Save attempt when finished
+  useEffect(() => {
+    if (!finished || savedRef.current || !student?.id) return;
+    savedRef.current = true;
+    const elapsed = Math.round((Date.now() - startedAtRef.current) / 1000);
+    savePastExamAttempt({
+      studentId: student.id,
+      modelId: model.id,
+      mode: "training",
+      score,
+      total: questions.length,
+      blankCount: 0,
+      elapsedSeconds: elapsed,
+      answers: {},
+    });
+  }, [finished, student?.id, model.id, score, questions.length]);
 
   const total = questions.length;
   const question = questions[currentIndex];
@@ -50,6 +74,8 @@ const TrainingMode = ({ model, questions, onBackToSelect }: Props) => {
     setRevealed(false);
     setScore(0);
     setFinished(false);
+    startedAtRef.current = Date.now();
+    savedRef.current = false;
   };
 
   if (finished) {

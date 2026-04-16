@@ -10,6 +10,9 @@ import {
 import { Timer, ArrowRight, ArrowLeft, CheckCircle2, XCircle, MinusCircle, RotateCcw, Trophy, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { OPTION_LABELS, type PastExamQuestion, type PastExamModelInfo } from "./types";
+import { useAuth } from "@/hooks/useAuth";
+import { useStudentData } from "@/hooks/useStudentData";
+import { savePastExamAttempt } from "@/lib/pastExamAttempts";
 
 type Phase = "intro" | "active" | "finished";
 
@@ -27,6 +30,8 @@ const formatTime = (seconds: number) => {
 
 const StrictMode = ({ model, questions, onBackToSelect }: Props) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: student } = useStudentData(user?.id);
   const total = questions.length;
   const durationSec = (model.duration_minutes ?? 0) * 60;
 
@@ -39,6 +44,7 @@ const StrictMode = ({ model, questions, onBackToSelect }: Props) => {
   const [confirmSubmit, setConfirmSubmit] = useState(false);
   const warned5Ref = useRef(false);
   const warned1Ref = useRef(false);
+  const savedRef = useRef(false);
 
   // Countdown
   useEffect(() => {
@@ -106,6 +112,23 @@ const StrictMode = ({ model, questions, onBackToSelect }: Props) => {
     });
     return { correct, wrong, blank, pct: total ? Math.round((correct / total) * 100) : 0 };
   }, [answers, questions, total]);
+
+  // Persist attempt once when finished
+  useEffect(() => {
+    if (phase !== "finished" || savedRef.current || !student?.id) return;
+    savedRef.current = true;
+    const elapsed = startedAt && endedAt ? Math.round((endedAt - startedAt) / 1000) : 0;
+    savePastExamAttempt({
+      studentId: student.id,
+      modelId: model.id,
+      mode: "strict",
+      score: stats.correct,
+      total,
+      blankCount: stats.blank,
+      elapsedSeconds: elapsed,
+      answers,
+    });
+  }, [phase, student?.id, model.id, stats.correct, stats.blank, total, startedAt, endedAt, answers]);
 
   // ===== INTRO =====
   if (phase === "intro") {

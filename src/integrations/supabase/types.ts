@@ -674,6 +674,48 @@ export type Database = {
         }
         Relationships: []
       }
+      past_exam_attempts: {
+        Row: {
+          answers: Json
+          blank_count: number
+          completed_at: string
+          created_at: string
+          elapsed_seconds: number
+          id: string
+          mode: string
+          model_id: string
+          score: number
+          student_id: string
+          total: number
+        }
+        Insert: {
+          answers?: Json
+          blank_count?: number
+          completed_at?: string
+          created_at?: string
+          elapsed_seconds?: number
+          id?: string
+          mode?: string
+          model_id: string
+          score?: number
+          student_id: string
+          total?: number
+        }
+        Update: {
+          answers?: Json
+          blank_count?: number
+          completed_at?: string
+          created_at?: string
+          elapsed_seconds?: number
+          id?: string
+          mode?: string
+          model_id?: string
+          score?: number
+          student_id?: string
+          total?: number
+        }
+        Relationships: []
+      }
       past_exam_model_questions: {
         Row: {
           created_at: string

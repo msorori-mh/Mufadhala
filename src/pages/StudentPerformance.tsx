@@ -12,6 +12,7 @@ import { useStudentAccess } from "@/hooks/useStudentAccess";
 import { useQuery } from "@tanstack/react-query";
 import ThemeToggle from "@/components/ThemeToggle";
 import SubjectPerformanceDetail from "@/components/SubjectPerformanceDetail";
+import PastExamStatsCard from "@/components/PastExamStatsCard";
 import {
   ChevronRight, Loader2, Trophy, TrendingUp,
   Target, Users, BookOpen, BarChart3, CheckCircle, XCircle,
@@ -448,6 +449,9 @@ const StudentPerformance = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Past exam attempts stats */}
+        <PastExamStatsCard studentId={student?.id} />
 
         {/* Lesson Completion List */}
         <Card>
