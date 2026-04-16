@@ -28,6 +28,7 @@ import MobileBottomNav from "./components/MobileBottomNav";
 
 
 // Lazy imports — secondary pages
+const AIGenerator = lazy(() => import("./pages/AIGenerator"));
 const PastExams = lazy(() => import("./pages/PastExams"));
 const PastExamPractice = lazy(() => import("./pages/PastExamPractice"));
 
@@ -145,6 +146,7 @@ function App() {
                   <Route path="/lessons" element={<LessonsList />} />
                   <Route path="/lessons/:id" element={<LessonDetail />} />
                   <Route path="/exam" element={<ExamSimulator />} />
+                  <Route path="/ai-generator" element={<AIGenerator />} />
                   <Route path="/exam-history" element={<ExamHistory />} />
                   <Route path="/performance" element={<StudentPerformance />} />
                   <Route path="/subscription" element={<Subscription />} />
