@@ -266,6 +266,7 @@ const ChatWidget = React.forwardRef<HTMLDivElement, ChatWidgetProps>(({ lessonCo
     }
 
     incrementUsage();
+    setUsageTick((t) => t + 1);
     // usage tracked in localStorage
 
     // Build multimodal content if images exist
