@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Lock } from "lucide-react";
 import { trackSubscriptionClick } from "@/lib/conversionTracking";
+import { isPaymentUIEnabled } from "@/lib/platformGate";
 import ModeSelector from "./past-exam/ModeSelector";
 import TrainingMode from "./past-exam/TrainingMode";
 import StrictMode from "./past-exam/StrictMode";
@@ -83,17 +84,24 @@ const PastExamPractice = () => {
   }
 
   if (locked) {
+    const paymentsVisible = isPaymentUIEnabled();
     return (
       <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
         <div className="text-center px-6 space-y-4 max-w-xs">
           <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto">
             <Lock className="w-10 h-10 text-muted-foreground" />
           </div>
-          <h2 className="text-xl font-bold">هذا النموذج متاح للمشتركين فقط</h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">اشترك للوصول إلى جميع نماذج الأعوام السابقة والتدرّب عليها</p>
+          <h2 className="text-xl font-bold">
+            {paymentsVisible ? "هذا النموذج متاح للمشتركين فقط" : "هذا النموذج غير متاح في هذه النسخة"}
+          </h2>
+          {paymentsVisible && (
+            <p className="text-sm text-muted-foreground leading-relaxed">اشترك للوصول إلى جميع نماذج الأعوام السابقة والتدرّب عليها</p>
+          )}
           <div className="flex flex-col gap-2.5 pt-2">
-            <Button size="lg" className="w-full text-base" onClick={() => { trackSubscriptionClick("past_exams", { model_id: modelId, reason: "practice_locked" }); navigate("/subscription"); }}>اشترك الآن</Button>
-            <Button variant="outline" size="lg" className="w-full" onClick={() => navigate("/past-exams")}>رجوع</Button>
+            {paymentsVisible && (
+              <Button size="lg" className="w-full text-base" onClick={() => { trackSubscriptionClick("past_exams", { model_id: modelId, reason: "practice_locked" }); navigate("/subscription"); }}>اشترك الآن</Button>
+            )}
+            <Button variant={paymentsVisible ? "outline" : "default"} size="lg" className="w-full" onClick={() => navigate("/past-exams")}>رجوع</Button>
           </div>
         </div>
       </div>

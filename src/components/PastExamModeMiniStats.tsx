@@ -133,7 +133,8 @@ const PastExamModeMiniStats = ({ stats, variant, loading, isPaid, isFreeModel }:
         <div className="flex items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/10 p-2 mt-1">
           <Lock className="w-3 h-3 text-destructive shrink-0 mt-0.5" />
           <p className="text-[10px] leading-tight text-destructive">
-            <span className="font-bold">المحاولة المجانية مستخدمة</span> · هذا النموذج هو عينتك المجانية. اشترك للوصول إلى جميع نماذج الأعوام السابقة بلا حدود.
+            <span className="font-bold">المحاولة المجانية مستخدمة</span> · هذا النموذج هو عينتك المجانية.
+            {isPaymentUIEnabled() ? " اشترك للوصول إلى جميع نماذج الأعوام السابقة بلا حدود." : " النماذج الإضافية غير متاحة في هذه النسخة."}
           </p>
         </div>
       )}

@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Target } from "lucide-react";
 import { trackSubscriptionClick } from "@/lib/conversionTracking";
+import { isPaymentUIEnabled } from "@/lib/platformGate";
 
 interface Props {
   percentage: number;
@@ -12,6 +13,9 @@ interface Props {
 
 const PostExamUpgrade = ({ percentage, totalQuestions, hasSubscription = false }: Props) => {
   const navigate = useNavigate();
+
+  // Hide the upgrade card entirely inside the native APK.
+  if (!isPaymentUIEnabled()) return null;
 
   const handleCTA = () => {
     if (hasSubscription) {
@@ -44,3 +48,4 @@ const PostExamUpgrade = ({ percentage, totalQuestions, hasSubscription = false }
 };
 
 export default PostExamUpgrade;
+

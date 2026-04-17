@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { trackSubscriptionClick } from "@/lib/conversionTracking";
+import { isPaymentUIEnabled } from "@/lib/platformGate";
 
 type ContentPart =
   | { type: "text"; text: string }
@@ -430,7 +431,7 @@ const ChatWidget = React.forwardRef<HTMLDivElement, ChatWidgetProps>(({ lessonCo
           <div className="border-t border-border p-3">
             {getRemainingMessages(effectiveLimit) <= 0 ? (
               <div className="text-center py-2 space-y-2">
-                {!hasSubscription ? (
+                {!hasSubscription && isPaymentUIEnabled() ? (
                   <>
                     <p className="text-xs text-muted-foreground">
                       وصلت للحد المجاني ({FREE_DAILY_LIMIT} رسائل يومياً)
@@ -503,7 +504,7 @@ const ChatWidget = React.forwardRef<HTMLDivElement, ChatWidgetProps>(({ lessonCo
                   <p className="text-[10px] text-muted-foreground">
                     {getRemainingMessages(effectiveLimit)} رسالة متبقية اليوم
                   </p>
-                  {!hasSubscription && (
+                  {!hasSubscription && isPaymentUIEnabled() && (
                     <a href="/subscription" onClick={() => trackSubscriptionClick("chat_widget", { reason: "footer_link" })} className="text-[10px] text-primary hover:underline flex items-center gap-0.5">
                       <Lock className="w-2.5 h-2.5" />
                       {dailyLimit} رسالة للمشتركين
