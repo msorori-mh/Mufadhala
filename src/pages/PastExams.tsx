@@ -60,17 +60,11 @@ const PastExams = () => {
     return sorted[0]?.id ?? null;
   }, [models]);
 
-  // Group models by year
-  const modelsByYear = useMemo(() => {
-    const map: Record<number, typeof models> = {};
-    models.forEach((m) => {
-      if (!map[m.year]) map[m.year] = [];
-      map[m.year].push(m);
-    });
-    return Object.entries(map)
-      .sort(([a], [b]) => Number(b) - Number(a))
-      .map(([year, items]) => ({ year: Number(year), items }));
-  }, [models]);
+  // Flat list sorted by year descending
+  const sortedModels = useMemo(
+    () => [...models].sort((a, b) => b.year - a.year),
+    [models]
+  );
 
   const universityName = universities.find((u) => u.id === effectiveUniversityId)?.name_ar;
 
