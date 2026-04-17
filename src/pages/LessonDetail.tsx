@@ -448,88 +448,134 @@ const LessonDetail = () => {
             </TabsContent>
           )}
 
-          <TabsContent value="quiz" className="mt-4 space-y-2">
+          <TabsContent value="quiz" className="mt-4 space-y-3">
             {questions.length === 0 ? (
-              <Card>
-                <CardContent className="py-8 text-center">
-                  <p className="text-muted-foreground">لا توجد أسئلة لهذا الدرس</p>
+              <Card className="border-border/70 shadow-sm">
+                <CardContent className="py-12 flex flex-col items-center justify-center text-center">
+                  <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted text-muted-foreground mb-3">
+                    <HelpCircle className="w-6 h-6" />
+                  </span>
+                  <p className="text-muted-foreground text-sm">لا توجد أسئلة لهذا الدرس</p>
                 </CardContent>
               </Card>
             ) : (
               <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-1 mb-3"
-                  onClick={() => {
-                    if (revealedAnswers.size === questions.length) {
-                      setRevealedAnswers(new Set());
-                    } else {
-                      setRevealedAnswers(new Set(questions.map((q) => q.id)));
-                    }
-                  }}
-                >
-                  {revealedAnswers.size === questions.length ? (
-                    <><EyeOff className="w-4 h-4" /> إخفاء جميع الإجابات</>
-                  ) : (
-                    <><Eye className="w-4 h-4" /> إظهار جميع الإجابات</>
-                  )}
-                </Button>
+                {/* Quiz toolbar */}
+                <div className="flex items-center justify-between gap-2 px-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 text-primary">
+                      <HelpCircle className="w-4 h-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground leading-none">اختبر فهمك</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">{questions.length} سؤال — فكّر قبل أن تكشف الإجابة</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1 h-8"
+                    onClick={() => {
+                      if (revealedAnswers.size === questions.length) {
+                        setRevealedAnswers(new Set());
+                      } else {
+                        setRevealedAnswers(new Set(questions.map((q) => q.id)));
+                      }
+                    }}
+                  >
+                    {revealedAnswers.size === questions.length ? (
+                      <><EyeOff className="w-4 h-4" /><span className="hidden sm:inline">إخفاء الكل</span></>
+                    ) : (
+                      <><Eye className="w-4 h-4" /><span className="hidden sm:inline">إظهار الكل</span></>
+                    )}
+                  </Button>
+                </div>
+
                 {questions.map((q, i) => {
                   const isRevealed = revealedAnswers.has(q.id);
                   const isTrueFalse = q.question_type === "true_false";
                   const options = isTrueFalse ? (["a", "b"] as const) : (["a", "b", "c", "d"] as const);
 
                   return (
-                    <Card key={q.id}>
-                      <CardContent className="py-2.5 px-3">
-                        <div className="flex items-start gap-2 mb-1.5">
-                          {isTrueFalse && <Badge variant="outline" className="text-[10px] shrink-0">صح/خطأ</Badge>}
-                          <p className="font-semibold text-xs">{i + 1}. {q.question_text}</p>
+                    <Card
+                      key={q.id}
+                      className={`overflow-hidden border shadow-sm transition-colors ${
+                        isRevealed ? "border-primary/30 bg-primary/[0.02]" : "border-border/70"
+                      }`}
+                    >
+                      <CardContent className="p-4 sm:p-5">
+                        {/* Question header */}
+                        <div className="flex items-start gap-3 mb-3">
+                          <span className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-bold">
+                            {i + 1}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            {isTrueFalse && (
+                              <Badge variant="outline" className="text-[10px] mb-1.5 border-primary/30 text-primary">
+                                صح / خطأ
+                              </Badge>
+                            )}
+                            <p className="font-semibold text-[14px] sm:text-[15px] leading-relaxed text-foreground">
+                              {q.question_text}
+                            </p>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-1.5">
-                          {options.map((opt) => {
-                            const optionText = isTrueFalse ? (opt === "a" ? "صح" : "خطأ") : ((q[`option_${opt}` as keyof Question] as string) || "");
-                            const isCorrectOption = q.correct_option === opt;
 
-                            let classes = "flex items-center gap-2 p-2 rounded-lg border text-xs transition-colors ";
-                            if (isRevealed && isCorrectOption) {
-                              classes += "border-green-500 bg-green-50 dark:bg-green-950/30 ";
-                            } else {
-                              classes += "border-border ";
-                            }
+                        {/* Options */}
+                        <div className={`grid gap-2 ${isTrueFalse ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2"}`}>
+                          {options.map((opt) => {
+                            const optionText = isTrueFalse
+                              ? (opt === "a" ? "صح" : "خطأ")
+                              : ((q[`option_${opt}` as keyof Question] as string) || "");
+                            const isCorrectOption = q.correct_option === opt;
+                            const highlight = isRevealed && isCorrectOption;
 
                             return (
-                              <div key={opt} className={classes}>
+                              <div
+                                key={opt}
+                                className={`flex items-center gap-2.5 p-2.5 rounded-lg border text-[13px] transition-colors ${
+                                  highlight
+                                    ? "border-green-500/60 bg-green-50 dark:bg-green-950/30 text-foreground"
+                                    : "border-border bg-card text-foreground/90"
+                                }`}
+                              >
                                 {!isTrueFalse && (
-                                  <span className="w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-bold shrink-0">
+                                  <span
+                                    className={`w-6 h-6 rounded-full border flex items-center justify-center text-[11px] font-bold shrink-0 ${
+                                      highlight
+                                        ? "border-green-500 bg-green-500 text-white"
+                                        : "border-border text-muted-foreground"
+                                    }`}
+                                  >
                                     {opt.toUpperCase()}
                                   </span>
                                 )}
-                                <span className="flex-1">{optionText}</span>
-                                {isRevealed && isCorrectOption && <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />}
+                                <span className="flex-1 leading-snug">{optionText}</span>
+                                {highlight && <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />}
                               </div>
                             );
                           })}
                         </div>
 
+                        {/* Explanation */}
                         {isRevealed && q.explanation && (
-                          <div className="mt-1.5 p-2 bg-muted rounded-lg">
-                            <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">الشرح:</p>
-                            <p className="text-xs">{q.explanation}</p>
+                          <div className="mt-3 rounded-lg border border-border/60 bg-muted/50 p-3">
+                            <p className="text-[11px] font-bold text-primary mb-1 tracking-wide">الشرح</p>
+                            <p className="text-[13px] text-foreground leading-relaxed">{q.explanation}</p>
                           </div>
                         )}
 
+                        {/* Reveal action */}
                         <Button
                           variant={isRevealed ? "outline" : "default"}
                           size="sm"
-                          className="mt-1.5 w-auto gap-1"
+                          className="mt-3 w-full sm:w-auto gap-1.5"
                           onClick={() => toggleRevealAnswer(q.id)}
                         >
                           {isRevealed ? (
-                            <><XCircle className="w-4 h-4" /> إخفاء الإجابة</>
+                            <><EyeOff className="w-4 h-4" /> إخفاء الإجابة</>
                           ) : (
-                            <><CheckCircle2 className="w-4 h-4" /> أظهر الإجابة</>
+                            <><Eye className="w-4 h-4" /> أظهر الإجابة</>
                           )}
                         </Button>
                       </CardContent>
