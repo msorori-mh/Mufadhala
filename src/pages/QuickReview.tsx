@@ -14,6 +14,7 @@ import {
   Play,
   X,
   Clock,
+  CheckCircle2,
 } from "lucide-react";
 import { useQuickReviewData, type QuickReviewLesson } from "@/hooks/useQuickReviewData";
 import QuickReviewCard from "@/components/QuickReviewCard";
@@ -300,19 +301,48 @@ function FocusMode({
       {/* Card */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-4 py-5">
-          <Card className="border-2 border-primary/15 shadow-sm overflow-hidden">
+          <Card className={cn(
+            "border-2 shadow-sm overflow-hidden transition-colors",
+            current.isCompleted
+              ? "border-secondary/40 bg-secondary/[0.04]"
+              : "border-primary/15"
+          )}>
             <CardContent className="p-0">
               {/* Card header */}
-              <div className="flex items-start gap-3 p-4 border-b border-border/40 bg-primary/[0.04]">
-                <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
-                  <span className="text-sm font-bold text-primary tabular-nums">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
+              <div className={cn(
+                "flex items-start gap-3 p-4 border-b border-border/40",
+                current.isCompleted ? "bg-secondary/[0.08]" : "bg-primary/[0.04]"
+              )}>
+                <div className={cn(
+                  "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+                  current.isCompleted ? "bg-secondary/20" : "bg-primary/15"
+                )}>
+                  {current.isCompleted ? (
+                    <CheckCircle2 className="w-5 h-5 text-secondary" />
+                  ) : (
+                    <span className="text-sm font-bold text-primary tabular-nums">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-semibold text-primary/80 mb-0.5">
-                    ملخص الدرس
-                  </p>
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                    <p className={cn(
+                      "text-[10px] font-semibold",
+                      current.isCompleted ? "text-secondary" : "text-primary/80"
+                    )}>
+                      ملخص الدرس
+                    </p>
+                    {current.isCompleted && (
+                      <Badge
+                        variant="secondary"
+                        className="h-4 px-1.5 text-[9px] gap-0.5 bg-secondary/15 text-secondary border-secondary/30"
+                      >
+                        <CheckCircle2 className="w-2.5 h-2.5" />
+                        مكتمل
+                      </Badge>
+                    )}
+                  </div>
                   <h2 className="font-bold text-foreground text-base leading-snug break-words">
                     {current.title}
                   </h2>
