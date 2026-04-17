@@ -111,7 +111,7 @@ const Index = React.forwardRef<HTMLDivElement>((_, fwdRef) => {
       <section className={`gradient-hero py-3 md:py-5 px-4 transition-all duration-700 ease-out ${showBubble ? "opacity-100 max-h-24 translate-y-0" : "opacity-0 max-h-0 translate-y-4 overflow-hidden py-0"}`}>
         <div className="max-w-3xl mx-auto flex justify-center">
           <button
-            onClick={() => { setShowBubble(false); navigate("/register"); }}
+            onClick={() => { setShowBubble(false); navigate("/login"); }}
             className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-primary-foreground rounded-full px-5 py-2.5 text-sm font-bold shadow-lg animate-float cursor-pointer hover:bg-white/30 transition-colors"
           >
             جرّب مستواك الآن 🚀
