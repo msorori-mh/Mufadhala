@@ -1,5 +1,6 @@
 import { TrendingUp, Trophy, Target, Lock } from "lucide-react";
 import type { ModeAttemptStats } from "@/lib/pastExamAttempts";
+import { isPaymentUIEnabled } from "@/lib/platformGate";
 
 interface Props {
   stats: ModeAttemptStats;
