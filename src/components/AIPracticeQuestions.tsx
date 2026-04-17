@@ -251,13 +251,36 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-3 space-y-3">
-        {/* Remaining usage indicator — visible to everyone except confirmed paid subscribers */}
+        {/* Remaining usage indicator — visible to everyone except confirmed paid subscribers.
+            Prominent badge with color cues: primary when plenty left, amber when 1 left, red when 0. */}
         {!isPaid && remaining !== null && dailyLimit !== null && questions.length === 0 && !loading && (
-          <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border">
-            <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
-            <p className="text-xs text-muted-foreground">
-              المتبقي: <span className="font-bold text-foreground">{remaining}</span> / {dailyLimit} توليد اليوم
-            </p>
+          <div
+            className={`flex items-center justify-between gap-2 p-3 rounded-lg border-2 ${
+              remaining === 0
+                ? "bg-destructive/10 border-destructive/30"
+                : remaining === 1
+                ? "bg-amber-500/10 border-amber-500/30"
+                : "bg-primary/5 border-primary/20"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles
+                className={`w-4 h-4 shrink-0 ${
+                  remaining === 0 ? "text-destructive" : remaining === 1 ? "text-amber-600" : "text-primary"
+                }`}
+              />
+              <p className="text-xs font-semibold text-foreground">المحاولات المتبقية اليوم</p>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span
+                className={`text-lg font-bold ${
+                  remaining === 0 ? "text-destructive" : remaining === 1 ? "text-amber-600" : "text-primary"
+                }`}
+              >
+                {remaining}
+              </span>
+              <span className="text-xs text-muted-foreground">/ {dailyLimit}</span>
+            </div>
           </div>
         )}
 
