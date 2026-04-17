@@ -348,15 +348,31 @@ const ChatWidget = React.forwardRef<HTMLDivElement, ChatWidgetProps>(({ lessonCo
       {open && (
         <div className="flex flex-col bg-card border border-border rounded-2xl shadow-2xl w-[calc(100vw-2rem)] max-w-[380px] h-[70vh] max-h-[520px] sm:w-[380px]">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-primary/5 rounded-t-2xl">
-            <div className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-primary" />
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-primary/5 rounded-t-2xl">
+            <div className="flex items-center gap-2 min-w-0">
+              <Bot className="h-5 w-5 text-primary shrink-0" />
               <span className="font-bold text-sm text-foreground">مساعد مُفَاضَلَة</span>
+              {showFreeCounter && (
+                <Badge
+                  variant={remaining <= 2 ? "destructive" : "secondary"}
+                  className="text-[10px] px-1.5 py-0 h-5 tabular-nums shrink-0"
+                  title="الرسائل المتبقية اليوم في الباقة المجانية"
+                >
+                  {remaining}/{FREE_DAILY_LIMIT}
+                </Badge>
+              )}
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setOpen(false)}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setOpen(false)}>
               <X className="h-4 w-4" />
             </Button>
           </div>
+          {/* Subtle remaining-messages hint for non-paid users when getting low */}
+          {showFreeCounter && remaining > 0 && remaining <= 3 && (
+            <div className="px-4 py-1.5 bg-destructive/5 border-b border-destructive/20 text-[11px] text-destructive flex items-center gap-1.5">
+              <Sparkles className="h-3 w-3 shrink-0" />
+              متبقّي {remaining} {remaining === 1 ? "رسالة" : "رسائل"} فقط · فعّل اشتراكك للمزيد
+            </div>
+          )}
 
           {/* Messages */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
