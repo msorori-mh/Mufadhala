@@ -33,3 +33,15 @@ export const GRADE_LABELS_SHORT: Record<number, string> = {
   2: "ثاني ثانوي",
   3: "ثالث ثانوي",
 };
+
+/**
+ * AI question generator daily usage limits.
+ * Defaults are used as fallback when `app_cache` has no entry for `CACHE_KEY`.
+ * Admins can override at runtime from /admin/ai-limits without redeploying the edge function.
+ */
+export const AI_GENERATION_LIMITS = {
+  CACHE_KEY: "ai_generation_limits",
+  DEFAULT_FREE_DAILY: 2,
+  DEFAULT_SUBSCRIBED_DAILY: 100,
+  CACHE_TTL_SECONDS: 31_536_000, // 1 year — refreshed manually on save
+} as const;
