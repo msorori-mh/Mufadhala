@@ -14,6 +14,7 @@ import {
   Play,
   X,
   Clock,
+  CheckCircle2,
 } from "lucide-react";
 import { useQuickReviewData, type QuickReviewLesson } from "@/hooks/useQuickReviewData";
 import QuickReviewCard from "@/components/QuickReviewCard";
