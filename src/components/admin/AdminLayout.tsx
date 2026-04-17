@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import {
   GraduationCap, LayoutDashboard, Building2, BookOpen, Users, UserCog,
   LogOut, ChevronDown, ChevronUp, BarChart3, FileText,
-  CreditCard, Wallet, ListChecks, DollarSign, ClipboardCheck, ArrowRight, ArrowLeft, Tag, FlaskConical, ScrollText, UserCircle, Route, Target, ShieldCheck,
+  CreditCard, Wallet, ListChecks, DollarSign, ClipboardCheck, ArrowRight, ArrowLeft, Tag, FlaskConical, ScrollText, UserCircle, Route, Target, ShieldCheck, Sparkles,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,6 +36,7 @@ const mainNavItems: NavItem[] = [
   { path: "/admin/deletion-logs", label: "سجل الحذف", icon: ScrollText, permission: "admin_only" },
   { path: "/admin/tracks", label: "المسارات الأكاديمية", icon: Route, permission: "admin_only" },
   { path: "/admin/past-exams", label: "نماذج سابقة", icon: ScrollText, permission: "past_exams" },
+  { path: "/admin/ai-limits", label: "حدود مولّد الأسئلة", icon: Sparkles, permission: "admin_only" },
 ];
 
 const reportSubItems: NavItem[] = [
