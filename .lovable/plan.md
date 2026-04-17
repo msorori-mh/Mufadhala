@@ -1,52 +1,46 @@
 
 
-## تشخيص: لماذا لم يتم تحديث `build.gradle` تلقائياً؟
+## التشخيص
 
-السكربت `scripts/sync-android-version.mjs` موجود لكنه **لا يعمل تلقائياً** — يجب تشغيله يدوياً كخطوة منفصلة. وهذا ما حدث: تم تخطّي السكربت بالكامل أثناء البناء، فبقي الملف على القيم الافتراضية `versionCode 1` و `versionName "1.0"`.
+`useSubscription` يدمج `trial` مع `active` في حقل واحد `isActive = true`. كل المكوّنات تستخدمه:
+- `useTrueExamEngine` → `freeAttemptUsed` لا يتفعّل أبداً للحساب التجريبي
+- `AIPerformanceAnalysis` → التحليل يعمل بدون حدود
+- `submit-exam` edge function → لا يفرض أي حد على عدد المحاولات (الحد فقط في الواجهة)
 
-## الحل: ربط السكربت تلقائياً بسير عمل البناء
+أي مستخدم جديد لديه trial تلقائي 24 ساعة → كل القيود المجانية تُتجاوز.
 
-سأضيف ربطاً مزدوجاً يضمن استحالة نسيان الخطوة:
+## الحل
 
-### 1) إضافة scripts في `package.json`
-```json
-"sync:android": "node scripts/sync-android-version.mjs",
-"build:android": "npm run build && npx cap sync android && npm run sync:android"
-```
-بهذا يصبح أمر واحد يبني ويزامن الإصدار:
-```bash
-npm run build:android
-cd android && ./gradlew assembleRelease
-```
+### 1) `useSubscription` — كشف الاشتراك المدفوع منفصلاً
+أضف حقلاً جديداً `isPaid: boolean` (= `status === 'active'` فقط، يستثني trial). أبقي `isActive` كما هو لتجنّب كسر باقي التطبيق.
 
-### 2) ربط Gradle ليشغّل السكربت قبل كل بناء (الحل الأقوى)
-إضافة hook في `android/app/build.gradle`:
-```gradle
-task syncVersionFromTs(type: Exec) {
-    workingDir "$rootDir/.."
-    commandLine 'node', 'scripts/sync-android-version.mjs'
-}
-preBuild.dependsOn syncVersionFromTs
-```
-بهذا حتى لو شغّل المستخدم `./gradlew assembleRelease` مباشرة، سيقوم Gradle نفسه بتشغيل السكربت قبل البناء.
+### 2) محاكي الاختبارات — `useTrueExamEngine.ts`
+- استبدل `hasActiveSubscription` بـ `isPaid` في حساب `freeAttemptUsed` و `canAccessFull`
+- `const freeAttemptUsed = !isPaid && !isStaff && pastAttempts.filter(a => a.completed_at).length >= 1`
 
-### 3) إصلاح فوري للحالة الحالية
-سأعرض على المستخدم الأمر اليدوي السريع لتحديث الملف الآن قبل إعادة البناء:
-```bash
-node scripts/sync-android-version.mjs
-cd android && ./gradlew clean assembleRelease
-```
+### 3) فرض الحد على السيرفر — `submit-exam/index.ts`
+أضف فحصاً قبل insert:
+- اقرأ الاشتراك المدفوع (status='active' و expires_at سليم)
+- إذا غير مدفوع: عُدّ `exam_attempts` المكتملة اليوم (أو إجمالاً) للطالب → إذا ≥ 1 ارجع 403 مع `error: "free_limit_reached"`
+- هذه طبقة أمان حقيقية بدلاً من الاعتماد على الواجهة فقط
 
-## الملفات المتوقع تعديلها
-- `package.json` (إضافة scripts مساعدة)
-- `android/app/build.gradle` (إضافة `syncVersionFromTs` task + `preBuild.dependsOn`)
+السياسة: مجاني = محاولة واحدة كاملة (مكتملة) إجمالاً، ليس يومياً (مطابق للسلوك الحالي في الواجهة).
 
-## ملاحظة مهمة
-- مجلد `android/` يُولَّد محلياً عبر `npx cap add android` ولا يُرفَع إلى GitHub، لذا تعديل `build.gradle` من Lovable لن ينعكس على جهازك. لكن إضافة الـ task في `build.gradle` سأوثّقها كتعليمات لتُضيفها مرة واحدة محلياً، ثم تبقى دائماً.
-- الحل الأنظف هو **خيار 1** (script في `package.json`) لأنه يبقى في المستودع ويُسحب عبر `git pull`.
+### 4) تحليل الأداء — `AIPerformanceAnalysis.tsx`
+- استبدل `hasSubscription` المرسل من `ExamSimulator` ليصبح `isPaid` بدلاً من `hasActiveSubscription`
+- في `ExamSimulator.tsx` غيّر السطر 425: `hasSubscription={engine.isPaid}`
+- أضف فحصاً اختيارياً على السيرفر داخل `chat` function لاحقاً (خارج النطاق الحالي)
 
-## الخطوات بعد الموافقة
-1. أعدّل `package.json` لإضافة `sync:android` و `build:android`.
-2. أُعطيك الأمر اليدوي الفوري لتحديث `build.gradle` الحالي.
-3. أوثّق سير العمل الجديد المختصر.
+### 5) تحديث المذكرة
+أضف ملاحظة في `mem://monetization/strategy-and-paywall.md`: **trial ≠ paid**، كل القيود المجانية تطبَّق على المستخدم التجريبي.
+
+## ملفات متأثرة
+- `src/hooks/useSubscription.ts` (إضافة `isPaid`)
+- `src/features/exams/hooks/useTrueExamEngine.ts` (استخدام `isPaid`)
+- `src/pages/ExamSimulator.tsx` (تمرير `isPaid` للتحليل)
+- `supabase/functions/submit-exam/index.ts` (فرض حد المحاولة المجانية)
+- `mem://monetization/strategy-and-paywall.md` (توثيق)
+
+## ملاحظة أمنية
+نقطة الضعف الحقيقية أن `submit-exam` لا يفرض أي حد. الواجهة وحدها يمكن الالتفاف عليها. الإصلاح في النقطة 3 هو الحاسم.
 
