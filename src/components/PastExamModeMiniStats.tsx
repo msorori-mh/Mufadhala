@@ -16,11 +16,15 @@ interface Props {
  * for a specific mode on this past-exam model. Helps the student decide
  * which mode to pick based on their own history.
  */
-const PastExamModeMiniStats = ({ stats, variant, loading }: Props) => {
+const PastExamModeMiniStats = ({ stats, variant, loading, isPaid, isFreeModel }: Props) => {
   const colorClass = variant === "training" ? "text-secondary" : "text-destructive";
   const bgClass = variant === "training" ? "bg-secondary/10" : "bg-destructive/10";
   const borderClass = variant === "training" ? "border-secondary/30" : "border-destructive/30";
   const strokeColor = variant === "training" ? "hsl(var(--secondary))" : "hsl(var(--destructive))";
+
+  // Free attempt is "used" when: student is not paid, this is a free sample model,
+  // and they have at least one attempt on this mode.
+  const freeAttemptUsed = !isPaid && isFreeModel && stats.attempts >= 1;
 
   if (loading) {
     return (
