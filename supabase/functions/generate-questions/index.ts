@@ -20,9 +20,9 @@ serve(async (req) => {
   }
 
   try {
-    const { subject, count = 5, difficulty = "medium" } = await req.json();
+    const { subject, count = 5, difficulty = "medium", dry_run = false } = await req.json();
 
-    if (!subject || typeof subject !== "string") {
+    if (!dry_run && (!subject || typeof subject !== "string")) {
       return new Response(
         JSON.stringify({ error: "subject is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -98,6 +98,25 @@ serve(async (req) => {
     }
 
     const currentUsage = usageCount ?? 0;
+    const remainingNow = Math.max(0, dailyLimit - currentUsage);
+
+    // Dry-run mode: return limits snapshot without consuming usage or calling AI
+    if (dry_run) {
+      return new Response(
+        JSON.stringify({
+          dry_run: true,
+          userId,
+          hasSubscription: hasPaidSub,
+          limit: dailyLimit,
+          used: currentUsage,
+          remaining: remainingNow,
+          freeLimit,
+          subscribedLimit,
+          source: cachedLimits ? "cache" : "default",
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (currentUsage >= dailyLimit) {
       return new Response(
