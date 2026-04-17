@@ -474,7 +474,8 @@ const LessonDetail = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="gap-1 h-8"
+                    className="gap-1 h-9 min-w-9 px-2 sm:px-3"
+                    aria-label={revealedAnswers.size === questions.length ? "إخفاء جميع الإجابات" : "إظهار جميع الإجابات"}
                     onClick={() => {
                       if (revealedAnswers.size === questions.length) {
                         setRevealedAnswers(new Set());
