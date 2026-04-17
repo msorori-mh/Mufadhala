@@ -414,13 +414,13 @@ const Dashboard = () => {
                     <h3 className="text-sm font-bold text-foreground mb-3">✨ ما الذي يميّز مُفَاضَلَة؟</h3>
                     <div className="grid grid-cols-2 gap-3">
                       {[
+                        { emoji: "🤖", label: "مساعد مفاضلة الذكي", sub: "يجيب عن أي سؤال فوراً" },
+                        { emoji: "✨", label: "مولد الأسئلة الذكي", sub: "أسئلة مخصصة لنقاط ضعفك" },
+                        { emoji: "📝", label: "نماذج اختبارات سابقة", sub: "مع إجابات نموذجية" },
+                        { emoji: "⏱️", label: "محاكاة واقعية", sub: "لبيئة الاختبار الفعلية" },
                         { emoji: "📚", label: "3000+ سؤال تدريبي", sub: "مراجع ومعتمد" },
                         { emoji: "🧠", label: "شرح علمي مفصّل", sub: "لكل إجابة" },
-                        { emoji: "⏱️", label: "محاكاة واقعية", sub: "لبيئة الاختبار" },
                         { emoji: "📶", label: "يعمل أوفلاين", sub: "بدون إنترنت" },
-                        { emoji: "📝", label: "نماذج اختبارات سابقة", sub: "مع إجابات نموذجية" },
-                        { emoji: "🤖", label: "مساعد مفاضلة الذكي", sub: "مساعد ذكاء اصطناعي للإجابة عن أي شيء" },
-                        { emoji: "✨", label: "مولد الأسئلة الذكي", sub: "يقوم بتوليد أسئلة بناءً على تحليل الأداء الخاص بك" },
                       ].map((f, i) => (
                         <div key={i} className="flex items-center gap-2">
                           <span className="text-lg">{f.emoji}</span>
