@@ -32,4 +32,4 @@ type: feature
 ### طبقات الفرض على السيرفر (لا تعتمد على الواجهة فقط)
 - `submit-exam` edge function: يفحص `subscriptions` (status='active' + expires_at سليم) وإذا غير مدفوع يرفض المحاولة الثانية بـ `403 free_limit_reached`.
 - `generate-questions` edge function: يفحص `ai_generation_usage` ويرفض بعد تجاوز `FREE_DAILY_LIMIT`.
-- `chat` edge function: يحدّ المحادثات عبر `chat_usage`.
+- `chat` edge function: للمستخدم غير المدفوع (status≠'active') يَعدّ رسائل اليوم في `chat_usage` ويرجع `403 free_limit_reached` عند تجاوز `FREE_DAILY_LIMIT=10`. trial يخضع للحد المجاني.
