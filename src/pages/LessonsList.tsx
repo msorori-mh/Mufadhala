@@ -376,40 +376,79 @@ const LessonsList = () => {
                 const done = completedLessons.has(lesson.id);
                 const originalIndex = lessons.findIndex(l => l.id === lesson.id);
                 const isSavedOffline = savedOfflineIds.has(lesson.id);
+                const qCount = questionCounts[lesson.id] || 0;
                 return (
                   <div
                     key={lesson.id}
-                    className="block"
+                    role="button"
+                    tabIndex={0}
+                    className="block group outline-none"
                     onClick={() => navigate(`/lessons/${lesson.id}`)}
+                    onKeyDown={(e) => { if (e.key === "Enter") navigate(`/lessons/${lesson.id}`); }}
                   >
-                    <Card className={`hover:shadow-md transition-shadow cursor-pointer border-r-4 ${done ? "border-r-green-500" : "border-r-primary"}`}>
-                      <CardContent className="py-4 px-4">
-                        <div className="flex items-center justify-between">
+                    <Card
+                      className={`relative overflow-hidden cursor-pointer border bg-card
+                        transition-all duration-200 ease-out
+                        hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm
+                        group-focus-visible:ring-2 group-focus-visible:ring-ring
+                        ${done ? "border-green-500/30 dark:border-green-500/25" : "border-border hover:border-primary/40"}`}
+                    >
+                      {/* Accent rail */}
+                      <span
+                        aria-hidden
+                        className={`absolute inset-y-0 right-0 w-1 ${done ? "bg-green-500" : "bg-primary/70"}`}
+                      />
+                      <CardContent className="py-4 pr-5 pl-4">
+                        <div className="flex items-start gap-3">
+                          {/* Index / status icon */}
+                          <span
+                            className={`w-9 h-9 rounded-full text-sm font-bold flex items-center justify-center shrink-0 mt-0.5
+                              ${done
+                                ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
+                                : "bg-primary/10 text-primary"}`}
+                          >
+                            {done ? <CheckCircle2 className="w-5 h-5" /> : originalIndex + 1}
+                          </span>
+
                           <div className="flex-1 min-w-0">
+                            {/* Title row */}
                             <div className="flex items-center gap-2">
-                              <span className={`w-7 h-7 rounded-full text-sm font-bold flex items-center justify-center shrink-0 ${done ? "bg-green-100 text-green-600 dark:bg-green-950/30" : "bg-primary/10 text-primary"}`}>
-                                {done ? <CheckCircle2 className="w-4 h-4" /> : originalIndex + 1}
-                              </span>
-                              <p className="font-semibold text-foreground">{lesson.title}</p>
+                              <h3 className="font-semibold text-[15px] leading-tight text-foreground truncate">
+                                {lesson.title}
+                              </h3>
                               {isSavedOffline && !isOffline && (
-                                <Download className="w-3.5 h-3.5 text-primary shrink-0" />
+                                <Download className="w-3.5 h-3.5 text-primary shrink-0" aria-label="محفوظ للأوفلاين" />
                               )}
                             </div>
-                            {lesson.summary && <p className="text-sm text-muted-foreground mt-1 mr-9 line-clamp-2">{lesson.summary}</p>}
-                            <div className="mt-2 mr-9 flex gap-2">
-                              {!isOffline && (
-                                <Badge variant="outline" className="text-xs">
-                                  {questionCounts[lesson.id] || 0} سؤال
+
+                            {/* Summary */}
+                            {lesson.summary && (
+                              <p className="text-[13px] text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
+                                {lesson.summary}
+                              </p>
+                            )}
+
+                            {/* Meta row */}
+                            <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+                              {done ? (
+                                <Badge className="text-[10px] h-5 px-2 bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-950/40 dark:text-green-400 border-0">
+                                  <CheckCircle2 className="w-3 h-3 ml-1" />
+                                  مكتمل
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px] h-5 px-2 border-primary/30 text-primary">
+                                  جديد
                                 </Badge>
                               )}
-                              {done && (
-                                <Badge className="text-xs bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400">
-                                  مكتمل
+                              {!isOffline && (
+                                <Badge variant="outline" className="text-[10px] h-5 px-2 text-muted-foreground border-border">
+                                  {qCount} سؤال
                                 </Badge>
                               )}
                             </div>
                           </div>
-                          <ArrowRight className="w-5 h-5 text-muted-foreground shrink-0 mr-2" />
+
+                          <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 mt-2 transition-transform group-hover:-translate-x-0.5" />
                         </div>
                       </CardContent>
                     </Card>
