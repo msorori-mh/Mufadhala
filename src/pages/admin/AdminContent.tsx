@@ -398,7 +398,14 @@ const AdminContent = () => {
     let presentationUrl = lessonPresentationUrl;
     if (lessonPresentationFile) {
       setUploadingPresentation(true);
-      const { safeFileExtension } = await import("@/lib/storageKey");
+      const { safeFileExtension, validateUploadFile, FILE_PRESETS } = await import("@/lib/storageKey");
+      const v = validateUploadFile(lessonPresentationFile, FILE_PRESETS.presentation);
+      if (!v.ok) {
+        toast({ variant: "destructive", title: "ملف عرض غير صالح", description: v.error });
+        setSaving(false);
+        setUploadingPresentation(false);
+        return;
+      }
       const fileExt = safeFileExtension(lessonPresentationFile.name, "pptx");
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage

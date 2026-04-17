@@ -87,10 +87,12 @@ const AdminPaymentMethods = () => {
     let barcode_url: string | null = editing?.barcode_url ?? null;
     let logo_url: string | null = editing?.logo_url ?? null;
 
-    const { safeFileExtension } = await import("@/lib/storageKey");
+    const { safeFileExtension, validateUploadFile, FILE_PRESETS } = await import("@/lib/storageKey");
 
     // Upload new barcode
     if (barcodeFile) {
+      const v = validateUploadFile(barcodeFile, FILE_PRESETS.paymentBarcode);
+      if (!v.ok) { toast({ variant: "destructive", title: "ملف باركود غير صالح", description: v.error }); setSaving(false); return; }
       const ext = safeFileExtension(barcodeFile.name);
       const path = `${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("payment-barcodes").upload(path, barcodeFile, {
@@ -103,6 +105,8 @@ const AdminPaymentMethods = () => {
 
     // Upload new logo
     if (logoFile) {
+      const v = validateUploadFile(logoFile, FILE_PRESETS.paymentLogo);
+      if (!v.ok) { toast({ variant: "destructive", title: "ملف شعار غير صالح", description: v.error }); setSaving(false); return; }
       const ext = safeFileExtension(logoFile.name);
       const path = `${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("payment-logos").upload(path, logoFile, {

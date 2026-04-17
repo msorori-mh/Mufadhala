@@ -274,7 +274,13 @@ const Subscription = () => {
       return;
     }
 
-    const { safeFileExtension } = await import("@/lib/storageKey");
+    const { safeFileExtension, validateUploadFile, FILE_PRESETS } = await import("@/lib/storageKey");
+    const v = validateUploadFile(receiptFile, FILE_PRESETS.receipt);
+    if (!v.ok) {
+      toast({ variant: "destructive", title: "ملف غير صالح", description: v.error });
+      setSubmitting(false);
+      return;
+    }
     const ext = safeFileExtension(receiptFile.name);
     const filePath = `${user.id}/${Date.now()}.${ext}`;
     const { error: uploadErr } = await supabase.storage.from("receipts").upload(filePath, receiptFile, {

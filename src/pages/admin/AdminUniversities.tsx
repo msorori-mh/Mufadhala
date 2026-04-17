@@ -104,16 +104,20 @@ const AdminUniversities = () => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const invalidFile = Array.from(files).find(f => !allowedTypes.includes(f.type));
-    if (invalidFile) {
-      toast({ variant: "destructive", title: "يُقبل فقط ملفات PDF أو صور (JPG, PNG, WebP)" });
-      return;
+    const { safeFileExtension, validateUploadFile, FILE_PRESETS } = await import("@/lib/storageKey");
+
+    // Pre-validate all files (size + type) before any upload
+    for (const f of Array.from(files)) {
+      const v = validateUploadFile(f, FILE_PRESETS.guide);
+      if (!v.ok) {
+        toast({ variant: "destructive", title: `ملف غير صالح: ${f.name}`, description: v.error });
+        return;
+      }
     }
 
     setUploading(true);
     const newFiles: GuideFile[] = [];
 
-    const { safeFileExtension } = await import("@/lib/storageKey");
     for (const file of Array.from(files)) {
       // Sanitize key for Supabase Storage (ASCII only, no spaces/Arabic)
       const safeExt = safeFileExtension(file.name);
