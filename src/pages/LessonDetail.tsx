@@ -239,31 +239,82 @@ const LessonDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="gradient-primary text-white px-4 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0">
-            <BookOpen className="w-5 h-5 shrink-0" />
-            <span className="font-bold truncate">{lesson.title}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            {/* Offline save/remove button */}
-            {!isOffline && (
-              isSavedOffline ? (
-                <Button variant="ghost" size="sm" onClick={handleRemoveOffline} className="text-white hover:bg-white/20 hover:text-white gap-1">
-                  <Trash2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">حذف المحفوظ</span>
-                </Button>
-              ) : (
-                <Button variant="ghost" size="sm" onClick={handleSaveOffline} disabled={savingOffline} className="text-white hover:bg-white/20 hover:text-white gap-1">
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">حفظ أوفلاين</span>
-                </Button>
-              )
-            )}
-            <ThemeToggle />
-            <Button variant="ghost" size="sm" asChild className="text-white hover:bg-white/20 hover:text-white shrink-0">
-              <Link to="/lessons"><ChevronLeft className="w-4 h-4 ml-1" />الدروس</Link>
+      <header className="gradient-primary text-white shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 pt-3 pb-4">
+          {/* Top bar: back + actions */}
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="text-white hover:bg-white/15 hover:text-white -mr-2 h-8 px-2 gap-1"
+            >
+              <Link to="/lessons">
+                <ChevronLeft className="w-4 h-4" />
+                <span className="text-sm">الدروس</span>
+              </Link>
             </Button>
+
+            <div className="flex items-center gap-0.5">
+              {!isOffline && (
+                isSavedOffline ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveOffline}
+                    className="text-white hover:bg-white/15 hover:text-white h-8 px-2 gap-1"
+                    aria-label="حذف المحفوظ"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span className="hidden sm:inline text-sm">حذف المحفوظ</span>
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSaveOffline}
+                    disabled={savingOffline}
+                    className="text-white hover:bg-white/15 hover:text-white h-8 px-2 gap-1"
+                    aria-label="حفظ أوفلاين"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span className="hidden sm:inline text-sm">حفظ أوفلاين</span>
+                  </Button>
+                )
+              )}
+              <ThemeToggle />
+            </div>
+          </div>
+
+          {/* Title block */}
+          <div className="mt-3 flex items-start gap-3">
+            <span className="shrink-0 mt-0.5 inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/15 ring-1 ring-white/20">
+              <BookOpen className="w-5 h-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-white/70">درس</p>
+              <h1 className="mt-0.5 text-xl sm:text-2xl font-bold leading-tight text-white break-words">
+                {lesson.title}
+              </h1>
+              {/* Inline header chips */}
+              <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                {isCompleted && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/20 text-white ring-1 ring-white/25">
+                    <Check className="w-3 h-3" /> مكتمل
+                  </span>
+                )}
+                {lesson.grade_level && GRADE_LABELS[lesson.grade_level] && (
+                  <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-white/10 text-white/90 ring-1 ring-white/15">
+                    {GRADE_LABELS[lesson.grade_level]}
+                  </span>
+                )}
+                {isSavedOffline && !isOffline && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-white/10 text-white/90 ring-1 ring-white/15">
+                    <Download className="w-3 h-3" /> محفوظ
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -277,30 +328,14 @@ const LessonDetail = () => {
       )}
 
       <main className="max-w-4xl mx-auto px-4 py-6 md:pb-6">
-        {/* Completion button */}
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {isCompleted ? (
-              <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 gap-1">
-                <Check className="w-3 h-3" /> مكتمل
-              </Badge>
-            ) : !isOffline ? (
-              <Button variant="outline" size="sm" onClick={markComplete} className="gap-1">
-                <Check className="w-4 h-4" /> تحديد كمكتمل
-              </Button>
-            ) : null}
-            {isSavedOffline && !isOffline && (
-              <Badge variant="outline" className="text-xs gap-1 border-primary/40 text-primary">
-                <Download className="w-3 h-3" /> محفوظ أوفلاين
-              </Badge>
-            )}
-            {lesson.grade_level && GRADE_LABELS[lesson.grade_level] && (
-              <Badge variant="outline" className="text-xs gap-1 border-amber-500 text-amber-600">
-                {GRADE_LABELS[lesson.grade_level]}
-              </Badge>
-            )}
+        {/* Completion action (status chips now live in header) */}
+        {!isCompleted && !isOffline && (
+          <div className="mb-4">
+            <Button variant="outline" size="sm" onClick={markComplete} className="gap-1">
+              <Check className="w-4 h-4" /> تحديد كمكتمل
+            </Button>
           </div>
-        </div>
+        )}
 
         <Tabs defaultValue="content" dir="rtl">
           <TabsList className={`w-full grid h-auto ${isFromCache ? (signedPresentationUrl ? "grid-cols-4" : "grid-cols-3") : (signedPresentationUrl ? "grid-cols-5" : "grid-cols-4")}`}>
