@@ -448,7 +448,7 @@ const LessonDetail = () => {
             </TabsContent>
           )}
 
-          <TabsContent value="quiz" className="mt-4 space-y-3">
+          <TabsContent value="quiz" className="mt-4 space-y-4">
             {questions.length === 0 ? (
               <Card className="border-border/70 shadow-sm">
                 <CardContent className="py-12 flex flex-col items-center justify-center text-center">
@@ -474,7 +474,8 @@ const LessonDetail = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="gap-1 h-8"
+                    className="gap-1 h-9 min-w-9 px-2 sm:px-3"
+                    aria-label={revealedAnswers.size === questions.length ? "إخفاء جميع الإجابات" : "إظهار جميع الإجابات"}
                     onClick={() => {
                       if (revealedAnswers.size === questions.length) {
                         setRevealedAnswers(new Set());
@@ -560,8 +561,8 @@ const LessonDetail = () => {
                         {/* Explanation */}
                         {isRevealed && q.explanation && (
                           <div className="mt-3 rounded-lg border border-border/60 bg-muted/50 p-3">
-                            <p className="text-[11px] font-bold text-primary mb-1 tracking-wide">الشرح</p>
-                            <p className="text-[13px] text-foreground leading-relaxed">{q.explanation}</p>
+                            <p className="text-[11px] font-bold text-primary mb-1">الشرح</p>
+                            <p className="text-[13px] text-foreground leading-[1.85] break-words">{q.explanation}</p>
                           </div>
                         )}
 
@@ -569,7 +570,7 @@ const LessonDetail = () => {
                         <Button
                           variant={isRevealed ? "outline" : "default"}
                           size="sm"
-                          className="mt-3 w-full sm:w-auto gap-1.5"
+                          className="mt-3 w-full sm:w-auto h-10 gap-1.5"
                           onClick={() => toggleRevealAnswer(q.id)}
                         >
                           {isRevealed ? (
