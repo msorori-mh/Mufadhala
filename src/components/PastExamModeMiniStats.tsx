@@ -130,9 +130,9 @@ const PastExamModeMiniStats = ({ stats, variant, loading, isPaid, isFreeModel }:
 
       {/* Free-attempt-used warning chip */}
       {freeAttemptUsed && (
-        <div className="flex items-start gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 mt-1">
-          <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-          <p className="text-[10px] leading-tight text-amber-700 dark:text-amber-300">
+        <div className="flex items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/10 p-2 mt-1">
+          <Lock className="w-3 h-3 text-destructive shrink-0 mt-0.5" />
+          <p className="text-[10px] leading-tight text-destructive">
             <span className="font-bold">المحاولة المجانية مستخدمة</span> · هذا النموذج هو عينتك المجانية. اشترك للوصول إلى جميع نماذج الأعوام السابقة بلا حدود.
           </p>
         </div>
