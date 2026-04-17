@@ -40,6 +40,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
 
   const { user } = useAuth();
   const { data: student } = useStudentData(user?.id);
+  const { isPaid } = useSubscription(user?.id);
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["past-exam-mode-stats", student?.id, model.id],
     queryFn: () => fetchModelAttemptStats(student!.id, model.id),
