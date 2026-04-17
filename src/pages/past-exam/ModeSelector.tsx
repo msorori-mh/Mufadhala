@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -15,6 +16,10 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, BookOpen, Timer, AlertTriangle, Lock, EyeOff, LogOut, Sparkles, Lightbulb, Smile, Flame, Trophy, GraduationCap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { PastExamModelInfo } from "./types";
+import { useAuth } from "@/hooks/useAuth";
+import { useStudentData } from "@/hooks/useStudentData";
+import { fetchModelAttemptStats } from "@/lib/pastExamAttempts";
+import PastExamModeMiniStats from "@/components/PastExamModeMiniStats";
 
 interface Props {
   model: PastExamModelInfo;
@@ -28,6 +33,15 @@ const ModeSelector = ({ model, totalQuestions, onSelectTraining, onSelectStrict 
   const hasDuration = (model.duration_minutes ?? 0) > 0;
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
+
+  const { user } = useAuth();
+  const { data: student } = useStudentData(user?.id);
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ["past-exam-mode-stats", student?.id, model.id],
+    queryFn: () => fetchModelAttemptStats(student!.id, model.id),
+    enabled: !!student?.id && !!model.id,
+    staleTime: 30_000,
+  });
 
   const openStrictConfirm = () => {
     if (!hasDuration) return;
@@ -116,6 +130,11 @@ const ModeSelector = ({ model, totalQuestions, onSelectTraining, onSelectStrict 
               <li className="flex items-center gap-2"><span className="text-secondary">✓</span> شرح تفصيلي لكل سؤال</li>
               <li className="flex items-center gap-2"><span className="text-secondary">✓</span> تعلّم بسرعتك دون قلق</li>
             </ul>
+            <PastExamModeMiniStats
+              stats={stats?.training ?? { attempts: 0, avgPct: 0, bestPct: 0, lastPcts: [] }}
+              variant="training"
+              loading={statsLoading}
+            />
             <Button className="w-full" variant="secondary">
               <BookOpen className="w-4 h-4 ml-1.5" />
               ابدأ التدريب
@@ -169,6 +188,13 @@ const ModeSelector = ({ model, totalQuestions, onSelectTraining, onSelectStrict 
               <li className="flex items-center gap-2"><EyeOff className="w-3.5 h-3.5 text-destructive" /> بدون كشف للإجابات</li>
               <li className="flex items-center gap-2"><Trophy className="w-3.5 h-3.5 text-destructive" /> نتيجة ومراجعة شاملة</li>
             </ul>
+            {hasDuration && (
+              <PastExamModeMiniStats
+                stats={stats?.strict ?? { attempts: 0, avgPct: 0, bestPct: 0, lastPcts: [] }}
+                variant="strict"
+                loading={statsLoading}
+              />
+            )}
             {hasDuration ? (
               <Button className="w-full" variant="destructive" onClick={(e) => { e.stopPropagation(); openStrictConfirm(); }}>
                 <Lock className="w-4 h-4 ml-1.5" />

@@ -25,3 +25,52 @@ export const savePastExamAttempt = async (params: SavePastExamAttemptParams) => 
   if (error) console.error("[savePastExamAttempt]", error);
   return { error };
 };
+
+export interface ModeAttemptStats {
+  attempts: number;
+  avgPct: number;
+  bestPct: number;
+  lastPcts: number[]; // chronological, oldest -> newest, max 5
+}
+
+export interface ModelAttemptStats {
+  training: ModeAttemptStats;
+  strict: ModeAttemptStats;
+}
+
+const emptyStats = (): ModeAttemptStats => ({ attempts: 0, avgPct: 0, bestPct: 0, lastPcts: [] });
+
+export const fetchModelAttemptStats = async (
+  studentId: string,
+  modelId: string
+): Promise<ModelAttemptStats> => {
+  const { data, error } = await (supabase as any)
+    .from("past_exam_attempts")
+    .select("mode, score, total, completed_at")
+    .eq("student_id", studentId)
+    .eq("model_id", modelId)
+    .order("completed_at", { ascending: true });
+
+  if (error || !data) {
+    return { training: emptyStats(), strict: emptyStats() };
+  }
+
+  const buildStats = (rows: any[]): ModeAttemptStats => {
+    if (!rows.length) return emptyStats();
+    const pcts = rows
+      .map((r) => (r.total > 0 ? Math.round((r.score / r.total) * 100) : 0));
+    const avg = Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length);
+    const best = Math.max(...pcts);
+    return {
+      attempts: rows.length,
+      avgPct: avg,
+      bestPct: best,
+      lastPcts: pcts.slice(-5),
+    };
+  };
+
+  return {
+    training: buildStats(data.filter((r: any) => r.mode === "training")),
+    strict: buildStats(data.filter((r: any) => r.mode === "strict")),
+  };
+};
