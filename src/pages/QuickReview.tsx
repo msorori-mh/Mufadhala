@@ -178,6 +178,29 @@ export default function QuickReview() {
               </CardContent>
             </Card>
 
+            {/* Completion progress (read-only, derived from lesson_progress) */}
+            {(() => {
+              const total = filteredLessons.length;
+              const done = filteredLessons.filter((l) => l.isCompleted).length;
+              if (total === 0) return null;
+              const pct = Math.round((done / total) * 100);
+              return (
+                <div className="flex items-center gap-3 px-1">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[11px] font-semibold text-muted-foreground">
+                        تقدّم القراءة
+                      </span>
+                      <span className="text-[11px] font-bold text-foreground tabular-nums">
+                        {done} / {total}
+                      </span>
+                    </div>
+                    <Progress value={pct} className="h-1.5" />
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* List of summary cards */}
             <div className="space-y-3">
               {filteredLessons.map((lesson, idx) => (
