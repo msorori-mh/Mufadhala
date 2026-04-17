@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 let DAILY_LIMIT = 30;
+const FREE_DAILY_LIMIT = 10;
 let AI_MODEL = "google/gemini-3-flash-preview";
 let CUSTOM_SYSTEM_PROMPT = "";
 let limitFetchedAt = 0;
