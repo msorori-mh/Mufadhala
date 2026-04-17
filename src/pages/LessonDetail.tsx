@@ -561,8 +561,8 @@ const LessonDetail = () => {
                         {/* Explanation */}
                         {isRevealed && q.explanation && (
                           <div className="mt-3 rounded-lg border border-border/60 bg-muted/50 p-3">
-                            <p className="text-[11px] font-bold text-primary mb-1 tracking-wide">الشرح</p>
-                            <p className="text-[13px] text-foreground leading-relaxed">{q.explanation}</p>
+                            <p className="text-[11px] font-bold text-primary mb-1">الشرح</p>
+                            <p className="text-[13px] text-foreground leading-[1.85] break-words">{q.explanation}</p>
                           </div>
                         )}
 
@@ -570,7 +570,7 @@ const LessonDetail = () => {
                         <Button
                           variant={isRevealed ? "outline" : "default"}
                           size="sm"
-                          className="mt-3 w-full sm:w-auto gap-1.5"
+                          className="mt-3 w-full sm:w-auto h-10 gap-1.5"
                           onClick={() => toggleRevealAnswer(q.id)}
                         >
                           {isRevealed ? (
