@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import type { PastExamModelInfo } from "./types";
 import { useAuth } from "@/hooks/useAuth";
 import { useStudentData } from "@/hooks/useStudentData";
+import { useSubscription } from "@/hooks/useSubscription";
 import { fetchModelAttemptStats } from "@/lib/pastExamAttempts";
 import PastExamModeMiniStats from "@/components/PastExamModeMiniStats";
 import PastExamModesComparisonDialog from "@/components/PastExamModesComparisonDialog";
@@ -25,11 +26,12 @@ import PastExamModesComparisonDialog from "@/components/PastExamModesComparisonD
 interface Props {
   model: PastExamModelInfo;
   totalQuestions: number;
+  isFreeModel?: boolean;
   onSelectTraining: () => void;
   onSelectStrict: () => void;
 }
 
-const ModeSelector = ({ model, totalQuestions, onSelectTraining, onSelectStrict }: Props) => {
+const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, onSelectStrict }: Props) => {
   const navigate = useNavigate();
   const hasDuration = (model.duration_minutes ?? 0) > 0;
   const [confirmOpen, setConfirmOpen] = useState(false);
