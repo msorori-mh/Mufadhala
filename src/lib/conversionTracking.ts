@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { isPaymentUIEnabled } from "@/lib/platformGate";
 
 /** Approved subscription touchpoints. Keep this in sync with DB validation trigger. */
 export type ConversionSource =
@@ -19,6 +20,8 @@ export async function trackConversionEvent(
   eventType: ConversionEventType = "click",
   metadata: Record<string, unknown> = {}
 ): Promise<void> {
+  // Suppress all subscription analytics inside the native APK.
+  if (!isPaymentUIEnabled()) return;
   try {
     const { data: { user } } = await supabase.auth.getUser();
     await supabase.from("conversion_events").insert({

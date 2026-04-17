@@ -19,6 +19,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import ConversionBoosters from "@/components/ConversionBoosters";
 import { getZone, getPlanPrice, getZoneFromUniversity, getPlanPriceByZone, PriceZone } from "@/domain/pricing";
 import { trackFunnelEvent } from "@/lib/funnelTracking";
+import { isPaymentUIEnabled } from "@/lib/platformGate";
 
 interface Plan {
   id: string; name: string; slug: string; description: string;
@@ -51,6 +52,14 @@ const Subscription = () => {
   const { user, student: studentData, loading: accessLoading, canSubscribe } = useStudentAccess();
   const authLoading = accessLoading;
   const navigate = useNavigate();
+
+  // Native APK guard — payment surfaces are web-only.
+  useEffect(() => {
+    if (!isPaymentUIEnabled()) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate]);
+  if (!isPaymentUIEnabled()) return null;
   const { toast } = useToast();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
