@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ChevronLeft, ChevronRight, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check, Star, Download, Trash2, WifiOff, Eye, EyeOff, Presentation, Brain } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check, Star, Download, Trash2, WifiOff, Eye, EyeOff, Presentation, Brain, Sparkles, Clock, ArrowLeft } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import LessonReviews from "@/components/LessonReviews";
 import { toast } from "sonner";
@@ -71,6 +71,7 @@ const LessonDetail = () => {
   const [signedPresentationUrl, setSignedPresentationUrl] = useState<string | null>(null);
   const [prevLesson, setPrevLesson] = useState<{ id: string; title: string } | null>(null);
   const [nextLesson, setNextLesson] = useState<{ id: string; title: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("content");
 
   // Reveal answer state
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
@@ -337,7 +338,7 @@ const LessonDetail = () => {
           </div>
         )}
 
-        <Tabs defaultValue="content" dir="rtl">
+        <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
           <TabsList className={`w-full grid h-auto ${isFromCache ? (signedPresentationUrl ? "grid-cols-4" : "grid-cols-3") : (signedPresentationUrl ? "grid-cols-5" : "grid-cols-4")}`}>
             <TabsTrigger value="content" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الشرح</TabsTrigger>
             <TabsTrigger value="summary" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><BookOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الملخص</TabsTrigger>
@@ -383,24 +384,70 @@ const LessonDetail = () => {
               <div className="flex items-center justify-between gap-2 px-5 py-3 border-b border-border/60 bg-muted/40">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 text-primary">
-                    <BookOpen className="w-4 h-4" />
+                    <Sparkles className="w-4 h-4" />
                   </span>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-foreground leading-none">ملخص الدرس</p>
                     <p className="text-[11px] text-muted-foreground mt-1">أبرز النقاط لمراجعة سريعة</p>
                   </div>
                 </div>
-                {lesson.summary && (
-                  <SummaryPDFDownload title={lesson.title} text={lesson.summary} />
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {lesson.summary && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium">
+                      <Clock className="w-3 h-3" />
+                      ~{Math.max(1, Math.round((lesson.summary.trim().length / 5) / 180))} د
+                    </span>
+                  )}
+                  {lesson.summary && (
+                    <SummaryPDFDownload title={lesson.title} text={lesson.summary} />
+                  )}
+                </div>
               </div>
-              <CardContent className="py-6 px-5 sm:px-6">
+              <CardContent className="py-6 px-4 sm:px-6">
                 {lesson.summary ? (
-                  <div className="relative rounded-lg bg-primary/[0.04] border-r-4 border-primary/40 px-4 py-4 sm:px-5 sm:py-5">
-                    <article className="prose prose-sm sm:prose-base max-w-none text-foreground whitespace-pre-wrap leading-[1.9] text-[15px] sm:text-[16px]">
-                      {lesson.summary}
-                    </article>
-                  </div>
+                  <>
+                    <div className="relative rounded-xl bg-primary/[0.04] border border-primary/15 px-4 py-5 sm:px-6 sm:py-6 space-y-4">
+                      {/* Right accent bar (RTL) */}
+                      <span aria-hidden className="absolute top-3 bottom-3 right-0 w-[3px] rounded-full bg-primary/60" />
+                      {(() => {
+                        const raw = lesson.summary ?? "";
+                        const chunks = raw
+                          .split(/\n{2,}/)
+                          .map((c) => c.trim())
+                          .filter(Boolean);
+                        const blocks = chunks.length > 0 ? chunks : [raw];
+                        return blocks.map((block, idx) => (
+                          <p
+                            key={idx}
+                            className={`whitespace-pre-wrap break-words text-foreground/90 text-[15px] sm:text-[16px] leading-[1.95] ${
+                              idx === 0 ? "font-medium" : "font-normal"
+                            }`}
+                          >
+                            {block}
+                          </p>
+                        ));
+                      })()}
+                    </div>
+
+                    {/* Bottom bridge → questions tab */}
+                    <div className="mt-5 flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary shrink-0">
+                          <HelpCircle className="w-4 h-4" />
+                        </span>
+                        <p className="text-sm text-foreground/80 truncate">جاهز للاختبار؟</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setActiveTab("quiz")}
+                        className="text-primary hover:text-primary hover:bg-primary/10 gap-1 shrink-0"
+                      >
+                        ابدأ الأسئلة
+                        <ArrowLeft className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted text-muted-foreground mb-3">
