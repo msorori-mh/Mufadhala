@@ -82,6 +82,10 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [dailyLimit, setDailyLimit] = useState<number | null>(null);
   const [limitReached, setLimitReached] = useState(false);
+  // Tracks whether the *backend* considers this user a paid subscriber.
+  // Distinct from `hasSubscription` prop which counts trial users as subscribed.
+  // Only `paidSubscriber === true` should grant the higher limit & hide upgrade CTA.
+  const [paidSubscriber, setPaidSubscriber] = useState<boolean | null>(null);
 
   // Default subject = first available track subject
   useEffect(() => {
@@ -111,17 +115,17 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
   });
 
   // Initial render of remaining/limit before any generate call.
-  // Uses a soft client-side fallback that mirrors the backend defaults,
-  // but the authoritative values (limit, remaining) always come from the
-  // edge function response and override these on first generate.
+  // We optimistically assume the FREE limit because trial users (who pass
+  // `hasSubscription=true` from useSubscription) are still on the free quota
+  // server-side. The backend response on first generate corrects both values.
   useEffect(() => {
     if (usageData !== undefined && dailyLimit === null) {
-      const fallbackLimit = hasSubscription ? 100 : 10;
+      const fallbackLimit = 2; // matches DEFAULT_FREE_DAILY in domain/constants
       setDailyLimit(fallbackLimit);
       setRemaining(Math.max(0, fallbackLimit - usageData));
       setLimitReached(usageData >= fallbackLimit);
     }
-  }, [usageData, hasSubscription, dailyLimit]);
+  }, [usageData, dailyLimit]);
 
   const generate = async () => {
     if (limitReached) return;
