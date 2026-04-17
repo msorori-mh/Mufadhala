@@ -422,10 +422,10 @@ const ExamSimulator = () => {
           questions={engine.examQuestions}
           answers={engine.answers}
           percentage={engine.percentage}
-          hasSubscription={engine.hasActiveSubscription}
+          hasSubscription={engine.isPaid}
         />
 
-        <PostExamUpgrade percentage={engine.percentage} totalQuestions={engine.examQuestions.length} hasSubscription={engine.hasActiveSubscription} />
+        <PostExamUpgrade percentage={engine.percentage} totalQuestions={engine.examQuestions.length} hasSubscription={engine.isPaid} />
 
         {/* Full Review Report */}
         <div className="space-y-2">

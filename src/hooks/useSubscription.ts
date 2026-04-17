@@ -6,6 +6,8 @@ import { toast } from "sonner";
 interface SubscriptionStatus {
   hasSubscription: boolean;
   isActive: boolean;
+  /** True ONLY for paid 'active' subscriptions (excludes trial). Use this for paywall enforcement. */
+  isPaid: boolean;
   isPending: boolean;
   isTrial: boolean;
   trialEndsAt: string | null;
@@ -17,7 +19,7 @@ interface SubscriptionStatus {
 }
 
 const defaultStatus: SubscriptionStatus = {
-  hasSubscription: false, isActive: false, isPending: false,
+  hasSubscription: false, isActive: false, isPaid: false, isPending: false,
   isTrial: false, trialEndsAt: null,
   expiresAt: null, planId: null, planSlug: null, allowedMajorIds: null, loading: true,
 };
@@ -37,7 +39,7 @@ export const useSubscription = (userId: string | undefined): SubscriptionStatus 
 
       if (!data || data.length === 0) {
         return {
-          hasSubscription: false, isActive: false, isPending: false,
+          hasSubscription: false, isActive: false, isPaid: false, isPending: false,
           isTrial: false, trialEndsAt: null as string | null, expiresAt: null as string | null,
           planId: null as string | null, planSlug: null as string | null,
           allowedMajorIds: null as string[] | null, rawStatus: null as string | null,
@@ -45,13 +47,14 @@ export const useSubscription = (userId: string | undefined): SubscriptionStatus 
       }
 
       const sub = data[0];
-      const isActive = sub.status === "active" && (!sub.expires_at || new Date(sub.expires_at) > new Date());
+      const isPaid = sub.status === "active" && (!sub.expires_at || new Date(sub.expires_at) > new Date());
       const isTrial = sub.status === "trial" && !!sub.trial_ends_at && new Date(sub.trial_ends_at) > new Date();
       const plan = sub.subscription_plans as { slug: string; allowed_major_ids: string[] | null } | null;
 
       return {
         hasSubscription: true,
-        isActive: isActive || isTrial,
+        isActive: isPaid || isTrial,
+        isPaid,
         isPending: sub.status === "pending",
         isTrial,
         trialEndsAt: sub.trial_ends_at,
