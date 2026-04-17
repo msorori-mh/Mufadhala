@@ -53,13 +53,12 @@ const Subscription = () => {
   const authLoading = accessLoading;
   const navigate = useNavigate();
 
-  // Native APK guard — payment surfaces are web-only.
+  // Native APK guard — payment surfaces are web-only. Redirect immediately.
   useEffect(() => {
     if (!isPaymentUIEnabled()) {
       navigate("/dashboard", { replace: true });
     }
   }, [navigate]);
-  if (!isPaymentUIEnabled()) return null;
   const { toast } = useToast();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
