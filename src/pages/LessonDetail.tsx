@@ -448,7 +448,7 @@ const LessonDetail = () => {
             </TabsContent>
           )}
 
-          <TabsContent value="quiz" className="mt-4 space-y-3">
+          <TabsContent value="quiz" className="mt-4 space-y-4">
             {questions.length === 0 ? (
               <Card className="border-border/70 shadow-sm">
                 <CardContent className="py-12 flex flex-col items-center justify-center text-center">
