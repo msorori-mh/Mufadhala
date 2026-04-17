@@ -251,8 +251,8 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-3 space-y-3">
-        {/* Remaining usage indicator for free users */}
-        {!hasSubscription && remaining !== null && dailyLimit !== null && questions.length === 0 && !loading && (
+        {/* Remaining usage indicator — visible to everyone except confirmed paid subscribers */}
+        {!isPaid && remaining !== null && dailyLimit !== null && questions.length === 0 && !loading && (
           <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border">
             <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
             <p className="text-xs text-muted-foreground">
