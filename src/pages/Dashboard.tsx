@@ -193,6 +193,7 @@ const Dashboard = () => {
 
   const navCards = [
     { path: isAdmin ? "/admin/content" : "/lessons", title: "المحتوى التعليمي", desc: isAdmin ? "إدارة الدروس والأسئلة" : "تدرّب على الدروس والأسئلة", icon: BookOpen, color: "border-r-secondary", iconColor: "text-secondary", bgColor: "bg-secondary/10" },
+    ...(!isAdmin ? [{ path: "/quick-review", title: "المراجعة السريعة", desc: "ملخصات كل دروسك في مكان واحد", icon: Sparkles, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10" }] : []),
     { path: "/exam", title: "محاكاة الاختبار", desc: "45 سؤال في 90 دقيقة", icon: ClipboardCheck, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" },
     { path: "/past-exams", title: "نماذج الأعوام السابقة", desc: "تدرّب على نماذج القبول الحقيقية", icon: FileText, color: "border-r-accent", iconColor: "text-accent", bgColor: "bg-accent/10" },
     { path: "/college-guide", title: "دليل الكليات", desc: "متطلبات القبول ونسب القبول والمواعيد", icon: Building2, color: "border-r-primary", iconColor: "text-primary", bgColor: "bg-primary/10" },
