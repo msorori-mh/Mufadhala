@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ChevronLeft, ChevronRight, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check, Star, Download, Trash2, WifiOff, Eye, EyeOff, Presentation, Brain } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, FileText, HelpCircle, CheckCircle2, XCircle, Loader2, Check, Star, Download, Trash2, WifiOff, Eye, EyeOff, Presentation, Brain, Sparkles, Clock, ArrowLeft } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import LessonReviews from "@/components/LessonReviews";
 import { toast } from "sonner";
@@ -337,7 +337,7 @@ const LessonDetail = () => {
           </div>
         )}
 
-        <Tabs defaultValue="content" dir="rtl">
+        <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
           <TabsList className={`w-full grid h-auto ${isFromCache ? (signedPresentationUrl ? "grid-cols-4" : "grid-cols-3") : (signedPresentationUrl ? "grid-cols-5" : "grid-cols-4")}`}>
             <TabsTrigger value="content" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الشرح</TabsTrigger>
             <TabsTrigger value="summary" className="flex items-center gap-1 text-[10px] sm:text-xs py-2"><BookOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5" />الملخص</TabsTrigger>
