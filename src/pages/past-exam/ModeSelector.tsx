@@ -295,6 +295,14 @@ const ModeSelector = ({ model, totalQuestions, onSelectTraining, onSelectStrict 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Detailed Comparison Dialog */}
+      <PastExamModesComparisonDialog
+        open={compareOpen}
+        onOpenChange={setCompareOpen}
+        durationMinutes={model.duration_minutes}
+        totalQuestions={totalQuestions}
+      />
     </div>
   );
 };
