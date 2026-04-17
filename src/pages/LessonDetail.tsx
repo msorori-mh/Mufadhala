@@ -328,30 +328,14 @@ const LessonDetail = () => {
       )}
 
       <main className="max-w-4xl mx-auto px-4 py-6 md:pb-6">
-        {/* Completion button */}
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {isCompleted ? (
-              <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 gap-1">
-                <Check className="w-3 h-3" /> مكتمل
-              </Badge>
-            ) : !isOffline ? (
-              <Button variant="outline" size="sm" onClick={markComplete} className="gap-1">
-                <Check className="w-4 h-4" /> تحديد كمكتمل
-              </Button>
-            ) : null}
-            {isSavedOffline && !isOffline && (
-              <Badge variant="outline" className="text-xs gap-1 border-primary/40 text-primary">
-                <Download className="w-3 h-3" /> محفوظ أوفلاين
-              </Badge>
-            )}
-            {lesson.grade_level && GRADE_LABELS[lesson.grade_level] && (
-              <Badge variant="outline" className="text-xs gap-1 border-amber-500 text-amber-600">
-                {GRADE_LABELS[lesson.grade_level]}
-              </Badge>
-            )}
+        {/* Completion action (status chips now live in header) */}
+        {!isCompleted && !isOffline && (
+          <div className="mb-4">
+            <Button variant="outline" size="sm" onClick={markComplete} className="gap-1">
+              <Check className="w-4 h-4" /> تحديد كمكتمل
+            </Button>
           </div>
-        </div>
+        )}
 
         <Tabs defaultValue="content" dir="rtl">
           <TabsList className={`w-full grid h-auto ${isFromCache ? (signedPresentationUrl ? "grid-cols-4" : "grid-cols-3") : (signedPresentationUrl ? "grid-cols-5" : "grid-cols-4")}`}>
