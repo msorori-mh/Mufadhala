@@ -126,6 +126,47 @@ serve(async (req) => {
       }
     } catch { /* ignore */ }
 
+    // Server-side free-tier enforcement: non-paid users capped at FREE_DAILY_LIMIT
+    if (userId) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const sb = createClient(supabaseUrl, supabaseKey);
+
+        // Check PAID subscription only (status='active' + not expired). Trial does NOT count.
+        const { data: subRow } = await sb
+          .from("subscriptions")
+          .select("status, expires_at")
+          .eq("user_id", userId)
+          .eq("status", "active")
+          .maybeSingle();
+        const isPaid = !!subRow && (subRow.expires_at == null || new Date(subRow.expires_at) > new Date());
+
+        if (!isPaid) {
+          // Count today's messages for this user
+          const startOfDay = new Date();
+          startOfDay.setHours(0, 0, 0, 0);
+          const { count } = await sb
+            .from("chat_usage")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", userId)
+            .gte("created_at", startOfDay.toISOString());
+
+          if ((count ?? 0) >= FREE_DAILY_LIMIT) {
+            return new Response(
+              JSON.stringify({
+                error: `وصلت للحد المجاني (${FREE_DAILY_LIMIT} رسائل يومياً). فعّل اشتراكك للمتابعة.`,
+                code: "free_limit_reached",
+              }),
+              { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        }
+      } catch (e) {
+        console.error("free-tier check failed:", e);
+      }
+    }
+
     // Log usage asynchronously (fire-and-forget)
     try {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
