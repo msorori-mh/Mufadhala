@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import type { PastExamModelInfo } from "./types";
 import { useAuth } from "@/hooks/useAuth";
 import { useStudentData } from "@/hooks/useStudentData";
+import { useSubscription } from "@/hooks/useSubscription";
 import { fetchModelAttemptStats } from "@/lib/pastExamAttempts";
 import PastExamModeMiniStats from "@/components/PastExamModeMiniStats";
 import PastExamModesComparisonDialog from "@/components/PastExamModesComparisonDialog";
@@ -25,11 +26,12 @@ import PastExamModesComparisonDialog from "@/components/PastExamModesComparisonD
 interface Props {
   model: PastExamModelInfo;
   totalQuestions: number;
+  isFreeModel?: boolean;
   onSelectTraining: () => void;
   onSelectStrict: () => void;
 }
 
-const ModeSelector = ({ model, totalQuestions, onSelectTraining, onSelectStrict }: Props) => {
+const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, onSelectStrict }: Props) => {
   const navigate = useNavigate();
   const hasDuration = (model.duration_minutes ?? 0) > 0;
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -38,6 +40,7 @@ const ModeSelector = ({ model, totalQuestions, onSelectTraining, onSelectStrict 
 
   const { user } = useAuth();
   const { data: student } = useStudentData(user?.id);
+  const { isPaid } = useSubscription(user?.id);
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["past-exam-mode-stats", student?.id, model.id],
     queryFn: () => fetchModelAttemptStats(student!.id, model.id),
@@ -147,6 +150,8 @@ const ModeSelector = ({ model, totalQuestions, onSelectTraining, onSelectStrict 
               stats={stats?.training ?? { attempts: 0, avgPct: 0, bestPct: 0, lastPcts: [] }}
               variant="training"
               loading={statsLoading}
+              isPaid={isPaid}
+              isFreeModel={isFreeModel}
             />
             <Button className="w-full" variant="secondary">
               <BookOpen className="w-4 h-4 ml-1.5" />
@@ -206,6 +211,8 @@ const ModeSelector = ({ model, totalQuestions, onSelectTraining, onSelectStrict 
                 stats={stats?.strict ?? { attempts: 0, avgPct: 0, bestPct: 0, lastPcts: [] }}
                 variant="strict"
                 loading={statsLoading}
+                isPaid={isPaid}
+                isFreeModel={isFreeModel}
               />
             )}
             {hasDuration ? (

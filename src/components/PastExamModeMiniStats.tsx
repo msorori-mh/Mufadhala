@@ -1,10 +1,14 @@
-import { TrendingUp, Trophy, Target } from "lucide-react";
+import { TrendingUp, Trophy, Target, Lock } from "lucide-react";
 import type { ModeAttemptStats } from "@/lib/pastExamAttempts";
 
 interface Props {
   stats: ModeAttemptStats;
   variant: "training" | "strict";
   loading?: boolean;
+  /** Whether the student has a paid subscription (excludes trial) */
+  isPaid?: boolean;
+  /** Whether this model is the free sample for its university */
+  isFreeModel?: boolean;
 }
 
 /**
@@ -12,11 +16,15 @@ interface Props {
  * for a specific mode on this past-exam model. Helps the student decide
  * which mode to pick based on their own history.
  */
-const PastExamModeMiniStats = ({ stats, variant, loading }: Props) => {
+const PastExamModeMiniStats = ({ stats, variant, loading, isPaid, isFreeModel }: Props) => {
   const colorClass = variant === "training" ? "text-secondary" : "text-destructive";
   const bgClass = variant === "training" ? "bg-secondary/10" : "bg-destructive/10";
   const borderClass = variant === "training" ? "border-secondary/30" : "border-destructive/30";
   const strokeColor = variant === "training" ? "hsl(var(--secondary))" : "hsl(var(--destructive))";
+
+  // Free attempt is "used" when: student is not paid, this is a free sample model,
+  // and they have at least one attempt on this mode.
+  const freeAttemptUsed = !isPaid && isFreeModel && stats.attempts >= 1;
 
   if (loading) {
     return (
@@ -119,6 +127,16 @@ const PastExamModeMiniStats = ({ stats, variant, loading }: Props) => {
           </div>
         </div>
       </div>
+
+      {/* Free-attempt-used warning chip */}
+      {freeAttemptUsed && (
+        <div className="flex items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/10 p-2 mt-1">
+          <Lock className="w-3 h-3 text-destructive shrink-0 mt-0.5" />
+          <p className="text-[10px] leading-tight text-destructive">
+            <span className="font-bold">المحاولة المجانية مستخدمة</span> · هذا النموذج هو عينتك المجانية. اشترك للوصول إلى جميع نماذج الأعوام السابقة بلا حدود.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

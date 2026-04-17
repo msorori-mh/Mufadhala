@@ -123,6 +123,7 @@ const PastExamPractice = () => {
     <ModeSelector
       model={model}
       totalQuestions={questions.length}
+      isFreeModel={!!isFirstFreeModel}
       onSelectTraining={() => setMode("training")}
       onSelectStrict={() => setMode("strict_intro")}
     />
