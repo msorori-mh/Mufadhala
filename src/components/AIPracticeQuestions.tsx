@@ -145,6 +145,7 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
         if (error.message?.includes("daily_limit_reached") || (data && data.error === "daily_limit_reached")) {
           setLimitReached(true);
           setRemaining(0);
+          if (data?.hasSubscription !== undefined) setPaidSubscriber(!!data.hasSubscription);
         } else {
           toast.error("حدث خطأ في توليد الأسئلة");
           console.error(error);
@@ -152,13 +153,15 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
       } else if (data?.error === "daily_limit_reached") {
         setLimitReached(true);
         setRemaining(0);
+        if (data?.hasSubscription !== undefined) setPaidSubscriber(!!data.hasSubscription);
       } else if (data?.questions) {
         setQuestions(data.questions);
-        // Backend is the single source of truth for limit + remaining
+        // Backend is the single source of truth for limit + remaining + paid status
         if (data.limit !== undefined) setDailyLimit(data.limit);
+        if (data.hasSubscription !== undefined) setPaidSubscriber(!!data.hasSubscription);
         if (data.remaining !== undefined) {
           setRemaining(data.remaining);
-          if (data.remaining <= 0 && !hasSubscription) {
+          if (data.remaining <= 0 && !data.hasSubscription) {
             setLimitReached(true);
           }
         }
