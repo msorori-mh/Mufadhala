@@ -1,10 +1,14 @@
-import { TrendingUp, Trophy, Target } from "lucide-react";
+import { TrendingUp, Trophy, Target, Lock } from "lucide-react";
 import type { ModeAttemptStats } from "@/lib/pastExamAttempts";
 
 interface Props {
   stats: ModeAttemptStats;
   variant: "training" | "strict";
   loading?: boolean;
+  /** Whether the student has a paid subscription (excludes trial) */
+  isPaid?: boolean;
+  /** Whether this model is the free sample for its university */
+  isFreeModel?: boolean;
 }
 
 /**
