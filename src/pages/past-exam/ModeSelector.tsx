@@ -130,6 +130,11 @@ const ModeSelector = ({ model, totalQuestions, onSelectTraining, onSelectStrict 
               <li className="flex items-center gap-2"><span className="text-secondary">✓</span> شرح تفصيلي لكل سؤال</li>
               <li className="flex items-center gap-2"><span className="text-secondary">✓</span> تعلّم بسرعتك دون قلق</li>
             </ul>
+            <PastExamModeMiniStats
+              stats={stats?.training ?? { attempts: 0, avgPct: 0, bestPct: 0, lastPcts: [] }}
+              variant="training"
+              loading={statsLoading}
+            />
             <Button className="w-full" variant="secondary">
               <BookOpen className="w-4 h-4 ml-1.5" />
               ابدأ التدريب
@@ -183,6 +188,13 @@ const ModeSelector = ({ model, totalQuestions, onSelectTraining, onSelectStrict 
               <li className="flex items-center gap-2"><EyeOff className="w-3.5 h-3.5 text-destructive" /> بدون كشف للإجابات</li>
               <li className="flex items-center gap-2"><Trophy className="w-3.5 h-3.5 text-destructive" /> نتيجة ومراجعة شاملة</li>
             </ul>
+            {hasDuration && (
+              <PastExamModeMiniStats
+                stats={stats?.strict ?? { attempts: 0, avgPct: 0, bestPct: 0, lastPcts: [] }}
+                variant="strict"
+                loading={statsLoading}
+              />
+            )}
             {hasDuration ? (
               <Button className="w-full" variant="destructive" onClick={(e) => { e.stopPropagation(); openStrictConfirm(); }}>
                 <Lock className="w-4 h-4 ml-1.5" />
