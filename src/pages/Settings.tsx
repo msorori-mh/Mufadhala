@@ -11,11 +11,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { APP_VERSION, APP_VERSION_CODE } from "@/domain/version";
+import { isPaymentUIEnabled } from "@/lib/platformGate";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const { theme, setTheme } = useTheme();
+  const paymentsVisible = isPaymentUIEnabled();
 
   const [notifInApp, setNotifInApp] = useState(() => localStorage.getItem("notif_in_app") !== "false");
   const [notifExamResults, setNotifExamResults] = useState(() => localStorage.getItem("notif_exam_results") !== "false");
@@ -162,11 +164,15 @@ const Settings = () => {
               <span className="text-sm">نتائج الاختبارات</span>
               <Switch checked={notifExamResults} onCheckedChange={setNotifExamResults} />
             </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <span className="text-sm">تحديثات الاشتراك</span>
-              <Switch checked={notifSubscription} onCheckedChange={setNotifSubscription} />
-            </div>
+            {paymentsVisible && (
+              <>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">تحديثات الاشتراك</span>
+                  <Switch checked={notifSubscription} onCheckedChange={setNotifSubscription} />
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -186,24 +192,28 @@ const Settings = () => {
                   بعد إكمال بياناتك في الملف الشخصي، توجّه للوحة التحكم وابدأ بمشاهدة الدروس المتاحة لتخصصك، ثم جرّب اختبار نهاية الدرس لتقييم فهمك.
                 </AccordionContent>
               </AccordionItem>
-              <AccordionItem value="q2">
-                <AccordionTrigger className="text-sm text-right">ما الفرق بين الحساب المجاني والمشترك؟</AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground">
-                  الحساب المجاني يتيح لك الوصول إلى عدد محدود من الدروس والأسئلة يومياً. الاشتراك يفتح كامل المحتوى ومحاكي الاختبار الحقيقي ومولّد الأسئلة الذكي بدون حدود.
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="q3">
-                <AccordionTrigger className="text-sm text-right">كيف أشترك في المنصة؟</AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground">
-                  من القائمة الرئيسية اختر "الاشتراك"، اختر الباقة المناسبة، حوّل المبلغ عبر إحدى طرق الدفع المعروضة، ثم ارفع صورة سند التحويل وسيتم تفعيل اشتراكك خلال وقت قصير.
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="q4">
-                <AccordionTrigger className="text-sm text-right">لم يتم تفعيل اشتراكي بعد الدفع، ماذا أفعل؟</AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground">
-                  تأكد من رفع صورة واضحة لسند التحويل. يتم مراجعة السندات يدوياً خلال ساعات قليلة. إذا تأخر التفعيل أكثر من 24 ساعة، تواصل معنا عبر واتساب من قسم "تواصل معنا" أدناه.
-                </AccordionContent>
-              </AccordionItem>
+              {paymentsVisible && (
+                <>
+                  <AccordionItem value="q2">
+                    <AccordionTrigger className="text-sm text-right">ما الفرق بين الحساب المجاني والمشترك؟</AccordionTrigger>
+                    <AccordionContent className="text-sm text-muted-foreground">
+                      الحساب المجاني يتيح لك الوصول إلى عدد محدود من الدروس والأسئلة يومياً. الاشتراك يفتح كامل المحتوى ومحاكي الاختبار الحقيقي ومولّد الأسئلة الذكي بدون حدود.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="q3">
+                    <AccordionTrigger className="text-sm text-right">كيف أشترك في المنصة؟</AccordionTrigger>
+                    <AccordionContent className="text-sm text-muted-foreground">
+                      من القائمة الرئيسية اختر "الاشتراك"، اختر الباقة المناسبة، حوّل المبلغ عبر إحدى طرق الدفع المعروضة، ثم ارفع صورة سند التحويل وسيتم تفعيل اشتراكك خلال وقت قصير.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="q4">
+                    <AccordionTrigger className="text-sm text-right">لم يتم تفعيل اشتراكي بعد الدفع، ماذا أفعل؟</AccordionTrigger>
+                    <AccordionContent className="text-sm text-muted-foreground">
+                      تأكد من رفع صورة واضحة لسند التحويل. يتم مراجعة السندات يدوياً خلال ساعات قليلة. إذا تأخر التفعيل أكثر من 24 ساعة، تواصل معنا عبر واتساب من قسم "تواصل معنا" أدناه.
+                    </AccordionContent>
+                  </AccordionItem>
+                </>
+              )}
               <AccordionItem value="q5">
                 <AccordionTrigger className="text-sm text-right">كيف يعمل محاكي الاختبار الحقيقي؟</AccordionTrigger>
                 <AccordionContent className="text-sm text-muted-foreground">
