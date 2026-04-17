@@ -105,6 +105,8 @@ const AdminPaymentMethods = () => {
 
     // Upload new logo
     if (logoFile) {
+      const v = validateUploadFile(logoFile, FILE_PRESETS.paymentLogo);
+      if (!v.ok) { toast({ variant: "destructive", title: "ملف شعار غير صالح", description: v.error }); setSaving(false); return; }
       const ext = safeFileExtension(logoFile.name);
       const path = `${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("payment-logos").upload(path, logoFile, {
