@@ -1,0 +1,240 @@
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+
+/**
+ * Generates an A4 print-ready brochure PDF for Mufadhala.
+ * Strategy: Build the brochure as off-screen HTML (perfect Arabic RTL + icons + brand),
+ * snapshot it with html2canvas, and embed into a single A4 page via jsPDF.
+ *
+ * @param qrCanvas - The existing QR <canvas> element from the page (reused for fidelity)
+ */
+export async function generateBrochurePDF(qrCanvas: HTMLCanvasElement): Promise<void> {
+  const qrDataUrl = qrCanvas.toDataURL("image/png");
+
+  // A4 @ ~96 DPI working canvas: 794 x 1123 px (final PDF still vector-sharp via 2x scale)
+  const A4_WIDTH_PX = 794;
+  const A4_HEIGHT_PX = 1123;
+
+  const container = document.createElement("div");
+  container.style.position = "fixed";
+  container.style.top = "-10000px";
+  container.style.left = "0";
+  container.style.width = `${A4_WIDTH_PX}px`;
+  container.style.height = `${A4_HEIGHT_PX}px`;
+  container.style.background = "#ffffff";
+  container.style.fontFamily = "'Cairo', system-ui, sans-serif";
+  container.setAttribute("dir", "rtl");
+
+  container.innerHTML = `
+    <div style="
+      width:100%; height:100%; box-sizing:border-box;
+      background: linear-gradient(135deg, #1A237E 0%, #283593 50%, #2E7D32 100%);
+      padding: 36px;
+      display:flex; flex-direction:column;
+      color: #ffffff;
+    ">
+      <!-- Inner white card -->
+      <div style="
+        flex:1; background:#ffffff; border-radius:24px;
+        padding: 40px 36px;
+        display:flex; flex-direction:column; gap:24px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+        color:#1A237E;
+        position:relative; overflow:hidden;
+      ">
+        <!-- Decorative corner accents -->
+        <div style="position:absolute; top:-60px; left:-60px; width:180px; height:180px; border-radius:50%; background:#1A237E; opacity:0.06;"></div>
+        <div style="position:absolute; bottom:-80px; right:-80px; width:240px; height:240px; border-radius:50%; background:#2E7D32; opacity:0.06;"></div>
+
+        <!-- Header / Brand -->
+        <div style="text-align:center; position:relative;">
+          <div style="
+            display:inline-flex; align-items:center; justify-content:center;
+            width:72px; height:72px; border-radius:18px;
+            background: linear-gradient(135deg, #1A237E, #3949AB);
+            box-shadow: 0 8px 20px rgba(26,35,126,0.35);
+            margin-bottom:14px;
+          ">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+              <path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5"/>
+            </svg>
+          </div>
+          <h1 style="margin:0; font-size:36px; font-weight:800; color:#1A237E; letter-spacing:-0.5px;">
+            مُفَاضَلَة
+          </h1>
+          <p style="margin:6px 0 0; font-size:14px; color:#5b6bb5; letter-spacing:2px; font-weight:600;">
+            MUFADHALA
+          </p>
+          <p style="margin:14px 0 0; font-size:16px; color:#374151; font-weight:600; line-height:1.6;">
+            منصتك الذكية للتحضير لاختبارات القبول الجامعي في اليمن
+          </p>
+        </div>
+
+        <!-- Divider with badge -->
+        <div style="display:flex; align-items:center; gap:12px; margin: 4px 0;">
+          <div style="flex:1; height:2px; background: linear-gradient(to left, transparent, #2E7D32);"></div>
+          <div style="
+            background: #2E7D32; color:#fff; padding: 8px 18px;
+            border-radius: 999px; font-size:13px; font-weight:700;
+          ">
+            امسح • ثبّت • ابدأ التحضير
+          </div>
+          <div style="flex:1; height:2px; background: linear-gradient(to right, transparent, #2E7D32);"></div>
+        </div>
+
+        <!-- QR Section -->
+        <div style="
+          display:flex; flex-direction:column; align-items:center; gap:14px;
+          padding: 20px;
+          background: #f8fafc; border: 2px dashed #1A237E33;
+          border-radius:18px;
+        ">
+          <div style="
+            background:#fff; padding:14px; border-radius:14px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+          ">
+            <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:200px; height:200px;" />
+          </div>
+          <div style="text-align:center;">
+            <p style="margin:0; font-size:15px; font-weight:700; color:#1A237E;">
+              وجّه كاميرا جوالك نحو الرمز
+            </p>
+            <p style="margin:6px 0 0; font-size:13px; color:#6b7280; direction:ltr; font-family: 'Courier New', monospace; font-weight:600;">
+              mufadhala.com/install
+            </p>
+          </div>
+        </div>
+
+        <!-- Install Instructions: 2 columns -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+          <!-- Android -->
+          <div style="
+            background:#fff; border:1.5px solid #e5e7eb;
+            border-radius:14px; padding:16px;
+            border-top: 4px solid #2E7D32;
+          ">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+              <h3 style="margin:0; font-size:15px; font-weight:800; color:#1A237E;">Android</h3>
+              <span style="
+                font-size:11px; font-weight:700; color:#2E7D32;
+                background:#2E7D3215; padding:3px 10px; border-radius:999px;
+              ">أندرويد</span>
+            </div>
+            <ol style="margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px;">
+              ${androidStep(1, "افتح الموقع في متصفح Chrome")}
+              ${androidStep(2, "اضغط على قائمة الخيارات (⋮)")}
+              ${androidStep(3, "اختر «تثبيت التطبيق»")}
+            </ol>
+          </div>
+
+          <!-- iOS -->
+          <div style="
+            background:#fff; border:1.5px solid #e5e7eb;
+            border-radius:14px; padding:16px;
+            border-top: 4px solid #1A237E;
+          ">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+              <h3 style="margin:0; font-size:15px; font-weight:800; color:#1A237E;">iPhone / iPad</h3>
+              <span style="
+                font-size:11px; font-weight:700; color:#1A237E;
+                background:#1A237E15; padding:3px 10px; border-radius:999px;
+              ">آيفون</span>
+            </div>
+            <ol style="margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px;">
+              ${iosStep(1, "افتح الموقع في متصفح Safari")}
+              ${iosStep(2, "اضغط على زر المشاركة ⬆")}
+              ${iosStep(3, "اختر «إضافة إلى الشاشة الرئيسية»")}
+            </ol>
+          </div>
+        </div>
+
+        <!-- Features highlights -->
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-top:4px;">
+          ${featureBadge("📚", "دروس وملخصات")}
+          ${featureBadge("🤖", "مُفَاضِل AI")}
+          ${featureBadge("📝", "اختبارات سابقة")}
+        </div>
+
+        <!-- Footer -->
+        <div style="
+          margin-top:auto; text-align:center;
+          padding-top:14px; border-top: 1px solid #e5e7eb;
+        ">
+          <p style="margin:0; font-size:12px; color:#6b7280; font-weight:600;">
+            © ${new Date().getFullYear()} مُفَاضَلَة • هندسة النجاح في اختبارات القبول
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(container);
+
+  try {
+    // Wait one frame so layout/fonts settle
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      logging: false,
+      width: A4_WIDTH_PX,
+      height: A4_HEIGHT_PX,
+    });
+
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    // A4 = 210 x 297 mm — fill the page
+    pdf.addImage(imgData, "JPEG", 0, 0, 210, 297, undefined, "FAST");
+    pdf.save("mufadhala-brochure.pdf");
+  } finally {
+    document.body.removeChild(container);
+  }
+}
+
+function androidStep(n: number, text: string): string {
+  return `
+    <li style="display:flex; gap:10px; align-items:flex-start;">
+      <span style="
+        flex-shrink:0; width:22px; height:22px; border-radius:50%;
+        background:#2E7D3215; color:#2E7D32; font-size:11px; font-weight:800;
+        display:inline-flex; align-items:center; justify-content:center;
+      ">${n}</span>
+      <span style="font-size:12.5px; color:#374151; line-height:1.5; padding-top:2px;">${text}</span>
+    </li>
+  `;
+}
+
+function iosStep(n: number, text: string): string {
+  return `
+    <li style="display:flex; gap:10px; align-items:flex-start;">
+      <span style="
+        flex-shrink:0; width:22px; height:22px; border-radius:50%;
+        background:#1A237E15; color:#1A237E; font-size:11px; font-weight:800;
+        display:inline-flex; align-items:center; justify-content:center;
+      ">${n}</span>
+      <span style="font-size:12.5px; color:#374151; line-height:1.5; padding-top:2px;">${text}</span>
+    </li>
+  `;
+}
+
+function featureBadge(emoji: string, label: string): string {
+  return `
+    <div style="
+      background: linear-gradient(135deg, #1A237E08, #2E7D3208);
+      border:1px solid #1A237E20;
+      border-radius:12px; padding:10px;
+      text-align:center;
+    ">
+      <div style="font-size:22px; line-height:1;">${emoji}</div>
+      <div style="margin-top:4px; font-size:11px; font-weight:700; color:#1A237E;">${label}</div>
+    </div>
+  `;
+}

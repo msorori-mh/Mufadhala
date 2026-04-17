@@ -4,18 +4,21 @@ import { QRCodeCanvas } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Download, GraduationCap, Smartphone, Share2, Plus, MoreVertical, ArrowLeft, Globe } from "lucide-react";
+import { Download, GraduationCap, Smartphone, Share2, Plus, MoreVertical, ArrowLeft, Globe, FileText, Loader2 } from "lucide-react";
+import { generateBrochurePDF } from "@/lib/generateBrochurePDF";
+import { toast } from "sonner";
 
 /**
  * Install page — Public landing for QR brochure scans.
  * Strategy: QR points here. Page guides users to add the web app to home screen
- * on Android/iOS. Also offers a downloadable QR PNG for print materials.
+ * on Android/iOS. Also offers a downloadable QR PNG and a print-ready A4 brochure PDF.
  */
 export default function Install() {
   // Always link QR to the canonical public URL (so brochure works regardless of origin)
   const canonicalUrl = "https://mufadhala.com/install";
   const qrRef = useRef<HTMLDivElement>(null);
   const [platform, setPlatform] = useState<"ios" | "android" | "other">("other");
+  const [generatingPDF, setGeneratingPDF] = useState(false);
 
   useEffect(() => {
     const ua = navigator.userAgent.toLowerCase();
@@ -35,6 +38,21 @@ export default function Install() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+  };
+
+  const downloadBrochure = async () => {
+    const canvas = qrRef.current?.querySelector("canvas") as HTMLCanvasElement | null;
+    if (!canvas) return;
+    setGeneratingPDF(true);
+    try {
+      await generateBrochurePDF(canvas);
+      toast.success("تم تنزيل البروشور بنجاح");
+    } catch (err) {
+      console.error(err);
+      toast.error("تعذر إنشاء البروشور، حاول مرة أخرى");
+    } finally {
+      setGeneratingPDF(false);
+    }
   };
 
   return (
@@ -82,11 +100,19 @@ export default function Install() {
             </div>
 
             <div className="flex flex-wrap gap-2 justify-center w-full">
-              <Button onClick={downloadQR} variant="default" className="gap-2">
-                <Download className="w-4 h-4" />
-                تنزيل رمز QR (PNG)
+              <Button onClick={downloadBrochure} variant="default" className="gap-2" disabled={generatingPDF}>
+                {generatingPDF ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileText className="w-4 h-4" />
+                )}
+                {generatingPDF ? "جاري الإنشاء..." : "تنزيل بروشور PDF (A4)"}
               </Button>
-              <Button asChild variant="outline" className="gap-2">
+              <Button onClick={downloadQR} variant="outline" className="gap-2">
+                <Download className="w-4 h-4" />
+                تنزيل QR (PNG)
+              </Button>
+              <Button asChild variant="ghost" className="gap-2">
                 <Link to="/">
                   <ArrowLeft className="w-4 h-4" />
                   دخول الموقع
