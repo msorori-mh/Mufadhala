@@ -32,6 +32,7 @@ const AIGenerator = lazy(() => import("./pages/AIGenerator"));
 const PastExams = lazy(() => import("./pages/PastExams"));
 const PastExamPractice = lazy(() => import("./pages/PastExamPractice"));
 const QuickReview = lazy(() => import("./pages/QuickReview"));
+const Install = lazy(() => import("./pages/Install"));
 
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminResetPassword = lazy(() => import("./pages/AdminResetPassword"));
@@ -161,6 +162,7 @@ function App() {
                   <Route path="/past-exams" element={<PastExams />} />
                   <Route path="/past-exams/:modelId" element={<PastExamPractice />} />
                   <Route path="/quick-review" element={<QuickReview />} />
+                  <Route path="/install" element={<Install />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/delete-account" element={<DeleteAccount />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
