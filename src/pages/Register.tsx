@@ -42,6 +42,7 @@ const Register = () => {
   const [phoneValue, setPhoneValue] = useState(""); // shadow for validation display
   const [gpaValue, setGpaValue] = useState(""); // shadow for GPA validation
   const [formValid, setFormValid] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [phoneDuplicate, setPhoneDuplicate] = useState(false);
   const [checkingPhone, setCheckingPhone] = useState(false);
@@ -112,6 +113,14 @@ const Register = () => {
 
   const handleSubmit = async () => {
     if (!formValid || loading || phoneDuplicate) return;
+    if (!agreedToTerms) {
+      toast({
+        title: "الموافقة مطلوبة",
+        description: "يجب الموافقة على شروط الاستخدام وسياسة الخصوصية للمتابعة",
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Read text values from DOM refs (source of truth)
     const firstName = firstNameRef.current?.value?.trim() ?? "";
@@ -297,7 +306,28 @@ const Register = () => {
             )}
           </div>
 
-          <Button className="w-full" size="lg" disabled={!formValid || loading || phoneDuplicate} onClick={handleSubmit}>
+          <div className="flex items-start gap-2 p-3 rounded-lg border bg-muted/30">
+            <input
+              type="checkbox"
+              id="agree-terms"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              className="mt-1 w-4 h-4 accent-primary cursor-pointer flex-shrink-0"
+            />
+            <Label htmlFor="agree-terms" className="text-xs leading-relaxed cursor-pointer font-normal">
+              أوافق على{" "}
+              <Link to="/terms-of-service" target="_blank" className="text-primary underline font-medium">
+                شروط الاستخدام
+              </Link>
+              {" "}و{" "}
+              <Link to="/privacy-policy" target="_blank" className="text-primary underline font-medium">
+                سياسة الخصوصية
+              </Link>
+              {" "}الخاصة بتطبيق مُفَاضَلَة، وأقر بأنني اطلعت على نموذج أمان البيانات.
+            </Label>
+          </div>
+
+          <Button className="w-full" size="lg" disabled={!formValid || loading || phoneDuplicate || !agreedToTerms} onClick={handleSubmit}>
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
