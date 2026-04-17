@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { trackSubscriptionClick } from "@/lib/conversionTracking";
+import { isPaymentUIEnabled } from "@/lib/platformGate";
 
 interface ExamQuestion {
   id: string;
@@ -29,11 +30,18 @@ const AIPerformanceAnalysis = ({ questions, answers, percentage, hasSubscription
   const navigate = useNavigate();
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const paymentsVisible = isPaymentUIEnabled();
+
+  // Hide the entire AI analysis card in native APK when user is not paid —
+  // we don't want to surface any subscription-related teaser.
+  if (!paymentsVisible && !hasSubscription) return null;
 
   const generateAnalysis = async () => {
     if (!hasSubscription) {
-      trackSubscriptionClick("ai_performance", { percentage });
-      navigate("/subscription");
+      if (paymentsVisible) {
+        trackSubscriptionClick("ai_performance", { percentage });
+        navigate("/subscription");
+      }
       return;
     }
 

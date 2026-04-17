@@ -12,6 +12,7 @@ import NativeSelect from "@/components/NativeSelect";
 import { ArrowRight, FileText, Lock, ChevronLeft } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { trackSubscriptionClick } from "@/lib/conversionTracking";
+import { isPaymentUIEnabled } from "@/lib/platformGate";
 
 const PastExams = () => {
   const navigate = useNavigate();
@@ -139,8 +140,11 @@ const PastExams = () => {
                     className={`cursor-pointer transition-shadow hover:shadow-md ${locked ? "opacity-75" : ""}`}
                     onClick={() => {
                       if (locked) {
-                        trackSubscriptionClick("past_exams", { model_id: model.id, year: model.year });
-                        navigate("/subscription");
+                        if (isPaymentUIEnabled()) {
+                          trackSubscriptionClick("past_exams", { model_id: model.id, year: model.year });
+                          navigate("/subscription");
+                        }
+                        // In native APK: do nothing (card stays visually locked, no upsell flow).
                       } else {
                         navigate(`/past-exams/${model.id}`);
                       }

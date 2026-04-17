@@ -15,6 +15,7 @@ import PostExamUpgrade from "@/components/PostExamUpgrade";
 import FreeLimitMessage from "@/components/FreeLimitMessage";
 import AIPerformanceAnalysis from "@/components/AIPerformanceAnalysis";
 import { trackSubscriptionClick } from "@/lib/conversionTracking";
+import { isPaymentUIEnabled } from "@/lib/platformGate";
 import {
   useTrueExamEngine,
   formatTime,
@@ -101,7 +102,7 @@ const ExamSimulator = () => {
           {engine.pendingResultsCount > 0 && <PendingSyncBanner count={engine.pendingResultsCount} />}
 
           {/* Repeated-usage inline banner */}
-          {showUsageBanner && (
+          {showUsageBanner && isPaymentUIEnabled() && (
             <Card className="border-accent/30 bg-accent/5">
               <CardContent className="py-4 px-4">
                 <div className="flex items-start justify-between gap-3">

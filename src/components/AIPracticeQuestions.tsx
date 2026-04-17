@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useStudentAccess } from "@/hooks/useStudentAccess";
 import FreeLimitMessage from "@/components/FreeLimitMessage";
 import { trackSubscriptionClick } from "@/lib/conversionTracking";
+import { isPaymentUIEnabled } from "@/lib/platformGate";
 
 interface AIQuestion {
   question_text: string;
@@ -214,18 +215,24 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
               <Lock className="w-8 h-8 text-primary" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-base font-bold text-foreground">وصلت للحد المجاني لتوليد الأسئلة</h3>
-              <p className="text-sm text-muted-foreground">
-                لو تريد تدريب أكثر — اشترك الآن
-              </p>
+              <h3 className="text-base font-bold text-foreground">
+                {isPaymentUIEnabled() ? "وصلت للحد المجاني لتوليد الأسئلة" : "وصلت للحد اليومي لتوليد الأسئلة"}
+              </h3>
+              {isPaymentUIEnabled() && (
+                <p className="text-sm text-muted-foreground">
+                  لو تريد تدريب أكثر — اشترك الآن
+                </p>
+              )}
             </div>
-            <Button
-              size="lg"
-              className="w-full text-base font-bold"
-              onClick={() => { trackSubscriptionClick("ai_generator"); navigate("/subscription"); }}
-            >
-              اشترك الآن
-            </Button>
+            {isPaymentUIEnabled() && (
+              <Button
+                size="lg"
+                className="w-full text-base font-bold"
+                onClick={() => { trackSubscriptionClick("ai_generator"); navigate("/subscription"); }}
+              >
+                اشترك الآن
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
