@@ -398,11 +398,14 @@ const AdminContent = () => {
     let presentationUrl = lessonPresentationUrl;
     if (lessonPresentationFile) {
       setUploadingPresentation(true);
-      const fileExt = lessonPresentationFile.name.split('.').pop();
+      const { safeFileExtension } = await import("@/lib/storageKey");
+      const fileExt = safeFileExtension(lessonPresentationFile.name, "pptx");
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage
         .from('lesson-presentations')
-        .upload(fileName, lessonPresentationFile);
+        .upload(fileName, lessonPresentationFile, {
+          contentType: lessonPresentationFile.type || undefined,
+        });
       if (uploadError) {
         toast({ variant: "destructive", title: `خطأ في رفع العرض: ${uploadError.message}` });
         setSaving(false);

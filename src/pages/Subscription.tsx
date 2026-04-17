@@ -274,9 +274,12 @@ const Subscription = () => {
       return;
     }
 
-    const ext = receiptFile.name.split(".").pop();
+    const { safeFileExtension } = await import("@/lib/storageKey");
+    const ext = safeFileExtension(receiptFile.name);
     const filePath = `${user.id}/${Date.now()}.${ext}`;
-    const { error: uploadErr } = await supabase.storage.from("receipts").upload(filePath, receiptFile);
+    const { error: uploadErr } = await supabase.storage.from("receipts").upload(filePath, receiptFile, {
+      contentType: receiptFile.type || undefined,
+    });
     if (uploadErr) {
       const uploadMsg = uploadErr.message.includes("Payload too large")
         ? "حجم الملف كبير جداً. الحد الأقصى 5 ميجابايت."
