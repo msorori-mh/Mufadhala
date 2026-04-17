@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
+import { APP_VERSION, APP_VERSION_CODE } from "@/domain/version";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -129,7 +130,7 @@ const Settings = () => {
             <Separator />
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">الإصدار</span>
-              <span className="text-sm font-medium" dir="ltr">v5.0.1</span>
+              <span className="text-sm font-medium" dir="ltr">{APP_VERSION} ({APP_VERSION_CODE})</span>
             </div>
             <Separator />
             <div className="flex flex-col gap-2">
