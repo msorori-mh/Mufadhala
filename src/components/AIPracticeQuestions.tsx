@@ -82,6 +82,10 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [dailyLimit, setDailyLimit] = useState<number | null>(null);
   const [limitReached, setLimitReached] = useState(false);
+  // Tracks whether the *backend* considers this user a paid subscriber.
+  // Distinct from `hasSubscription` prop which counts trial users as subscribed.
+  // Only `paidSubscriber === true` should grant the higher limit & hide upgrade CTA.
+  const [paidSubscriber, setPaidSubscriber] = useState<boolean | null>(null);
 
   // Default subject = first available track subject
   useEffect(() => {
@@ -111,17 +115,17 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
   });
 
   // Initial render of remaining/limit before any generate call.
-  // Uses a soft client-side fallback that mirrors the backend defaults,
-  // but the authoritative values (limit, remaining) always come from the
-  // edge function response and override these on first generate.
+  // We optimistically assume the FREE limit because trial users (who pass
+  // `hasSubscription=true` from useSubscription) are still on the free quota
+  // server-side. The backend response on first generate corrects both values.
   useEffect(() => {
     if (usageData !== undefined && dailyLimit === null) {
-      const fallbackLimit = hasSubscription ? 100 : 10;
+      const fallbackLimit = 2; // matches DEFAULT_FREE_DAILY in domain/constants
       setDailyLimit(fallbackLimit);
       setRemaining(Math.max(0, fallbackLimit - usageData));
       setLimitReached(usageData >= fallbackLimit);
     }
-  }, [usageData, hasSubscription, dailyLimit]);
+  }, [usageData, dailyLimit]);
 
   const generate = async () => {
     if (limitReached) return;
@@ -141,6 +145,7 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
         if (error.message?.includes("daily_limit_reached") || (data && data.error === "daily_limit_reached")) {
           setLimitReached(true);
           setRemaining(0);
+          if (data?.hasSubscription !== undefined) setPaidSubscriber(!!data.hasSubscription);
         } else {
           toast.error("حدث خطأ في توليد الأسئلة");
           console.error(error);
@@ -148,13 +153,15 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
       } else if (data?.error === "daily_limit_reached") {
         setLimitReached(true);
         setRemaining(0);
+        if (data?.hasSubscription !== undefined) setPaidSubscriber(!!data.hasSubscription);
       } else if (data?.questions) {
         setQuestions(data.questions);
-        // Backend is the single source of truth for limit + remaining
+        // Backend is the single source of truth for limit + remaining + paid status
         if (data.limit !== undefined) setDailyLimit(data.limit);
+        if (data.hasSubscription !== undefined) setPaidSubscriber(!!data.hasSubscription);
         if (data.remaining !== undefined) {
           setRemaining(data.remaining);
-          if (data.remaining <= 0 && !hasSubscription) {
+          if (data.remaining <= 0 && !data.hasSubscription) {
             setLimitReached(true);
           }
         }
@@ -185,8 +192,10 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
     : 0;
   const percentage = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
 
-  // Show limit reached full-screen message
-  if (limitReached && !hasSubscription && questions.length === 0) {
+  // Show limit reached full-screen message — uses paidSubscriber (backend truth),
+  // not hasSubscription prop, so trial users hitting the free limit see the upgrade CTA.
+  const isPaid = paidSubscriber === true;
+  if (limitReached && !isPaid && questions.length === 0) {
     return (
       <Card>
         <CardHeader className="pb-2 pt-3 px-4">
@@ -242,8 +251,8 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-3 space-y-3">
-        {/* Remaining usage indicator for free users */}
-        {!hasSubscription && remaining !== null && dailyLimit !== null && questions.length === 0 && !loading && (
+        {/* Remaining usage indicator — visible to everyone except confirmed paid subscribers */}
+        {!isPaid && remaining !== null && dailyLimit !== null && questions.length === 0 && !loading && (
           <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border">
             <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
             <p className="text-xs text-muted-foreground">

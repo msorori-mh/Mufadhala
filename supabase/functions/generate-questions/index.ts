@@ -56,8 +56,21 @@ serve(async (req) => {
 
     const userId = user.id;
 
-    // Check subscription status
-    const { data: hasActiveSub } = await supabase.rpc("has_active_subscription", { _user_id: userId });
+    // Check ONLY paid subscription status (status = 'active' with valid expires_at).
+    // Trial users (status = 'trial') must remain on the FREE limit — otherwise
+    // any new account would get 100/day for the first 24 hours.
+    const { data: paidSubRow } = await supabase
+      .from("subscriptions")
+      .select("status, expires_at")
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const hasPaidSub = !!paidSubRow && (
+      paidSubRow.expires_at === null || new Date(paidSubRow.expires_at) > new Date()
+    );
 
     // Read dynamic limits from app_cache (admin-controlled, no redeploy needed)
     const { data: cachedLimits } = await supabase.rpc("get_cache", { _key: LIMITS_CACHE_KEY });
@@ -68,7 +81,7 @@ serve(async (req) => {
     const subscribedLimit = Number.isFinite(limits.subscribed) && (limits.subscribed as number) > 0
       ? Math.floor(limits.subscribed as number)
       : DEFAULT_SUBSCRIBED_DAILY_LIMIT;
-    const dailyLimit = hasActiveSub ? subscribedLimit : freeLimit;
+    const dailyLimit = hasPaidSub ? subscribedLimit : freeLimit;
 
     // Count today's usage
     const todayStart = new Date();
@@ -90,12 +103,12 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           error: "daily_limit_reached",
-          message: hasActiveSub
+          message: hasPaidSub
             ? "وصلت للحد اليومي لتوليد الأسئلة. حاول مرة أخرى غداً."
             : "وصلت للحد المجاني لتوليد الأسئلة",
           remaining: 0,
           limit: dailyLimit,
-          hasSubscription: !!hasActiveSub,
+          hasSubscription: hasPaidSub,
         }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -233,7 +246,7 @@ serve(async (req) => {
     // Add remaining count to response
     const remaining = Math.max(0, dailyLimit - currentUsage - 1);
 
-    return new Response(JSON.stringify({ ...questions, remaining, limit: dailyLimit }), {
+    return new Response(JSON.stringify({ ...questions, remaining, limit: dailyLimit, hasSubscription: hasPaidSub }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
