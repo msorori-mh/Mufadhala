@@ -128,50 +128,53 @@ const PastExams = () => {
                 نماذج {universityName}
               </p>
             )}
-            {sortedModels.map((model) => {
+            {sortedModels.map((model, idx) => {
               const isFirstFree = model.id === firstFreeModelId;
               const locked = !isFirstFree && !hasActiveSubscription;
+              const prevYear = idx > 0 ? sortedModels[idx - 1].year : null;
+              const isYearBoundary = idx > 0 && prevYear !== model.year;
               return (
-                <Card
-                  key={model.id}
-                  className={`cursor-pointer transition-shadow hover:shadow-md ${locked ? "opacity-75" : ""}`}
-                  onClick={() => {
-                    if (locked) {
-                      trackSubscriptionClick("past_exams", { model_id: model.id, year: model.year });
-                      navigate("/subscription");
-                    } else {
-                      navigate(`/past-exams/${model.id}`);
-                    }
-                  }}
-                >
-                  <CardContent className="flex items-center gap-3 p-3">
-                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      {locked ? (
-                        <Lock className="w-4 h-4 text-muted-foreground" />
-                      ) : (
-                        <FileText className="w-4 h-4 text-primary" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">
-                        <span>{model.title}</span>
-                        <span className="text-muted-foreground font-normal"> · </span>
-                        <span className="text-primary">{model.year}</span>
-                        {model.duration_minutes && (
-                          <>
-                            <span className="text-muted-foreground font-normal"> · </span>
-                            <span className="text-muted-foreground font-normal">{model.duration_minutes}د</span>
-                          </>
+                <div key={model.id} className={isYearBoundary ? "pt-2 mt-1 border-t border-dashed border-border/60" : ""}>
+                  <Card
+                    className={`cursor-pointer transition-shadow hover:shadow-md ${locked ? "opacity-75" : ""}`}
+                    onClick={() => {
+                      if (locked) {
+                        trackSubscriptionClick("past_exams", { model_id: model.id, year: model.year });
+                        navigate("/subscription");
+                      } else {
+                        navigate(`/past-exams/${model.id}`);
+                      }
+                    }}
+                  >
+                    <CardContent className="flex items-center gap-3 p-3">
+                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        {locked ? (
+                          <Lock className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <FileText className="w-4 h-4 text-primary" />
                         )}
-                      </p>
-                    </div>
-                    {locked ? (
-                      <Badge variant="secondary" className="text-[10px] shrink-0">مدفوع</Badge>
-                    ) : (
-                      <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0" />
-                    )}
-                  </CardContent>
-                </Card>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          <span>{model.title}</span>
+                          <span className="text-muted-foreground font-normal"> · </span>
+                          <span className="text-primary">{model.year}</span>
+                          {model.duration_minutes && (
+                            <>
+                              <span className="text-muted-foreground font-normal"> · </span>
+                              <span className="text-muted-foreground font-normal">{model.duration_minutes}د</span>
+                            </>
+                          )}
+                        </p>
+                      </div>
+                      {locked ? (
+                        <Badge variant="secondary" className="text-[10px] shrink-0">مدفوع</Badge>
+                      ) : (
+                        <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0" />
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
               );
             })}
           </div>
