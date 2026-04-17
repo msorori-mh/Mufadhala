@@ -421,15 +421,25 @@ const Dashboard = () => {
                         { emoji: "📚", label: "3000+ سؤال تدريبي", sub: "مراجع ومعتمد" },
                         { emoji: "🧠", label: "شرح علمي مفصّل", sub: "لكل إجابة" },
                         { emoji: "📶", label: "يعمل أوفلاين", sub: "بدون إنترنت" },
-                      ].map((f, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <span className="text-lg">{f.emoji}</span>
-                          <div>
-                            <p className="text-xs font-semibold text-foreground">{f.label}</p>
-                            <p className="text-[10px] text-muted-foreground">{f.sub}</p>
+                      ].map((f, i) => {
+                        const isSmart = i < 3;
+                        return (
+                          <div
+                            key={i}
+                            className={`flex items-center gap-2 rounded-lg p-2 transition-all duration-200 ${
+                              isSmart
+                                ? "bg-accent/10 border border-accent/30 hover:bg-accent/15 hover:border-accent/50 hover:scale-[1.02] hover:shadow-sm"
+                                : "hover:bg-muted/50"
+                            }`}
+                          >
+                            <span className="text-lg">{f.emoji}</span>
+                            <div className="min-w-0">
+                              <p className={`text-xs font-semibold ${isSmart ? "text-accent" : "text-foreground"}`}>{f.label}</p>
+                              <p className="text-[10px] text-muted-foreground">{f.sub}</p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>
