@@ -383,6 +383,7 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
                     { icon: BookOpen, title: "استعرض الدروس", desc: "ابدأ بمراجعة الملخصات الذكية لتخصصك", path: "/lessons", color: "text-secondary", bg: "bg-secondary/10" },
+                    { icon: Sparkles, title: "المراجعة السريعة", desc: "كل ملخصات دروسك في مكان واحد", path: "/quick-review", color: "text-accent", bg: "bg-accent/10" },
                     { icon: FileText, title: "نماذج الأعوام السابقة", desc: "تدرّب على نماذج حقيقية مع إجاباتها النموذجية", path: "/past-exams", color: "text-accent", bg: "bg-accent/10" },
                     { icon: ClipboardCheck, title: "خُض اختبار محاكاة", desc: "اعرف مستواك قبل يوم المفاضلة", path: "/exam", color: "text-primary", bg: "bg-primary/10" },
                     { icon: Sparkles, title: "مولد الأسئلة الذكي", desc: "يقوم بتوليد أسئلة بناءً على تحليل أدائك", path: "/ai-generator", color: "text-primary", bg: "bg-primary/10" },
