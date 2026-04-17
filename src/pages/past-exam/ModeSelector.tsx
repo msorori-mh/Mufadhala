@@ -150,6 +150,8 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
               stats={stats?.training ?? { attempts: 0, avgPct: 0, bestPct: 0, lastPcts: [] }}
               variant="training"
               loading={statsLoading}
+              isPaid={isPaid}
+              isFreeModel={isFreeModel}
             />
             <Button className="w-full" variant="secondary">
               <BookOpen className="w-4 h-4 ml-1.5" />
