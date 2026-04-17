@@ -135,7 +135,7 @@ const fetchExamData = async (userId: string) => {
 // ── Hook ───────────────────────────────────────────────────
 export function useTrueExamEngine() {
   const { user, loading: authLoading, isStaff } = useAuth();
-  const { isActive: hasActiveSubscription, loading: subLoading } = useSubscription(user?.id);
+  const { isActive: hasActiveSubscription, isPaid, loading: subLoading } = useSubscription(user?.id);
   const isOffline = useOfflineStatus();
   const { toast } = useToast();
 
@@ -395,13 +395,14 @@ export function useTrueExamEngine() {
   const percentage = resultTotal > 0 ? Math.round((resultScore / resultTotal) * 100) : 0;
   const passed = percentage >= 60;
   const attemptsUsed = pastAttempts.length;
-  const canAccessFull = isStaff || hasActiveSubscription;
-  const freeAttemptUsed = !hasActiveSubscription && !isStaff && pastAttempts.filter(a => a.completed_at).length >= 1;
+  // Trial users are NOT paid → enforce free limit on them too
+  const canAccessFull = isStaff || isPaid;
+  const freeAttemptUsed = !isPaid && !isStaff && pastAttempts.filter(a => a.completed_at).length >= 1;
   const canStart = (allQuestions.length > 0 || (isOffline && hasOfflineQuestions)) && !freeAttemptUsed;
   const questionsAvailable = isOffline ? offlineQuestionCount : Math.min(allQuestions.length, EXAM_TOTAL_QUESTIONS);
 
   return {
-    user, isStaff, loading, isOffline, hasActiveSubscription,
+    user, isStaff, loading, isOffline, hasActiveSubscription, isPaid,
     student, majorName, allQuestions, pastAttempts, hasStudentData,
     hasOfflineQuestions, offlineQuestionCount, downloadingOffline, pendingResultsCount, isOfflineExam,
     phase, examStatus, examQuestions, currentQuestion, currentIndex,

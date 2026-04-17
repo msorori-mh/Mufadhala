@@ -69,6 +69,45 @@ Deno.serve(async (req) => {
       );
     }
 
+    // 4b. Skip free-limit check for staff (admin/moderator)
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    const isStaff = (roles || []).some((r: any) => r.role === "admin" || r.role === "moderator");
+
+    // 4c. Enforce free attempt limit for non-paid users (trial counts as non-paid)
+    if (!isStaff) {
+      const nowIso = new Date().toISOString();
+      const { data: paidSubs } = await supabaseAdmin
+        .from("subscriptions")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+        .limit(1);
+
+      const isPaid = (paidSubs || []).length > 0;
+
+      if (!isPaid) {
+        const { count } = await supabaseAdmin
+          .from("exam_attempts")
+          .select("id", { count: "exact", head: true })
+          .eq("student_id", student.id)
+          .not("completed_at", "is", null);
+
+        if ((count ?? 0) >= 1) {
+          return new Response(
+            JSON.stringify({
+              error: "free_limit_reached",
+              message: "وصلت للحد المجاني للمحاكي. اشترك للمتابعة.",
+            }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
+
     // 5. Get the question IDs from answers
     const questionIds = Object.keys(answers);
     if (questionIds.length === 0 || questionIds.length > 45) {

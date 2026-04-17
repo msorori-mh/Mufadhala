@@ -22,4 +22,14 @@ type: feature
 - لا banners ترقية على لوحة التحكم
 - لا بطاقة "الاشتراك" دائمة في القوائم
 - صفحة `/subscription` تبقى متاحة فقط عبر الروابط من النقاط الخمس أعلاه
-- منطق `useSubscription` و `useStudentAccess` لم يتغيّر
+
+### ⚠️ trial ≠ paid (قاعدة حاسمة)
+كل مستخدم جديد يحصل على trial تلقائي 24 ساعة عبر `auto_create_trial_subscription`. هذا **لا يمنحه** حق تجاوز الحدود المجانية:
+- `useSubscription` يكشف `isPaid` (= `status='active'` فقط) منفصلاً عن `isActive` (يشمل trial).
+- **استخدم `isPaid` لكل القيود**: `useTrueExamEngine` (محاكي)، `AIPerformanceAnalysis`، `generate-questions`.
+- `isActive` يُستخدم فقط لإخفاء CTA ترقية أثناء فترة trial النشطة (تجربة UX).
+
+### طبقات الفرض على السيرفر (لا تعتمد على الواجهة فقط)
+- `submit-exam` edge function: يفحص `subscriptions` (status='active' + expires_at سليم) وإذا غير مدفوع يرفض المحاولة الثانية بـ `403 free_limit_reached`.
+- `generate-questions` edge function: يفحص `ai_generation_usage` ويرفض بعد تجاوز `FREE_DAILY_LIMIT`.
+- `chat` edge function: يحدّ المحادثات عبر `chat_usage`.
