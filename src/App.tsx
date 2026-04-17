@@ -66,6 +66,7 @@ const AdminDeletionLogs = lazy(() => import("./pages/admin/AdminDeletionLogs"));
 const AdminTracks = lazy(() => import("./pages/admin/AdminTracks"));
 const AdminPastExams = lazy(() => import("./pages/admin/AdminPastExams"));
 const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
+const AdminAIGenerationLimits = lazy(() => import("./pages/admin/AdminAIGenerationLimits"));
 const Settings = lazy(() => import("./pages/Settings"));
 const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
 const PublicDeleteAccount = lazy(() => import("./pages/PublicDeleteAccount"));
@@ -187,6 +188,7 @@ function App() {
                   <Route path="/admin/tracks" element={<AdminTracks />} />
                   <Route path="/admin/past-exams" element={<AdminPastExams />} />
                   <Route path="/admin/profile" element={<AdminProfile />} />
+                  <Route path="/admin/ai-limits" element={<AdminAIGenerationLimits />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 </PageShell>

@@ -7,8 +7,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const FREE_DAILY_LIMIT = 2;
-const SUBSCRIBED_DAILY_LIMIT = 100;
+// Defaults — overridable at runtime via app_cache key "ai_generation_limits".
+// See src/domain/constants.ts (AI_GENERATION_LIMITS) for the matching defaults
+// and /admin/ai-limits for the admin UI that updates the cache.
+const DEFAULT_FREE_DAILY_LIMIT = 2;
+const DEFAULT_SUBSCRIBED_DAILY_LIMIT = 100;
+const LIMITS_CACHE_KEY = "ai_generation_limits";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -54,7 +58,17 @@ serve(async (req) => {
 
     // Check subscription status
     const { data: hasActiveSub } = await supabase.rpc("has_active_subscription", { _user_id: userId });
-    const dailyLimit = hasActiveSub ? SUBSCRIBED_DAILY_LIMIT : FREE_DAILY_LIMIT;
+
+    // Read dynamic limits from app_cache (admin-controlled, no redeploy needed)
+    const { data: cachedLimits } = await supabase.rpc("get_cache", { _key: LIMITS_CACHE_KEY });
+    const limits = (cachedLimits ?? {}) as { free?: number; subscribed?: number };
+    const freeLimit = Number.isFinite(limits.free) && (limits.free as number) > 0
+      ? Math.floor(limits.free as number)
+      : DEFAULT_FREE_DAILY_LIMIT;
+    const subscribedLimit = Number.isFinite(limits.subscribed) && (limits.subscribed as number) > 0
+      ? Math.floor(limits.subscribed as number)
+      : DEFAULT_SUBSCRIBED_DAILY_LIMIT;
+    const dailyLimit = hasActiveSub ? subscribedLimit : freeLimit;
 
     // Count today's usage
     const todayStart = new Date();
