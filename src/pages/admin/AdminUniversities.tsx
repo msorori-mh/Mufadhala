@@ -114,11 +114,18 @@ const AdminUniversities = () => {
     const newFiles: GuideFile[] = [];
 
     for (const file of Array.from(files)) {
-      const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}_${file.name}`;
-      let result = await supabase.storage.from("university-guides").upload(fileName, file);
+      // Sanitize key for Supabase Storage (ASCII only, no spaces/Arabic)
+      const ext = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const safeExt = ext || "bin";
+      const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${safeExt}`;
+      let result = await supabase.storage.from("university-guides").upload(fileName, file, {
+        contentType: file.type || undefined,
+      });
       if (result.error && result.error.message?.includes("claim")) {
         await supabase.auth.refreshSession();
-        result = await supabase.storage.from("university-guides").upload(fileName, file);
+        result = await supabase.storage.from("university-guides").upload(fileName, file, {
+          contentType: file.type || undefined,
+        });
       }
 
       if (result.error) {
@@ -127,7 +134,7 @@ const AdminUniversities = () => {
         const { data: pub } = supabase.storage.from("university-guides").getPublicUrl(fileName);
         newFiles.push({
           url: pub.publicUrl,
-          name: file.name,
+          name: file.name, // عرض الاسم الأصلي (العربي) للمستخدم فقط
           type: file.type === "application/pdf" ? "pdf" : "image",
           uploaded_at: new Date().toISOString(),
         });
