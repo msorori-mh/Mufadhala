@@ -194,7 +194,7 @@ interface ChatWidgetProps {
 
 const ChatWidget = React.forwardRef<HTMLDivElement, ChatWidgetProps>(({ lessonContext, defaultOpen }, ref) => {
   const { user } = useAuthContext();
-  const { isActive: hasSubscription } = useSubscription(user?.id);
+  const { isActive: hasSubscription, isPaid } = useSubscription(user?.id);
   const [open, setOpen] = useState(defaultOpen ?? false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -202,11 +202,15 @@ const ChatWidget = React.forwardRef<HTMLDivElement, ChatWidgetProps>(({ lessonCo
   const [dailyLimit, setDailyLimit] = useState(DEFAULT_DAILY_LIMIT);
   const [welcomeText, setWelcomeText] = useState("مرحباً! أنا مساعد مُفَاضَلَة الذكي 👋");
   const [pendingImages, setPendingImages] = useState<string[]>([]);
+  const [usageTick, setUsageTick] = useState(0); // re-render trigger for remaining counter
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Determine effective limit based on subscription
   const effectiveLimit = hasSubscription ? dailyLimit : Math.min(dailyLimit, FREE_DAILY_LIMIT);
+  const remaining = getRemainingMessages(effectiveLimit);
+  // Show counter only for non-paid users (trial included → must see free quota)
+  const showFreeCounter = !isPaid;
 
   useEffect(() => {
     fetchChatSettings().then(({ limit, welcome }) => {
