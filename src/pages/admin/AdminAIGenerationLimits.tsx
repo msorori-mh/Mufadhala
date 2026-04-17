@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Save, Sparkles, RotateCcw } from "lucide-react";
+import { Loader2, Save, Sparkles, RotateCcw, FlaskConical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +22,17 @@ const AdminAIGenerationLimits = () => {
   const [free, setFree] = useState<number>(AI_GENERATION_LIMITS.DEFAULT_FREE_DAILY);
   const [subscribed, setSubscribed] = useState<number>(AI_GENERATION_LIMITS.DEFAULT_SUBSCRIBED_DAILY);
   const [usingDefaults, setUsingDefaults] = useState(true);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    hasSubscription: boolean;
+    limit: number;
+    used: number;
+    remaining: number;
+    freeLimit: number;
+    subscribedLimit: number;
+    source: string;
+    userId: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -75,6 +86,28 @@ const AdminAIGenerationLimits = () => {
   const handleResetToDefaults = () => {
     setFree(AI_GENERATION_LIMITS.DEFAULT_FREE_DAILY);
     setSubscribed(AI_GENERATION_LIMITS.DEFAULT_SUBSCRIBED_DAILY);
+  };
+
+  const handleQuickTest = async () => {
+    setTesting(true);
+    setTestResult(null);
+    const { data, error } = await supabase.functions.invoke("generate-questions", {
+      body: { dry_run: true },
+    });
+    setTesting(false);
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "فشل الاختبار",
+        description: error.message,
+      });
+      return;
+    }
+    setTestResult(data);
+    toast({
+      title: "اكتمل الاختبار",
+      description: `الحد: ${data.limit} | المتبقي: ${data.remaining}`,
+    });
   };
 
   if (authLoading || !isAdmin) {
@@ -168,6 +201,64 @@ const AdminAIGenerationLimits = () => {
                   </Button>
                 </div>
               </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FlaskConical className="w-4 h-4 text-primary" />
+              اختبار سريع
+            </CardTitle>
+            <CardDescription>
+              يستدعي <code className="text-xs">generate-questions</code> بوضع dry-run بحسابك
+              الحالي للتحقق من الحد الفعّال والاشتراك. <strong>لا يستهلك رصيد توليد.</strong>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button onClick={handleQuickTest} disabled={testing} variant="secondary" className="gap-2">
+              {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
+              تشغيل الاختبار
+            </Button>
+
+            {testResult && (
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-1.5 text-xs font-mono" dir="ltr">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">hasSubscription:</span>
+                  <span className={testResult.hasSubscription ? "text-primary font-bold" : "text-muted-foreground"}>
+                    {String(testResult.hasSubscription)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">limit (effective):</span>
+                  <span className="font-bold text-foreground">{testResult.limit}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">used today:</span>
+                  <span className="font-bold text-foreground">{testResult.used}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">remaining:</span>
+                  <span className={testResult.remaining === 0 ? "text-destructive font-bold" : "font-bold text-foreground"}>
+                    {testResult.remaining}
+                  </span>
+                </div>
+                <div className="border-t pt-1.5 mt-1.5 flex justify-between">
+                  <span className="text-muted-foreground">freeLimit:</span>
+                  <span>{testResult.freeLimit}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">subscribedLimit:</span>
+                  <span>{testResult.subscribedLimit}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">source:</span>
+                  <span className={testResult.source === "cache" ? "text-primary" : "text-muted-foreground"}>
+                    {testResult.source}
+                  </span>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
