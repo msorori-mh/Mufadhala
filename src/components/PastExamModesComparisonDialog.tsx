@@ -131,41 +131,57 @@ const PastExamModesComparisonDialog = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((row) => (
-                <TableRow key={row.criterion} className="border-border/50">
-                  <TableCell className="py-2.5 px-2 text-xs font-bold text-foreground align-top w-[42%]">
-                    {row.criterion}
-                  </TableCell>
-                  <TableCell className="py-2.5 px-2 text-[11px] align-top">
-                    <div className="flex items-start gap-1">
-                      {row.training.positive !== undefined && (
-                        row.training.positive ? (
-                          <Check className="w-3 h-3 text-secondary shrink-0 mt-0.5" />
-                        ) : (
-                          <X className="w-3 h-3 text-muted-foreground shrink-0 mt-0.5" />
-                        )
-                      )}
-                      <span className={row.training.positive ? "text-secondary font-semibold" : "text-foreground/80"}>
-                        {row.training.value}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-2.5 px-2 text-[11px] align-top">
-                    <div className="flex items-start gap-1">
-                      {row.strict.positive !== undefined && (
-                        row.strict.positive ? (
-                          <Check className="w-3 h-3 text-destructive shrink-0 mt-0.5" />
-                        ) : (
-                          <X className="w-3 h-3 text-muted-foreground shrink-0 mt-0.5" />
-                        )
-                      )}
-                      <span className={row.strict.positive ? "text-destructive font-semibold" : "text-foreground/80"}>
-                        {row.strict.value}
-                      </span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {rows.map((row) => {
+                const trainingWins = row.training.positive === true && row.strict.positive !== true;
+                const strictWins = row.strict.positive === true && row.training.positive !== true;
+                return (
+                  <TableRow key={row.criterion} className="border-border/50">
+                    <TableCell className="py-2.5 px-2 text-xs font-bold text-foreground align-top w-[42%]">
+                      {row.criterion}
+                    </TableCell>
+                    <TableCell className="py-1.5 px-1 text-[11px] align-top">
+                      <div
+                        className={`flex items-start gap-1 rounded-md px-1.5 py-1 transition-colors ${
+                          trainingWins
+                            ? "border border-secondary/50 bg-secondary/5 ring-1 ring-secondary/20"
+                            : "border border-transparent"
+                        }`}
+                      >
+                        {row.training.positive !== undefined && (
+                          row.training.positive ? (
+                            <Check className="w-3 h-3 text-secondary shrink-0 mt-0.5" />
+                          ) : (
+                            <X className="w-3 h-3 text-muted-foreground shrink-0 mt-0.5" />
+                          )
+                        )}
+                        <span className={row.training.positive ? "text-secondary font-semibold" : "text-foreground/80"}>
+                          {row.training.value}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-1.5 px-1 text-[11px] align-top">
+                      <div
+                        className={`flex items-start gap-1 rounded-md px-1.5 py-1 transition-colors ${
+                          strictWins
+                            ? "border border-destructive/50 bg-destructive/5 ring-1 ring-destructive/20"
+                            : "border border-transparent"
+                        }`}
+                      >
+                        {row.strict.positive !== undefined && (
+                          row.strict.positive ? (
+                            <Check className="w-3 h-3 text-destructive shrink-0 mt-0.5" />
+                          ) : (
+                            <X className="w-3 h-3 text-muted-foreground shrink-0 mt-0.5" />
+                          )
+                        )}
+                        <span className={row.strict.positive ? "text-destructive font-semibold" : "text-foreground/80"}>
+                          {row.strict.value}
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
 
