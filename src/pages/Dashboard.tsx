@@ -418,6 +418,9 @@ const Dashboard = () => {
                         { emoji: "🧠", label: "شرح علمي مفصّل", sub: "لكل إجابة" },
                         { emoji: "⏱️", label: "محاكاة واقعية", sub: "لبيئة الاختبار" },
                         { emoji: "📶", label: "يعمل أوفلاين", sub: "بدون إنترنت" },
+                        { emoji: "📝", label: "نماذج اختبارات سابقة", sub: "مع إجابات نموذجية" },
+                        { emoji: "🤖", label: "مساعد مفاضلة الذكي", sub: "مساعد ذكاء اصطناعي للإجابة عن أي شيء" },
+                        { emoji: "✨", label: "مولد الأسئلة الذكي", sub: "يقوم بتوليد أسئلة بناءً على تحليل الأداء الخاص بك" },
                       ].map((f, i) => (
                         <div key={i} className="flex items-center gap-2">
                           <span className="text-lg">{f.emoji}</span>
