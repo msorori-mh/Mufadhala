@@ -71,6 +71,7 @@ const LessonDetail = () => {
   const [signedPresentationUrl, setSignedPresentationUrl] = useState<string | null>(null);
   const [prevLesson, setPrevLesson] = useState<{ id: string; title: string } | null>(null);
   const [nextLesson, setNextLesson] = useState<{ id: string; title: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("content");
 
   // Reveal answer state
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
