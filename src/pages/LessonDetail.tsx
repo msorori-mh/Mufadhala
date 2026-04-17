@@ -425,6 +425,35 @@ const LessonDetail = () => {
                             .map((c) => c.trim())
                             .filter(Boolean);
                           const blocks = chunks.length > 0 ? chunks : [raw];
+
+                          // Visual-only highlighter: numbers + quoted segments
+                          // Does NOT mutate lesson.summary
+                          const HIGHLIGHT_RE =
+                            /(«[^»]+»|"[^"]+"|'[^']+'|[\u0660-\u0669\d]+(?:[.,][\u0660-\u0669\d]+)*%?)/g;
+
+                          const renderHighlighted = (text: string) => {
+                            const parts = text.split(HIGHLIGHT_RE);
+                            return parts.map((part, i) => {
+                              if (!part) return null;
+                              if (i % 2 === 1) {
+                                const isQuote = /^[«"'].*[»"']$/.test(part);
+                                return (
+                                  <span
+                                    key={i}
+                                    className={
+                                      isQuote
+                                        ? "text-primary font-semibold"
+                                        : "text-primary font-bold tabular-nums"
+                                    }
+                                  >
+                                    {part}
+                                  </span>
+                                );
+                              }
+                              return <span key={i}>{part}</span>;
+                            });
+                          };
+
                           return blocks.map((block, idx) => (
                             <div key={idx}>
                               <p
@@ -432,7 +461,7 @@ const LessonDetail = () => {
                                   idx === 0 ? "font-medium" : "font-normal"
                                 }`}
                               >
-                                {block}
+                                {renderHighlighted(block)}
                               </p>
                             </div>
                           ));
