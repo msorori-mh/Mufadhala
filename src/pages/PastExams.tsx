@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import NativeSelect from "@/components/NativeSelect";
-import { ArrowRight, FileText, Lock, ChevronLeft, Calendar } from "lucide-react";
+import { ArrowRight, FileText, Lock, ChevronLeft } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { trackSubscriptionClick } from "@/lib/conversionTracking";
 
@@ -60,17 +60,11 @@ const PastExams = () => {
     return sorted[0]?.id ?? null;
   }, [models]);
 
-  // Group models by year
-  const modelsByYear = useMemo(() => {
-    const map: Record<number, typeof models> = {};
-    models.forEach((m) => {
-      if (!map[m.year]) map[m.year] = [];
-      map[m.year].push(m);
-    });
-    return Object.entries(map)
-      .sort(([a], [b]) => Number(b) - Number(a))
-      .map(([year, items]) => ({ year: Number(year), items }));
-  }, [models]);
+  // Flat list sorted by year descending
+  const sortedModels = useMemo(
+    () => [...models].sort((a, b) => b.year - a.year),
+    [models]
+  );
 
   const universityName = universities.find((u) => u.id === effectiveUniversityId)?.name_ar;
 
@@ -128,61 +122,58 @@ const PastExams = () => {
             <p>لا توجد نماذج متاحة لهذه الجامعة حالياً</p>
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-2">
             {universityName && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mb-1">
                 نماذج {universityName}
               </p>
             )}
-            {modelsByYear.map(({ year, items }) => (
-              <div key={year} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-primary" />
-                  <h3 className="text-sm font-bold text-foreground">{year}</h3>
-                </div>
-                <div className="space-y-2">
-                  {items.map((model) => {
-                    const isFirstFree = model.id === firstFreeModelId;
-                    const locked = !isFirstFree && !hasActiveSubscription;
-                    return (
-                      <Card
-                        key={model.id}
-                        className={`cursor-pointer transition-shadow hover:shadow-md ${locked ? "opacity-75" : ""}`}
-                        onClick={() => {
-                          if (locked) {
-                            trackSubscriptionClick("past_exams", { model_id: model.id, year: model.year });
-                            navigate("/subscription");
-                          } else {
-                            navigate(`/past-exams/${model.id}`);
-                          }
-                        }}
-                      >
-                        <CardContent className="flex items-center gap-3 p-4">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                            {locked ? (
-                              <Lock className="w-5 h-5 text-muted-foreground" />
-                            ) : (
-                              <FileText className="w-5 h-5 text-primary" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground truncate">{model.title}</p>
-                            {model.duration_minutes && (
-                              <p className="text-xs text-muted-foreground">{model.duration_minutes} دقيقة</p>
-                            )}
-                          </div>
-                          {locked ? (
-                            <Badge variant="secondary" className="text-[10px] shrink-0">مدفوع</Badge>
-                          ) : (
-                            <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0" />
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+            {sortedModels.map((model) => {
+              const isFirstFree = model.id === firstFreeModelId;
+              const locked = !isFirstFree && !hasActiveSubscription;
+              return (
+                <Card
+                  key={model.id}
+                  className={`cursor-pointer transition-shadow hover:shadow-md ${locked ? "opacity-75" : ""}`}
+                  onClick={() => {
+                    if (locked) {
+                      trackSubscriptionClick("past_exams", { model_id: model.id, year: model.year });
+                      navigate("/subscription");
+                    } else {
+                      navigate(`/past-exams/${model.id}`);
+                    }
+                  }}
+                >
+                  <CardContent className="flex items-center gap-3 p-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      {locked ? (
+                        <Lock className="w-4 h-4 text-muted-foreground" />
+                      ) : (
+                        <FileText className="w-4 h-4 text-primary" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        <span>{model.title}</span>
+                        <span className="text-muted-foreground font-normal"> · </span>
+                        <span className="text-primary">{model.year}</span>
+                        {model.duration_minutes && (
+                          <>
+                            <span className="text-muted-foreground font-normal"> · </span>
+                            <span className="text-muted-foreground font-normal">{model.duration_minutes}د</span>
+                          </>
+                        )}
+                      </p>
+                    </div>
+                    {locked ? (
+                      <Badge variant="secondary" className="text-[10px] shrink-0">مدفوع</Badge>
+                    ) : (
+                      <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0" />
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </main>
