@@ -13,13 +13,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, BookOpen, Timer, AlertTriangle, Lock, EyeOff, LogOut, Sparkles, Lightbulb, Smile, Flame, Trophy, GraduationCap } from "lucide-react";
+import { ArrowRight, BookOpen, Timer, AlertTriangle, Lock, EyeOff, LogOut, Sparkles, Lightbulb, Smile, Flame, Trophy, GraduationCap, Scale } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { PastExamModelInfo } from "./types";
 import { useAuth } from "@/hooks/useAuth";
 import { useStudentData } from "@/hooks/useStudentData";
 import { fetchModelAttemptStats } from "@/lib/pastExamAttempts";
 import PastExamModeMiniStats from "@/components/PastExamModeMiniStats";
+import PastExamModesComparisonDialog from "@/components/PastExamModesComparisonDialog";
 
 interface Props {
   model: PastExamModelInfo;
@@ -33,6 +34,7 @@ const ModeSelector = ({ model, totalQuestions, onSelectTraining, onSelectStrict 
   const hasDuration = (model.duration_minutes ?? 0) > 0;
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
 
   const { user } = useAuth();
   const { data: student } = useStudentData(user?.id);
@@ -86,6 +88,17 @@ const ModeSelector = ({ model, totalQuestions, onSelectTraining, onSelectStrict 
             <p className="text-[10px] text-muted-foreground mt-0.5">اختبر جاهزيتك</p>
           </div>
         </div>
+
+        {/* Detailed Comparison Trigger */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-1.5 text-xs h-9 border-dashed"
+          onClick={() => setCompareOpen(true)}
+        >
+          <Scale className="w-3.5 h-3.5" />
+          مقارنة تفصيلية بين الوضعين
+        </Button>
 
         {/* Training Mode */}
         <Card className="relative overflow-hidden border-2 border-secondary/30 hover:border-secondary transition-all cursor-pointer active:scale-[0.99] hover:shadow-lg" onClick={onSelectTraining}>
@@ -282,6 +295,14 @@ const ModeSelector = ({ model, totalQuestions, onSelectTraining, onSelectStrict 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Detailed Comparison Dialog */}
+      <PastExamModesComparisonDialog
+        open={compareOpen}
+        onOpenChange={setCompareOpen}
+        durationMinutes={model.duration_minutes}
+        totalQuestions={totalQuestions}
+      />
     </div>
   );
 };
