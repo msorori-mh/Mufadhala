@@ -13,6 +13,8 @@ import { OPTION_LABELS, type PastExamQuestion, type PastExamModelInfo } from "./
 import { useAuth } from "@/hooks/useAuth";
 import { useStudentData } from "@/hooks/useStudentData";
 import { savePastExamAttempt } from "@/lib/pastExamAttempts";
+import { isNativePlatform } from "@/lib/capacitor";
+import { App as CapacitorApp } from "@capacitor/app";
 
 type Phase = "intro" | "active" | "finished";
 
@@ -42,6 +44,7 @@ const StrictMode = ({ model, questions, onBackToSelect }: Props) => {
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [endedAt, setEndedAt] = useState<number | null>(null);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
+  const [confirmExit, setConfirmExit] = useState(false);
   const warned5Ref = useRef(false);
   const warned1Ref = useRef(false);
   const savedRef = useRef(false);
@@ -87,6 +90,36 @@ const StrictMode = ({ model, questions, onBackToSelect }: Props) => {
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
+  }, [phase]);
+
+  // Android hardware back button — block exit during active exam
+  useEffect(() => {
+    if (phase !== "active" || !isNativePlatform()) return;
+    let listenerHandle: { remove: () => void } | null = null;
+    (async () => {
+      const handle = await CapacitorApp.addListener("backButton", () => {
+        // Open exit confirmation instead of navigating away
+        setConfirmExit(true);
+      });
+      listenerHandle = handle;
+    })();
+    return () => {
+      listenerHandle?.remove();
+    };
+  }, [phase]);
+
+  // Browser back button (popstate) — same protection for web/PWA
+  useEffect(() => {
+    if (phase !== "active") return;
+    // Push a sentinel state so back press triggers popstate without leaving
+    window.history.pushState({ strictExam: true }, "");
+    const onPop = () => {
+      setConfirmExit(true);
+      // Re-push to keep the user on this page until they confirm
+      window.history.pushState({ strictExam: true }, "");
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
   }, [phase]);
 
   const startExam = () => {
@@ -451,6 +484,35 @@ const StrictMode = ({ model, questions, onBackToSelect }: Props) => {
             <AlertDialogCancel>إلغاء</AlertDialogCancel>
             <AlertDialogAction onClick={() => { setConfirmSubmit(false); finishExam(); }}>
               تأكيد التسليم
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmExit} onOpenChange={setConfirmExit}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              الخروج من الامتحان؟
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              أنت في وضع الامتحان الصارم. الخروج الآن سيؤدي إلى{" "}
+              <span className="font-bold text-destructive">فقدان كل تقدمك</span>{" "}
+              ولن يتم حفظ إجاباتك ({answeredCount} من {total}).
+              <span className="block mt-2 text-foreground/80">هل أنت متأكد من الخروج؟</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>متابعة الامتحان</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                setConfirmExit(false);
+                onBackToSelect();
+              }}
+            >
+              نعم، اخرج
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
