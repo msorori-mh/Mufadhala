@@ -381,79 +381,90 @@ const LessonDetail = () => {
 
           <TabsContent value="summary" className="mt-4">
             <Card className="overflow-hidden border-border/70 shadow-sm">
-              <div className="flex items-center justify-between gap-2 px-5 py-3 border-b border-border/60 bg-muted/40">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 text-primary">
-                    <Sparkles className="w-4 h-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground leading-none">ملخص الدرس</p>
-                    <p className="text-[11px] text-muted-foreground mt-1">أبرز النقاط لمراجعة سريعة</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {lesson.summary && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium">
-                      <Clock className="w-3 h-3" />
-                      ~{Math.max(1, Math.round((lesson.summary.trim().length / 5) / 180))} د
-                    </span>
-                  )}
-                  {lesson.summary && (
-                    <SummaryPDFDownload title={lesson.title} text={lesson.summary} />
-                  )}
-                </div>
-              </div>
-              <CardContent className="py-6 px-4 sm:px-6">
+              <CardContent className="py-5 px-4 sm:px-6">
                 {lesson.summary ? (
                   <>
-                    <div className="relative rounded-xl bg-primary/[0.04] border border-primary/15 px-4 py-5 sm:px-6 sm:py-6 space-y-4">
+                    {/* Revision sheet container */}
+                    <div className="relative rounded-xl bg-primary/[0.05] border border-primary/20 shadow-sm p-4 sm:p-5">
                       {/* Right accent bar (RTL) */}
-                      <span aria-hidden className="absolute top-3 bottom-3 right-0 w-[3px] rounded-full bg-primary/60" />
-                      {(() => {
-                        const raw = lesson.summary ?? "";
-                        const chunks = raw
-                          .split(/\n{2,}/)
-                          .map((c) => c.trim())
-                          .filter(Boolean);
-                        const blocks = chunks.length > 0 ? chunks : [raw];
-                        return blocks.map((block, idx) => (
-                          <p
-                            key={idx}
-                            className={`whitespace-pre-wrap break-words text-foreground/90 text-[15px] sm:text-[16px] leading-[1.95] ${
-                              idx === 0 ? "font-medium" : "font-normal"
-                            }`}
-                          >
-                            {block}
-                          </p>
-                        ));
-                      })()}
-                    </div>
+                      <span
+                        aria-hidden
+                        className="absolute right-0 top-0 bottom-0 w-[3px] rounded-r-xl bg-primary/60"
+                      />
 
-                    {/* Bottom bridge → questions tab */}
-                    <div className="mt-5 flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary shrink-0">
-                          <HelpCircle className="w-4 h-4" />
-                        </span>
-                        <p className="text-sm text-foreground/80 truncate">جاهز للاختبار؟</p>
+                      {/* Eyebrow header */}
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 text-primary shrink-0">
+                            <Sparkles className="w-4 h-4" />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-[12px] font-semibold text-primary/80 leading-none">
+                              ملخص الدرس
+                            </p>
+                            <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug">
+                              أهم النقاط للمراجعة السريعة قبل الاختبار
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            <Clock className="w-3 h-3" />
+                            ~{Math.max(1, Math.round(lesson.summary.length / 900))} د
+                          </span>
+                          <SummaryPDFDownload title={lesson.title} text={lesson.summary} />
+                        </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setActiveTab("quiz")}
-                        className="text-primary hover:text-primary hover:bg-primary/10 gap-1 shrink-0"
-                      >
-                        ابدأ الأسئلة
-                        <ArrowLeft className="w-4 h-4" />
-                      </Button>
+
+                      {/* Revision blocks */}
+                      <div className="space-y-4">
+                        {(() => {
+                          const raw = lesson.summary ?? "";
+                          const chunks = raw
+                            .split(/\n{2,}/)
+                            .map((c) => c.trim())
+                            .filter(Boolean);
+                          const blocks = chunks.length > 0 ? chunks : [raw];
+                          return blocks.map((block, idx) => (
+                            <div key={idx}>
+                              <p
+                                className={`whitespace-pre-wrap break-words text-foreground/90 text-[15px] sm:text-[16px] leading-[1.95] ${
+                                  idx === 0 ? "font-medium" : "font-normal"
+                                }`}
+                              >
+                                {block}
+                              </p>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+
+                      {/* Bottom soft bridge */}
+                      <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary shrink-0">
+                            <HelpCircle className="w-3.5 h-3.5" />
+                          </span>
+                          <p className="text-sm text-foreground/80 truncate">جاهز للاختبار؟</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setActiveTab("quiz")}
+                          className="text-primary hover:text-primary hover:bg-primary/10 gap-1 shrink-0"
+                        >
+                          انتقل إلى الأسئلة
+                          <ArrowLeft className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted text-muted-foreground mb-3">
-                      <BookOpen className="w-6 h-6" />
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mb-3">
+                      <Sparkles className="w-6 h-6" />
                     </span>
-                    <p className="text-muted-foreground text-sm">لا يوجد ملخص بعد</p>
+                    <p className="text-muted-foreground text-sm">لا يوجد ملخص لهذا الدرس بعد</p>
                   </div>
                 )}
               </CardContent>
