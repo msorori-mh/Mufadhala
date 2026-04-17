@@ -87,11 +87,15 @@ const AdminPaymentMethods = () => {
     let barcode_url: string | null = editing?.barcode_url ?? null;
     let logo_url: string | null = editing?.logo_url ?? null;
 
+    const { safeFileExtension } = await import("@/lib/storageKey");
+
     // Upload new barcode
     if (barcodeFile) {
-      const ext = barcodeFile.name.split(".").pop();
+      const ext = safeFileExtension(barcodeFile.name);
       const path = `${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("payment-barcodes").upload(path, barcodeFile);
+      const { error: upErr } = await supabase.storage.from("payment-barcodes").upload(path, barcodeFile, {
+        contentType: barcodeFile.type || undefined,
+      });
       if (upErr) { toast({ variant: "destructive", title: "فشل رفع الباركود" }); setSaving(false); return; }
       const { data: urlData } = supabase.storage.from("payment-barcodes").getPublicUrl(path);
       barcode_url = urlData.publicUrl;
@@ -99,9 +103,11 @@ const AdminPaymentMethods = () => {
 
     // Upload new logo
     if (logoFile) {
-      const ext = logoFile.name.split(".").pop();
+      const ext = safeFileExtension(logoFile.name);
       const path = `${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("payment-logos").upload(path, logoFile);
+      const { error: upErr } = await supabase.storage.from("payment-logos").upload(path, logoFile, {
+        contentType: logoFile.type || undefined,
+      });
       if (upErr) { toast({ variant: "destructive", title: "فشل رفع الشعار" }); setSaving(false); return; }
       const { data: urlData } = supabase.storage.from("payment-logos").getPublicUrl(path);
       logo_url = urlData.publicUrl;
