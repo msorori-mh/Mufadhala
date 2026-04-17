@@ -1,12 +1,23 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, Sparkles, BookOpen, AlertCircle } from "lucide-react";
-import { useQuickReviewData } from "@/hooks/useQuickReviewData";
+import { Progress } from "@/components/ui/progress";
+import {
+  ChevronRight,
+  ChevronLeft,
+  Sparkles,
+  BookOpen,
+  AlertCircle,
+  Play,
+  X,
+  Clock,
+} from "lucide-react";
+import { useQuickReviewData, type QuickReviewLesson } from "@/hooks/useQuickReviewData";
 import QuickReviewCard from "@/components/QuickReviewCard";
+import { chunkSummary, estimateReadMinutes } from "@/lib/quickReviewFormat";
 import { cn } from "@/lib/utils";
 
 const ALL_KEY = "__all__";
@@ -15,6 +26,8 @@ export default function QuickReview() {
   const navigate = useNavigate();
   const { data, isLoading, canAccess, hasContent } = useQuickReviewData();
   const [activeSubject, setActiveSubject] = useState<string>(ALL_KEY);
+  const [focusMode, setFocusMode] = useState(false);
+  const [focusIndex, setFocusIndex] = useState(0);
 
   const filteredLessons = useMemo(() => {
     if (!data) return [];
@@ -32,6 +45,27 @@ export default function QuickReview() {
       }))
       .filter((s) => s.count > 0);
   }, [data]);
+
+  // Reset focus index when filter or list changes
+  useEffect(() => {
+    setFocusIndex(0);
+  }, [activeSubject, filteredLessons.length]);
+
+  // Lock body scroll while focus mode is open
+  useEffect(() => {
+    if (!focusMode) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [focusMode]);
+
+  const startFocus = () => {
+    if (filteredLessons.length === 0) return;
+    setFocusIndex(0);
+    setFocusMode(true);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -118,16 +152,226 @@ export default function QuickReview() {
             desc="جرّب اختيار مادة أخرى من الأعلى."
           />
         ) : (
-          <div className="space-y-3">
-            {filteredLessons.map((lesson, idx) => (
-              <QuickReviewCard key={lesson.id} lesson={lesson} index={idx} />
-            ))}
+          <div className="space-y-4">
+            {/* Focus Mode CTA banner */}
+            <Card className="border-primary/30 bg-gradient-to-l from-primary/[0.06] to-primary/[0.02]">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-bold text-foreground">
+                    وضع المراجعة السريعة
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                    استعرض الملخصات واحداً تلو الآخر مثل البطاقات التعليمية
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={startFocus}
+                  className="shrink-0 h-9 gap-1.5"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  ابدأ
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* List of summary cards */}
+            <div className="space-y-3">
+              {filteredLessons.map((lesson, idx) => (
+                <QuickReviewCard key={lesson.id} lesson={lesson} index={idx} />
+              ))}
+            </div>
           </div>
         )}
       </main>
+
+      {/* Focus Mode overlay */}
+      {focusMode && filteredLessons.length > 0 && (
+        <FocusMode
+          lessons={filteredLessons}
+          index={focusIndex}
+          onIndexChange={setFocusIndex}
+          onClose={() => setFocusMode(false)}
+          onOpenLesson={(id) => {
+            setFocusMode(false);
+            navigate(`/lessons/${id}`);
+          }}
+        />
+      )}
     </div>
   );
 }
+
+// ─── Focus Mode (flashcard-style) ────────────────────────
+
+function FocusMode({
+  lessons,
+  index,
+  onIndexChange,
+  onClose,
+  onOpenLesson,
+}: {
+  lessons: QuickReviewLesson[];
+  index: number;
+  onIndexChange: (i: number) => void;
+  onClose: () => void;
+  onOpenLesson: (id: string) => void;
+}) {
+  const total = lessons.length;
+  const current = lessons[Math.min(index, total - 1)];
+  const progressPct = ((index + 1) / total) * 100;
+  const isFirst = index === 0;
+  const isLast = index === total - 1;
+
+  const chunks = useMemo(() => chunkSummary(current.summary), [current.summary]);
+  const minutes = estimateReadMinutes(current.summary);
+
+  // Keyboard navigation (desktop)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      // RTL: ArrowRight = previous, ArrowLeft = next
+      if (e.key === "ArrowRight" && !isFirst) onIndexChange(index - 1);
+      if (e.key === "ArrowLeft" && !isLast) onIndexChange(index + 1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [index, isFirst, isLast, onClose, onIndexChange]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-background flex flex-col"
+      role="dialog"
+      aria-modal="true"
+      aria-label="وضع المراجعة السريعة"
+    >
+      {/* Top bar with progress */}
+      <div className="border-b border-border/60 bg-background/95 backdrop-blur-md">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="h-9 w-9 shrink-0"
+            aria-label="إغلاق وضع المراجعة"
+          >
+            <X className="w-5 h-5" />
+          </Button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="text-[11px] font-semibold text-muted-foreground">
+                وضع المراجعة
+              </span>
+              <span className="text-xs font-bold text-foreground tabular-nums">
+                {index + 1} / {total}
+              </span>
+            </div>
+            <Progress value={progressPct} className="h-1.5" />
+          </div>
+        </div>
+      </div>
+
+      {/* Card */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-2xl mx-auto px-4 py-5">
+          <Card className="border-2 border-primary/15 shadow-sm overflow-hidden">
+            <CardContent className="p-0">
+              {/* Card header */}
+              <div className="flex items-start gap-3 p-4 border-b border-border/40 bg-primary/[0.04]">
+                <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+                  <span className="text-sm font-bold text-primary tabular-nums">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-semibold text-primary/80 mb-0.5">
+                    ملخص الدرس
+                  </p>
+                  <h2 className="font-bold text-foreground text-base leading-snug break-words">
+                    {current.title}
+                  </h2>
+                </div>
+                {minutes > 0 && (
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground shrink-0 tabular-nums">
+                    <Clock className="w-3 h-3" />
+                    <span>~{minutes} د</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Chunked body */}
+              <div className="p-4 space-y-4">
+                {chunks.map((chunk, i) => (
+                  <div
+                    key={i}
+                    className="relative pr-3 border-r-[3px] border-primary/30"
+                  >
+                    <p className="text-[15px] text-foreground/90 leading-[1.95] break-words whitespace-pre-wrap">
+                      {chunk}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Open full lesson */}
+              <div className="px-4 pb-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onOpenLesson(current.id)}
+                  className="h-9 gap-1.5 text-primary hover:bg-primary/5 px-2"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  افتح الدرس الكامل
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Bottom navigation */}
+      <div className="border-t border-border/60 bg-background/95 backdrop-blur-md">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => onIndexChange(index - 1)}
+            disabled={isFirst}
+            className="flex-1 h-11 gap-1.5"
+            aria-label="الملخص السابق"
+          >
+            <ChevronRight className="w-4 h-4" />
+            السابق
+          </Button>
+          {isLast ? (
+            <Button
+              onClick={onClose}
+              className="flex-1 h-11 gap-1.5"
+              aria-label="إنهاء المراجعة"
+            >
+              تم 🎉
+            </Button>
+          ) : (
+            <Button
+              onClick={() => onIndexChange(index + 1)}
+              className="flex-1 h-11 gap-1.5"
+              aria-label="الملخص التالي"
+            >
+              التالي
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Small UI helpers ────────────────────────────────────
 
 function ChipButton({
   active,
