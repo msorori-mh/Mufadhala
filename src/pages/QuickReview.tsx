@@ -173,7 +173,7 @@ export default function QuickReview() {
                   className="shrink-0 h-9 gap-1.5"
                 >
                   <Play className="w-3.5 h-3.5" />
-                  ابدأ
+                  ابدأ مراجعة سريعة
                 </Button>
               </CardContent>
             </Card>
