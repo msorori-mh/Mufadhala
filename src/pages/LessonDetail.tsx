@@ -351,34 +351,63 @@ const LessonDetail = () => {
           </TabsList>
 
           <TabsContent value="content" className="mt-4">
-            <Card>
-              <CardContent className="py-6 px-5">
+            <Card className="overflow-hidden border-border/70 shadow-sm">
+              <div className="flex items-center gap-2 px-5 py-3 border-b border-border/60 bg-muted/40">
+                <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 text-primary">
+                  <FileText className="w-4 h-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground leading-none">شرح الدرس</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">اقرأ بتمعّن — يمكنك العودة في أي وقت</p>
+                </div>
+              </div>
+              <CardContent className="py-6 px-5 sm:px-6">
                 {lesson.content ? (
-                  <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
+                  <article className="prose prose-sm sm:prose-base max-w-none text-foreground whitespace-pre-wrap leading-[1.95] tracking-[0.01em] text-[15px] sm:text-[16px] first-letter:text-primary first-letter:font-bold first-letter:text-2xl">
                     {lesson.content}
-                  </div>
+                  </article>
                 ) : (
-                  <p className="text-muted-foreground text-center py-8">لا يوجد محتوى بعد</p>
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted text-muted-foreground mb-3">
+                      <FileText className="w-6 h-6" />
+                    </span>
+                    <p className="text-muted-foreground text-sm">لا يوجد محتوى بعد</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="summary" className="mt-4">
-            <Card>
-              <CardContent className="py-6 px-5">
+            <Card className="overflow-hidden border-border/70 shadow-sm">
+              <div className="flex items-center justify-between gap-2 px-5 py-3 border-b border-border/60 bg-muted/40">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 text-primary">
+                    <BookOpen className="w-4 h-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground leading-none">ملخص الدرس</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">أبرز النقاط لمراجعة سريعة</p>
+                  </div>
+                </div>
+                {lesson.summary && (
+                  <SummaryPDFDownload title={lesson.title} text={lesson.summary} />
+                )}
+              </div>
+              <CardContent className="py-6 px-5 sm:px-6">
                 {lesson.summary ? (
-                  <>
-                    <div className="flex justify-end mb-3">
-                      <SummaryPDFDownload title={lesson.title} text={lesson.summary} />
-                    </div>
-                    <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
+                  <div className="relative rounded-lg bg-primary/[0.04] border-r-4 border-primary/40 px-4 py-4 sm:px-5 sm:py-5">
+                    <article className="prose prose-sm sm:prose-base max-w-none text-foreground whitespace-pre-wrap leading-[1.9] text-[15px] sm:text-[16px]">
                       {lesson.summary}
-                    </div>
-                  </>
-
+                    </article>
+                  </div>
                 ) : (
-                  <p className="text-muted-foreground text-center py-8">لا يوجد ملخص بعد</p>
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted text-muted-foreground mb-3">
+                      <BookOpen className="w-6 h-6" />
+                    </span>
+                    <p className="text-muted-foreground text-sm">لا يوجد ملخص بعد</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -386,7 +415,16 @@ const LessonDetail = () => {
 
           {signedPresentationUrl && (
             <TabsContent value="presentation" className="mt-4 space-y-4">
-              <Card>
+              <Card className="overflow-hidden border-border/70 shadow-sm">
+                <div className="flex items-center gap-2 px-5 py-3 border-b border-border/60 bg-muted/40">
+                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 text-primary">
+                    <Presentation className="w-4 h-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground leading-none">العرض التقديمي</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">اعرض شرائح الدرس بالشاشة الكاملة</p>
+                  </div>
+                </div>
                 <CardContent className="py-4 px-4">
                   <div className="aspect-[16/9] w-full rounded-lg overflow-hidden border bg-muted">
                     <iframe
