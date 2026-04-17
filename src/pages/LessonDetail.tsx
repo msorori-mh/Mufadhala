@@ -596,30 +596,107 @@ const LessonDetail = () => {
 
         {/* Prev/Next lesson navigation */}
         {(prevLesson || nextLesson) && (
-          <div className="mt-6 flex items-stretch gap-3">
-            {prevLesson ? (
-              <Button variant="outline" className="flex-1 h-auto py-3 px-4 justify-start text-right gap-2" asChild>
-                <Link to={`/lessons/${prevLesson.id}`}>
-                  <ChevronRight className="w-5 h-5 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-[10px] text-muted-foreground">الدرس السابق</p>
-                    <p className="text-sm font-medium truncate">{prevLesson.title}</p>
+          <nav aria-label="التنقل بين الدروس" className="mt-8">
+            <div className="flex items-center gap-2 mb-3 px-1">
+              <span className="h-px flex-1 bg-border" aria-hidden />
+              <span className="text-[11px] font-medium text-muted-foreground">تابع رحلتك</span>
+              <span className="h-px flex-1 bg-border" aria-hidden />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+              {/* Previous */}
+              {prevLesson ? (
+                <Link
+                  to={`/lessons/${prevLesson.id}`}
+                  className="group block rounded-xl border border-border/70 bg-card p-3 sm:p-4
+                    shadow-sm transition-all duration-200 ease-out
+                    hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5
+                    active:translate-y-0 active:shadow-sm
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span
+                      className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full
+                        bg-muted text-muted-foreground transition-colors
+                        group-hover:bg-primary/10 group-hover:text-primary"
+                      aria-hidden
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </span>
+                    <div className="min-w-0 flex-1 text-right">
+                      <p className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">
+                        السابق
+                      </p>
+                      <p className="text-[13px] sm:text-sm font-semibold text-foreground truncate mt-0.5">
+                        {prevLesson.title}
+                      </p>
+                    </div>
                   </div>
                 </Link>
-              </Button>
-            ) : <div className="flex-1" />}
-            {nextLesson ? (
-              <Button variant="outline" className="flex-1 h-auto py-3 px-4 justify-end text-left gap-2" asChild>
-                <Link to={`/lessons/${nextLesson.id}`}>
-                  <div className="min-w-0">
-                    <p className="text-[10px] text-muted-foreground">الدرس التالي</p>
-                    <p className="text-sm font-medium truncate">{nextLesson.title}</p>
+              ) : (
+                <div
+                  aria-hidden
+                  className="rounded-xl border border-dashed border-border/50 bg-muted/20 p-3 sm:p-4 flex items-center"
+                >
+                  <div className="flex items-center gap-2.5 opacity-50 min-w-0">
+                    <span className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full bg-muted text-muted-foreground/60">
+                      <ChevronRight className="w-5 h-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">السابق</p>
+                      <p className="text-[13px] text-muted-foreground truncate mt-0.5">بداية المسار</p>
+                    </div>
                   </div>
-                  <ChevronLeft className="w-5 h-5 shrink-0" />
+                </div>
+              )}
+
+              {/* Next */}
+              {nextLesson ? (
+                <Link
+                  to={`/lessons/${nextLesson.id}`}
+                  className="group block rounded-xl border border-primary/30 bg-primary/[0.04] p-3 sm:p-4
+                    shadow-sm transition-all duration-200 ease-out
+                    hover:border-primary/60 hover:bg-primary/[0.08] hover:shadow-md hover:-translate-y-0.5
+                    active:translate-y-0 active:shadow-sm
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="min-w-0 flex-1 text-left">
+                      <p className="text-[10px] uppercase tracking-wider font-semibold text-primary">
+                        التالي
+                      </p>
+                      <p className="text-[13px] sm:text-sm font-semibold text-foreground truncate mt-0.5">
+                        {nextLesson.title}
+                      </p>
+                    </div>
+                    <span
+                      className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full
+                        bg-primary text-primary-foreground transition-transform
+                        group-hover:translate-x-[-2px]"
+                      aria-hidden
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </span>
+                  </div>
                 </Link>
-              </Button>
-            ) : <div className="flex-1" />}
-          </div>
+              ) : (
+                <div
+                  aria-hidden
+                  className="rounded-xl border border-dashed border-border/50 bg-muted/20 p-3 sm:p-4 flex items-center"
+                >
+                  <div className="flex items-center gap-2.5 opacity-60 min-w-0 w-full">
+                    <div className="min-w-0 flex-1 text-left">
+                      <p className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">التالي</p>
+                      <p className="text-[13px] text-muted-foreground truncate mt-0.5">نهاية المسار 🎉</p>
+                    </div>
+                    <span className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full bg-muted text-muted-foreground/60">
+                      <ChevronLeft className="w-5 h-5" />
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </nav>
         )}
         {/* Floating AI Tutor for lesson context */}
         {!isFromCache && lesson && (
