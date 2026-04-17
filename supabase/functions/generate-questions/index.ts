@@ -246,7 +246,7 @@ serve(async (req) => {
     // Add remaining count to response
     const remaining = Math.max(0, dailyLimit - currentUsage - 1);
 
-    return new Response(JSON.stringify({ ...questions, remaining, limit: dailyLimit }), {
+    return new Response(JSON.stringify({ ...questions, remaining, limit: dailyLimit, hasSubscription: hasPaidSub }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
