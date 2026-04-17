@@ -211,6 +211,8 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
                 stats={stats?.strict ?? { attempts: 0, avgPct: 0, bestPct: 0, lastPcts: [] }}
                 variant="strict"
                 loading={statsLoading}
+                isPaid={isPaid}
+                isFreeModel={isFreeModel}
               />
             )}
             {hasDuration ? (
