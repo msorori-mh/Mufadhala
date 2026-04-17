@@ -11,7 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowRight, BookOpen, Timer, AlertTriangle, Lock, EyeOff, LogOut } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight, BookOpen, Timer, AlertTriangle, Lock, EyeOff, LogOut, Sparkles, Lightbulb, Smile, Flame, Trophy, GraduationCap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { PastExamModelInfo } from "./types";
 
@@ -58,49 +59,119 @@ const ModeSelector = ({ model, totalQuestions, onSelectTraining, onSelectStrict 
           </p>
         </div>
 
+        {/* Quick Comparison Strip */}
+        <div className="grid grid-cols-2 gap-3 text-center">
+          <div className="rounded-xl bg-secondary/10 border border-secondary/30 p-3">
+            <Smile className="w-5 h-5 text-secondary mx-auto mb-1" />
+            <p className="text-xs font-bold text-foreground">للمبتدئين</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">تعلّم بدون ضغط</p>
+          </div>
+          <div className="rounded-xl bg-destructive/10 border border-destructive/30 p-3">
+            <Flame className="w-5 h-5 text-destructive mx-auto mb-1" />
+            <p className="text-xs font-bold text-foreground">للمتقدمين</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">اختبر جاهزيتك</p>
+          </div>
+        </div>
+
         {/* Training Mode */}
-        <Card className="border-2 border-secondary/30 hover:border-secondary transition-colors cursor-pointer active:scale-[0.99]" onClick={onSelectTraining}>
-          <CardContent className="p-5 space-y-3">
+        <Card className="relative overflow-hidden border-2 border-secondary/30 hover:border-secondary transition-all cursor-pointer active:scale-[0.99] hover:shadow-lg" onClick={onSelectTraining}>
+          <div className="absolute top-0 left-0 w-full h-1 bg-secondary" />
+          <CardContent className="p-5 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-secondary/15 flex items-center justify-center shrink-0">
-                <BookOpen className="w-6 h-6 text-secondary" />
+              <div className="w-14 h-14 rounded-2xl bg-secondary/15 flex items-center justify-center shrink-0 ring-2 ring-secondary/20">
+                <BookOpen className="w-7 h-7 text-secondary" />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-base font-bold">وضع التدريب</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">تعلّم خطوة بخطوة</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-base font-bold">وضع التدريب</h2>
+                  <Badge variant="secondary" className="text-[10px] gap-1 px-2 py-0">
+                    <Sparkles className="w-3 h-3" />
+                    موصى به
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <Lightbulb className="w-3 h-3" />
+                  تعلّم خطوة بخطوة بدون ضغط
+                </p>
               </div>
             </div>
+
+            <div className="grid grid-cols-3 gap-2 py-2 border-y border-border/50">
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground">المؤقت</p>
+                <p className="text-xs font-bold text-secondary mt-0.5">بلا حد</p>
+              </div>
+              <div className="text-center border-x border-border/50">
+                <p className="text-[10px] text-muted-foreground">الإجابات</p>
+                <p className="text-xs font-bold text-secondary mt-0.5">فورية</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground">الشرح</p>
+                <p className="text-xs font-bold text-secondary mt-0.5">تفصيلي</p>
+              </div>
+            </div>
+
             <ul className="text-sm space-y-1.5 text-foreground/80 pr-1">
-              <li>✅ كشف فوري للإجابة الصحيحة</li>
-              <li>✅ شرح تفصيلي لكل سؤال</li>
-              <li>✅ بدون مؤقت — تعلّم بسرعتك</li>
+              <li className="flex items-center gap-2"><span className="text-secondary">✓</span> كشف فوري للإجابة الصحيحة</li>
+              <li className="flex items-center gap-2"><span className="text-secondary">✓</span> شرح تفصيلي لكل سؤال</li>
+              <li className="flex items-center gap-2"><span className="text-secondary">✓</span> تعلّم بسرعتك دون قلق</li>
             </ul>
-            <Button className="w-full" variant="secondary">ابدأ التدريب</Button>
+            <Button className="w-full" variant="secondary">
+              <BookOpen className="w-4 h-4 ml-1.5" />
+              ابدأ التدريب
+            </Button>
           </CardContent>
         </Card>
 
         {/* Strict Mode */}
         <Card
-          className={`border-2 transition-colors ${hasDuration ? "border-destructive/30 hover:border-destructive cursor-pointer active:scale-[0.99]" : "border-border opacity-60"}`}
+          className={`relative overflow-hidden border-2 transition-all ${hasDuration ? "border-destructive/30 hover:border-destructive cursor-pointer active:scale-[0.99] hover:shadow-lg" : "border-border opacity-60"}`}
           onClick={hasDuration ? openStrictConfirm : undefined}
         >
-          <CardContent className="p-5 space-y-3">
+          <div className={`absolute top-0 left-0 w-full h-1 ${hasDuration ? "bg-destructive" : "bg-muted"}`} />
+          <CardContent className="p-5 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-destructive/10 flex items-center justify-center shrink-0">
-                <Timer className="w-6 h-6 text-destructive" />
+              <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center shrink-0 ring-2 ring-destructive/20">
+                <Trophy className="w-7 h-7 text-destructive" />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-base font-bold">الامتحان الصارم</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">محاكاة ظروف الاختبار الحقيقي</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-base font-bold">الامتحان الصارم</h2>
+                  <Badge variant="destructive" className="text-[10px] gap-1 px-2 py-0">
+                    <Flame className="w-3 h-3" />
+                    تحدّي
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <GraduationCap className="w-3 h-3" />
+                  محاكاة ظروف الاختبار الحقيقي
+                </p>
               </div>
             </div>
+
+            <div className="grid grid-cols-3 gap-2 py-2 border-y border-border/50">
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground">المؤقت</p>
+                <p className="text-xs font-bold text-destructive mt-0.5">{hasDuration ? `${model.duration_minutes} د` : "—"}</p>
+              </div>
+              <div className="text-center border-x border-border/50">
+                <p className="text-[10px] text-muted-foreground">الإجابات</p>
+                <p className="text-xs font-bold text-destructive mt-0.5">مخفية</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground">المراجعة</p>
+                <p className="text-xs font-bold text-destructive mt-0.5">في النهاية</p>
+              </div>
+            </div>
+
             <ul className="text-sm space-y-1.5 text-foreground/80 pr-1">
-              <li>⏱️ مؤقت تنازلي {hasDuration ? `(${model.duration_minutes} دقيقة)` : ""}</li>
-              <li>🔒 بدون كشف للإجابات أثناء الاختبار</li>
-              <li>📊 النتيجة والمراجعة في النهاية</li>
+              <li className="flex items-center gap-2"><Timer className="w-3.5 h-3.5 text-destructive" /> مؤقت تنازلي صارم</li>
+              <li className="flex items-center gap-2"><EyeOff className="w-3.5 h-3.5 text-destructive" /> بدون كشف للإجابات</li>
+              <li className="flex items-center gap-2"><Trophy className="w-3.5 h-3.5 text-destructive" /> نتيجة ومراجعة شاملة</li>
             </ul>
             {hasDuration ? (
               <Button className="w-full" variant="destructive" onClick={(e) => { e.stopPropagation(); openStrictConfirm(); }}>
+                <Lock className="w-4 h-4 ml-1.5" />
                 ابدأ الامتحان الصارم
               </Button>
             ) : (
