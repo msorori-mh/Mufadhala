@@ -192,8 +192,10 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
     : 0;
   const percentage = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
 
-  // Show limit reached full-screen message
-  if (limitReached && !hasSubscription && questions.length === 0) {
+  // Show limit reached full-screen message — uses paidSubscriber (backend truth),
+  // not hasSubscription prop, so trial users hitting the free limit see the upgrade CTA.
+  const isPaid = paidSubscriber === true;
+  if (limitReached && !isPaid && questions.length === 0) {
     return (
       <Card>
         <CardHeader className="pb-2 pt-3 px-4">
