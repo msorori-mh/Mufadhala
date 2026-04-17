@@ -488,6 +488,35 @@ const StrictMode = ({ model, questions, onBackToSelect }: Props) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={confirmExit} onOpenChange={setConfirmExit}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              الخروج من الامتحان؟
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              أنت في وضع الامتحان الصارم. الخروج الآن سيؤدي إلى{" "}
+              <span className="font-bold text-destructive">فقدان كل تقدمك</span>{" "}
+              ولن يتم حفظ إجاباتك ({answeredCount} من {total}).
+              <span className="block mt-2 text-foreground/80">هل أنت متأكد من الخروج؟</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>متابعة الامتحان</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                setConfirmExit(false);
+                onBackToSelect();
+              }}
+            >
+              نعم، اخرج
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
