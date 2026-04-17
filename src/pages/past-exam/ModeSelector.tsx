@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -15,6 +16,10 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, BookOpen, Timer, AlertTriangle, Lock, EyeOff, LogOut, Sparkles, Lightbulb, Smile, Flame, Trophy, GraduationCap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { PastExamModelInfo } from "./types";
+import { useAuth } from "@/hooks/useAuth";
+import { useStudentData } from "@/hooks/useStudentData";
+import { fetchModelAttemptStats } from "@/lib/pastExamAttempts";
+import PastExamModeMiniStats from "@/components/PastExamModeMiniStats";
 
 interface Props {
   model: PastExamModelInfo;
@@ -28,6 +33,15 @@ const ModeSelector = ({ model, totalQuestions, onSelectTraining, onSelectStrict 
   const hasDuration = (model.duration_minutes ?? 0) > 0;
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
+
+  const { user } = useAuth();
+  const { data: student } = useStudentData(user?.id);
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ["past-exam-mode-stats", student?.id, model.id],
+    queryFn: () => fetchModelAttemptStats(student!.id, model.id),
+    enabled: !!student?.id && !!model.id,
+    staleTime: 30_000,
+  });
 
   const openStrictConfirm = () => {
     if (!hasDuration) return;
