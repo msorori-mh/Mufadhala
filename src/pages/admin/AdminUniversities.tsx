@@ -113,10 +113,10 @@ const AdminUniversities = () => {
     setUploading(true);
     const newFiles: GuideFile[] = [];
 
+    const { safeFileExtension } = await import("@/lib/storageKey");
     for (const file of Array.from(files)) {
       // Sanitize key for Supabase Storage (ASCII only, no spaces/Arabic)
-      const ext = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
-      const safeExt = ext || "bin";
+      const safeExt = safeFileExtension(file.name);
       const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${safeExt}`;
       let result = await supabase.storage.from("university-guides").upload(fileName, file, {
         contentType: file.type || undefined,
