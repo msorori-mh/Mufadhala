@@ -51,11 +51,22 @@ const readSavedDuration = (modelId: string): number | null => {
 const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, onSelectStrict }: Props) => {
   const navigate = useNavigate();
   const hasDuration = (model.duration_minutes ?? 0) > 0;
-  const savedDuration = readSavedDuration(model.id);
+  const [savedDuration, setSavedDuration] = useState<number | null>(() => readSavedDuration(model.id));
   const suggestedDefault = Math.max(
     MIN_DURATION,
     savedDuration ?? model.suggested_duration_minutes ?? 60
   );
+
+  const handleResetSavedDuration = () => {
+    try {
+      localStorage.removeItem(LAST_DURATION_KEY(model.id));
+    } catch {
+      // ignore
+    }
+    setSavedDuration(null);
+    const fallback = Math.max(MIN_DURATION, model.suggested_duration_minutes ?? 60);
+    setCustomDuration(fallback);
+  };
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
