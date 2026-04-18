@@ -29,7 +29,7 @@ const PastExamPractice = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("past_exam_models")
-        .select("id, title, year, is_paid, is_published, university_id, duration_minutes")
+        .select("id, title, year, is_paid, is_published, university_id, duration_minutes, suggested_duration_minutes")
         .eq("id", modelId!)
         .single();
       return data;
