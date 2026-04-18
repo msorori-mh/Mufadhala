@@ -8,7 +8,8 @@ export type ConversionSource =
   | "past_exams"
   | "ai_performance"
   | "chat_widget"
-  | "install_share";
+  | "install_share"
+  | "brochure_download";
 
 export type ConversionEventType = "view" | "click";
 

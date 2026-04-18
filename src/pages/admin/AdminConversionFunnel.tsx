@@ -18,6 +18,8 @@ const SOURCE_LABELS: Record<string, { label: string; color: string }> = {
   past_exams: { label: "النماذج السابقة", color: "hsl(var(--secondary))" },
   ai_performance: { label: "تحليل الأداء بالذكاء الاصطناعي", color: "hsl(var(--chart-4, var(--primary)))" },
   chat_widget: { label: "المساعد الذكي", color: "hsl(var(--chart-5, var(--accent)))" },
+  install_share: { label: "مشاركة التطبيق", color: "hsl(var(--chart-2, var(--primary)))" },
+  brochure_download: { label: "تنزيل البروشور (PDF)", color: "hsl(var(--chart-3, var(--accent)))" },
 };
 
 const ALL_SOURCES = Object.keys(SOURCE_LABELS);

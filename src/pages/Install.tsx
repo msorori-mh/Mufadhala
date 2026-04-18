@@ -78,6 +78,18 @@ export default function Install() {
     try {
       await generateBrochurePDF(canvas);
       toast.success("تم تنزيل البروشور بنجاح");
+      // Track brochure download as a conversion event (fire-and-forget)
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        await supabase.from("conversion_events").insert({
+          user_id: user?.id ?? null,
+          source: "brochure_download",
+          event_type: "click",
+          metadata: { format: "pdf_a4" } as never,
+        });
+      } catch {
+        // silent — analytics never blocks UX
+      }
     } catch (err) {
       console.error(err);
       toast.error("تعذر إنشاء البروشور، حاول مرة أخرى");
