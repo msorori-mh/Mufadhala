@@ -43,6 +43,8 @@ const AdminPastExams = () => {
     setYear(new Date().getFullYear());
     setIsPaid(false);
     setIsPublished(false);
+    setDurationMinutes("");
+    setSuggestedDurationMinutes("");
   };
 
   const handleCancel = () => {
@@ -58,6 +60,8 @@ const AdminPastExams = () => {
   const [year, setYear] = useState(new Date().getFullYear());
   const [isPaid, setIsPaid] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
+  const [durationMinutes, setDurationMinutes] = useState<string>("");
+  const [suggestedDurationMinutes, setSuggestedDurationMinutes] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
   const { data: universities = [] } = useQuery({
@@ -110,6 +114,8 @@ const AdminPastExams = () => {
     setYear(m.year);
     setIsPaid(m.is_paid);
     setIsPublished(m.is_published);
+    setDurationMinutes(m.duration_minutes != null ? String(m.duration_minutes) : "");
+    setSuggestedDurationMinutes((m as any).suggested_duration_minutes != null ? String((m as any).suggested_duration_minutes) : "");
     setShowForm(true);
     setShowQuestions(null);
     setJustCreatedId(null); // editing must NOT show "created" banner
