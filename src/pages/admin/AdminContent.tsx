@@ -853,6 +853,10 @@ const AdminContent = () => {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button onClick={refreshData} size="sm" variant="outline" disabled={refreshing || loading}>
+              <RefreshCw className={`w-4 h-4 ml-1 ${refreshing ? "animate-spin" : ""}`} />
+              {refreshing ? "جارٍ التحديث..." : "إعادة تحميل"}
+            </Button>
             <Button onClick={exportLessons} size="sm" variant="outline">
               <Download className="w-4 h-4 ml-1" />تصدير
             </Button>
