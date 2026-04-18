@@ -44,6 +44,13 @@ interface Question {
   question_type?: string;
 }
 
+/** Sort questions: true/false first, then others; preserve display_order within each group. */
+const sortQuestionsByType = (qs: Question[]): Question[] => {
+  const tf = qs.filter((q) => q.question_type === "true_false").sort((a, b) => a.display_order - b.display_order);
+  const rest = qs.filter((q) => q.question_type !== "true_false").sort((a, b) => a.display_order - b.display_order);
+  return [...tf, ...rest];
+};
+
 /** Extract storage path from a presentation_url (handles both full URLs and plain filenames). */
 const getPresentationPath = (url: string): string => {
   try {
