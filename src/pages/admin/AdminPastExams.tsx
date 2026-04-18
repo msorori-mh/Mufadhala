@@ -119,6 +119,8 @@ const AdminPastExams = () => {
     setShowForm(true);
     setShowQuestions(null);
     setJustCreatedId(null); // editing must NOT show "created" banner
+    // Force fresh question count to avoid stale-cache blocking publish
+    qc.invalidateQueries({ queryKey: ["admin-past-exam-question-counts"] });
   };
 
   const handleSave = async () => {
@@ -145,10 +147,14 @@ const AdminPastExams = () => {
     setSaving(true);
     try {
       if (editingModel) {
-        // Block publishing empty models
+        // Block publishing empty models — verify against DB directly (cache may be stale)
         if (isPublished && !editingModel.is_published) {
-          const currentCount = questionCounts[editingModel.id] || 0;
-          if (currentCount === 0) {
+          const { count, error: countErr } = await supabase
+            .from("past_exam_model_questions")
+            .select("id", { count: "exact", head: true })
+            .eq("model_id", editingModel.id);
+          if (countErr) throw countErr;
+          if ((count || 0) === 0) {
             toast({ variant: "destructive", title: "لا يمكن نشر نموذج فارغ", description: "أضف الأسئلة أولاً قبل النشر" });
             setSaving(false);
             return;
@@ -160,8 +166,12 @@ const AdminPastExams = () => {
           suggested_duration_minutes: suggestedParsed,
         } as any).eq("id", editingModel.id);
         if (error) throw error;
-        toast({ title: "تم تحديث النموذج" });
+        toast({
+          title: "تم تحديث النموذج",
+          description: isPublished ? "✓ النموذج منشور للطلاب الآن" : "تم الحفظ كمسودة",
+        });
         qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
+        qc.invalidateQueries({ queryKey: ["admin-past-exam-question-counts"] });
         setShowForm(false);
         resetForm();
         // Editing: do NOT show success banner, do NOT auto-open questions editor
@@ -324,8 +334,15 @@ const AdminPastExams = () => {
                   <Label>يتطلب اشتراك</Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Switch checked={isPublished} onCheckedChange={setIsPublished} />
+                  <Switch
+                    checked={isPublished}
+                    onCheckedChange={setIsPublished}
+                    disabled={!!editingModel && (questionCounts[editingModel.id] || 0) === 0}
+                  />
                   <Label>منشور</Label>
+                  {editingModel && (questionCounts[editingModel.id] || 0) === 0 && (
+                    <span className="text-[11px] text-destructive">أضف الأسئلة أولاً</span>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2">
