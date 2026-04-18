@@ -222,6 +222,16 @@ const AdminContent = () => {
     setLoading(false);
   };
 
+  const refreshData = async () => {
+    setRefreshing(true);
+    try {
+      await fetchData();
+      toast({ title: "تم تحديث الأعداد", description: "تم جلب أحدث الدروس والأسئلة من قاعدة البيانات." });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => { if (!authLoading) fetchData(); }, [authLoading]);
 
   const { getAllowedMajorIds, loading: scopeLoading } = useModeratorScope(
