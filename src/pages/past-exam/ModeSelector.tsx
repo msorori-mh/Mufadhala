@@ -52,15 +52,14 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
   const navigate = useNavigate();
   const hasDuration = (model.duration_minutes ?? 0) > 0;
   const [savedDuration, setSavedDuration] = useState<number | null>(() => readSavedDuration(model.id));
-  // Smart default: saved > admin suggested > 1-min-per-question > 30
-  const computedSuggestedDefault = Math.max(
-    MIN_DURATION,
-    savedDuration
-      ?? model.suggested_duration_minutes
-      ?? (model.duration_minutes && model.duration_minutes > 0 ? model.duration_minutes : 0)
-      ?? 0
-      || (totalQuestions > 0 ? totalQuestions : 30)
-  );
+  // Smart default: saved > admin suggested > admin fixed > 1-min-per-question > 30
+  const computedSuggestedDefault = (() => {
+    if (savedDuration) return Math.max(MIN_DURATION, savedDuration);
+    if (model.suggested_duration_minutes) return Math.max(MIN_DURATION, model.suggested_duration_minutes);
+    if (model.duration_minutes && model.duration_minutes > 0) return Math.max(MIN_DURATION, model.duration_minutes);
+    if (totalQuestions > 0) return Math.max(MIN_DURATION, totalQuestions);
+    return 30;
+  })();
   const suggestedDefault = computedSuggestedDefault;
 
   const handleResetSavedDuration = () => {
