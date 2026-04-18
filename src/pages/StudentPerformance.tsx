@@ -575,13 +575,26 @@ const StudentPerformance = () => {
               {filteredLessons.map((l) => {
                 const done = completedLessonIds.has(l.id);
                 const qCount = questionCountMap.get(l.id) ?? 0;
+                const acc = lessonAccuracyMap.get(l.id);
+                const accPct = acc && acc.answered > 0 ? Math.round((acc.correct / acc.answered) * 100) : null;
+                const accColor =
+                  accPct === null ? "text-muted-foreground" :
+                  accPct >= 70 ? "text-green-600 dark:text-green-400" :
+                  accPct >= 50 ? "text-amber-600 dark:text-amber-400" :
+                  "text-red-600 dark:text-red-400";
                 return (
                   <div key={l.id} className={`flex items-center justify-between text-sm p-2 rounded-lg ${done ? "bg-green-50 dark:bg-green-950/20" : "bg-muted/50"}`}>
-                    <div className="flex items-center gap-2 truncate max-w-[65%]">
+                    <div className="flex items-center gap-2 truncate max-w-[55%]">
                       {done ? <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" /> : <XCircle className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
                       <span className="text-foreground truncate">{l.title}</span>
                     </div>
                     <div className="flex items-center gap-2">
+                      <span
+                        className={`text-xs font-medium tabular-nums ${accColor}`}
+                        title={accPct === null ? "لم تتم الإجابة بعد" : `${acc!.correct}/${acc!.answered} إجابة صحيحة`}
+                      >
+                        {accPct === null ? "—" : `${accPct}%`}
+                      </span>
                       <span className="text-xs text-muted-foreground">{qCount} سؤال</span>
                       <Badge variant={done ? "default" : "outline"} className="text-xs">
                         {done ? "✓" : "—"}
