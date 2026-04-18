@@ -303,6 +303,38 @@ const LessonsList = () => {
               </div>
             )}
 
+            {/* Grade level filter */}
+            {!isOffline && lessons.length > 0 && !searchQuery && (() => {
+              const hasAnyGrade = lessons.some(l => l.grade_level);
+              if (!hasAnyGrade) return null;
+              const grades: { value: string; label: string }[] = [
+                { value: "all", label: "كل الصفوف" },
+                { value: "1", label: "أول ثانوي" },
+                { value: "2", label: "ثاني ثانوي" },
+                { value: "3", label: "ثالث ثانوي" },
+              ];
+              return (
+                <div className="flex gap-1.5 flex-wrap mb-3">
+                  {grades.map(g => {
+                    const count = g.value === "all"
+                      ? lessons.length
+                      : lessons.filter(l => l.grade_level === Number(g.value)).length;
+                    if (g.value !== "all" && count === 0) return null;
+                    return (
+                      <Badge
+                        key={g.value}
+                        variant={activeGradeFilter === g.value ? "default" : "outline"}
+                        className="cursor-pointer text-xs"
+                        onClick={() => setActiveGradeFilter(g.value)}
+                      >
+                        {g.label}{g.value !== "all" ? ` (${count})` : ""}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
             {/* Subject filter tabs */}
             {!isOffline && subjects.length > 0 && !searchQuery && (
               <div className="flex gap-1.5 flex-wrap mb-4">
