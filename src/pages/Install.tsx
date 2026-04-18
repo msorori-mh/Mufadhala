@@ -136,6 +136,16 @@ export default function Install() {
           <Badge variant="secondary" className="text-sm">امسح • ثبّت • ابدأ التحضير</Badge>
         </header>
 
+        {/* Prominent WhatsApp Share CTA */}
+        <Button
+          onClick={shareWhatsApp}
+          size="lg"
+          className="w-full h-14 text-base font-bold gap-3 bg-[#25D366] hover:bg-[#1FB855] text-white shadow-lg hover:shadow-xl transition-all border-0"
+        >
+          <Share2 className="w-5 h-5" />
+          شارك التطبيق الآن عبر واتساب
+        </Button>
+
         {/* QR Card */}
         <Card className="border-primary/20 shadow-xl">
           <CardContent className="p-6 sm:p-8 flex flex-col items-center gap-5">
