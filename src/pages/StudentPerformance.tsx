@@ -27,6 +27,7 @@ import {
 interface ExamRow {
   id: string; score: number; total: number;
   completed_at: string | null; major_id: string;
+  answers?: Record<string, string> | null;
 }
 
 interface LessonRow {
@@ -67,7 +68,7 @@ const StudentPerformance = () => {
 
       // Fetch deduplicated lessons + exams + progress + subjects in parallel
       const [{ data: exams }, lessonResult, { data: prog }, { data: peers }, { data: subjectsData }] = await Promise.all([
-        supabase.from("exam_attempts").select("id, score, total, completed_at, major_id")
+        supabase.from("exam_attempts").select("id, score, total, completed_at, major_id, answers")
           .eq("student_id", student.id).not("completed_at", "is", null).order("completed_at", { ascending: true }),
         supabase.from("lessons").select("id, title, major_id, subject_id")
           .in("subject_id", subjectIds).eq("is_published", true).order("display_order"),
@@ -146,6 +147,28 @@ const StudentPerformance = () => {
 
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("all");
   const [hideCompleted, setHideCompleted] = useState(false);
+
+  // Per-lesson correct-rate map from all student's exam attempts
+  // Map: lessonId -> { correct, answered }
+  const lessonAccuracyMap = (() => {
+    const map = new Map<string, { correct: number; answered: number }>();
+    if (!questions.length || !attempts.length) return map;
+    const qById = new Map<string, QuestionRow>();
+    questions.forEach((q) => qById.set(q.id, q));
+    attempts.forEach((att) => {
+      const ans = att.answers;
+      if (!ans || typeof ans !== "object") return;
+      Object.entries(ans).forEach(([qId, picked]) => {
+        const q = qById.get(qId);
+        if (!q) return;
+        const cur = map.get(q.lesson_id) ?? { correct: 0, answered: 0 };
+        cur.answered += 1;
+        if (typeof picked === "string" && picked === q.correct_option) cur.correct += 1;
+        map.set(q.lesson_id, cur);
+      });
+    });
+    return map;
+  })();
 
   // Filtered lessons by subject
   const subjectFilteredLessons = selectedSubjectId === "all"
@@ -552,13 +575,26 @@ const StudentPerformance = () => {
               {filteredLessons.map((l) => {
                 const done = completedLessonIds.has(l.id);
                 const qCount = questionCountMap.get(l.id) ?? 0;
+                const acc = lessonAccuracyMap.get(l.id);
+                const accPct = acc && acc.answered > 0 ? Math.round((acc.correct / acc.answered) * 100) : null;
+                const accColor =
+                  accPct === null ? "text-muted-foreground" :
+                  accPct >= 70 ? "text-green-600 dark:text-green-400" :
+                  accPct >= 50 ? "text-amber-600 dark:text-amber-400" :
+                  "text-red-600 dark:text-red-400";
                 return (
                   <div key={l.id} className={`flex items-center justify-between text-sm p-2 rounded-lg ${done ? "bg-green-50 dark:bg-green-950/20" : "bg-muted/50"}`}>
-                    <div className="flex items-center gap-2 truncate max-w-[65%]">
+                    <div className="flex items-center gap-2 truncate max-w-[55%]">
                       {done ? <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" /> : <XCircle className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
                       <span className="text-foreground truncate">{l.title}</span>
                     </div>
                     <div className="flex items-center gap-2">
+                      <span
+                        className={`text-xs font-medium tabular-nums ${accColor}`}
+                        title={accPct === null ? "لم تتم الإجابة بعد" : `${acc!.correct}/${acc!.answered} إجابة صحيحة`}
+                      >
+                        {accPct === null ? "—" : `${accPct}%`}
+                      </span>
                       <span className="text-xs text-muted-foreground">{qCount} سؤال</span>
                       <Badge variant={done ? "default" : "outline"} className="text-xs">
                         {done ? "✓" : "—"}
