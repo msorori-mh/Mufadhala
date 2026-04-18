@@ -277,6 +277,16 @@ export async function generateBrochurePDF(_qrCanvas: HTMLCanvasElement): Promise
 
     // A4 = 210 x 297 mm — fill the page
     pdf.addImage(imgData, "JPEG", 0, 0, 210, 297, undefined, "FAST");
+
+    // Make the entire QR area + URL text a clickable link to the canonical install URL.
+    // This guarantees that any tap in the PDF — even outside scanning — opens
+    // mufadhala.com/install, regardless of which environment generated the file.
+    // QR section sits roughly in the vertical middle of the A4 page.
+    // Coordinates in mm (A4: 210 × 297). Tuned to cover QR image + URL caption.
+    pdf.link(60, 110, 90, 90, { url: INSTALL_URL });
+    // Footer-level link covering the displayed "mufadhala.com/install" text.
+    pdf.link(60, 200, 90, 10, { url: INSTALL_URL });
+
     pdf.save("mufadhala-brochure.pdf");
   } finally {
     document.body.removeChild(container);
