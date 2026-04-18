@@ -17,7 +17,7 @@ import { useModeratorScope } from "@/hooks/useModeratorScope";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles, ChevronDown, ChevronUp, Search, Presentation, CheckSquare } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, FileText, HelpCircle, Upload, Download, Sparkles, ChevronDown, ChevronUp, Search, Presentation, CheckSquare, RefreshCw } from "lucide-react";
 import * as XLSX from "xlsx";
 import { parseWorkbook, executeImport, downloadUnifiedTemplate, type ImportReport, type ValidationError } from "@/services/importEngine";
 
@@ -110,6 +110,7 @@ const AdminContent = () => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Filters — subject-based
   const [filterSubject, setFilterSubject] = useState("");
@@ -219,6 +220,16 @@ const AdminContent = () => {
     setQuestions(qAll);
     if (subs) setSubjects(subs as Subject[]);
     setLoading(false);
+  };
+
+  const refreshData = async () => {
+    setRefreshing(true);
+    try {
+      await fetchData();
+      toast({ title: "تم تحديث الأعداد", description: "تم جلب أحدث الدروس والأسئلة من قاعدة البيانات." });
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   useEffect(() => { if (!authLoading) fetchData(); }, [authLoading]);
@@ -842,6 +853,10 @@ const AdminContent = () => {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button onClick={refreshData} size="sm" variant="outline" disabled={refreshing || loading}>
+              <RefreshCw className={`w-4 h-4 ml-1 ${refreshing ? "animate-spin" : ""}`} />
+              {refreshing ? "جارٍ التحديث..." : "إعادة تحميل"}
+            </Button>
             <Button onClick={exportLessons} size="sm" variant="outline">
               <Download className="w-4 h-4 ml-1" />تصدير
             </Button>
