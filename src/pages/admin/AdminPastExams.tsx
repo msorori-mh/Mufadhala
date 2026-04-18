@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import NativeSelect from "@/components/NativeSelect";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -319,6 +320,96 @@ const AdminPastExams = () => {
     }
   };
 
+  // ===== Bulk actions =====
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkPublish = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    try {
+      // Verify each has questions; skip empty ones
+      const { data: counts, error: cErr } = await supabase
+        .from("past_exam_model_questions")
+        .select("model_id")
+        .in("model_id", ids);
+      if (cErr) throw cErr;
+      const haveQs = new Set((counts || []).map((r: any) => r.model_id));
+      const publishable = ids.filter((id) => haveQs.has(id));
+      const skipped = ids.length - publishable.length;
+      if (publishable.length === 0) {
+        toast({ variant: "destructive", title: "لا يمكن نشر النماذج الفارغة", description: "كل النماذج المحددة بدون أسئلة" });
+        return;
+      }
+      const { error } = await supabase
+        .from("past_exam_models")
+        .update({ is_published: true } as any)
+        .in("id", publishable);
+      if (error) throw error;
+      await qc.refetchQueries({ queryKey: ["admin-past-exam-models"] });
+      toast({
+        title: `✓ تم نشر ${publishable.length} نموذج`,
+        description: skipped > 0 ? `تم تجاهل ${skipped} نموذج فارغ` : undefined,
+      });
+      clearSelection();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر النشر الجماعي", description: err?.message || "حدث خطأ" });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const handleBulkUnpublish = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    if (!confirm(`إرجاع ${ids.length} نموذج إلى مسودة؟ ستختفي عن الطلاب فوراً.`)) return;
+    setBulkBusy(true);
+    try {
+      const { error } = await supabase
+        .from("past_exam_models")
+        .update({ is_published: false } as any)
+        .in("id", ids);
+      if (error) throw error;
+      await qc.refetchQueries({ queryKey: ["admin-past-exam-models"] });
+      toast({ title: `تم إرجاع ${ids.length} نموذج إلى مسودة` });
+      clearSelection();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر إلغاء النشر الجماعي", description: err?.message || "حدث خطأ" });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const handleBulkDelete = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    if (!confirm(`حذف ${ids.length} نموذج وجميع أسئلته نهائياً؟ لا يمكن التراجع.`)) return;
+    setBulkBusy(true);
+    try {
+      const { error: e1 } = await supabase.from("past_exam_model_questions").delete().in("model_id", ids);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("past_exam_models").delete().in("id", ids);
+      if (e2) throw e2;
+      await qc.refetchQueries({ queryKey: ["admin-past-exam-models"] });
+      await qc.refetchQueries({ queryKey: ["admin-past-exam-question-counts"] });
+      toast({ title: `تم حذف ${ids.length} نموذج` });
+      if (showQuestions && ids.includes(showQuestions)) setShowQuestions(null);
+      clearSelection();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر الحذف الجماعي", description: err?.message || "حدث خطأ" });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <PermissionGate permission="past_exams">
@@ -500,15 +591,87 @@ const AdminPastExams = () => {
           if (filtered.length === 0) {
             return <p className="text-center text-muted-foreground py-8">لا توجد نماذج تطابق الفلاتر</p>;
           }
+          const filteredIds = filtered.map((m) => m.id);
+          const selectedFilteredIds = filteredIds.filter((id) => selectedIds.has(id));
+          const allSelected = filteredIds.length > 0 && selectedFilteredIds.length === filteredIds.length;
+          const someSelected = selectedFilteredIds.length > 0 && !allSelected;
+          const toggleAll = () => {
+            if (allSelected) {
+              setSelectedIds((prev) => {
+                const next = new Set(prev);
+                filteredIds.forEach((id) => next.delete(id));
+                return next;
+              });
+            } else {
+              setSelectedIds((prev) => {
+                const next = new Set(prev);
+                filteredIds.forEach((id) => next.add(id));
+                return next;
+              });
+            }
+          };
           return (
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">عرض {filtered.length} من {models.length}</p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                  onCheckedChange={toggleAll}
+                  aria-label="تحديد الكل"
+                />
+                <p className="text-xs text-muted-foreground">
+                  عرض {filtered.length} من {models.length}
+                  {selectedFilteredIds.length > 0 && (
+                    <span className="text-primary font-semibold"> · محدد {selectedFilteredIds.length}</span>
+                  )}
+                </p>
+              </div>
+              {selectedFilteredIds.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Button
+                    size="sm"
+                    className="h-8 text-xs gap-1 bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                    disabled={bulkBusy}
+                    onClick={() => handleBulkPublish(selectedFilteredIds)}
+                  >
+                    <Eye className="w-3.5 h-3.5" /> نشر المحدد
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs gap-1"
+                    disabled={bulkBusy}
+                    onClick={() => handleBulkUnpublish(selectedFilteredIds)}
+                  >
+                    <EyeOff className="w-3.5 h-3.5" /> إلغاء النشر
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="h-8 text-xs gap-1"
+                    disabled={bulkBusy}
+                    onClick={() => handleBulkDelete(selectedFilteredIds)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> حذف المحدد
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={clearSelection} disabled={bulkBusy}>
+                    إلغاء التحديد
+                  </Button>
+                </div>
+              )}
+            </div>
             {filtered.map((m) => {
               const qCount = questionCounts[m.id] || 0;
               const isEmpty = qCount === 0;
+              const isSelected = selectedIds.has(m.id);
               return (
-              <Card key={m.id} className={`hover:shadow-sm transition-shadow ${isEmpty ? "border-destructive/30" : ""}`}>
+              <Card key={m.id} className={`hover:shadow-sm transition-shadow ${isEmpty ? "border-destructive/30" : ""} ${isSelected ? "ring-2 ring-primary/40" : ""}`}>
                 <CardContent className="flex items-center gap-3 p-4">
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => toggleSelect(m.id)}
+                    aria-label={`تحديد ${m.title}`}
+                  />
                   <FileText className="w-5 h-5 text-primary shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate">{m.title}</p>
