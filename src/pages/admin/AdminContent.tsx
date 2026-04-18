@@ -185,8 +185,8 @@ const AdminContent = () => {
       supabase.from("universities").select("*").order("display_order"),
       supabase.from("colleges").select("*").order("display_order"),
       supabase.from("majors").select("*").order("display_order"),
-      supabase.from("lessons").select("*").order("display_order"),
-      supabase.from("questions").select("*").order("display_order"),
+      supabase.from("lessons").select("*").order("display_order").limit(5000),
+      supabase.from("questions").select("*").order("display_order").limit(20000),
       supabase.from("subjects").select("id, name_ar, code").eq("is_active", true).order("display_order"),
     ]);
     if (u) setUniversities(u);
