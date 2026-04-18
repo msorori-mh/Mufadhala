@@ -11,6 +11,7 @@ import { useOfflineExamSync } from "./hooks/useOfflineExamSync";
 import { useEffect } from "react";
 import { initializeCapacitor } from "./lib/capacitor";
 import { useBottomNavVisible } from "./hooks/useBottomNavVisible";
+import { useAppRefresh } from "./hooks/useAppRefresh";
 
 // Eager imports — critical student pages (no spinner on navigation)
 import Index from "./pages/Index";
