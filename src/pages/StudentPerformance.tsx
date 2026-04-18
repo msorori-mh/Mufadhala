@@ -145,13 +145,18 @@ const StudentPerformance = () => {
   const filterType = filter?.type ?? "major";
 
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("all");
+  const [hideCompleted, setHideCompleted] = useState(false);
 
   // Filtered lessons by subject
-  const filteredLessons = selectedSubjectId === "all"
+  const subjectFilteredLessons = selectedSubjectId === "all"
     ? lessons
     : lessons.filter(l => l.subject_id === selectedSubjectId);
-  const filteredCompleted = filteredLessons.filter(l => completedLessonIds.has(l.id)).length;
-  const filteredCompletionPct = filteredLessons.length > 0 ? Math.round((filteredCompleted / filteredLessons.length) * 100) : 0;
+  const filteredCompleted = subjectFilteredLessons.filter(l => completedLessonIds.has(l.id)).length;
+  const filteredCompletionPct = subjectFilteredLessons.length > 0 ? Math.round((filteredCompleted / subjectFilteredLessons.length) * 100) : 0;
+  // Apply "hide completed" only to the visible list
+  const filteredLessons = hideCompleted
+    ? subjectFilteredLessons.filter(l => !completedLessonIds.has(l.id))
+    : subjectFilteredLessons;
 
   if (authLoading || loading) {
     return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
@@ -521,12 +526,25 @@ const StudentPerformance = () => {
               </div>
             )}
 
-            {/* Progress bar for selected filter */}
-            <div className="space-y-1">
+            {/* Hide-completed toggle + Progress */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => setHideCompleted(v => !v)}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
+                    hideCompleted
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
+                  }`}
+                  aria-pressed={hideCompleted}
+                >
+                  {hideCompleted ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                  {hideCompleted ? "إظهار المكتمل" : "إخفاء المكتمل"}
+                </button>
+                <p className="text-xs text-muted-foreground" dir="ltr">{filteredCompletionPct}%</p>
+              </div>
               <Progress value={filteredCompletionPct} className="h-2" />
-              <p className="text-xs text-muted-foreground text-left" dir="ltr">
-                {filteredCompletionPct}%
-              </p>
             </div>
 
             {/* Lesson list */}
@@ -549,7 +567,13 @@ const StudentPerformance = () => {
                   </div>
                 );
               })}
-              {filteredLessons.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">لا توجد دروس</p>}
+              {filteredLessons.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  {hideCompleted && subjectFilteredLessons.length > 0
+                    ? "🎉 جميع الدروس في هذا التصنيف مكتملة!"
+                    : "لا توجد دروس"}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
