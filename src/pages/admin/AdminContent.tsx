@@ -855,6 +855,29 @@ const AdminContent = () => {
           </select>
         </div>
 
+        {/* Selected subject quick-summary (always visible when subject chosen) */}
+        {filterSubject && (() => {
+          const subj = subjects.find(s => s.id === filterSubject);
+          const subjLessons = scopedLessons.filter(l =>
+            l.subject_id === filterSubject &&
+            (!filterGradeLevel || l.grade_level === Number(filterGradeLevel))
+          );
+          const subjQuestions = questions.filter(q => subjLessons.some(l => l.id === q.lesson_id)).length;
+          const gradeLabel = filterGradeLevel
+            ? (GRADE_LEVELS.find(g => g.value === Number(filterGradeLevel))?.label || "")
+            : "جميع الصفوف";
+          return (
+            <div className="text-sm bg-primary/5 border border-primary/20 rounded-md px-3 py-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="text-muted-foreground">المادة المختارة:</span>
+              <span className="font-semibold text-foreground">{subj?.name_ar || "—"}</span>
+              <span className="text-muted-foreground">—</span>
+              <span className="font-semibold text-foreground">{gradeLabel}</span>
+              <span className="text-muted-foreground">→</span>
+              <span className="font-bold text-primary">{subjLessons.length} درس · {subjQuestions} سؤال</span>
+            </div>
+          );
+        })()}
+
         {/* Search results summary */}
         {(filterSubject || filterGradeLevel || filterPublished) && (
           <Card className="bg-muted/40 border-dashed">
