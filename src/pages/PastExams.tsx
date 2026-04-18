@@ -54,13 +54,6 @@ const PastExams = () => {
     enabled: !!effectiveUniversityId,
   });
 
-  // Determine the first model (by year asc, then order) as the free one
-  const firstFreeModelId = useMemo(() => {
-    if (models.length === 0) return null;
-    const sorted = [...models].sort((a, b) => a.year - b.year);
-    return sorted[0]?.id ?? null;
-  }, [models]);
-
   // Flat list sorted by year descending
   const sortedModels = useMemo(
     () => [...models].sort((a, b) => b.year - a.year),
@@ -130,8 +123,7 @@ const PastExams = () => {
               </p>
             )}
             {sortedModels.map((model, idx) => {
-              const isFirstFree = model.id === firstFreeModelId;
-              const locked = !isFirstFree && !hasActiveSubscription;
+              const locked = model.is_paid && !hasActiveSubscription;
               const prevYear = idx > 0 ? sortedModels[idx - 1].year : null;
               const isYearBoundary = idx > 0 && prevYear !== model.year;
               return (
@@ -171,11 +163,15 @@ const PastExams = () => {
                           )}
                         </p>
                       </div>
-                      {locked ? (
-                        <Badge variant="secondary" className="text-[10px] shrink-0">مدفوع</Badge>
-                      ) : (
-                        <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0" />
+                      {model.is_paid && (
+                        <Badge variant="secondary" className="text-[10px] shrink-0">
+                          {locked ? "مدفوع" : "مدفوع ✓"}
+                        </Badge>
                       )}
+                      {!model.is_paid && (
+                        <Badge variant="outline" className="text-[10px] shrink-0 border-secondary/40 text-secondary">مجاني</Badge>
+                      )}
+                      {!locked && <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0" />}
                     </CardContent>
                   </Card>
                 </div>
