@@ -119,6 +119,8 @@ const AdminPastExams = () => {
     setShowForm(true);
     setShowQuestions(null);
     setJustCreatedId(null); // editing must NOT show "created" banner
+    // Force fresh question count to avoid stale-cache blocking publish
+    qc.invalidateQueries({ queryKey: ["admin-past-exam-question-counts"] });
   };
 
   const handleSave = async () => {
