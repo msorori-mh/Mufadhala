@@ -12,6 +12,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, BookOpen, Timer, AlertTriangle, Lock, EyeOff, LogOut, Sparkles, Lightbulb, Smile, Flame, Trophy, GraduationCap, Scale } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -28,8 +30,11 @@ interface Props {
   totalQuestions: number;
   isFreeModel?: boolean;
   onSelectTraining: () => void;
-  onSelectStrict: () => void;
+  onSelectStrict: (customDurationMinutes?: number) => void;
 }
+
+const QUICK_DURATIONS = [30, 45, 60, 90, 120];
+const MIN_DURATION = 30;
 
 const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, onSelectStrict }: Props) => {
   const navigate = useNavigate();
@@ -37,6 +42,8 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
+  const [durationPickerOpen, setDurationPickerOpen] = useState(false);
+  const [customDuration, setCustomDuration] = useState<number>(60);
 
   const { user } = useAuth();
   const { data: student } = useStudentData(user?.id);
@@ -48,15 +55,30 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
     staleTime: 30_000,
   });
 
-  const openStrictConfirm = () => {
-    if (!hasDuration) return;
+  const openStrictFlow = () => {
+    if (hasDuration) {
+      setAcknowledged(false);
+      setConfirmOpen(true);
+    } else {
+      setCustomDuration(60);
+      setDurationPickerOpen(true);
+    }
+  };
+
+  const handleDurationConfirm = () => {
+    if (customDuration < MIN_DURATION) return;
+    setDurationPickerOpen(false);
     setAcknowledged(false);
     setConfirmOpen(true);
   };
 
   const handleConfirmStart = () => {
     setConfirmOpen(false);
-    onSelectStrict();
+    if (hasDuration) {
+      onSelectStrict();
+    } else {
+      onSelectStrict(customDuration);
+    }
   };
 
   return (
@@ -162,10 +184,10 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
 
         {/* Strict Mode */}
         <Card
-          className={`relative overflow-hidden border-2 transition-all ${hasDuration ? "border-destructive/30 hover:border-destructive cursor-pointer active:scale-[0.99] hover:shadow-lg" : "border-border opacity-60"}`}
-          onClick={hasDuration ? openStrictConfirm : undefined}
+          className="relative overflow-hidden border-2 border-destructive/30 hover:border-destructive transition-all cursor-pointer active:scale-[0.99] hover:shadow-lg"
+          onClick={openStrictFlow}
         >
-          <div className={`absolute top-0 left-0 w-full h-1 ${hasDuration ? "bg-destructive" : "bg-muted"}`} />
+          <div className="absolute top-0 left-0 w-full h-1 bg-destructive" />
           <CardContent className="p-5 space-y-4">
             <div className="flex items-start gap-3">
               <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center shrink-0 ring-2 ring-destructive/20">
@@ -178,6 +200,11 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
                     <Flame className="w-3 h-3" />
                     تحدّي
                   </Badge>
+                  {!hasDuration && (
+                    <Badge variant="outline" className="text-[10px] px-2 py-0 border-dashed">
+                      أنت تحدد المدة
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                   <GraduationCap className="w-3 h-3" />
@@ -189,7 +216,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
             <div className="grid grid-cols-3 gap-2 py-2 border-y border-border/50">
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground">المؤقت</p>
-                <p className="text-xs font-bold text-destructive mt-0.5">{hasDuration ? `${model.duration_minutes} د` : "—"}</p>
+                <p className="text-xs font-bold text-destructive mt-0.5">{hasDuration ? `${model.duration_minutes} د` : "اختر المدة"}</p>
               </div>
               <div className="text-center border-x border-border/50">
                 <p className="text-[10px] text-muted-foreground">الإجابات</p>
@@ -206,26 +233,17 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
               <li className="flex items-center gap-2"><EyeOff className="w-3.5 h-3.5 text-destructive" /> بدون كشف للإجابات</li>
               <li className="flex items-center gap-2"><Trophy className="w-3.5 h-3.5 text-destructive" /> نتيجة ومراجعة شاملة</li>
             </ul>
-            {hasDuration && (
-              <PastExamModeMiniStats
-                stats={stats?.strict ?? { attempts: 0, avgPct: 0, bestPct: 0, lastPcts: [] }}
-                variant="strict"
-                loading={statsLoading}
-                isPaid={isPaid}
-                isFreeModel={isFreeModel}
-              />
-            )}
-            {hasDuration ? (
-              <Button className="w-full" variant="destructive" onClick={(e) => { e.stopPropagation(); openStrictConfirm(); }}>
-                <Lock className="w-4 h-4 ml-1.5" />
-                ابدأ الامتحان الصارم
-              </Button>
-            ) : (
-              <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/40 rounded-lg p-3">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>هذا النموذج لا يحتوي على مدة محددة. يرجى التواصل مع الإدارة لإضافة مدة الاختبار.</span>
-              </div>
-            )}
+            <PastExamModeMiniStats
+              stats={stats?.strict ?? { attempts: 0, avgPct: 0, bestPct: 0, lastPcts: [] }}
+              variant="strict"
+              loading={statsLoading}
+              isPaid={isPaid}
+              isFreeModel={isFreeModel}
+            />
+            <Button className="w-full" variant="destructive" onClick={(e) => { e.stopPropagation(); openStrictFlow(); }}>
+              <Lock className="w-4 h-4 ml-1.5" />
+              ابدأ الامتحان الصارم
+            </Button>
           </CardContent>
         </Card>
       </main>
@@ -251,7 +269,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
               <div className="text-sm">
                 <p className="font-bold text-foreground">المؤقت لا يمكن إيقافه</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  سيستمر العد التنازلي ({model.duration_minutes} دقيقة) حتى لو أغلقت التطبيق.
+                  سيستمر العد التنازلي ({hasDuration ? model.duration_minutes : customDuration} دقيقة) حتى لو أغلقت التطبيق.
                 </p>
               </div>
             </div>
@@ -303,11 +321,76 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Duration Picker Dialog (only when admin didn't set a duration) */}
+      <Dialog open={durationPickerOpen} onOpenChange={setDurationPickerOpen}>
+        <DialogContent dir="rtl" className="max-w-md">
+          <DialogHeader>
+            <div className="mx-auto w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mb-2">
+              <Timer className="w-7 h-7 text-destructive" />
+            </div>
+            <DialogTitle className="text-center text-lg">حدد مدة الاختبار</DialogTitle>
+            <DialogDescription className="text-center text-sm">
+              اختر المدة التي ترغب بإكمال الاختبار خلالها (الحد الأدنى {MIN_DURATION} دقيقة).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-3 gap-2">
+              {QUICK_DURATIONS.map((d) => (
+                <Button
+                  key={d}
+                  type="button"
+                  variant={customDuration === d ? "destructive" : "outline"}
+                  className="h-12 text-sm font-bold"
+                  onClick={() => setCustomDuration(d)}
+                >
+                  {d} د
+                </Button>
+              ))}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-foreground">أو أدخل مدة مخصصة (دقائق)</label>
+              <Input
+                type="number"
+                min={MIN_DURATION}
+                step={5}
+                value={customDuration}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10);
+                  setCustomDuration(Number.isFinite(v) ? v : 0);
+                }}
+                className="h-11 text-base text-center font-bold"
+              />
+              {customDuration < MIN_DURATION && (
+                <p className="text-[11px] text-destructive">يجب ألا تقل المدة عن {MIN_DURATION} دقيقة.</p>
+              )}
+            </div>
+
+            <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/40 rounded-lg p-3">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>بمجرد البدء لا يمكن تعديل المدة أو إيقاف المؤقت.</span>
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setDurationPickerOpen(false)}>إلغاء</Button>
+            <Button
+              variant="destructive"
+              disabled={customDuration < MIN_DURATION}
+              onClick={handleDurationConfirm}
+            >
+              متابعة
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Detailed Comparison Dialog */}
       <PastExamModesComparisonDialog
         open={compareOpen}
         onOpenChange={setCompareOpen}
-        durationMinutes={model.duration_minutes}
+        durationMinutes={model.duration_minutes ?? customDuration}
         totalQuestions={totalQuestions}
       />
     </div>
