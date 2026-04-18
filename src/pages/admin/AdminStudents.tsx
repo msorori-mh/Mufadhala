@@ -124,8 +124,9 @@ const AdminStudents = () => {
       if (filterCollegeId && s.college_id !== filterCollegeId) return false;
       if (filterMajorId && s.major_id !== filterMajorId) return false;
       if (search) {
+        const q = search.toLowerCase().trim();
         const name = getFullName(s).toLowerCase();
-        return name.includes(search.toLowerCase()) || s.coordination_number?.includes(search);
+        return name.includes(q) || (s.phone || "").toLowerCase().includes(q);
       }
       return true;
     });
