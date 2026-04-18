@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, ArrowRight, FileText, Save, Upload, Download, Copy, EyeOff } from "lucide-react";
+import { Plus, Trash2, ArrowRight, FileText, Save, Upload, Download, Copy, EyeOff, Eye } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { parsePastExamFile, downloadTemplate, type ParsedQuestion, type ParseError } from "@/services/pastExamImport";
 
@@ -225,6 +225,36 @@ const AdminPastExams = () => {
       toast({ variant: "destructive", title: "تعذر إلغاء النشر", description: err?.message || "حدث خطأ" });
     } finally {
       setUnpublishingId(null);
+    }
+  };
+
+  const [publishingId, setPublishingId] = useState<string | null>(null);
+  const handleQuickPublish = async (m: Model) => {
+    // Verify against DB directly to avoid stale cache
+    setPublishingId(m.id);
+    try {
+      const { count, error: countErr } = await supabase
+        .from("past_exam_model_questions")
+        .select("id", { count: "exact", head: true })
+        .eq("model_id", m.id);
+      if (countErr) throw countErr;
+      if ((count || 0) === 0) {
+        toast({ variant: "destructive", title: "لا يمكن نشر نموذج فارغ", description: "أضف الأسئلة أولاً قبل النشر" });
+        return;
+      }
+      if (!confirm(`نشر النموذج "${m.title}" للطلاب الآن؟`)) return;
+      const { error } = await supabase
+        .from("past_exam_models")
+        .update({ is_published: true })
+        .eq("id", m.id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
+      qc.invalidateQueries({ queryKey: ["admin-past-exam-question-counts"] });
+      toast({ title: "✓ تم النشر", description: "النموذج منشور للطلاب الآن" });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر النشر", description: err?.message || "حدث خطأ" });
+    } finally {
+      setPublishingId(null);
     }
   };
 
@@ -479,7 +509,21 @@ const AdminPastExams = () => {
                         </Button>
                       </>
                     ) : (
-                      <Badge variant="outline" className="text-[10px]">مسودة</Badge>
+                      <>
+                        <Badge variant="outline" className="text-[10px]">مسودة</Badge>
+                        {!isEmpty && (
+                          <Button
+                            size="sm"
+                            className="h-7 text-[11px] px-2 gap-1 bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                            title="نشر النموذج للطلاب فوراً"
+                            disabled={publishingId === m.id}
+                            onClick={() => handleQuickPublish(m)}
+                          >
+                            <Eye className="w-3 h-3" />
+                            {publishingId === m.id ? "..." : "نشر سريع"}
+                          </Button>
+                        )}
+                      </>
                     )}
                     <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setJustCreatedId(null); setShowQuestions(m.id); }}>الأسئلة</Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>تعديل</Button>
