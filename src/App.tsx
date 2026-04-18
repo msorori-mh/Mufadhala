@@ -11,6 +11,7 @@ import { useOfflineExamSync } from "./hooks/useOfflineExamSync";
 import { useEffect } from "react";
 import { initializeCapacitor } from "./lib/capacitor";
 import { useBottomNavVisible } from "./hooks/useBottomNavVisible";
+import { useAppRefresh } from "./hooks/useAppRefresh";
 
 // Eager imports — critical student pages (no spinner on navigation)
 import Index from "./pages/Index";
@@ -84,10 +85,11 @@ const InstallAppPrompt = lazy(() => import("./components/InstallAppPrompt"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 2 * 60 * 1000,
-      gcTime: 10 * 60 * 1000,
+      staleTime: 30 * 1000, // 30s — fresh data without overwhelming the network
+      gcTime: 5 * 60 * 1000,
       retry: 1,
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
     },
   },
 });
@@ -107,6 +109,7 @@ function PageLoader() {
 
 function OfflineExamSyncProvider({ children }: { children: React.ReactNode }) {
   useOfflineExamSync();
+  useAppRefresh();
   return <>{children}</>;
 }
 

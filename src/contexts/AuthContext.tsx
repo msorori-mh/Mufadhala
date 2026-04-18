@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { saveNativeSession, getNativeSession, clearNativeSession } from "@/lib/nativeSessionStorage";
 import { toast } from "sonner";
@@ -37,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => sessionStorage.getItem("supabase_recovery_mode") === "true"
   );
   const initialized = useRef(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (initialized.current) return;
@@ -115,6 +117,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
           fetchRoles(session.user.id);
           saveNativeSession(session.access_token, session.refresh_token);
+          // Refresh student-related data so admin updates appear without logout/login
+          queryClient.invalidateQueries({ queryKey: ["student"] });
+          queryClient.invalidateQueries({ queryKey: ["subscription"] });
         }
       } else {
         setUser(null);
