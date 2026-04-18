@@ -1,38 +1,26 @@
 
 
 ## الفهم
-إضافة شارة برتقالية بجانب اسم المادة في مصفوفة `/admin/reports/content` عندما تكون المادة فارغة (لا دروس ولا أسئلة عبر كل الصفوف).
+في `/admin/students` خانة البحث تعرض حالياً "بحث بالاسم أو رقم التنسيق..."، لكن البحث الفعلي يطابق على `name` و `coordination_number`. المطلوب تغييره ليكون البحث بالاسم أو رقم الهاتف.
 
 ## الحل
+ملف واحد: `src/pages/admin/AdminStudents.tsx`
 
-في `src/pages/admin/AdminReportsContent.tsx`، داخل خلية اسم المادة في الجدول، أضف شارة `Badge` (variant مخصص برتقالي) عند تحقق:
+### 1) تحديث منطق الفلترة (السطر 126-129)
 ```ts
-row.totalLessons === 0 && row.totalQuestions === 0
+if (search) {
+  const q = search.toLowerCase().trim();
+  const name = getFullName(s).toLowerCase();
+  return name.includes(q) || (s.phone || "").toLowerCase().includes(q);
+}
 ```
 
-### التغييرات
-- ملف واحد: `src/pages/admin/AdminReportsContent.tsx`
-- استيراد `Badge` من `@/components/ui/badge` وأيقونة `AlertCircle` من `lucide-react`
-- تحديث خلية `<TableCell className="font-medium">{row.name_ar}</TableCell>`:
-  ```tsx
-  <TableCell className="font-medium">
-    <div className="flex items-center gap-2">
-      <span>{row.name_ar}</span>
-      {row.totalLessons === 0 && row.totalQuestions === 0 && (
-        <Badge className="bg-orange-500 hover:bg-orange-500 text-white text-[10px] gap-1">
-          <AlertCircle className="w-3 h-3" />
-          فارغة
-        </Badge>
-      )}
-    </div>
-  </TableCell>
-  ```
-
-### اختياري (بنفس المنطق)
-نفس الشارة للجامعات الفارغة في مصفوفة الجامعات عند `row.models === 0 && row.questions === 0` بنص "بدون نماذج".
+### 2) تحديث نص الـ placeholder (السطر 292)
+```tsx
+<Input placeholder="بحث بالاسم أو رقم الهاتف..." ... />
+```
 
 ### النطاق
-- ملف واحد فقط
-- لا تغييرات DB
-- لا استعلامات إضافية
+- ملف واحد، تغييران سطريان.
+- لا تغييرات DB، لا تغيير في التصدير أو نموذج التعديل (لا يزال `coordination_number` يظهر في تفاصيل الطالب وفي ملف Excel — وهذا منفصل عن البحث).
 
