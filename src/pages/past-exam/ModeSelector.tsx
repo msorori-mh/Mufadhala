@@ -28,8 +28,11 @@ interface Props {
   totalQuestions: number;
   isFreeModel?: boolean;
   onSelectTraining: () => void;
-  onSelectStrict: () => void;
+  onSelectStrict: (customDurationMinutes?: number) => void;
 }
+
+const QUICK_DURATIONS = [30, 45, 60, 90, 120];
+const MIN_DURATION = 30;
 
 const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, onSelectStrict }: Props) => {
   const navigate = useNavigate();
@@ -37,6 +40,8 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
+  const [durationPickerOpen, setDurationPickerOpen] = useState(false);
+  const [customDuration, setCustomDuration] = useState<number>(60);
 
   const { user } = useAuth();
   const { data: student } = useStudentData(user?.id);
@@ -48,15 +53,30 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
     staleTime: 30_000,
   });
 
-  const openStrictConfirm = () => {
-    if (!hasDuration) return;
+  const openStrictFlow = () => {
+    if (hasDuration) {
+      setAcknowledged(false);
+      setConfirmOpen(true);
+    } else {
+      setCustomDuration(60);
+      setDurationPickerOpen(true);
+    }
+  };
+
+  const handleDurationConfirm = () => {
+    if (customDuration < MIN_DURATION) return;
+    setDurationPickerOpen(false);
     setAcknowledged(false);
     setConfirmOpen(true);
   };
 
   const handleConfirmStart = () => {
     setConfirmOpen(false);
-    onSelectStrict();
+    if (hasDuration) {
+      onSelectStrict();
+    } else {
+      onSelectStrict(customDuration);
+    }
   };
 
   return (
