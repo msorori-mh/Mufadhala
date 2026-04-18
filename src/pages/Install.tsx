@@ -96,9 +96,11 @@ export default function Install() {
           text: shareMessage,
           url: canonicalUrl,
         });
+        void trackShare("native");
       } else {
         await navigator.clipboard.writeText(shareMessage);
         toast.success("تم نسخ الرابط، الصقه في أي تطبيق");
+        void trackShare("native");
       }
     } catch (err) {
       // user cancelled or error — silent
@@ -106,11 +108,13 @@ export default function Install() {
   };
 
   const shareWhatsApp = () => {
+    void trackShare("whatsapp");
     const url = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const shareTelegram = () => {
+    void trackShare("telegram");
     const url = `https://t.me/share/url?url=${encodeURIComponent(canonicalUrl)}&text=${encodeURIComponent(shareMessage)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
