@@ -33,8 +33,8 @@ interface Props {
   onSelectStrict: (customDurationMinutes?: number) => void;
 }
 
-const QUICK_DURATIONS = [30, 45, 60, 90, 120];
-const MIN_DURATION = 30;
+const QUICK_DURATIONS = [10, 15, 30, 45, 60, 90];
+const MIN_DURATION = 5;
 const LAST_DURATION_KEY = (modelId: string) => `pastExam:lastDuration:${modelId}`;
 
 const readSavedDuration = (modelId: string): number | null => {
