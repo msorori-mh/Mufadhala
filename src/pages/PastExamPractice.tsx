@@ -21,6 +21,7 @@ const PastExamPractice = () => {
   const { isActive: hasActiveSubscription } = useSubscription(user?.id);
 
   const [mode, setMode] = useState<PastExamMode>("select");
+  const [customDurationMinutes, setCustomDurationMinutes] = useState<number | null>(null);
 
   // Fetch model info
   const { data: model, isLoading: modelLoading } = useQuery({
@@ -107,7 +108,7 @@ const PastExamPractice = () => {
   }
 
   if (mode === "strict_intro" || mode === "strict_active" || mode === "strict_finished") {
-    return <StrictMode model={model} questions={questions} onBackToSelect={() => setMode("select")} />;
+    return <StrictMode model={model} questions={questions} onBackToSelect={() => setMode("select")} customDurationMinutes={customDurationMinutes} />;
   }
 
   return (
@@ -116,7 +117,10 @@ const PastExamPractice = () => {
       totalQuestions={questions.length}
       isFreeModel={!model.is_paid}
       onSelectTraining={() => setMode("training")}
-      onSelectStrict={() => setMode("strict_intro")}
+      onSelectStrict={(duration) => {
+        setCustomDurationMinutes(duration ?? null);
+        setMode("strict_intro");
+      }}
     />
   );
 };
