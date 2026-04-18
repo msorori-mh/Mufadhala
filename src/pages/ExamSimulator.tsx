@@ -431,13 +431,37 @@ const ExamSimulator = () => {
         {/* Full Review Report */}
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-muted-foreground">مراجعة تفصيلية للإجابات</h3>
-          {engine.examQuestions.map((q, i) => {
+          {(() => {
+            const tfCount = engine.examQuestions.filter((q: any) => q.question_type === "true_false").length;
+            const mcCount = engine.examQuestions.length - tfCount;
+            const showHeaders = tfCount > 0 && mcCount > 0;
+            const firstTfIndex = showHeaders ? engine.examQuestions.findIndex((q: any) => q.question_type === "true_false") : -1;
+            const firstMcIndex = showHeaders ? engine.examQuestions.findIndex((q: any) => q.question_type !== "true_false") : -1;
+
+            return engine.examQuestions.map((q: any, i: number) => {
             const userAnswer = engine.answers[q.id];
             const isCorrect = userAnswer === q.correct_option;
             const isUnanswered = !userAnswer;
+            const showTfHeader = i === firstTfIndex;
+            const showMcHeader = i === firstMcIndex;
 
             return (
-              <Card key={q.id} className={`border-r-4 ${isCorrect ? "border-r-green-500" : isUnanswered ? "border-r-muted-foreground" : "border-r-destructive"}`}>
+              <div key={q.id}>
+                {showTfHeader && (
+                  <div className="flex items-center gap-2 pt-2 pb-1">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-xs font-semibold text-muted-foreground px-2">أسئلة الصح والخطأ</span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                )}
+                {showMcHeader && (
+                  <div className="flex items-center gap-2 pt-2 pb-1">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-xs font-semibold text-muted-foreground px-2">أسئلة الاختيار من متعدد</span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                )}
+              <Card className={`border-r-4 ${isCorrect ? "border-r-green-500" : isUnanswered ? "border-r-muted-foreground" : "border-r-destructive"}`}>
                 <CardContent className="py-3 px-4">
                   <div className="flex items-start gap-2">
                     {isCorrect ? <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" /> :
