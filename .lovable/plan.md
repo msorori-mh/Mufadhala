@@ -1,43 +1,35 @@
 
 
-## التحليل
+## المشكلة
 
-بعد فحص دقيق للكود وقاعدة البيانات:
+زر "دخول الموقع" في بروشور PDF يفتح رابط البيئة التطويرية `5f636eec-...lovableproject.com` بدلاً من `mufadhala.com/install`.
 
-### نتائج الفحص
-1. **قاعدة البيانات سليمة**: درس "التفاعلات الكيميائية والتغير الكيميائي" (`f5c90c02`) فعلاً يحتوي على **20 سؤال**.
-2. **الدالة `get_lesson_question_counts` تعمل بشكل صحيح** على الخادم وترجع 194 سجل (4 دروس فقط فارغة فعلياً من أصل 198).
-3. **`LessonsList.tsx` تستخدم RPC بشكل صحيح** — هذا الملف تم إصلاحه سابقاً.
+## السبب الجذري
 
-### السبب الجذري للمشكلة المتبقية
-
-عُثر على **استعلام مكسور آخر** في صفحة "أداء الطالب" (`/student-performance`) لم يُصلَح في الجولة السابقة:
+في `src/lib/generateBrochurePDF.ts` يُستخدم `window.location.origin` لبناء رابط زر "دخول الموقع":
 
 ```ts
-// src/pages/StudentPerformance.tsx — السطر 96
-const { data: qs } = await supabase
-  .from("questions")
-  .select("id, lesson_id, correct_option, subject")
-  .in("lesson_id", lessonIds);
+// السطر المعني داخل HTML البروشور
+<a href="${window.location.origin}">دخول الموقع</a>
 ```
 
-هذا الاستعلام يجلب أعمدة كاملة لكل سؤال (`id, lesson_id, correct_option, subject`) لكل دروس مسار القبول الطبي (3898 سؤال). لكن **Supabase يفرض حد 1000 صف افتراضياً** — فيرجع أول 1000 سؤال فقط، وأي درس لا تصادفه أسئلته ضمنها يظهر "0 سؤال" في عمود الإكمال.
+عند فتح البروشور من بيئة المعاينة (`*.lovableproject.com`)، يأخذ `window.location.origin` قيمة المعاينة ويُحقن في PDF — بينما QR نفسه يستخدم `https://mufadhala.com/install` (ثابت في `Install.tsx`) ولذلك يعمل بشكل صحيح.
 
-أيضاً **ذاكرة React Query المحلية**: المستخدم قد يرى نتائج مخزّنة من الجلسة السابقة (قبل تطبيق RPC). نحتاج تقليل `staleTime` مؤقتاً + إضافة `refetchOnMount: "always"` لضمان تحديث فوري.
+البروشور يجب أن يكون **مستقلاً عن البيئة** لأنه ملف يُوزَّع للطلاب.
 
-### الحل
+## الحل
 
-**الملف الوحيد المطلوب تعديله**: `src/pages/StudentPerformance.tsx`
+تثبيت الرابط القانوني `https://mufadhala.com` في `generateBrochurePDF.ts` (نفس النهج المتبع لـ QR في `Install.tsx`).
 
-1. **استبدال جلب صفوف الأسئلة بـ RPC مُجمَّع** (نفس النمط الذي طُبِّق في `LessonsList`):
-   - استخدام `supabase.rpc("get_lesson_question_counts", { _lesson_ids: lessonIds })` للحصول على عدد الأسئلة.
-   - بقاء جلب الأسئلة الكامل (للحاجة لـ `correct_option` و`subject` في تحليل الأداء) لكن **مع التقسيم paginated** عبر `.range(from, from+999)` في حلقة حتى نهاية البيانات — تماماً مثل ما طُبِّق على `useExamEngine`.
-2. **تخزين عدد الأسئلة في `Map<lesson_id, count>`** يُحسب مرة واحدة بدل `questions.filter(...)` المكلف.
-3. **استبدال السطر 512** ليقرأ من الـ Map الجديد بدل تصفية المصفوفة.
+### الملف المعدَّل
+
+| الملف | التغيير |
+|---|---|
+| `src/lib/generateBrochurePDF.ts` | استبدال أي استخدام لـ `window.location.origin` بثابت `https://mufadhala.com` لروابط الزر، وضمان أن أي عرض نصي للرابط يطابق `mufadhala.com/install`. |
 
 ### النتيجة المتوقعة
 
-- صفحة `/student-performance` ستعرض العدد الصحيح (20 سؤال) لكل درس.
-- تحليل الأداء حسب المادة سيكون أدق لأنه سيرى كل الأسئلة بدل أول 1000 فقط.
-- `LessonsList.tsx` يعمل بالفعل بشكل صحيح — لو المستخدم لا يزال يرى "0" هناك، فالسبب ذاكرة React Query؛ سيُحلّ بإعادة تحميل الصفحة.
+- زر "دخول الموقع" في PDF يفتح `https://mufadhala.com`
+- QR يفتح `https://mufadhala.com/install` (يعمل بالفعل)
+- البروشور قابل للتوزيع من أي بيئة (معاينة / منشور / دومين مخصص) بنفس النتيجة
 
