@@ -1,40 +1,36 @@
 
-المستخدم يريد ترتيب أسئلة الدرس بحيث تظهر أسئلة الصح/الخطأ أولاً ثم أسئلة الاختيار من متعدد.
 
-دعني أفحص الكود المسؤول عن عرض أسئلة الدرس.
-<lov-tool-use id="toolu_vrtx_01MHhftarssNqUt7jJoGxLx8" name="code--search_files" integration-id="code" data="{\"query\": \"question_type|true_false|tf\", \"include_patterns\": \"src/pages/LessonDetail.tsx\"}">
-</lov-tool-use>
+## الخطة: إضافة "الصف الدراسي" في نافذة الاستيراد + الفلترة المستقبلية
 
-<lov-tool-use id="toolu_vrtx_01N7sy8swYPVXECcLAMXeiwP" name="code--search_files" integration-id="code" data="{\"query\": \"questions.*from.*supabase|fetchQuestions\", \"include_patterns\": \"src/pages/LessonDetail.tsx\"}">
-</lov-tool-use>
+### الوضع الحالي
+- نافذة الاستيراد تعرض حقل **"المادة الدراسية الافتراضية"** فقط (`importSubjectId`).
+- عمود "الصف الدراسي (1/2/3)" موجود في القالب وفي محرك الاستيراد (`grade_level` في `ImportLesson`)، لكن إذا كان فارغاً في الملف يبقى `NULL`.
+- جدول `lessons` يحتوي بالفعل على عمود `grade_level smallint` — لا حاجة لتعديل قاعدة البيانات.
+- صفحة `AdminContent` بها فلتر `filterGradeLevel` يعمل، لكن صفحة الطالب `LessonsList` لا تفلتر بالصف.
 
-<lov-tool-use id="toolu_vrtx_01TD4JCgHEd8DBzsmrKRQpH2" name="code--search_files" integration-id="code" data="{\"query\": \"question_type|true_false\", \"include_patterns\": \"src/pages/LessonDetail.tsx\"}">
-</lov-tool-use>
+### التعديلات المطلوبة
 
-<lov-tool-use id="toolu_vrtx_01F66DoMoZbPQBWkCkmAVxxp" name="code--search_files" integration-id="code" data="{\"include_patterns\": \"src/pages/LessonDetail.tsx\", \"query\": \"order|sort|questions\"}">
-</lov-tool-use>
-I have enough context. The fix is simple: sort the questions array so true/false comes first, then multiple choice. The fetch happens at line 100, ordered by `display_order`. I'll sort after fetch (and after cache load).
+#### 1) `src/services/importEngine.ts`
+- إضافة `fallbackGradeLevel?: number | null` إلى خيارات `executeImport`.
+- عند إدراج درس جديد: استخدام `lesson.grade_level ?? fallbackGradeLevel ?? null`.
 
-<lov-plan>
+#### 2) `src/pages/admin/AdminContent.tsx` — نافذة الاستيراد
+- إضافة state جديد: `importGradeLevel` (string: "" أو "1"/"2"/"3").
+- إضافة **خطوة جديدة** بين الخطوة 2 (المادة) والخطوة 3 (رفع الملف): قائمة منسدلة "الصف الدراسي الافتراضي (اختياري)" بخيارات: تحديد من الملف / أول ثانوي / ثاني ثانوي / ثالث ثانوي.
+- تمرير `fallbackGradeLevel: importGradeLevel ? Number(importGradeLevel) : null` إلى `executeImport`.
+- إعادة ضبطه عند فتح النافذة بقيمة `filterGradeLevel` الحالية.
 
-## الخطة: عرض أسئلة الصح/الخطأ قبل أسئلة الاختيارات
+#### 3) `src/pages/LessonsList.tsx` — فلتر الصف للطالب
+- إضافة شريط أزرار/قائمة في أعلى قائمة الدروس: **الكل / أول ثانوي / ثاني ثانوي / ثالث ثانوي**.
+- فلترة الدروس المعروضة حسب `grade_level` عند اختيار صف محدد. الدروس بدون `grade_level` تظهر دائماً (لتجنب إخفاء المحتوى القديم).
+- حفظ الاختيار في `localStorage` لكل طالب لتجربة سلسة.
 
-### المشكلة
-حالياً تُعرض الأسئلة في `LessonDetail.tsx` مرتبة فقط حسب `display_order` بدون فصل بين الأنواع.
-
-### الحل
-ترتيب الأسئلة بحيث تظهر أسئلة `true_false` أولاً، ثم أسئلة الاختيار من متعدد (`multiple_choice` أو غير محدد)، مع الحفاظ على `display_order` داخل كل مجموعة.
-
-### التعديل
-**ملف واحد فقط**: `src/pages/LessonDetail.tsx`
-- إضافة دالة مساعدة `sortQuestionsByType(questions)` تُرجع الأسئلة مفروزة:
-  - أولاً: `question_type === "true_false"` (مرتبة حسب `display_order`)
-  - ثانياً: باقي الأنواع (مرتبة حسب `display_order`)
-- تطبيقها في موضعين:
-  1. عند `setQuestions(q as Question[])` بعد الجلب من Supabase (سطر 104)
-  2. عند `setQuestions(cached.questions as Question[])` من الكاش الأوفلاين (سطر 90)
-- لا حاجة لتعديل قاعدة البيانات أو محرك الاستيراد.
+### النطاق
+- ملفات معدّلة: `src/services/importEngine.ts`، `src/pages/admin/AdminContent.tsx`، `src/pages/LessonsList.tsx`.
+- لا تغييرات في قاعدة البيانات (العمود موجود).
+- متوافق تماماً مع البنية الحالية: الدروس القديمة بدون `grade_level` لا تتأثر.
 
 ### النتيجة
-الطالب يبدأ بأسئلة الصح/الخطأ الأبسط لبناء الثقة، ثم ينتقل للاختيارات الأطول.
+- المسؤول يستطيع تحديد الصف الافتراضي مرة واحدة عند الاستيراد بدلاً من ملء العمود في كل صف.
+- الطالب يستطيع تصفح "دروس الكيمياء — أول ثانوي" مثلاً مباشرة.
 
