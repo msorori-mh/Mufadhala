@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, Link } from "react-router-dom";
-import { Home, BookOpen, ClipboardCheck, Sparkles, Bell, Shield } from "lucide-react";
+import { Home, BookOpen, ClipboardCheck, Sparkles, Settings as SettingsIcon, Shield, Bell } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { isNativePlatform } from "@/lib/capacitor";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -10,7 +10,7 @@ const studentNavItems = [
   { path: "/lessons", icon: BookOpen, label: "الدروس" },
   { path: "/quick-review", icon: Sparkles, label: "المراجعة" },
   { path: "/exam", icon: ClipboardCheck, label: "الاختبار" },
-  { path: "/notifications", icon: Bell, label: "الإشعارات" },
+  { path: "/settings", icon: SettingsIcon, label: "الإعدادات" },
 ];
 
 const adminNavItems = [
