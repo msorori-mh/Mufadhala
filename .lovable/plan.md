@@ -1,26 +1,21 @@
 
-
 ## الفهم
-في `/admin/students` خانة البحث تعرض حالياً "بحث بالاسم أو رقم التنسيق..."، لكن البحث الفعلي يطابق على `name` و `coordination_number`. المطلوب تغييره ليكون البحث بالاسم أو رقم الهاتف.
+في صفحة `/install`، زر "دخول الموقع" يستخدم `<Link to="/">` من react-router-dom، مما يُبقي المستخدم على نفس الـ origin الحالي (مثلاً preview أو lovable.app)، بدلاً من توجيهه للدومين الرسمي `mufadhala.com`.
 
 ## الحل
-ملف واحد: `src/pages/admin/AdminStudents.tsx`
+في `src/pages/Install.tsx`، استبدل `Link` الداخلي بوسم `<a>` خارجي يشير صراحةً إلى `https://mufadhala.com`.
 
-### 1) تحديث منطق الفلترة (السطر 126-129)
-```ts
-if (search) {
-  const q = search.toLowerCase().trim();
-  const name = getFullName(s).toLowerCase();
-  return name.includes(q) || (s.phone || "").toLowerCase().includes(q);
-}
-```
-
-### 2) تحديث نص الـ placeholder (السطر 292)
+### التغيير (سطر 117-122)
 ```tsx
-<Input placeholder="بحث بالاسم أو رقم الهاتف..." ... />
+<Button asChild variant="ghost" className="gap-2">
+  <a href="https://mufadhala.com">
+    <ArrowLeft className="w-4 h-4" />
+    دخول الموقع
+  </a>
+</Button>
 ```
 
 ### النطاق
-- ملف واحد، تغييران سطريان.
-- لا تغييرات DB، لا تغيير في التصدير أو نموذج التعديل (لا يزال `coordination_number` يظهر في تفاصيل الطالب وفي ملف Excel — وهذا منفصل عن البحث).
-
+- ملف واحد: `src/pages/Install.tsx`
+- تغيير سطرين فقط (استبدال `Link to="/"` بـ `<a href="https://mufadhala.com">`)
+- إزالة استيراد `Link` إذا لم يعد مستخدماً
