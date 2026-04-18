@@ -35,11 +35,27 @@ interface Props {
 
 const QUICK_DURATIONS = [30, 45, 60, 90, 120];
 const MIN_DURATION = 30;
+const LAST_DURATION_KEY = (modelId: string) => `pastExam:lastDuration:${modelId}`;
+
+const readSavedDuration = (modelId: string): number | null => {
+  try {
+    const raw = localStorage.getItem(LAST_DURATION_KEY(modelId));
+    if (!raw) return null;
+    const v = parseInt(raw, 10);
+    return Number.isFinite(v) && v >= MIN_DURATION ? v : null;
+  } catch {
+    return null;
+  }
+};
 
 const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, onSelectStrict }: Props) => {
   const navigate = useNavigate();
   const hasDuration = (model.duration_minutes ?? 0) > 0;
-  const suggestedDefault = Math.max(MIN_DURATION, model.suggested_duration_minutes ?? 60);
+  const savedDuration = readSavedDuration(model.id);
+  const suggestedDefault = Math.max(
+    MIN_DURATION,
+    savedDuration ?? model.suggested_duration_minutes ?? 60
+  );
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
