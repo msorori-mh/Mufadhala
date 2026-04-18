@@ -84,6 +84,11 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
 
   const handleDurationConfirm = () => {
     if (customDuration < MIN_DURATION) return;
+    try {
+      localStorage.setItem(LAST_DURATION_KEY(model.id), String(customDuration));
+    } catch {
+      // ignore quota / privacy mode errors
+    }
     setDurationPickerOpen(false);
     setAcknowledged(false);
     setConfirmOpen(true);
