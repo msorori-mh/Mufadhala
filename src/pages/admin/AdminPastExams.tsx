@@ -591,15 +591,87 @@ const AdminPastExams = () => {
           if (filtered.length === 0) {
             return <p className="text-center text-muted-foreground py-8">لا توجد نماذج تطابق الفلاتر</p>;
           }
+          const filteredIds = filtered.map((m) => m.id);
+          const selectedFilteredIds = filteredIds.filter((id) => selectedIds.has(id));
+          const allSelected = filteredIds.length > 0 && selectedFilteredIds.length === filteredIds.length;
+          const someSelected = selectedFilteredIds.length > 0 && !allSelected;
+          const toggleAll = () => {
+            if (allSelected) {
+              setSelectedIds((prev) => {
+                const next = new Set(prev);
+                filteredIds.forEach((id) => next.delete(id));
+                return next;
+              });
+            } else {
+              setSelectedIds((prev) => {
+                const next = new Set(prev);
+                filteredIds.forEach((id) => next.add(id));
+                return next;
+              });
+            }
+          };
           return (
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">عرض {filtered.length} من {models.length}</p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                  onCheckedChange={toggleAll}
+                  aria-label="تحديد الكل"
+                />
+                <p className="text-xs text-muted-foreground">
+                  عرض {filtered.length} من {models.length}
+                  {selectedFilteredIds.length > 0 && (
+                    <span className="text-primary font-semibold"> · محدد {selectedFilteredIds.length}</span>
+                  )}
+                </p>
+              </div>
+              {selectedFilteredIds.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Button
+                    size="sm"
+                    className="h-8 text-xs gap-1 bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                    disabled={bulkBusy}
+                    onClick={() => handleBulkPublish(selectedFilteredIds)}
+                  >
+                    <Eye className="w-3.5 h-3.5" /> نشر المحدد
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs gap-1"
+                    disabled={bulkBusy}
+                    onClick={() => handleBulkUnpublish(selectedFilteredIds)}
+                  >
+                    <EyeOff className="w-3.5 h-3.5" /> إلغاء النشر
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="h-8 text-xs gap-1"
+                    disabled={bulkBusy}
+                    onClick={() => handleBulkDelete(selectedFilteredIds)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> حذف المحدد
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={clearSelection} disabled={bulkBusy}>
+                    إلغاء التحديد
+                  </Button>
+                </div>
+              )}
+            </div>
             {filtered.map((m) => {
               const qCount = questionCounts[m.id] || 0;
               const isEmpty = qCount === 0;
+              const isSelected = selectedIds.has(m.id);
               return (
-              <Card key={m.id} className={`hover:shadow-sm transition-shadow ${isEmpty ? "border-destructive/30" : ""}`}>
+              <Card key={m.id} className={`hover:shadow-sm transition-shadow ${isEmpty ? "border-destructive/30" : ""} ${isSelected ? "ring-2 ring-primary/40" : ""}`}>
                 <CardContent className="flex items-center gap-3 p-4">
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => toggleSelect(m.id)}
+                    aria-label={`تحديد ${m.title}`}
+                  />
                   <FileText className="w-5 h-5 text-primary shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate">{m.title}</p>
