@@ -151,8 +151,8 @@ const PastExams = () => {
             {/* Trial info banner — explains why paid models are still locked during trial */}
             {isTrial && isPaymentUIEnabled() &&
               sortedModels.some((m) => m.is_paid) && (
-                <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-xs text-foreground/90">
-                  <Crown className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <div className="flex items-center gap-2 rounded-lg bg-secondary/10 border border-secondary/30 px-3 py-2 text-xs text-foreground/90">
+                  <Crown className="w-3.5 h-3.5 text-secondary shrink-0" />
                   <span>أنت في الفترة التجريبية. اشترك الآن لفتح النماذج المدفوعة</span>
                 </div>
               )}
