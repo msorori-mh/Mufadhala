@@ -718,35 +718,77 @@ const AdminContent = () => {
   };
 
   const handleUnifiedImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
     setImporting(true);
     setImportReport(null);
 
-    try {
-      const data = await file.arrayBuffer();
-      const { lessonsRows, questionsRows } = parseWorkbook(data, file.name);
+    // Aggregated report across all files
+    const aggregated: ImportReport = {
+      lessonsCreated: 0,
+      lessonsUpdated: 0,
+      lessonsSkipped: 0,
+      questionsCreated: 0,
+      questionsSkipped: 0,
+      questionsFailed: 0,
+      errors: [],
+      warnings: [],
+      mode: "combined",
+    };
 
-      const report = await executeImport({
-        lessonsRows,
-        questionsRows,
-        subjects,
-        existingLessons: lessons.map(l => ({ id: l.id, title: l.title, lesson_code: l.lesson_code || null, subject_id: l.subject_id || null })),
-        existingQuestions: questions.map(q => ({ id: q.id, lesson_id: q.lesson_id, question_text: q.question_text })),
-        fallbackSubjectId: importSubjectId || undefined,
-      });
+    // Mutable snapshots so subsequent files see lessons created by earlier files
+    const existingLessons = lessons.map(l => ({ id: l.id, title: l.title, lesson_code: l.lesson_code || null, subject_id: l.subject_id || null }));
+    const existingQuestions = questions.map(q => ({ id: q.id, lesson_id: q.lesson_id, question_text: q.question_text }));
 
-      setImportReport(report);
+    let successFiles = 0;
+    let failedFiles = 0;
 
-      if (report.errors.length === 0) {
-        toast({ title: `تم الاستيراد: ${report.lessonsCreated} درس، ${report.questionsCreated} سؤال` });
-      } else {
-        toast({ variant: "destructive", title: `تم مع ${report.errors.length} خطأ — تحقق من التقرير` });
+    for (const file of files) {
+      try {
+        const data = await file.arrayBuffer();
+        const { lessonsRows, questionsRows } = parseWorkbook(data, file.name);
+
+        const report = await executeImport({
+          lessonsRows,
+          questionsRows,
+          subjects,
+          existingLessons,
+          existingQuestions,
+          fallbackSubjectId: importSubjectId || undefined,
+        });
+
+        aggregated.lessonsCreated += report.lessonsCreated;
+        aggregated.lessonsUpdated += report.lessonsUpdated;
+        aggregated.lessonsSkipped += report.lessonsSkipped;
+        aggregated.questionsCreated += report.questionsCreated;
+        aggregated.questionsSkipped += report.questionsSkipped;
+        aggregated.questionsFailed += report.questionsFailed;
+        // Prefix errors/warnings with file name for clarity
+        aggregated.errors.push(...report.errors.map(err => ({ ...err, sheet: `[${file.name}] ${err.sheet}` })));
+        aggregated.warnings.push(...report.warnings.map(w => ({ ...w, sheet: `[${file.name}] ${w.sheet}` })));
+        successFiles++;
+      } catch (err: any) {
+        failedFiles++;
+        aggregated.errors.push({
+          row: 0,
+          sheet: `[${file.name}]`,
+          field: "file",
+          message: `فشل قراءة الملف: ${err.message}`,
+        });
       }
-      fetchData();
-    } catch (err: any) {
-      toast({ variant: "destructive", title: `خطأ في قراءة الملف: ${err.message}` });
     }
+
+    setImportReport(aggregated);
+
+    if (aggregated.errors.length === 0) {
+      toast({ title: `تم استيراد ${successFiles} ملف: ${aggregated.lessonsCreated} درس، ${aggregated.questionsCreated} سؤال` });
+    } else {
+      toast({
+        variant: "destructive",
+        title: `${successFiles}/${files.length} ملف بنجاح — ${aggregated.errors.length} خطأ`,
+      });
+    }
+    fetchData();
     setImporting(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -1306,15 +1348,17 @@ const AdminContent = () => {
             <div className="space-y-2">
               <Label className="flex items-center gap-1.5">
                 <span className="bg-muted text-muted-foreground rounded-full w-5 h-5 inline-flex items-center justify-center text-xs">3</span>
-                ارفع ملف Excel (.xlsx, .xls, .csv)
+                ارفع ملف Excel واحد أو عدة ملفات (.xlsx, .xls, .csv)
               </Label>
               <Input
                 ref={fileInputRef}
                 type="file"
                 accept=".xlsx,.xls,.csv"
+                multiple
                 onChange={handleUnifiedImportFile}
                 disabled={importing}
               />
+              <p className="text-[11px] text-muted-foreground">يمكنك تحديد عدة ملفات معاً (Ctrl/Shift + Click) وستتم معالجتها بالتسلسل</p>
             </div>
 
             {importing && (
