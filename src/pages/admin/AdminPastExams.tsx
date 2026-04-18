@@ -294,6 +294,29 @@ const AdminPastExams = () => {
                   <Label>السنة</Label>
                   <Input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} />
                 </div>
+                <div className="space-y-1.5">
+                  <Label>مدة الاختبار الإلزامية (دقائق)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={durationMinutes}
+                    onChange={(e) => setDurationMinutes(e.target.value)}
+                    placeholder="اتركه فارغاً ليختار الطالب"
+                  />
+                  <p className="text-[11px] text-muted-foreground">إذا حُدِّدت، سيلتزم بها الطالب في الوضع المتقدم.</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>المدة المقترحة للطالب (دقائق)</Label>
+                  <Input
+                    type="number"
+                    min={30}
+                    step={5}
+                    value={suggestedDurationMinutes}
+                    onChange={(e) => setSuggestedDurationMinutes(e.target.value)}
+                    placeholder="مثال: 60 (الحد الأدنى 30)"
+                  />
+                  <p className="text-[11px] text-muted-foreground">تظهر كقيمة مبدئية في حوار اختيار المدة عند ترك المدة الإلزامية فارغة.</p>
+                </div>
               </div>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
