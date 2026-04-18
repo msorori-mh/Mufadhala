@@ -3,7 +3,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Download, GraduationCap, Smartphone, Share2, Plus, MoreVertical, ArrowLeft, Globe, FileText, Loader2 } from "lucide-react";
+import { Download, GraduationCap, Smartphone, Share2, Plus, MoreVertical, ArrowLeft, Globe, FileText, Loader2, Send } from "lucide-react";
 import { generateBrochurePDF } from "@/lib/generateBrochurePDF";
 import { toast } from "sonner";
 
@@ -52,6 +52,35 @@ export default function Install() {
     } finally {
       setGeneratingPDF(false);
     }
+  };
+
+  const shareMessage = `📚 منصة مُفَاضَلَة | Mufadhala\nمنصتك الذكية للتحضير لاختبارات القبول الجامعي في اليمن\n\nثبّت التطبيق وابدأ التحضير الآن:\n${canonicalUrl}`;
+
+  const shareNative = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "مُفَاضَلَة | Mufadhala",
+          text: shareMessage,
+          url: canonicalUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareMessage);
+        toast.success("تم نسخ الرابط، الصقه في أي تطبيق");
+      }
+    } catch (err) {
+      // user cancelled or error — silent
+    }
+  };
+
+  const shareWhatsApp = () => {
+    const url = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const shareTelegram = () => {
+    const url = `https://t.me/share/url?url=${encodeURIComponent(canonicalUrl)}&text=${encodeURIComponent(shareMessage)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -117,6 +146,27 @@ export default function Install() {
                   دخول الموقع
                 </a>
               </Button>
+            </div>
+
+            {/* Share Row */}
+            <div className="w-full pt-3 border-t border-border/60 space-y-2">
+              <p className="text-xs text-center text-muted-foreground font-medium">
+                شارك التطبيق مع أصدقائك
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                <Button onClick={shareWhatsApp} variant="outline" size="sm" className="gap-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 border-[#25D366]/30 text-[#128C7E]">
+                  <Share2 className="w-4 h-4" />
+                  واتساب
+                </Button>
+                <Button onClick={shareTelegram} variant="outline" size="sm" className="gap-2 bg-[#0088cc]/10 hover:bg-[#0088cc]/20 border-[#0088cc]/30 text-[#0088cc]">
+                  <Send className="w-4 h-4" />
+                  تيليجرام
+                </Button>
+                <Button onClick={shareNative} variant="outline" size="sm" className="gap-2">
+                  <Share2 className="w-4 h-4" />
+                  مشاركة...
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
