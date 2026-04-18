@@ -45,6 +45,7 @@ const reportSubItems: NavItem[] = [
   { path: "/admin/reports/subscriptions", label: "الاشتراكات", icon: ListChecks },
   { path: "/admin/reports/exams", label: "الاختبارات", icon: ClipboardCheck },
   { path: "/admin/reports/comparison", label: "مقارنة الفترات", icon: BarChart3 },
+  { path: "/admin/reports/content", label: "المحتوى التعليمي", icon: FileText },
   { path: "/admin/conversion-funnel", label: "قمع التحويل", icon: Target },
 ];
 
