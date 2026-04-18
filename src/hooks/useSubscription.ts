@@ -66,8 +66,8 @@ export const useSubscription = (userId: string | undefined): SubscriptionStatus 
       };
     },
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
+    refetchInterval: 30 * 1000,
   });
 
   // Show toast when status transitions from pending → active/rejected

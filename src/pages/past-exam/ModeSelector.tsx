@@ -33,8 +33,8 @@ interface Props {
   onSelectStrict: (customDurationMinutes?: number) => void;
 }
 
-const QUICK_DURATIONS = [30, 45, 60, 90, 120];
-const MIN_DURATION = 30;
+const QUICK_DURATIONS = [10, 15, 30, 45, 60, 90];
+const MIN_DURATION = 5;
 const LAST_DURATION_KEY = (modelId: string) => `pastExam:lastDuration:${modelId}`;
 
 const readSavedDuration = (modelId: string): number | null => {
@@ -52,10 +52,15 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
   const navigate = useNavigate();
   const hasDuration = (model.duration_minutes ?? 0) > 0;
   const [savedDuration, setSavedDuration] = useState<number | null>(() => readSavedDuration(model.id));
-  const suggestedDefault = Math.max(
-    MIN_DURATION,
-    savedDuration ?? model.suggested_duration_minutes ?? 60
-  );
+  // Smart default: saved > admin suggested > admin fixed > 1-min-per-question > 30
+  const computedSuggestedDefault = (() => {
+    if (savedDuration) return Math.max(MIN_DURATION, savedDuration);
+    if (model.suggested_duration_minutes) return Math.max(MIN_DURATION, model.suggested_duration_minutes);
+    if (model.duration_minutes && model.duration_minutes > 0) return Math.max(MIN_DURATION, model.duration_minutes);
+    if (totalQuestions > 0) return Math.max(MIN_DURATION, totalQuestions);
+    return 30;
+  })();
+  const suggestedDefault = computedSuggestedDefault;
 
   const handleResetSavedDuration = () => {
     try {
@@ -64,7 +69,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
       // ignore
     }
     setSavedDuration(null);
-    const fallback = Math.max(MIN_DURATION, model.suggested_duration_minutes ?? 60);
+    const fallback = Math.max(MIN_DURATION, model.suggested_duration_minutes ?? totalQuestions ?? 30);
     setCustomDuration(fallback);
   };
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -72,6 +77,8 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
   const [compareOpen, setCompareOpen] = useState(false);
   const [durationPickerOpen, setDurationPickerOpen] = useState(false);
   const [customDuration, setCustomDuration] = useState<number>(suggestedDefault);
+  // When student edits duration even if admin set one, we override with this value
+  const [overrideDuration, setOverrideDuration] = useState<number | null>(null);
 
   const { user } = useAuth();
   const { data: student } = useStudentData(user?.id);
@@ -84,13 +91,19 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
   });
 
   const openStrictFlow = () => {
-    if (hasDuration) {
+    // If admin set duration AND student has not chosen to override, go straight to confirmation
+    if (hasDuration && overrideDuration === null) {
       setAcknowledged(false);
       setConfirmOpen(true);
     } else {
-      setCustomDuration(suggestedDefault);
+      setCustomDuration(overrideDuration ?? suggestedDefault);
       setDurationPickerOpen(true);
     }
+  };
+
+  const openDurationEditor = () => {
+    setCustomDuration(overrideDuration ?? suggestedDefault);
+    setDurationPickerOpen(true);
   };
 
   const handleDurationConfirm = () => {
@@ -100,6 +113,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
     } catch {
       // ignore quota / privacy mode errors
     }
+    setOverrideDuration(customDuration);
     setDurationPickerOpen(false);
     setAcknowledged(false);
     setConfirmOpen(true);
@@ -107,12 +121,14 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
 
   const handleConfirmStart = () => {
     setConfirmOpen(false);
-    if (hasDuration) {
-      onSelectStrict();
-    } else {
-      onSelectStrict(customDuration);
-    }
+    // Always pass an explicit duration (override > admin > custom > smart default)
+    const finalDuration = overrideDuration
+      ?? (hasDuration ? (model.duration_minutes as number) : customDuration);
+    onSelectStrict(finalDuration);
   };
+
+  // Effective duration to display in the UI (for cards / timer preview)
+  const displayDuration = overrideDuration ?? (hasDuration ? (model.duration_minutes as number) : customDuration);
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -129,7 +145,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
         <div className="text-center space-y-2">
           <h1 className="text-xl font-bold">اختر وضع المحاولة</h1>
           <p className="text-sm text-muted-foreground">
-            {totalQuestions} سؤال{hasDuration ? ` · مدة الاختبار ${model.duration_minutes} دقيقة` : ""}
+            {totalQuestions} سؤال · مدة الاختبار {displayDuration} دقيقة
           </p>
         </div>
 
@@ -233,11 +249,9 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
                     <Flame className="w-3 h-3" />
                     تحدّي
                   </Badge>
-                  {!hasDuration && (
-                    <Badge variant="outline" className="text-[10px] px-2 py-0 border-dashed">
-                      أنت تحدد المدة
-                    </Badge>
-                  )}
+                  <Badge variant="outline" className="text-[10px] px-2 py-0 border-dashed">
+                    {overrideDuration !== null ? "مدة معدّلة" : hasDuration ? "قابلة للتعديل" : "أنت تحدد المدة"}
+                  </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                   <GraduationCap className="w-3 h-3" />
@@ -249,7 +263,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
             <div className="grid grid-cols-3 gap-2 py-2 border-y border-border/50">
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground">المؤقت</p>
-                <p className="text-xs font-bold text-destructive mt-0.5">{hasDuration ? `${model.duration_minutes} د` : "اختر المدة"}</p>
+                <p className="text-xs font-bold text-destructive mt-0.5">{displayDuration} د</p>
               </div>
               <div className="text-center border-x border-border/50">
                 <p className="text-[10px] text-muted-foreground">الإجابات</p>
@@ -273,10 +287,22 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
               isPaid={isPaid}
               isFreeModel={isFreeModel}
             />
-            <Button className="w-full" variant="destructive" onClick={(e) => { e.stopPropagation(); openStrictFlow(); }}>
-              <Lock className="w-4 h-4 ml-1.5" />
-              ابدأ الامتحان الصارم
-            </Button>
+            <div className="flex gap-2">
+              <Button className="flex-1" variant="destructive" onClick={(e) => { e.stopPropagation(); openStrictFlow(); }}>
+                <Lock className="w-4 h-4 ml-1.5" />
+                ابدأ الامتحان الصارم
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0 border-destructive/40 text-destructive hover:bg-destructive/10"
+                onClick={(e) => { e.stopPropagation(); openDurationEditor(); }}
+                title="تعديل المدة"
+                aria-label="تعديل المدة"
+              >
+                <Timer className="w-4 h-4" />
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </main>
@@ -302,7 +328,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
               <div className="text-sm">
                 <p className="font-bold text-foreground">المؤقت لا يمكن إيقافه</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  سيستمر العد التنازلي ({hasDuration ? model.duration_minutes : customDuration} دقيقة) حتى لو أغلقت التطبيق.
+                  سيستمر العد التنازلي ({displayDuration} دقيقة) حتى لو أغلقت التطبيق.
                 </p>
               </div>
             </div>
@@ -354,7 +380,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Duration Picker Dialog (only when admin didn't set a duration) */}
+      {/* Duration Picker Dialog (always available — student can always adjust duration) */}
       <Dialog open={durationPickerOpen} onOpenChange={setDurationPickerOpen}>
         <DialogContent dir="rtl" className="max-w-md">
           <DialogHeader>
@@ -363,7 +389,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
             </div>
             <DialogTitle className="text-center text-lg">حدد مدة الاختبار</DialogTitle>
             <DialogDescription className="text-center text-sm">
-              اختر المدة التي ترغب بإكمال الاختبار خلالها (الحد الأدنى {MIN_DURATION} دقيقة).
+              اختر المدة التي ترغب بإكمال الاختبار خلالها (الحد الأدنى {MIN_DURATION} دقائق).
             </DialogDescription>
           </DialogHeader>
 
@@ -385,6 +411,14 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
                 💡 المدة المقترحة من قِبَل الإدارة: <span className="font-bold text-foreground">{model.suggested_duration_minutes} دقيقة</span>
               </div>
             )}
+            {hasDuration && (
+              <div className="text-[11px] text-center text-muted-foreground bg-muted/40 rounded-md py-1.5 px-2">
+                ⏱️ المدة الافتراضية للنموذج: <span className="font-bold text-foreground">{model.duration_minutes} دقيقة</span>
+              </div>
+            )}
+            <div className="text-[11px] text-center text-muted-foreground bg-primary/5 border border-primary/20 rounded-md py-1.5 px-2">
+              📝 اقتراح ذكي بناءً على عدد الأسئلة: <span className="font-bold text-foreground">{Math.max(MIN_DURATION, totalQuestions)} دقيقة</span> (دقيقة لكل سؤال)
+            </div>
             <div className="grid grid-cols-3 gap-2">
               {QUICK_DURATIONS.map((d) => (
                 <Button
