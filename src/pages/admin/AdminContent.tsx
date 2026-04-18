@@ -814,7 +814,9 @@ const AdminContent = () => {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h1 className="text-2xl font-bold">المحتوى التعليمي</h1>
-            <p className="text-sm text-muted-foreground">{filteredLessons.length} درس مشترك</p>
+            <p className="text-sm text-muted-foreground">
+              {filteredLessons.length} درس · {questions.filter((q) => filteredLessons.some((l) => l.id === q.lesson_id)).length} سؤال
+            </p>
           </div>
           <div className="flex gap-2">
             <Button onClick={exportLessons} size="sm" variant="outline">
@@ -832,7 +834,10 @@ const AdminContent = () => {
           <select value={filterSubject} onChange={(e) => setFilterSubject(e.target.value)} className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm flex-1 min-w-[140px]">
             <option value="">جميع المواد</option>
             {subjects.map((s) => {
-              const subjectLessons = scopedLessons.filter((l) => l.subject_id === s.id);
+              const subjectLessons = scopedLessons.filter((l) =>
+                l.subject_id === s.id &&
+                (!filterGradeLevel || l.grade_level === Number(filterGradeLevel))
+              );
               const questionCount = questions.filter((q) => subjectLessons.some((l) => l.id === q.lesson_id)).length;
               return <option key={s.id} value={s.id}>{s.name_ar} ({subjectLessons.length} درس، {questionCount} سؤال)</option>;
             })}
@@ -849,6 +854,29 @@ const AdminContent = () => {
             <option value="draft">مسودة</option>
           </select>
         </div>
+
+        {/* Search results summary */}
+        {(filterSubject || filterGradeLevel || filterPublished) && (
+          <Card className="bg-muted/40 border-dashed">
+            <CardContent className="p-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-muted-foreground">نتائج البحث:</span>
+                <Badge variant="secondary">
+                  {filterSubject ? (subjects.find(s => s.id === filterSubject)?.name_ar || "—") : "جميع المواد"}
+                </Badge>
+                <Badge variant="secondary">
+                  {filterGradeLevel ? (GRADE_LEVELS.find(g => g.value === Number(filterGradeLevel))?.label || "—") : "جميع الصفوف"}
+                </Badge>
+                {filterPublished && (
+                  <Badge variant="secondary">{filterPublished === "published" ? "منشور" : "مسودة"}</Badge>
+                )}
+              </div>
+              <div className="font-semibold text-foreground">
+                {filteredLessons.length} درس · {questions.filter((q) => filteredLessons.some((l) => l.id === q.lesson_id)).length} سؤال
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Lessons + Questions split view */}
         <div className="grid gap-4 md:grid-cols-2">
