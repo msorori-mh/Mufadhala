@@ -61,13 +61,24 @@ const fetchSearchContent = async () => {
   let mappedQuestions: QuestionResult[] = [];
 
   if (lessonIds.length > 0) {
-    const { data: qs } = await supabase
-      .from("questions")
-      .select("id, question_text, lesson_id, option_a, option_b, option_c, option_d")
-      .in("lesson_id", lessonIds);
-    if (qs) {
+    // Paginated fetch to bypass Supabase's 1000-row default limit
+    const allQs: any[] = [];
+    const PAGE = 1000;
+    let from = 0;
+    while (true) {
+      const { data: page } = await supabase
+        .from("questions")
+        .select("id, question_text, lesson_id, option_a, option_b, option_c, option_d")
+        .in("lesson_id", lessonIds)
+        .range(from, from + PAGE - 1);
+      if (!page || page.length === 0) break;
+      allQs.push(...page);
+      if (page.length < PAGE) break;
+      from += PAGE;
+    }
+    if (allQs.length > 0) {
       const lessonMap = new Map(lessons.map((l: any) => [l.id, { title: l.title, major_name: l.majors?.name_ar || "" }]));
-      mappedQuestions = qs.map((q: any) => {
+      mappedQuestions = allQs.map((q: any) => {
         const info = lessonMap.get(q.lesson_id) || { title: "", major_name: "" };
         return { ...q, lesson_title: info.title, major_name: info.major_name };
       });

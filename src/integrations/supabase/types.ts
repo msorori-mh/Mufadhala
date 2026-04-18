@@ -1488,6 +1488,13 @@ export type Database = {
           total_exams: number
         }[]
       }
+      get_lesson_question_counts: {
+        Args: { _lesson_ids: string[] }
+        Returns: {
+          lesson_id: string
+          q_count: number
+        }[]
+      }
       get_published_lessons_by_college: {
         Args: { _college_id: string }
         Returns: {

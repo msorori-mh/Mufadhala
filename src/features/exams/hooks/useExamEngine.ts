@@ -109,22 +109,31 @@ const fetchExamData = async (userId: string) => {
     subjectNames.forEach((sn: any) => subjectNameMap.set(sn.id, sn.name_ar));
   }
 
-  // 4) Fetch questions for unique lessons only
-  const { data: qs } =
-    uniqueLessonIds.length > 0
-      ? await supabase
-          .from("questions")
-          .select(
-            "id, question_text, option_a, option_b, option_c, option_d, correct_option, explanation, lesson_id, subject, question_type"
-          )
-          .in("lesson_id", uniqueLessonIds)
-          .order("display_order")
-      : { data: [] };
+  // 4) Paginated fetch to bypass Supabase's 1000-row default limit
+  const qs: any[] = [];
+  if (uniqueLessonIds.length > 0) {
+    const PAGE = 1000;
+    let from = 0;
+    while (true) {
+      const { data: page } = await supabase
+        .from("questions")
+        .select(
+          "id, question_text, option_a, option_b, option_c, option_d, correct_option, explanation, lesson_id, subject, question_type"
+        )
+        .in("lesson_id", uniqueLessonIds)
+        .order("display_order")
+        .range(from, from + PAGE - 1);
+      if (!page || page.length === 0) break;
+      qs.push(...page);
+      if (page.length < PAGE) break;
+      from += PAGE;
+    }
+  }
 
   let allQuestions: Question[] = [];
-  if (qs) {
+  if (qs.length > 0) {
     const uniqueSet = new Set(uniqueLessonIds);
-    allQuestions = (qs as any[])
+    allQuestions = qs
       .filter((q) => uniqueSet.has(q.lesson_id))
       .map((q) => ({
         ...q,

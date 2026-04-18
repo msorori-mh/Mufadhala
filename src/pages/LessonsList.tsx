@@ -159,8 +159,8 @@ const LessonsList = () => {
       const lessonIds = enrichedLessons.map(l => l.id);
       if (lessonIds.length === 0) return { lessons: enrichedLessons, majorName: filterName, subjects, questionCounts: {}, completedLessons: new Set<string>() };
 
-      const [{ data: qs }, { data: progress }] = await Promise.all([
-        supabase.from("questions").select("lesson_id").in("lesson_id", lessonIds),
+      const [{ data: counts }, { data: progress }] = await Promise.all([
+        supabase.rpc("get_lesson_question_counts", { _lesson_ids: lessonIds }),
         studentId
           ? supabase.from("lesson_progress").select("lesson_id")
               .eq("student_id", studentId).eq("is_completed", true)
@@ -169,7 +169,7 @@ const LessonsList = () => {
       ]);
 
       const questionCounts: Record<string, number> = {};
-      (qs || []).forEach((q: any) => { questionCounts[q.lesson_id] = (questionCounts[q.lesson_id] || 0) + 1; });
+      (counts || []).forEach((c: any) => { questionCounts[c.lesson_id] = Number(c.q_count) || 0; });
       const completedSet = new Set((progress || []).map((p: any) => p.lesson_id));
 
       return {
