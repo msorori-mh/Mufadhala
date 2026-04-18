@@ -249,11 +249,9 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
                     <Flame className="w-3 h-3" />
                     تحدّي
                   </Badge>
-                  {!hasDuration && (
-                    <Badge variant="outline" className="text-[10px] px-2 py-0 border-dashed">
-                      أنت تحدد المدة
-                    </Badge>
-                  )}
+                  <Badge variant="outline" className="text-[10px] px-2 py-0 border-dashed">
+                    {overrideDuration !== null ? "مدة معدّلة" : hasDuration ? "قابلة للتعديل" : "أنت تحدد المدة"}
+                  </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                   <GraduationCap className="w-3 h-3" />
