@@ -182,10 +182,10 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
 
         {/* Strict Mode */}
         <Card
-          className={`relative overflow-hidden border-2 transition-all ${hasDuration ? "border-destructive/30 hover:border-destructive cursor-pointer active:scale-[0.99] hover:shadow-lg" : "border-border opacity-60"}`}
-          onClick={hasDuration ? openStrictConfirm : undefined}
+          className="relative overflow-hidden border-2 border-destructive/30 hover:border-destructive transition-all cursor-pointer active:scale-[0.99] hover:shadow-lg"
+          onClick={openStrictFlow}
         >
-          <div className={`absolute top-0 left-0 w-full h-1 ${hasDuration ? "bg-destructive" : "bg-muted"}`} />
+          <div className="absolute top-0 left-0 w-full h-1 bg-destructive" />
           <CardContent className="p-5 space-y-4">
             <div className="flex items-start gap-3">
               <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center shrink-0 ring-2 ring-destructive/20">
@@ -198,6 +198,11 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
                     <Flame className="w-3 h-3" />
                     تحدّي
                   </Badge>
+                  {!hasDuration && (
+                    <Badge variant="outline" className="text-[10px] px-2 py-0 border-dashed">
+                      أنت تحدد المدة
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                   <GraduationCap className="w-3 h-3" />
@@ -209,7 +214,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
             <div className="grid grid-cols-3 gap-2 py-2 border-y border-border/50">
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground">المؤقت</p>
-                <p className="text-xs font-bold text-destructive mt-0.5">{hasDuration ? `${model.duration_minutes} د` : "—"}</p>
+                <p className="text-xs font-bold text-destructive mt-0.5">{hasDuration ? `${model.duration_minutes} د` : "اختر المدة"}</p>
               </div>
               <div className="text-center border-x border-border/50">
                 <p className="text-[10px] text-muted-foreground">الإجابات</p>
@@ -226,26 +231,17 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
               <li className="flex items-center gap-2"><EyeOff className="w-3.5 h-3.5 text-destructive" /> بدون كشف للإجابات</li>
               <li className="flex items-center gap-2"><Trophy className="w-3.5 h-3.5 text-destructive" /> نتيجة ومراجعة شاملة</li>
             </ul>
-            {hasDuration && (
-              <PastExamModeMiniStats
-                stats={stats?.strict ?? { attempts: 0, avgPct: 0, bestPct: 0, lastPcts: [] }}
-                variant="strict"
-                loading={statsLoading}
-                isPaid={isPaid}
-                isFreeModel={isFreeModel}
-              />
-            )}
-            {hasDuration ? (
-              <Button className="w-full" variant="destructive" onClick={(e) => { e.stopPropagation(); openStrictConfirm(); }}>
-                <Lock className="w-4 h-4 ml-1.5" />
-                ابدأ الامتحان الصارم
-              </Button>
-            ) : (
-              <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/40 rounded-lg p-3">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>هذا النموذج لا يحتوي على مدة محددة. يرجى التواصل مع الإدارة لإضافة مدة الاختبار.</span>
-              </div>
-            )}
+            <PastExamModeMiniStats
+              stats={stats?.strict ?? { attempts: 0, avgPct: 0, bestPct: 0, lastPcts: [] }}
+              variant="strict"
+              loading={statsLoading}
+              isPaid={isPaid}
+              isFreeModel={isFreeModel}
+            />
+            <Button className="w-full" variant="destructive" onClick={(e) => { e.stopPropagation(); openStrictFlow(); }}>
+              <Lock className="w-4 h-4 ml-1.5" />
+              ابدأ الامتحان الصارم
+            </Button>
           </CardContent>
         </Card>
       </main>
