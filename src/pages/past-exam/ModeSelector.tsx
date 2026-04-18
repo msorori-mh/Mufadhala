@@ -52,10 +52,16 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
   const navigate = useNavigate();
   const hasDuration = (model.duration_minutes ?? 0) > 0;
   const [savedDuration, setSavedDuration] = useState<number | null>(() => readSavedDuration(model.id));
-  const suggestedDefault = Math.max(
+  // Smart default: saved > admin suggested > 1-min-per-question > 30
+  const computedSuggestedDefault = Math.max(
     MIN_DURATION,
-    savedDuration ?? model.suggested_duration_minutes ?? 60
+    savedDuration
+      ?? model.suggested_duration_minutes
+      ?? (model.duration_minutes && model.duration_minutes > 0 ? model.duration_minutes : 0)
+      ?? 0
+      || (totalQuestions > 0 ? totalQuestions : 30)
   );
+  const suggestedDefault = computedSuggestedDefault;
 
   const handleResetSavedDuration = () => {
     try {
@@ -64,7 +70,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
       // ignore
     }
     setSavedDuration(null);
-    const fallback = Math.max(MIN_DURATION, model.suggested_duration_minutes ?? 60);
+    const fallback = Math.max(MIN_DURATION, model.suggested_duration_minutes ?? totalQuestions ?? 30);
     setCustomDuration(fallback);
   };
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -72,6 +78,8 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
   const [compareOpen, setCompareOpen] = useState(false);
   const [durationPickerOpen, setDurationPickerOpen] = useState(false);
   const [customDuration, setCustomDuration] = useState<number>(suggestedDefault);
+  // When student edits duration even if admin set one, we override with this value
+  const [overrideDuration, setOverrideDuration] = useState<number | null>(null);
 
   const { user } = useAuth();
   const { data: student } = useStudentData(user?.id);
@@ -84,13 +92,19 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
   });
 
   const openStrictFlow = () => {
-    if (hasDuration) {
+    // If admin set duration AND student has not chosen to override, go straight to confirmation
+    if (hasDuration && overrideDuration === null) {
       setAcknowledged(false);
       setConfirmOpen(true);
     } else {
-      setCustomDuration(suggestedDefault);
+      setCustomDuration(overrideDuration ?? suggestedDefault);
       setDurationPickerOpen(true);
     }
+  };
+
+  const openDurationEditor = () => {
+    setCustomDuration(overrideDuration ?? suggestedDefault);
+    setDurationPickerOpen(true);
   };
 
   const handleDurationConfirm = () => {
@@ -100,6 +114,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
     } catch {
       // ignore quota / privacy mode errors
     }
+    setOverrideDuration(customDuration);
     setDurationPickerOpen(false);
     setAcknowledged(false);
     setConfirmOpen(true);
@@ -107,12 +122,14 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
 
   const handleConfirmStart = () => {
     setConfirmOpen(false);
-    if (hasDuration) {
-      onSelectStrict();
-    } else {
-      onSelectStrict(customDuration);
-    }
+    // Always pass an explicit duration (override > admin > custom > smart default)
+    const finalDuration = overrideDuration
+      ?? (hasDuration ? (model.duration_minutes as number) : customDuration);
+    onSelectStrict(finalDuration);
   };
+
+  // Effective duration to display in the UI (for cards / timer preview)
+  const displayDuration = overrideDuration ?? (hasDuration ? (model.duration_minutes as number) : customDuration);
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
