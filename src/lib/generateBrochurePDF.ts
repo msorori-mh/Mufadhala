@@ -1,15 +1,84 @@
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import QRCode from "qrcode";
+
+const BRAND_PRIMARY = "#1A237E";
+const BRAND_SECONDARY = "#2E7D32";
+const INSTALL_URL = "https://mufadhala.com/install";
+
+/**
+ * Generates a branded QR code with the Mufadhala logo overlaid in the center.
+ * Uses high error correction (H=30%) so the centered logo doesn't break scanning.
+ */
+async function generateBrandedQR(size = 480): Promise<string> {
+  // 1) Render the QR onto an off-screen canvas in brand colors
+  const qrCanvas = document.createElement("canvas");
+  await QRCode.toCanvas(qrCanvas, INSTALL_URL, {
+    width: size,
+    margin: 1,
+    errorCorrectionLevel: "H",
+    color: {
+      dark: BRAND_PRIMARY,
+      light: "#FFFFFF",
+    },
+  });
+
+  const ctx = qrCanvas.getContext("2d");
+  if (!ctx) return qrCanvas.toDataURL("image/png");
+
+  // 2) Draw a centered white rounded square as the logo backdrop
+  const logoSize = Math.round(size * 0.22);
+  const cx = size / 2;
+  const cy = size / 2;
+  const half = logoSize / 2;
+  const radius = 14;
+
+  ctx.save();
+  ctx.fillStyle = "#FFFFFF";
+  // rounded rect
+  const x = cx - half;
+  const y = cy - half;
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + logoSize - radius, y);
+  ctx.quadraticCurveTo(x + logoSize, y, x + logoSize, y + radius);
+  ctx.lineTo(x + logoSize, y + logoSize - radius);
+  ctx.quadraticCurveTo(x + logoSize, y + logoSize, x + logoSize - radius, y + logoSize);
+  ctx.lineTo(x + radius, y + logoSize);
+  ctx.quadraticCurveTo(x, y + logoSize, x, y + logoSize - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+  ctx.fill();
+
+  // subtle border
+  ctx.strokeStyle = BRAND_PRIMARY;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.restore();
+
+  // 3) Draw the "م" letter (Mufadhala mark) inside the white square
+  ctx.save();
+  ctx.fillStyle = BRAND_PRIMARY;
+  ctx.font = `bold ${Math.round(logoSize * 0.62)}px 'Cairo', system-ui, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  // Slight vertical nudge for optical centering of Arabic glyph
+  ctx.fillText("م", cx, cy + Math.round(logoSize * 0.04));
+  ctx.restore();
+
+  return qrCanvas.toDataURL("image/png");
+}
 
 /**
  * Generates an A4 print-ready brochure PDF for Mufadhala.
  * Strategy: Build the brochure as off-screen HTML (perfect Arabic RTL + icons + brand),
  * snapshot it with html2canvas, and embed into a single A4 page via jsPDF.
  *
- * @param qrCanvas - The existing QR <canvas> element from the page (reused for fidelity)
+ * @param _qrCanvas - Kept for backward compatibility; we now generate a branded QR ourselves.
  */
-export async function generateBrochurePDF(qrCanvas: HTMLCanvasElement): Promise<void> {
-  const qrDataUrl = qrCanvas.toDataURL("image/png");
+export async function generateBrochurePDF(_qrCanvas: HTMLCanvasElement): Promise<void> {
+  const qrDataUrl = await generateBrandedQR(480);
 
   // A4 @ ~96 DPI working canvas: 794 x 1123 px (final PDF still vector-sharp via 2x scale)
   const A4_WIDTH_PX = 794;
