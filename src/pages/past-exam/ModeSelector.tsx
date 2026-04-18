@@ -328,7 +328,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
               <div className="text-sm">
                 <p className="font-bold text-foreground">المؤقت لا يمكن إيقافه</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  سيستمر العد التنازلي ({hasDuration ? model.duration_minutes : customDuration} دقيقة) حتى لو أغلقت التطبيق.
+                  سيستمر العد التنازلي ({displayDuration} دقيقة) حتى لو أغلقت التطبيق.
                 </p>
               </div>
             </div>
