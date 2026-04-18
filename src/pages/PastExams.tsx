@@ -143,9 +143,9 @@ const PastExams = () => {
                     }}
                   >
                     <CardContent className="flex items-center gap-3 p-3">
-                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${locked ? "bg-primary/15 ring-1 ring-primary/30" : "bg-primary/10"}`}>
                         {locked ? (
-                          <Lock className="w-4 h-4 text-muted-foreground" />
+                          <Lock className="w-4 h-4 text-primary" />
                         ) : (
                           <FileText className="w-4 h-4 text-primary" />
                         )}
@@ -164,12 +164,28 @@ const PastExams = () => {
                         </p>
                       </div>
                       {model.is_paid && (
-                        <Badge variant="secondary" className="text-[10px] shrink-0">
-                          {locked ? "مدفوع" : "مدفوع ✓"}
+                        <Badge
+                          variant={locked ? "default" : "secondary"}
+                          className="text-[10px] shrink-0"
+                        >
+                          {locked ? "اشتراك" : "اشتراك ✓"}
                         </Badge>
                       )}
                       {!model.is_paid && (
                         <Badge variant="outline" className="text-[10px] shrink-0 border-secondary/40 text-secondary">مجاني</Badge>
+                      )}
+                      {locked && isPaymentUIEnabled() && (
+                        <Button
+                          size="sm"
+                          className="h-7 px-2.5 text-[11px] shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            trackSubscriptionClick("past_exams", { model_id: model.id, year: model.year, from: "card_cta" });
+                            navigate("/subscription");
+                          }}
+                        >
+                          اشترك
+                        </Button>
                       )}
                       {!locked && <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0" />}
                     </CardContent>
