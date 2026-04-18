@@ -1257,46 +1257,82 @@ const AdminContent = () => {
 
       {/* Unified Import Dialog — Subject-Based */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Upload className="w-5 h-5" />
               استيراد المحتوى التعليمي
             </DialogTitle>
             <DialogDescription>
-              ارفع ملف Excel يحتوي على ورقة "الدروس" و/أو ورقة "الأسئلة". الدروس مشتركة وتظهر تلقائياً لجميع الكليات حسب المسار.
+              ارفع ملف Excel يحتوي على ورقة <strong>"الدروس"</strong> و/أو ورقة <strong>"الأسئلة"</strong>. الدروس مشتركة وتظهر تلقائياً لجميع الكليات حسب المسار.
             </DialogDescription>
           </DialogHeader>
+
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>المادة الدراسية الافتراضية (اختياري)</Label>
-              <select value={importSubjectId} onChange={(e) => setImportSubjectId(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="">تحديد من الملف</option>
-                {subjects.map((s) => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
-              </select>
-              <p className="text-[11px] text-muted-foreground">تُستخدم إذا لم يتم تحديد المادة في الملف</p>
+            {/* Step 1: Download template — prominent */}
+            <div className="border-2 border-dashed border-primary/30 rounded-lg p-4 bg-primary/5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold flex items-center gap-1.5">
+                    <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 inline-flex items-center justify-center text-xs">1</span>
+                    حمّل القالب الجاهز أولاً
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">يحتوي على الترويسات الصحيحة وأمثلة جاهزة</p>
+                </div>
+                <Button onClick={handleDownloadUnifiedTemplate} size="sm" variant="default">
+                  <Download className="w-4 h-4 ml-1" />تحميل القالب
+                </Button>
+              </div>
             </div>
 
+            {/* Step 2: Default subject */}
             <div className="space-y-2">
-              <Label>اختر ملف (Excel)</Label>
-              <Input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleUnifiedImportFile} disabled={importing} />
+              <Label className="flex items-center gap-1.5">
+                <span className="bg-muted text-muted-foreground rounded-full w-5 h-5 inline-flex items-center justify-center text-xs">2</span>
+                المادة الدراسية الافتراضية (اختياري)
+              </Label>
+              <select
+                value={importSubjectId}
+                onChange={(e) => setImportSubjectId(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">تحديد من عمود "المادة" داخل الملف</option>
+                {subjects.map((s) => <option key={s.id} value={s.id}>{s.name_ar}</option>)}
+              </select>
+              <p className="text-[11px] text-muted-foreground">تُستخدم فقط للصفوف التي لم تُحدد مادتها داخل الملف</p>
             </div>
+
+            {/* Step 3: Upload */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <span className="bg-muted text-muted-foreground rounded-full w-5 h-5 inline-flex items-center justify-center text-xs">3</span>
+                ارفع ملف Excel (.xlsx, .xls, .csv)
+              </Label>
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleUnifiedImportFile}
+                disabled={importing}
+              />
+            </div>
+
             {importing && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />جاري الاستيراد...
+              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted rounded p-3">
+                <Loader2 className="w-4 h-4 animate-spin" />جاري معالجة الملف وإدراج البيانات...
               </div>
             )}
 
             {importReport && (
-              <div className="bg-muted rounded-lg p-3 space-y-2">
+              <div className="bg-muted rounded-lg p-3 space-y-2 border">
                 <p className="text-xs font-semibold">📊 تقرير الاستيراد ({importReport.mode === "combined" ? "دروس + أسئلة" : importReport.mode === "lessons_only" ? "دروس فقط" : "أسئلة فقط"}):</p>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <span>✅ دروس جديدة: {importReport.lessonsCreated}</span>
-                  <span>🔄 دروس مُحدَّثة: {importReport.lessonsUpdated ?? 0}</span>
-                  <span>⏭️ دروس متكررة: {importReport.lessonsSkipped}</span>
-                  <span>✅ أسئلة جديدة: {importReport.questionsCreated}</span>
-                  <span>⏭️ أسئلة متكررة: {importReport.questionsSkipped}</span>
-                  <span>❌ أسئلة فاشلة: {importReport.questionsFailed ?? 0}</span>
+                  <span className="bg-background rounded px-2 py-1">✅ دروس جديدة: <strong>{importReport.lessonsCreated}</strong></span>
+                  <span className="bg-background rounded px-2 py-1">🔄 دروس مُحدَّثة: <strong>{importReport.lessonsUpdated ?? 0}</strong></span>
+                  <span className="bg-background rounded px-2 py-1">⏭️ دروس متكررة: <strong>{importReport.lessonsSkipped}</strong></span>
+                  <span className="bg-background rounded px-2 py-1">✅ أسئلة جديدة: <strong>{importReport.questionsCreated}</strong></span>
+                  <span className="bg-background rounded px-2 py-1">⏭️ أسئلة متكررة: <strong>{importReport.questionsSkipped}</strong></span>
+                  <span className="bg-background rounded px-2 py-1">❌ أسئلة فاشلة: <strong>{importReport.questionsFailed ?? 0}</strong></span>
                 </div>
                 {(importReport.warnings?.length ?? 0) > 0 && (
                   <div className="mt-2 space-y-1">
@@ -1313,10 +1349,10 @@ const AdminContent = () => {
                 {importReport.errors.length > 0 && (
                   <div className="mt-2 space-y-1">
                     <p className="text-xs font-medium text-destructive">❌ أخطاء ({importReport.errors.length}):</p>
-                    <div className="max-h-32 overflow-y-auto space-y-1">
+                    <div className="max-h-40 overflow-y-auto space-y-1">
                       {importReport.errors.slice(0, 20).map((err, i) => (
                         <p key={i} className="text-[11px] text-destructive bg-destructive/10 rounded px-2 py-1">
-                          {err.sheet} - صف {err.row}: {err.message}
+                          <strong>{err.sheet}</strong> - صف {err.row}: {err.message}
                         </p>
                       ))}
                       {importReport.errors.length > 20 && (
@@ -1328,21 +1364,17 @@ const AdminContent = () => {
               </div>
             )}
 
-            <div className="bg-muted rounded-lg p-3 space-y-2">
-              <p className="text-xs font-semibold">📋 تنسيق الملف الموحد:</p>
-              <p className="text-xs text-muted-foreground">
-                <strong>ورقة "الدروس":</strong> كود الدرس | المادة | العنوان | المحتوى | الملخص | الترتيب | منشور | مجاني | الصف
-              </p>
-              <p className="text-xs text-muted-foreground">
-                <strong>ورقة "الأسئلة":</strong> كود الدرس | نوع السؤال | نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة | الشرح | الترتيب
-              </p>
-              <p className="text-[11px] text-muted-foreground/70">
-                💡 الدروس مشتركة — كل درس يُنشأ مرة واحدة ويظهر لجميع الكليات حسب المسار والمادة
-              </p>
-              <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={handleDownloadUnifiedTemplate}>
-                <Download className="w-3 h-3 ml-1" />تحميل القالب الموحد
-              </Button>
-            </div>
+            {/* Help section */}
+            <details className="bg-muted/50 rounded-lg p-3 text-xs">
+              <summary className="cursor-pointer font-semibold">📋 تفاصيل تنسيق الملف</summary>
+              <div className="space-y-2 mt-2 text-muted-foreground">
+                <p><strong>ورقة "الدروس":</strong> كود الدرس | المادة | العنوان | المحتوى | الملخص | الترتيب | منشور | مجاني | الصف</p>
+                <p><strong>ورقة "الأسئلة":</strong> كود الدرس | نوع السؤال | نص السؤال | خيار أ | خيار ب | خيار ج | خيار د | الإجابة | الشرح | الترتيب</p>
+                <p className="text-[11px]">💡 الدروس مشتركة — كل درس يُنشأ مرة واحدة ويظهر لجميع الكليات حسب المسار والمادة</p>
+                <p className="text-[11px]">💡 الإجابة الصحيحة: a/b/c/d أو true/false أو صح/خطأ</p>
+                <p className="text-[11px]">💡 إذا فشل التحقق من الترويسات — تأكد أن أول 3 أعمدة تحتوي كلمات: <strong>كود</strong>، <strong>مادة</strong>، <strong>عنوان</strong> (للدروس) أو <strong>كود</strong>، <strong>نوع</strong>، <strong>نص</strong> (للأسئلة)</p>
+              </div>
+            </details>
           </div>
         </DialogContent>
       </Dialog>
