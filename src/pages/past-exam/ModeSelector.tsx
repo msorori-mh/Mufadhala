@@ -145,7 +145,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
         <div className="text-center space-y-2">
           <h1 className="text-xl font-bold">اختر وضع المحاولة</h1>
           <p className="text-sm text-muted-foreground">
-            {totalQuestions} سؤال{hasDuration ? ` · مدة الاختبار ${model.duration_minutes} دقيقة` : ""}
+            {totalQuestions} سؤال · مدة الاختبار {displayDuration} دقيقة
           </p>
         </div>
 
