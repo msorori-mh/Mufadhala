@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { QRCodeCanvas } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -113,10 +112,10 @@ export default function Install() {
                 تنزيل QR (PNG)
               </Button>
               <Button asChild variant="ghost" className="gap-2">
-                <Link to="/">
+                <a href="https://mufadhala.com">
                   <ArrowLeft className="w-4 h-4" />
                   دخول الموقع
-                </Link>
+                </a>
               </Button>
             </div>
           </CardContent>
