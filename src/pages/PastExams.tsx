@@ -57,6 +57,8 @@ const PastExams = () => {
       return data || [];
     },
     enabled: !!effectiveUniversityId,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   // Flat list sorted by year descending
