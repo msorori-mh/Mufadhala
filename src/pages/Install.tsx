@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Download, GraduationCap, Smartphone, Share2, Plus, MoreVertical, ArrowLeft, Globe, FileText, Loader2, Send } from "lucide-react";
 import { generateBrochurePDF } from "@/lib/generateBrochurePDF";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Install page — Public landing for QR brochure scans.
