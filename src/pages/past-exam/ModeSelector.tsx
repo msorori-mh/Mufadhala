@@ -263,7 +263,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
             <div className="grid grid-cols-3 gap-2 py-2 border-y border-border/50">
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground">المؤقت</p>
-                <p className="text-xs font-bold text-destructive mt-0.5">{hasDuration ? `${model.duration_minutes} د` : "اختر المدة"}</p>
+                <p className="text-xs font-bold text-destructive mt-0.5">{displayDuration} د</p>
               </div>
               <div className="text-center border-x border-border/50">
                 <p className="text-[10px] text-muted-foreground">الإجابات</p>
