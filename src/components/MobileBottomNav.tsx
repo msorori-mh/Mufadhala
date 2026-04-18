@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, Link } from "react-router-dom";
-import { Home, BookOpen, ClipboardCheck, Sparkles, Settings as SettingsIcon, Shield } from "lucide-react";
+import { Home, BookOpen, ClipboardCheck, Sparkles, Settings as SettingsIcon, Shield, Bell } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { isNativePlatform } from "@/lib/capacitor";
 import { useAuthContext } from "@/contexts/AuthContext";
