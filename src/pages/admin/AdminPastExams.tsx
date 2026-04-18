@@ -228,6 +228,36 @@ const AdminPastExams = () => {
     }
   };
 
+  const [publishingId, setPublishingId] = useState<string | null>(null);
+  const handleQuickPublish = async (m: Model) => {
+    // Verify against DB directly to avoid stale cache
+    setPublishingId(m.id);
+    try {
+      const { count, error: countErr } = await supabase
+        .from("past_exam_model_questions")
+        .select("id", { count: "exact", head: true })
+        .eq("model_id", m.id);
+      if (countErr) throw countErr;
+      if ((count || 0) === 0) {
+        toast({ variant: "destructive", title: "لا يمكن نشر نموذج فارغ", description: "أضف الأسئلة أولاً قبل النشر" });
+        return;
+      }
+      if (!confirm(`نشر النموذج "${m.title}" للطلاب الآن؟`)) return;
+      const { error } = await supabase
+        .from("past_exam_models")
+        .update({ is_published: true })
+        .eq("id", m.id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
+      qc.invalidateQueries({ queryKey: ["admin-past-exam-question-counts"] });
+      toast({ title: "✓ تم النشر", description: "النموذج منشور للطلاب الآن" });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر النشر", description: err?.message || "حدث خطأ" });
+    } finally {
+      setPublishingId(null);
+    }
+  };
+
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const handleDuplicate = async (m: Model) => {
     if (!confirm(`نسخ النموذج "${m.title}" مع جميع أسئلته؟`)) return;
