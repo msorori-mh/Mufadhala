@@ -112,7 +112,7 @@ export default function Install() {
                 تنزيل QR (PNG)
               </Button>
               <Button asChild variant="ghost" className="gap-2">
-                <a href="https://mufadhala.com">
+                <a href="/">
                   <ArrowLeft className="w-4 h-4" />
                   دخول الموقع
                 </a>
