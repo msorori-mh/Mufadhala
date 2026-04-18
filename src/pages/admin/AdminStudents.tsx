@@ -290,7 +290,7 @@ const AdminStudents = () => {
         {/* Search */}
         <div className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="بحث بالاسم أو رقم التنسيق..." value={search} onChange={(e) => setSearch(e.target.value)} className="pr-9" />
+          <Input placeholder="بحث بالاسم أو رقم الهاتف..." value={search} onChange={(e) => setSearch(e.target.value)} className="pr-9" />
         </div>
 
         <p className="text-sm text-muted-foreground">{filtered.length} نتيجة</p>
