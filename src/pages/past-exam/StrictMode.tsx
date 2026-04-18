@@ -22,6 +22,7 @@ interface Props {
   model: PastExamModelInfo;
   questions: PastExamQuestion[];
   onBackToSelect: () => void;
+  customDurationMinutes?: number | null;
 }
 
 const formatTime = (seconds: number) => {
@@ -30,12 +31,15 @@ const formatTime = (seconds: number) => {
   return `${m}:${s}`;
 };
 
-const StrictMode = ({ model, questions, onBackToSelect }: Props) => {
+const StrictMode = ({ model, questions, onBackToSelect, customDurationMinutes }: Props) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: student } = useStudentData(user?.id);
   const total = questions.length;
-  const durationSec = (model.duration_minutes ?? 0) * 60;
+  const effectiveDurationMinutes = (model.duration_minutes && model.duration_minutes > 0)
+    ? model.duration_minutes
+    : (customDurationMinutes ?? 0);
+  const durationSec = effectiveDurationMinutes * 60;
 
   const [phase, setPhase] = useState<Phase>("intro");
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -191,7 +195,7 @@ const StrictMode = ({ model, questions, onBackToSelect }: Props) => {
                 <div className="space-y-2 text-sm leading-relaxed">
                   <p className="font-bold text-foreground">قبل أن تبدأ، اعلم أن:</p>
                   <ul className="space-y-1.5 text-foreground/80">
-                    <li>⏱️ مدة الاختبار <span className="font-bold text-destructive">{model.duration_minutes} دقيقة</span></li>
+                    <li>⏱️ مدة الاختبار <span className="font-bold text-destructive">{effectiveDurationMinutes} دقيقة</span></li>
                     <li>📝 عدد الأسئلة <span className="font-bold">{total} سؤال</span></li>
                     <li>🔒 لن تظهر الإجابات الصحيحة إلا بعد التسليم</li>
                     <li>⚠️ عند انتهاء الوقت، يتم التسليم تلقائياً</li>
