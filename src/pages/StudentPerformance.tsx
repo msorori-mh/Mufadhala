@@ -148,6 +148,28 @@ const StudentPerformance = () => {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("all");
   const [hideCompleted, setHideCompleted] = useState(false);
 
+  // Per-lesson correct-rate map from all student's exam attempts
+  // Map: lessonId -> { correct, answered }
+  const lessonAccuracyMap = (() => {
+    const map = new Map<string, { correct: number; answered: number }>();
+    if (!questions.length || !attempts.length) return map;
+    const qById = new Map<string, QuestionRow>();
+    questions.forEach((q) => qById.set(q.id, q));
+    attempts.forEach((att) => {
+      const ans = att.answers;
+      if (!ans || typeof ans !== "object") return;
+      Object.entries(ans).forEach(([qId, picked]) => {
+        const q = qById.get(qId);
+        if (!q) return;
+        const cur = map.get(q.lesson_id) ?? { correct: 0, answered: 0 };
+        cur.answered += 1;
+        if (typeof picked === "string" && picked === q.correct_option) cur.correct += 1;
+        map.set(q.lesson_id, cur);
+      });
+    });
+    return map;
+  })();
+
   // Filtered lessons by subject
   const subjectFilteredLessons = selectedSubjectId === "all"
     ? lessons
