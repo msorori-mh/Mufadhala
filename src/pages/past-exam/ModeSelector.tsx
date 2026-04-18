@@ -39,11 +39,12 @@ const MIN_DURATION = 30;
 const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, onSelectStrict }: Props) => {
   const navigate = useNavigate();
   const hasDuration = (model.duration_minutes ?? 0) > 0;
+  const suggestedDefault = Math.max(MIN_DURATION, model.suggested_duration_minutes ?? 60);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [durationPickerOpen, setDurationPickerOpen] = useState(false);
-  const [customDuration, setCustomDuration] = useState<number>(60);
+  const [customDuration, setCustomDuration] = useState<number>(suggestedDefault);
 
   const { user } = useAuth();
   const { data: student } = useStudentData(user?.id);
@@ -60,7 +61,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
       setAcknowledged(false);
       setConfirmOpen(true);
     } else {
-      setCustomDuration(60);
+      setCustomDuration(suggestedDefault);
       setDurationPickerOpen(true);
     }
   };
