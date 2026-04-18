@@ -9,6 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from "@/components/ui/table";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useModeratorScope } from "@/hooks/useModeratorScope";
@@ -828,6 +830,91 @@ const AdminContent = () => {
             <Button onClick={openCreateLesson} size="sm"><Plus className="w-4 h-4 ml-1" />إضافة درس</Button>
           </div>
         </div>
+
+        {/* Content overview matrix: subjects × grade levels */}
+        <Collapsible defaultOpen={false}>
+          <Card>
+            <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-primary" />
+                <span className="font-semibold text-sm">نظرة شاملة على المحتوى (المواد × الصفوف)</span>
+              </div>
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0">
+                {(() => {
+                  const matrix = subjects.map(subject => {
+                    const byGrade = GRADE_LEVELS.map(g => {
+                      const ls = scopedLessons.filter(l => l.subject_id === subject.id && l.grade_level === g.value);
+                      const qs = questions.filter(q => ls.some(l => l.id === q.lesson_id)).length;
+                      return { grade: g.value, label: g.label, lessons: ls.length, questions: qs };
+                    });
+                    const totals = {
+                      lessons: byGrade.reduce((s, g) => s + g.lessons, 0),
+                      questions: byGrade.reduce((s, g) => s + g.questions, 0),
+                    };
+                    return { subject, byGrade, totals };
+                  });
+                  const grandTotals = GRADE_LEVELS.map(g => {
+                    const ls = scopedLessons.filter(l => l.grade_level === g.value);
+                    const qs = questions.filter(q => ls.some(l => l.id === q.lesson_id)).length;
+                    return { lessons: ls.length, questions: qs };
+                  });
+                  const grandSum = {
+                    lessons: grandTotals.reduce((s, g) => s + g.lessons, 0),
+                    questions: grandTotals.reduce((s, g) => s + g.questions, 0),
+                  };
+                  return (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-right">المادة</TableHead>
+                          {GRADE_LEVELS.map(g => (
+                            <TableHead key={g.value} className="text-center">{g.label}</TableHead>
+                          ))}
+                          <TableHead className="text-center font-bold">الإجمالي</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {matrix.map(({ subject, byGrade, totals }) => (
+                          <TableRow key={subject.id}>
+                            <TableCell className="font-medium text-right">{subject.name_ar}</TableCell>
+                            {byGrade.map(g => (
+                              <TableCell key={g.grade} className="text-center text-xs">
+                                {g.lessons === 0 && g.questions === 0 ? (
+                                  <span className="text-muted-foreground">—</span>
+                                ) : (
+                                  <span>{g.lessons} درس · {g.questions} سؤال</span>
+                                )}
+                              </TableCell>
+                            ))}
+                            <TableCell className="text-center text-xs font-semibold bg-muted/30">
+                              {totals.lessons} درس · {totals.questions} سؤال
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                      <TableFooter>
+                        <TableRow>
+                          <TableCell className="text-right font-bold">الإجمالي العام</TableCell>
+                          {grandTotals.map((g, i) => (
+                            <TableCell key={i} className="text-center text-xs font-bold">
+                              {g.lessons} درس · {g.questions} سؤال
+                            </TableCell>
+                          ))}
+                          <TableCell className="text-center text-xs font-bold bg-primary/10">
+                            {grandSum.lessons} درس · {grandSum.questions} سؤال
+                          </TableCell>
+                        </TableRow>
+                      </TableFooter>
+                    </Table>
+                  );
+                })()}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Filters — Subject-based */}
         <div className="flex gap-2 flex-wrap">
