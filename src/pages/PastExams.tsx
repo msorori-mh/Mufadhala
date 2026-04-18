@@ -18,7 +18,7 @@ const PastExams = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: student } = useStudentData(user?.id);
-  const { isActive: hasActiveSubscription } = useSubscription(user?.id);
+  const { isPaid: hasActiveSubscription } = useSubscription(user?.id);
 
   const [selectedUniversityId, setSelectedUniversityId] = useState<string>("");
 
