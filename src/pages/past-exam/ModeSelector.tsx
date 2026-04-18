@@ -35,11 +35,27 @@ interface Props {
 
 const QUICK_DURATIONS = [30, 45, 60, 90, 120];
 const MIN_DURATION = 30;
+const LAST_DURATION_KEY = (modelId: string) => `pastExam:lastDuration:${modelId}`;
+
+const readSavedDuration = (modelId: string): number | null => {
+  try {
+    const raw = localStorage.getItem(LAST_DURATION_KEY(modelId));
+    if (!raw) return null;
+    const v = parseInt(raw, 10);
+    return Number.isFinite(v) && v >= MIN_DURATION ? v : null;
+  } catch {
+    return null;
+  }
+};
 
 const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, onSelectStrict }: Props) => {
   const navigate = useNavigate();
   const hasDuration = (model.duration_minutes ?? 0) > 0;
-  const suggestedDefault = Math.max(MIN_DURATION, model.suggested_duration_minutes ?? 60);
+  const savedDuration = readSavedDuration(model.id);
+  const suggestedDefault = Math.max(
+    MIN_DURATION,
+    savedDuration ?? model.suggested_duration_minutes ?? 60
+  );
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
@@ -68,6 +84,11 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
 
   const handleDurationConfirm = () => {
     if (customDuration < MIN_DURATION) return;
+    try {
+      localStorage.setItem(LAST_DURATION_KEY(model.id), String(customDuration));
+    } catch {
+      // ignore quota / privacy mode errors
+    }
     setDurationPickerOpen(false);
     setAcknowledged(false);
     setConfirmOpen(true);
@@ -336,6 +357,11 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
           </DialogHeader>
 
           <div className="space-y-4 py-2">
+            {savedDuration && (
+              <div className="text-[11px] text-center text-secondary-foreground bg-secondary/20 border border-secondary/30 rounded-md py-1.5 px-2">
+                ⏱️ آخر مدة استخدمتها: <span className="font-bold">{savedDuration} دقيقة</span>
+              </div>
+            )}
             {model.suggested_duration_minutes && model.suggested_duration_minutes >= MIN_DURATION && (
               <div className="text-[11px] text-center text-muted-foreground bg-muted/40 rounded-md py-1.5 px-2">
                 💡 المدة المقترحة من قِبَل الإدارة: <span className="font-bold text-foreground">{model.suggested_duration_minutes} دقيقة</span>
