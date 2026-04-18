@@ -272,7 +272,7 @@ const AdminPastExams = () => {
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
                   <Switch checked={isPaid} onCheckedChange={setIsPaid} />
-                  <Label>مدفوع</Label>
+                  <Label>يتطلب اشتراك</Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch checked={isPublished} onCheckedChange={setIsPublished} />
@@ -396,7 +396,7 @@ const AdminPastExams = () => {
                     >
                       {isEmpty ? "فارغ" : `${qCount} سؤال`}
                     </Badge>
-                    {m.is_paid && <Badge variant="secondary" className="text-[10px]">مدفوع</Badge>}
+                    {m.is_paid && <Badge variant="secondary" className="text-[10px]">اشتراك</Badge>}
                     {m.is_published ? (
                       <>
                         <Badge className="text-[10px] bg-secondary">منشور</Badge>

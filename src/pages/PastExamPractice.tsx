@@ -75,7 +75,7 @@ const PastExamPractice = () => {
             <Lock className="w-10 h-10 text-muted-foreground" />
           </div>
           <h2 className="text-xl font-bold">
-            {paymentsVisible ? "هذا النموذج متاح للمشتركين فقط" : "هذا النموذج غير متاح في هذه النسخة"}
+            {paymentsVisible ? "يتطلب اشتراك للوصول" : "هذا النموذج غير متاح في هذه النسخة"}
           </h2>
           {paymentsVisible && (
             <p className="text-sm text-muted-foreground leading-relaxed">اشترك للوصول إلى جميع نماذج الأعوام السابقة والتدرّب عليها</p>
