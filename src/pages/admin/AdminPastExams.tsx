@@ -181,20 +181,34 @@ const AdminPastExams = () => {
           title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: isPublished,
           duration_minutes: durationParsed,
           suggested_duration_minutes: suggestedParsed,
-        } as any).select("id").single();
+        } as any).select("*").single();
         if (error) throw error;
         if (!created?.id) throw new Error("no id returned");
+
+        // Enforce publish state: if admin chose published but DB didn't reflect it, force-update
+        if (isPublished && (created as any).is_published !== true) {
+          const { error: fixErr } = await supabase
+            .from("past_exam_models")
+            .update({ is_published: true } as any)
+            .eq("id", (created as any).id);
+          if (fixErr) throw fixErr;
+        }
+
         toast({
-          title: "تم إنشاء النموذج",
+          title: isPublished ? "✓ تم إنشاء النموذج كمنشور" : "تم إنشاء النموذج كمسودة",
           description: isPublished
-            ? "✓ النموذج محفوظ كمنشور — أضف الأسئلة الآن ليتمكن الطلاب من التدرّب"
+            ? "النموذج منشور للطلاب — أضف الأسئلة الآن ليتمكنوا من التدرّب"
             : "تم الحفظ كمسودة — أضف الأسئلة ثم انشره",
         });
-        qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
+
+        // Confirmed refresh: await refetch so list shows correct badge before moving on
+        await qc.refetchQueries({ queryKey: ["admin-past-exam-models"] });
+        await qc.refetchQueries({ queryKey: ["admin-past-exam-question-counts"] });
+
         setShowForm(false);
         resetForm();
-        setJustCreatedId(created.id);
-        setShowQuestions(created.id);
+        setJustCreatedId((created as any).id);
+        setShowQuestions((created as any).id);
       }
     } catch (err: any) {
       // Save failed: keep admin inside the form, do NOT open questions editor
@@ -391,12 +405,25 @@ const AdminPastExams = () => {
         )}
 
         {/* Success banner — ONLY after creating a brand-new model */}
-        {showQuestions && justCreatedId === showQuestions && (
-          <div className="rounded-lg border border-secondary/40 bg-secondary/10 p-3 text-sm flex items-center gap-2">
-            <span className="font-bold text-secondary">✓ تم إنشاء النموذج</span>
-            <span className="text-muted-foreground">— الخطوة 2 من 2: أضف الأسئلة يدوياً أو استورد من ملف Excel</span>
-          </div>
-        )}
+        {showQuestions && justCreatedId === showQuestions && (() => {
+          const created = models.find((mm: any) => mm.id === showQuestions) as any;
+          const published = created?.is_published === true;
+          return (
+            <div className="rounded-lg border border-secondary/40 bg-secondary/10 p-3 text-sm flex flex-wrap items-center gap-2">
+              <span className="font-bold text-secondary">✓ تم إنشاء النموذج</span>
+              <span
+                className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  published
+                    ? "bg-secondary text-secondary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {published ? "منشور" : "مسودة"}
+              </span>
+              <span className="text-muted-foreground">— الخطوة 2 من 2: أضف الأسئلة يدوياً أو استورد من ملف Excel</span>
+            </div>
+          );
+        })()}
 
         {/* Questions Editor */}
         {showQuestions && (
