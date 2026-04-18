@@ -19,6 +19,7 @@ export default function Install() {
   const qrRef = useRef<HTMLDivElement>(null);
   const [platform, setPlatform] = useState<"ios" | "android" | "other">("other");
   const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [shareCount, setShareCount] = useState<number | null>(null);
 
   useEffect(() => {
     const ua = navigator.userAgent.toLowerCase();
@@ -26,7 +27,37 @@ export default function Install() {
     else if (/android/.test(ua)) setPlatform("android");
 
     document.title = "ثبّت تطبيق مُفَاضَلَة — امسح وابدأ";
+
+    // Fetch lifetime share count for social proof
+    (async () => {
+      try {
+        const { count } = await supabase
+          .from("conversion_events")
+          .select("id", { count: "exact", head: true })
+          .eq("source", "install_share")
+          .eq("event_type", "click");
+        if (typeof count === "number") setShareCount(count);
+      } catch {
+        // silent — counter is optional UX
+      }
+    })();
   }, []);
+
+  /** Fire-and-forget: log a share click + optimistically bump the counter. */
+  const trackShare = async (channel: "whatsapp" | "telegram" | "native") => {
+    setShareCount((prev) => (typeof prev === "number" ? prev + 1 : prev));
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase.from("conversion_events").insert({
+        user_id: user?.id ?? null,
+        source: "install_share",
+        event_type: "click",
+        metadata: { channel } as never,
+      });
+    } catch {
+      // silent — never block sharing
+    }
+  };
 
   const downloadQR = () => {
     const canvas = qrRef.current?.querySelector("canvas");
