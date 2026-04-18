@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import NativeSelect from "@/components/NativeSelect";
-import { ArrowRight, FileText, Lock, ChevronLeft } from "lucide-react";
+import { ArrowRight, FileText, Lock, ChevronLeft, Crown, Sparkles } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { trackSubscriptionClick } from "@/lib/conversionTracking";
 import { isPaymentUIEnabled } from "@/lib/platformGate";
@@ -116,12 +116,20 @@ const PastExams = () => {
             <p>لا توجد نماذج متاحة لهذه الجامعة حالياً</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {universityName && (
               <p className="text-sm text-muted-foreground mb-1">
                 نماذج {universityName}
               </p>
             )}
+            {/* Conversion hint banner — only shown on web when there are locked paid models */}
+            {isPaymentUIEnabled() &&
+              sortedModels.some((m) => m.is_paid && !hasActiveSubscription) && (
+                <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2 text-xs text-foreground/80">
+                  <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <span>اشترك للوصول لجميع النماذج المدفوعة دفعة واحدة</span>
+                </div>
+              )}
             {sortedModels.map((model, idx) => {
               const locked = model.is_paid && !hasActiveSubscription;
               const prevYear = idx > 0 ? sortedModels[idx - 1].year : null;
@@ -129,65 +137,85 @@ const PastExams = () => {
               return (
                 <div key={model.id} className={isYearBoundary ? "pt-2 mt-1 border-t border-dashed border-border/60" : ""}>
                   <Card
-                    className={`cursor-pointer transition-shadow hover:shadow-md ${locked ? "opacity-75" : ""}`}
+                    className={`transition-shadow ${
+                      locked
+                        ? "border-primary/30 bg-gradient-to-br from-primary/5 to-transparent shadow-sm"
+                        : "cursor-pointer hover:shadow-md"
+                    }`}
                     onClick={() => {
-                      if (locked) {
-                        if (isPaymentUIEnabled()) {
-                          trackSubscriptionClick("past_exams", { model_id: model.id, year: model.year });
-                          navigate("/subscription");
-                        }
-                        // In native APK: do nothing (card stays visually locked, no upsell flow).
-                      } else {
-                        navigate(`/past-exams/${model.id}`);
-                      }
+                      if (locked) return; // locked cards: action lives in the dedicated CTA below
+                      navigate(`/past-exams/${model.id}`);
                     }}
                   >
-                    <CardContent className="flex items-center gap-3 p-3">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${locked ? "bg-primary/15 ring-1 ring-primary/30" : "bg-primary/10"}`}>
-                        {locked ? (
-                          <Lock className="w-4 h-4 text-primary" />
+                    <CardContent className="p-3">
+                      {/* Top row: icon + title + badge */}
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                            locked
+                              ? "bg-primary/15 ring-1 ring-primary/30"
+                              : "bg-primary/10"
+                          }`}
+                        >
+                          {locked ? (
+                            <Lock className="w-4 h-4 text-primary" />
+                          ) : (
+                            <FileText className="w-4 h-4 text-primary" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground truncate">
+                            <span>{model.title}</span>
+                            <span className="text-muted-foreground font-normal"> · </span>
+                            <span className="text-primary">{model.year}</span>
+                            {model.duration_minutes && (
+                              <>
+                                <span className="text-muted-foreground font-normal"> · </span>
+                                <span className="text-muted-foreground font-normal">
+                                  {model.duration_minutes}د
+                                </span>
+                              </>
+                            )}
+                          </p>
+                        </div>
+                        {model.is_paid ? (
+                          <Badge
+                            variant={locked ? "default" : "secondary"}
+                            className="text-[10px] shrink-0"
+                          >
+                            {locked ? "مدفوع" : "اشتراك ✓"}
+                          </Badge>
                         ) : (
-                          <FileText className="w-4 h-4 text-primary" />
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] shrink-0 border-secondary/40 text-secondary"
+                          >
+                            مجاني
+                          </Badge>
+                        )}
+                        {!locked && (
+                          <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0" />
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">
-                          <span>{model.title}</span>
-                          <span className="text-muted-foreground font-normal"> · </span>
-                          <span className="text-primary">{model.year}</span>
-                          {model.duration_minutes && (
-                            <>
-                              <span className="text-muted-foreground font-normal"> · </span>
-                              <span className="text-muted-foreground font-normal">{model.duration_minutes}د</span>
-                            </>
-                          )}
-                        </p>
-                      </div>
-                      {model.is_paid && (
-                        <Badge
-                          variant={locked ? "default" : "secondary"}
-                          className="text-[10px] shrink-0"
-                        >
-                          {locked ? "اشتراك" : "اشتراك ✓"}
-                        </Badge>
-                      )}
-                      {!model.is_paid && (
-                        <Badge variant="outline" className="text-[10px] shrink-0 border-secondary/40 text-secondary">مجاني</Badge>
-                      )}
+
+                      {/* Bottom row: full-width subscribe CTA — web only, locked only */}
                       {locked && isPaymentUIEnabled() && (
                         <Button
-                          size="sm"
-                          className="h-7 px-2.5 text-[11px] shrink-0"
+                          className="mt-3 w-full h-10 gap-2 font-semibold shadow-sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            trackSubscriptionClick("past_exams", { model_id: model.id, year: model.year, from: "card_cta" });
+                            trackSubscriptionClick("past_exams", {
+                              model_id: model.id,
+                              year: model.year,
+                              from: "card_cta_full",
+                            });
                             navigate("/subscription");
                           }}
                         >
-                          اشترك
+                          <Crown className="w-4 h-4" />
+                          <span>اشترك للوصول لهذا النموذج</span>
                         </Button>
                       )}
-                      {!locked && <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0" />}
                     </CardContent>
                   </Card>
                 </div>
