@@ -44,6 +44,13 @@ interface Question {
   question_type?: string;
 }
 
+/** Sort questions: true/false first, then others; preserve display_order within each group. */
+const sortQuestionsByType = (qs: Question[]): Question[] => {
+  const tf = qs.filter((q) => q.question_type === "true_false").sort((a, b) => a.display_order - b.display_order);
+  const rest = qs.filter((q) => q.question_type !== "true_false").sort((a, b) => a.display_order - b.display_order);
+  return [...tf, ...rest];
+};
+
 /** Extract storage path from a presentation_url (handles both full URLs and plain filenames). */
 const getPresentationPath = (url: string): string => {
   try {
@@ -87,7 +94,7 @@ const LessonDetail = () => {
         // Load from cache
         if (cached) {
           setLesson({ id: cached.id, title: cached.title, content: cached.content, summary: cached.summary, major_id: "", presentation_url: null, grade_level: null, subject_id: null });
-          setQuestions(cached.questions as Question[]);
+          setQuestions(sortQuestionsByType(cached.questions as Question[]));
           setIsFromCache(true);
         }
         setLoading(false);
@@ -101,7 +108,7 @@ const LessonDetail = () => {
         supabase.from("students").select("id").eq("user_id", user.id).maybeSingle(),
       ]);
 
-      if (q) setQuestions(q as Question[]);
+      if (q) setQuestions(sortQuestionsByType(q as Question[]));
 
       if (l) {
         setLesson(l as Lesson);
