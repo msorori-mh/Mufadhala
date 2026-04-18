@@ -405,12 +405,25 @@ const AdminPastExams = () => {
         )}
 
         {/* Success banner — ONLY after creating a brand-new model */}
-        {showQuestions && justCreatedId === showQuestions && (
-          <div className="rounded-lg border border-secondary/40 bg-secondary/10 p-3 text-sm flex items-center gap-2">
-            <span className="font-bold text-secondary">✓ تم إنشاء النموذج</span>
-            <span className="text-muted-foreground">— الخطوة 2 من 2: أضف الأسئلة يدوياً أو استورد من ملف Excel</span>
-          </div>
-        )}
+        {showQuestions && justCreatedId === showQuestions && (() => {
+          const created = models.find((mm: any) => mm.id === showQuestions) as any;
+          const published = created?.is_published === true;
+          return (
+            <div className="rounded-lg border border-secondary/40 bg-secondary/10 p-3 text-sm flex flex-wrap items-center gap-2">
+              <span className="font-bold text-secondary">✓ تم إنشاء النموذج</span>
+              <span
+                className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  published
+                    ? "bg-secondary text-secondary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {published ? "منشور" : "مسودة"}
+              </span>
+              <span className="text-muted-foreground">— الخطوة 2 من 2: أضف الأسئلة يدوياً أو استورد من ملف Excel</span>
+            </div>
+          );
+        })()}
 
         {/* Questions Editor */}
         {showQuestions && (
