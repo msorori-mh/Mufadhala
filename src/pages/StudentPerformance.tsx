@@ -27,6 +27,7 @@ import {
 interface ExamRow {
   id: string; score: number; total: number;
   completed_at: string | null; major_id: string;
+  answers?: Record<string, string> | null;
 }
 
 interface LessonRow {
