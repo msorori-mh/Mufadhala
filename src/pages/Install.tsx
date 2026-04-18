@@ -14,7 +14,7 @@ import { toast } from "sonner";
  */
 export default function Install() {
   // Always link QR to the canonical public URL (so brochure works regardless of origin)
-  const canonicalUrl = "https://mufadhala.com/install";
+  const canonicalUrl = "https://www.mufadhala.com/install";
   const qrRef = useRef<HTMLDivElement>(null);
   const [platform, setPlatform] = useState<"ios" | "android" | "other">("other");
   const [generatingPDF, setGeneratingPDF] = useState(false);
