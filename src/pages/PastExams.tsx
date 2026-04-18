@@ -118,9 +118,28 @@ const PastExams = () => {
             ))}
           </div>
         ) : models.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <FileText className="w-12 h-12 mx-auto mb-3 opacity-40" />
-            <p>لا توجد نماذج متاحة لهذه الجامعة حالياً</p>
+          <div className="text-center py-12 px-4">
+            <FileText className="w-12 h-12 mx-auto mb-3 opacity-40 text-muted-foreground" />
+            <p className="text-foreground font-medium mb-1">
+              لم يتم رفع نماذج لـ {universityName || "هذه الجامعة"} بعد
+            </p>
+            <p className="text-sm text-muted-foreground mb-5">
+              نعمل على إضافة نماذج جديدة قريباً
+            </p>
+            {effectiveUniversityId !== FALLBACK_UNIVERSITY_ID && (
+              <Button
+                onClick={() => setSelectedUniversityId(FALLBACK_UNIVERSITY_ID)}
+                className="gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>تصفح نماذج جامعة تعز (متاحة الآن)</span>
+              </Button>
+            )}
+            {isPaymentUIEnabled() && (
+              <p className="text-xs text-muted-foreground mt-4">
+                اشترك الآن لتكون أول من يصل للنماذج عند رفعها
+              </p>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -129,6 +148,14 @@ const PastExams = () => {
                 نماذج {universityName}
               </p>
             )}
+            {/* Trial info banner — explains why paid models are still locked during trial */}
+            {isTrial && isPaymentUIEnabled() &&
+              sortedModels.some((m) => m.is_paid) && (
+                <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-xs text-foreground/90">
+                  <Crown className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>أنت في الفترة التجريبية. اشترك الآن لفتح النماذج المدفوعة</span>
+                </div>
+              )}
             {/* Conversion hint banner — only shown on web when there are locked paid models */}
             {isPaymentUIEnabled() &&
               sortedModels.some((m) => m.is_paid && !hasActiveSubscription) && (
