@@ -18,9 +18,12 @@ const PastExams = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: student } = useStudentData(user?.id);
-  const { isPaid: hasActiveSubscription } = useSubscription(user?.id);
+  const { isPaid: hasActiveSubscription, isTrial } = useSubscription(user?.id);
 
   const [selectedUniversityId, setSelectedUniversityId] = useState<string>("");
+
+  // Fallback university (currently the only one with published models): Taiz
+  const FALLBACK_UNIVERSITY_ID = "a0000001-0000-0000-0000-000000000003";
 
   // Fetch universities
   const { data: universities = [] } = useQuery({
