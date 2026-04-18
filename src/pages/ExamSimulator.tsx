@@ -491,8 +491,10 @@ const ExamSimulator = () => {
                   </div>
                 </CardContent>
               </Card>
+              </div>
             );
-          })}
+            });
+          })()}
         </div>
 
         <div className="flex gap-3">
