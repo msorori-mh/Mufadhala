@@ -320,7 +320,97 @@ const AdminPastExams = () => {
     }
   };
 
-  return (
+  // ===== Bulk actions =====
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkPublish = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    try {
+      // Verify each has questions; skip empty ones
+      const { data: counts, error: cErr } = await supabase
+        .from("past_exam_model_questions")
+        .select("model_id")
+        .in("model_id", ids);
+      if (cErr) throw cErr;
+      const haveQs = new Set((counts || []).map((r: any) => r.model_id));
+      const publishable = ids.filter((id) => haveQs.has(id));
+      const skipped = ids.length - publishable.length;
+      if (publishable.length === 0) {
+        toast({ variant: "destructive", title: "لا يمكن نشر النماذج الفارغة", description: "كل النماذج المحددة بدون أسئلة" });
+        return;
+      }
+      const { error } = await supabase
+        .from("past_exam_models")
+        .update({ is_published: true } as any)
+        .in("id", publishable);
+      if (error) throw error;
+      await qc.refetchQueries({ queryKey: ["admin-past-exam-models"] });
+      toast({
+        title: `✓ تم نشر ${publishable.length} نموذج`,
+        description: skipped > 0 ? `تم تجاهل ${skipped} نموذج فارغ` : undefined,
+      });
+      clearSelection();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر النشر الجماعي", description: err?.message || "حدث خطأ" });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const handleBulkUnpublish = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    if (!confirm(`إرجاع ${ids.length} نموذج إلى مسودة؟ ستختفي عن الطلاب فوراً.`)) return;
+    setBulkBusy(true);
+    try {
+      const { error } = await supabase
+        .from("past_exam_models")
+        .update({ is_published: false } as any)
+        .in("id", ids);
+      if (error) throw error;
+      await qc.refetchQueries({ queryKey: ["admin-past-exam-models"] });
+      toast({ title: `تم إرجاع ${ids.length} نموذج إلى مسودة` });
+      clearSelection();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر إلغاء النشر الجماعي", description: err?.message || "حدث خطأ" });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const handleBulkDelete = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    if (!confirm(`حذف ${ids.length} نموذج وجميع أسئلته نهائياً؟ لا يمكن التراجع.`)) return;
+    setBulkBusy(true);
+    try {
+      const { error: e1 } = await supabase.from("past_exam_model_questions").delete().in("model_id", ids);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("past_exam_models").delete().in("id", ids);
+      if (e2) throw e2;
+      await qc.refetchQueries({ queryKey: ["admin-past-exam-models"] });
+      await qc.refetchQueries({ queryKey: ["admin-past-exam-question-counts"] });
+      toast({ title: `تم حذف ${ids.length} نموذج` });
+      if (showQuestions && ids.includes(showQuestions)) setShowQuestions(null);
+      clearSelection();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر الحذف الجماعي", description: err?.message || "حدث خطأ" });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+
     <AdminLayout>
       <PermissionGate permission="past_exams">
       <div className="space-y-5">
