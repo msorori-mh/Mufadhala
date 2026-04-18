@@ -182,20 +182,40 @@ const AdminContent = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Fetch ALL questions in batches of 1000 to bypass PostgREST's max-rows cap
+  const fetchAllQuestions = async (): Promise<Question[]> => {
+    const PAGE = 1000;
+    let from = 0;
+    const all: Question[] = [];
+    while (true) {
+      const { data, error } = await supabase
+        .from("questions")
+        .select("*")
+        .order("display_order")
+        .range(from, from + PAGE - 1);
+      if (error || !data) break;
+      all.push(...(data as Question[]));
+      if (data.length < PAGE) break;
+      from += PAGE;
+      if (from > 200000) break; // safety guard
+    }
+    return all;
+  };
+
   const fetchData = async () => {
-    const [{ data: u }, { data: c }, { data: m }, { data: l }, { data: q }, { data: subs }] = await Promise.all([
+    const [{ data: u }, { data: c }, { data: m }, { data: l }, qAll, { data: subs }] = await Promise.all([
       supabase.from("universities").select("*").order("display_order"),
       supabase.from("colleges").select("*").order("display_order"),
       supabase.from("majors").select("*").order("display_order"),
       supabase.from("lessons").select("*").order("display_order").limit(5000),
-      supabase.from("questions").select("*").order("display_order").limit(20000),
+      fetchAllQuestions(),
       supabase.from("subjects").select("id, name_ar, code").eq("is_active", true).order("display_order"),
     ]);
     if (u) setUniversities(u);
     if (c) setColleges(c);
     if (m) setMajors(m);
     if (l) setLessons(l as Lesson[]);
-    if (q) setQuestions(q as Question[]);
+    setQuestions(qAll);
     if (subs) setSubjects(subs as Subject[]);
     setLoading(false);
   };

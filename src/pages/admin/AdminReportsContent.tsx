@@ -47,21 +47,34 @@ const AdminReportsContent = () => {
     const load = async () => {
       setLoading(true);
       try {
-        const [subjectsRes, lessonsRes, questionsRes, universitiesRes, modelsRes, modelQuestionsRes] = await Promise.all([
+        // Paginate large tables to bypass PostgREST max-rows cap (default 1000)
+        const fetchAllPaged = async <T,>(table: string, columns: string): Promise<T[]> => {
+          const PAGE = 1000;
+          let from = 0;
+          const all: T[] = [];
+          while (true) {
+            const { data, error } = await supabase.from(table as any).select(columns).range(from, from + PAGE - 1);
+            if (error || !data) break;
+            all.push(...(data as T[]));
+            if (data.length < PAGE) break;
+            from += PAGE;
+            if (from > 200000) break;
+          }
+          return all;
+        };
+
+        const [subjectsRes, universitiesRes, modelsRes, lessons, questions, modelQuestions] = await Promise.all([
           supabase.from("subjects").select("id, name_ar, display_order").order("display_order"),
-          supabase.from("lessons").select("id, subject_id, grade_level").limit(20000),
-          supabase.from("questions").select("lesson_id").limit(50000),
           supabase.from("universities").select("id, name_ar, display_order").order("display_order"),
           supabase.from("past_exam_models").select("id, university_id").limit(20000),
-          supabase.from("past_exam_model_questions").select("model_id").limit(50000),
+          fetchAllPaged<{ id: string; subject_id: string | null; grade_level: number | null }>("lessons", "id, subject_id, grade_level"),
+          fetchAllPaged<{ lesson_id: string }>("questions", "lesson_id"),
+          fetchAllPaged<{ model_id: string }>("past_exam_model_questions", "model_id"),
         ]);
 
         const subjects = subjectsRes.data ?? [];
-        const lessons = lessonsRes.data ?? [];
-        const questions = questionsRes.data ?? [];
         const universities = universitiesRes.data ?? [];
         const models = modelsRes.data ?? [];
-        const modelQuestions = modelQuestionsRes.data ?? [];
 
         // Subject matrix
         const subjectRows: SubjectRow[] = subjects.map((s) => {
