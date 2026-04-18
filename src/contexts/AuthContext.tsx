@@ -117,6 +117,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
           fetchRoles(session.user.id);
           saveNativeSession(session.access_token, session.refresh_token);
+          // Refresh student-related data so admin updates appear without logout/login
+          queryClient.invalidateQueries({ queryKey: ["student"] });
+          queryClient.invalidateQueries({ queryKey: ["subscription"] });
         }
       } else {
         setUser(null);
