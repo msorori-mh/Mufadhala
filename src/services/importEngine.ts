@@ -144,7 +144,7 @@ export function validateLessons(rows: any[][]): { lessons: ImportLesson[]; error
 
   // Header validation
   if (rows.length > 0) {
-    const headerErrors = validateHeaders(rows[0], LESSON_HEADERS, "الدروس");
+    const headerErrors = validateHeaders(rows[0], LESSON_HEADERS, "الدروس", LESSON_KEYWORDS);
     if (headerErrors.length > 0) {
       errors.push(...headerErrors);
       return { lessons, errors, warnings };
@@ -220,7 +220,7 @@ export function validateQuestions(rows: any[][]): { questions: ImportQuestion[];
 
   // Header validation
   if (rows.length > 0) {
-    const headerErrors = validateHeaders(rows[0], QUESTION_HEADERS, "الأسئلة");
+    const headerErrors = validateHeaders(rows[0], QUESTION_HEADERS, "الأسئلة", QUESTION_KEYWORDS);
     if (headerErrors.length > 0) {
       errors.push(...headerErrors);
       return { questions, errors, warnings };
