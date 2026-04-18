@@ -36,6 +36,8 @@ const PastExams = () => {
         .order("display_order");
       return data || [];
     },
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   // Auto-select student's university
