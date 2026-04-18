@@ -410,7 +410,7 @@ const AdminPastExams = () => {
     }
   };
 
-
+  return (
     <AdminLayout>
       <PermissionGate permission="past_exams">
       <div className="space-y-5">
