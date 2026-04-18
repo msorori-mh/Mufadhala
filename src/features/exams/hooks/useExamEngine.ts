@@ -29,6 +29,7 @@ export interface Question {
   correct_option: string;
   explanation: string;
   subject?: string;
+  question_type?: string;
 }
 
 export interface ExamAttempt {
@@ -114,7 +115,7 @@ const fetchExamData = async (userId: string) => {
       ? await supabase
           .from("questions")
           .select(
-            "id, question_text, option_a, option_b, option_c, option_d, correct_option, explanation, lesson_id, subject"
+            "id, question_text, option_a, option_b, option_c, option_d, correct_option, explanation, lesson_id, subject, question_type"
           )
           .in("lesson_id", uniqueLessonIds)
           .order("display_order")
@@ -156,7 +157,10 @@ function shuffleAndPick(arr: (Question | OfflineQuestion)[], count: number) {
   });
 
   if (bySubject.size <= 1 || count >= arr.length) {
-    return [...arr].sort(() => Math.random() - 0.5).slice(0, count);
+    const shuffled = [...arr].sort(() => Math.random() - 0.5).slice(0, count);
+    const tf = shuffled.filter((q: any) => q.question_type === "true_false");
+    const rest = shuffled.filter((q: any) => q.question_type !== "true_false");
+    return [...tf, ...rest];
   }
 
   const subjects = [...bySubject.entries()];
@@ -186,7 +190,11 @@ function shuffleAndPick(arr: (Question | OfflineQuestion)[], count: number) {
   }
 
   allocations.forEach((a) => result.push(...a.qs.slice(0, a.allocated)));
-  return result.sort(() => Math.random() - 0.5);
+  // TF questions first, then MCQ (preserve random order within each group)
+  const shuffled = result.sort(() => Math.random() - 0.5);
+  const tf = shuffled.filter((q: any) => q.question_type === "true_false");
+  const rest = shuffled.filter((q: any) => q.question_type !== "true_false");
+  return [...tf, ...rest];
 }
 
 export function formatTime(seconds: number) {
