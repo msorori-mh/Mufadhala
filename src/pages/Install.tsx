@@ -147,6 +147,27 @@ export default function Install() {
                 </a>
               </Button>
             </div>
+
+            {/* Share Row */}
+            <div className="w-full pt-3 border-t border-border/60 space-y-2">
+              <p className="text-xs text-center text-muted-foreground font-medium">
+                شارك التطبيق مع أصدقائك
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                <Button onClick={shareWhatsApp} variant="outline" size="sm" className="gap-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 border-[#25D366]/30 text-[#128C7E]">
+                  <Share2 className="w-4 h-4" />
+                  واتساب
+                </Button>
+                <Button onClick={shareTelegram} variant="outline" size="sm" className="gap-2 bg-[#0088cc]/10 hover:bg-[#0088cc]/20 border-[#0088cc]/30 text-[#0088cc]">
+                  <Send className="w-4 h-4" />
+                  تيليجرام
+                </Button>
+                <Button onClick={shareNative} variant="outline" size="sm" className="gap-2">
+                  <Share2 className="w-4 h-4" />
+                  مشاركة...
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
