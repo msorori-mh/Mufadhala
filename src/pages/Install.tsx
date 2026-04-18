@@ -3,7 +3,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Download, GraduationCap, Smartphone, Share2, Plus, MoreVertical, ArrowLeft, Globe, FileText, Loader2 } from "lucide-react";
+import { Download, GraduationCap, Smartphone, Share2, Plus, MoreVertical, ArrowLeft, Globe, FileText, Loader2, Send } from "lucide-react";
 import { generateBrochurePDF } from "@/lib/generateBrochurePDF";
 import { toast } from "sonner";
 
