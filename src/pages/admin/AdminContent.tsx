@@ -191,7 +191,8 @@ const AdminContent = () => {
       const { data, error } = await supabase
         .from("questions")
         .select("*")
-        .order("display_order")
+        .order("display_order", { ascending: true })
+        .order("id", { ascending: true })
         .range(from, from + PAGE - 1);
       if (error || !data) break;
       all.push(...(data as Question[]));
