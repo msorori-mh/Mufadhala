@@ -1348,15 +1348,17 @@ const AdminContent = () => {
             <div className="space-y-2">
               <Label className="flex items-center gap-1.5">
                 <span className="bg-muted text-muted-foreground rounded-full w-5 h-5 inline-flex items-center justify-center text-xs">3</span>
-                ارفع ملف Excel (.xlsx, .xls, .csv)
+                ارفع ملف Excel واحد أو عدة ملفات (.xlsx, .xls, .csv)
               </Label>
               <Input
                 ref={fileInputRef}
                 type="file"
                 accept=".xlsx,.xls,.csv"
+                multiple
                 onChange={handleUnifiedImportFile}
                 disabled={importing}
               />
+              <p className="text-[11px] text-muted-foreground">يمكنك تحديد عدة ملفات معاً (Ctrl/Shift + Click) وستتم معالجتها بالتسلسل</p>
             </div>
 
             {importing && (
