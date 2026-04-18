@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Download, GraduationCap, Smartphone, Share2, Plus, MoreVertical, ArrowLeft, Globe, FileText, Loader2, Send } from "lucide-react";
 import { generateBrochurePDF } from "@/lib/generateBrochurePDF";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Install page — Public landing for QR brochure scans.
@@ -18,6 +19,7 @@ export default function Install() {
   const qrRef = useRef<HTMLDivElement>(null);
   const [platform, setPlatform] = useState<"ios" | "android" | "other">("other");
   const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [shareCount, setShareCount] = useState<number | null>(null);
 
   useEffect(() => {
     const ua = navigator.userAgent.toLowerCase();
@@ -25,7 +27,37 @@ export default function Install() {
     else if (/android/.test(ua)) setPlatform("android");
 
     document.title = "ثبّت تطبيق مُفَاضَلَة — امسح وابدأ";
+
+    // Fetch lifetime share count for social proof
+    (async () => {
+      try {
+        const { count } = await supabase
+          .from("conversion_events")
+          .select("id", { count: "exact", head: true })
+          .eq("source", "install_share")
+          .eq("event_type", "click");
+        if (typeof count === "number") setShareCount(count);
+      } catch {
+        // silent — counter is optional UX
+      }
+    })();
   }, []);
+
+  /** Fire-and-forget: log a share click + optimistically bump the counter. */
+  const trackShare = async (channel: "whatsapp" | "telegram" | "native") => {
+    setShareCount((prev) => (typeof prev === "number" ? prev + 1 : prev));
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase.from("conversion_events").insert({
+        user_id: user?.id ?? null,
+        source: "install_share",
+        event_type: "click",
+        metadata: { channel } as never,
+      });
+    } catch {
+      // silent — never block sharing
+    }
+  };
 
   const downloadQR = () => {
     const canvas = qrRef.current?.querySelector("canvas");
@@ -64,9 +96,11 @@ export default function Install() {
           text: shareMessage,
           url: canonicalUrl,
         });
+        void trackShare("native");
       } else {
         await navigator.clipboard.writeText(shareMessage);
         toast.success("تم نسخ الرابط، الصقه في أي تطبيق");
+        void trackShare("native");
       }
     } catch (err) {
       // user cancelled or error — silent
@@ -74,11 +108,13 @@ export default function Install() {
   };
 
   const shareWhatsApp = () => {
+    void trackShare("whatsapp");
     const url = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const shareTelegram = () => {
+    void trackShare("telegram");
     const url = `https://t.me/share/url?url=${encodeURIComponent(canonicalUrl)}&text=${encodeURIComponent(shareMessage)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
@@ -150,9 +186,17 @@ export default function Install() {
 
             {/* Share Row */}
             <div className="w-full pt-3 border-t border-border/60 space-y-2">
-              <p className="text-xs text-center text-muted-foreground font-medium">
-                شارك التطبيق مع أصدقائك
-              </p>
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                <p className="text-xs text-center text-muted-foreground font-medium">
+                  شارك التطبيق مع أصدقائك
+                </p>
+                {typeof shareCount === "number" && shareCount > 0 && (
+                  <Badge variant="secondary" className="text-[10px] gap-1 px-2 py-0 h-5">
+                    <Share2 className="w-3 h-3" />
+                    تمت مشاركته {shareCount.toLocaleString("ar-EG")} مرة
+                  </Badge>
+                )}
+              </div>
               <div className="flex flex-wrap gap-2 justify-center">
                 <Button onClick={shareWhatsApp} variant="outline" size="sm" className="gap-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 border-[#25D366]/30 text-[#128C7E]">
                   <Share2 className="w-4 h-4" />

@@ -7,7 +7,8 @@ export type ConversionSource =
   | "ai_generator"
   | "past_exams"
   | "ai_performance"
-  | "chat_widget";
+  | "chat_widget"
+  | "install_share";
 
 export type ConversionEventType = "view" | "click";
 
