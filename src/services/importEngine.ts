@@ -54,27 +54,38 @@ export interface ImportReport {
   mode: "lessons_only" | "questions_only" | "combined";
 }
 
-// ─── Expected headers for strict validation ─────────────────────────
+// ─── Expected headers for relaxed validation ─────────────────────────
 const LESSON_HEADERS = ["كود الدرس", "المادة", "عنوان الدرس", "المحتوى", "الملخص", "ترتيب العرض", "منشور", "مجاني", "الصف الدراسي"];
 const QUESTION_HEADERS = ["كود الدرس", "نوع السؤال", "نص السؤال", "الخيار أ", "الخيار ب", "الخيار ج", "الخيار د", "الإجابة الصحيحة", "الشرح", "ترتيب العرض"];
 
+// Keywords that identify each required column (allows wide variations)
+const LESSON_KEYWORDS = ["كود", "ماد", "عنوان"]; // first 3 columns
+const QUESTION_KEYWORDS = ["كود", "نوع", "نص"]; // first 3 columns
+
 function normalizeHeader(h: string): string {
-  return String(h ?? "").trim().replace(/\s*\(.*?\)\s*/g, "").trim();
+  return String(h ?? "")
+    .trim()
+    .replace(/\s*\(.*?\)\s*/g, "") // remove parenthesized hints
+    .replace(/[\u064B-\u065F\u0670]/g, "") // remove Arabic diacritics
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
 }
 
-function validateHeaders(actual: any[], expected: string[], sheet: string): ValidationError[] {
+function validateHeaders(actual: any[], expected: string[], sheet: string, keywords: string[]): ValidationError[] {
   const errors: ValidationError[] = [];
   if (!actual || actual.length === 0) {
-    errors.push({ row: 1, sheet, field: "headers", message: `ورقة "${sheet}" فارغة أو بدون عناوين أعمدة`, severity: "error" });
+    errors.push({ row: 1, sheet, field: "headers", message: `ورقة "${sheet}" فارغة أو بدون عناوين أعمدة. تأكد من وجود صف ترويسات في الأعلى.`, severity: "error" });
     return errors;
   }
   const normalizedActual = actual.map(h => normalizeHeader(h));
-  const minRequired = Math.min(3, expected.length); // At least first 3 columns must match
-  for (let i = 0; i < minRequired; i++) {
-    if (!normalizedActual[i] || !normalizedActual[i].includes(normalizeHeader(expected[i]).slice(0, 4))) {
+  // Relaxed: only check that the keyword exists somewhere in the corresponding header cell
+  for (let i = 0; i < keywords.length; i++) {
+    const cell = normalizedActual[i] || "";
+    if (!cell.includes(keywords[i])) {
       errors.push({
         row: 1, sheet, field: `header_${i}`,
-        message: `العمود ${i + 1} يجب أن يكون "${expected[i]}" ولكن وُجد "${actual[i] ?? "(فارغ)"}"`,
+        message: `العمود ${i + 1} في ورقة "${sheet}" يجب أن يحتوي على كلمة "${keywords[i]}" — وُجد: "${actual[i] ?? "(فارغ)"}". المتوقع: "${expected[i]}".`,
         severity: "error",
       });
     }
@@ -133,7 +144,7 @@ export function validateLessons(rows: any[][]): { lessons: ImportLesson[]; error
 
   // Header validation
   if (rows.length > 0) {
-    const headerErrors = validateHeaders(rows[0], LESSON_HEADERS, "الدروس");
+    const headerErrors = validateHeaders(rows[0], LESSON_HEADERS, "الدروس", LESSON_KEYWORDS);
     if (headerErrors.length > 0) {
       errors.push(...headerErrors);
       return { lessons, errors, warnings };
@@ -209,7 +220,7 @@ export function validateQuestions(rows: any[][]): { questions: ImportQuestion[];
 
   // Header validation
   if (rows.length > 0) {
-    const headerErrors = validateHeaders(rows[0], QUESTION_HEADERS, "الأسئلة");
+    const headerErrors = validateHeaders(rows[0], QUESTION_HEADERS, "الأسئلة", QUESTION_KEYWORDS);
     if (headerErrors.length > 0) {
       errors.push(...headerErrors);
       return { questions, errors, warnings };
