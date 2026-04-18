@@ -77,7 +77,7 @@ export function useStudentAccess(): StudentAccessResult {
       };
     },
     enabled: !!collegeId,
-    staleTime: 10 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
   });
 
   const subjectIds = collegeData?.subjectIds ?? [];
