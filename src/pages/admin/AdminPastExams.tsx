@@ -43,6 +43,8 @@ const AdminPastExams = () => {
     setYear(new Date().getFullYear());
     setIsPaid(false);
     setIsPublished(false);
+    setDurationMinutes("");
+    setSuggestedDurationMinutes("");
   };
 
   const handleCancel = () => {
@@ -58,6 +60,8 @@ const AdminPastExams = () => {
   const [year, setYear] = useState(new Date().getFullYear());
   const [isPaid, setIsPaid] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
+  const [durationMinutes, setDurationMinutes] = useState<string>("");
+  const [suggestedDurationMinutes, setSuggestedDurationMinutes] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
   const { data: universities = [] } = useQuery({
@@ -110,6 +114,8 @@ const AdminPastExams = () => {
     setYear(m.year);
     setIsPaid(m.is_paid);
     setIsPublished(m.is_published);
+    setDurationMinutes(m.duration_minutes != null ? String(m.duration_minutes) : "");
+    setSuggestedDurationMinutes((m as any).suggested_duration_minutes != null ? String((m as any).suggested_duration_minutes) : "");
     setShowForm(true);
     setShowQuestions(null);
     setJustCreatedId(null); // editing must NOT show "created" banner
@@ -118,6 +124,22 @@ const AdminPastExams = () => {
   const handleSave = async () => {
     if (!title.trim() || !universityId) {
       toast({ variant: "destructive", title: "يرجى ملء جميع الحقول المطلوبة" });
+      return;
+    }
+    const parseDuration = (raw: string): number | null => {
+      const t = raw.trim();
+      if (!t) return null;
+      const n = parseInt(t, 10);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+    const durationParsed = parseDuration(durationMinutes);
+    const suggestedParsed = parseDuration(suggestedDurationMinutes);
+    if (durationMinutes.trim() && durationParsed === null) {
+      toast({ variant: "destructive", title: "مدة غير صالحة", description: "أدخل عدداً صحيحاً موجباً للمدة الإلزامية" });
+      return;
+    }
+    if (suggestedDurationMinutes.trim() && (suggestedParsed === null || suggestedParsed < 30)) {
+      toast({ variant: "destructive", title: "المدة المقترحة غير صالحة", description: "يجب ألا تقل المدة المقترحة عن 30 دقيقة" });
       return;
     }
     setSaving(true);
@@ -134,7 +156,9 @@ const AdminPastExams = () => {
         }
         const { error } = await supabase.from("past_exam_models").update({
           title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: isPublished,
-        }).eq("id", editingModel.id);
+          duration_minutes: durationParsed,
+          suggested_duration_minutes: suggestedParsed,
+        } as any).eq("id", editingModel.id);
         if (error) throw error;
         toast({ title: "تم تحديث النموذج" });
         qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
@@ -145,7 +169,9 @@ const AdminPastExams = () => {
         // New model: never allow publishing on creation (no questions yet)
         const { data: created, error } = await supabase.from("past_exam_models").insert({
           title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: false,
-        }).select("id").single();
+          duration_minutes: durationParsed,
+          suggested_duration_minutes: suggestedParsed,
+        } as any).select("id").single();
         if (error) throw error;
         if (!created?.id) throw new Error("no id returned");
         toast({ title: "تم إنشاء النموذج", description: "الآن أضف الأسئلة ثم انشره" });
@@ -267,6 +293,29 @@ const AdminPastExams = () => {
                 <div className="space-y-1.5">
                   <Label>السنة</Label>
                   <Input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>مدة الاختبار الإلزامية (دقائق)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={durationMinutes}
+                    onChange={(e) => setDurationMinutes(e.target.value)}
+                    placeholder="اتركه فارغاً ليختار الطالب"
+                  />
+                  <p className="text-[11px] text-muted-foreground">إذا حُدِّدت، سيلتزم بها الطالب في الوضع المتقدم.</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>المدة المقترحة للطالب (دقائق)</Label>
+                  <Input
+                    type="number"
+                    min={30}
+                    step={5}
+                    value={suggestedDurationMinutes}
+                    onChange={(e) => setSuggestedDurationMinutes(e.target.value)}
+                    placeholder="مثال: 60 (الحد الأدنى 30)"
+                  />
+                  <p className="text-[11px] text-muted-foreground">تظهر كقيمة مبدئية في حوار اختيار المدة عند ترك المدة الإلزامية فارغة.</p>
                 </div>
               </div>
               <div className="flex items-center gap-6">

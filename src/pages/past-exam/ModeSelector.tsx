@@ -39,11 +39,12 @@ const MIN_DURATION = 30;
 const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, onSelectStrict }: Props) => {
   const navigate = useNavigate();
   const hasDuration = (model.duration_minutes ?? 0) > 0;
+  const suggestedDefault = Math.max(MIN_DURATION, model.suggested_duration_minutes ?? 60);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [durationPickerOpen, setDurationPickerOpen] = useState(false);
-  const [customDuration, setCustomDuration] = useState<number>(60);
+  const [customDuration, setCustomDuration] = useState<number>(suggestedDefault);
 
   const { user } = useAuth();
   const { data: student } = useStudentData(user?.id);
@@ -60,7 +61,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
       setAcknowledged(false);
       setConfirmOpen(true);
     } else {
-      setCustomDuration(60);
+      setCustomDuration(suggestedDefault);
       setDurationPickerOpen(true);
     }
   };
@@ -335,6 +336,11 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
           </DialogHeader>
 
           <div className="space-y-4 py-2">
+            {model.suggested_duration_minutes && model.suggested_duration_minutes >= MIN_DURATION && (
+              <div className="text-[11px] text-center text-muted-foreground bg-muted/40 rounded-md py-1.5 px-2">
+                💡 المدة المقترحة من قِبَل الإدارة: <span className="font-bold text-foreground">{model.suggested_duration_minutes} دقيقة</span>
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-2">
               {QUICK_DURATIONS.map((d) => (
                 <Button

@@ -20,6 +20,7 @@ export interface PastExamModelInfo {
   is_published: boolean;
   university_id: string;
   duration_minutes: number | null;
+  suggested_duration_minutes?: number | null;
 }
 
 export const OPTION_LABELS: Record<string, string> = { a: "أ", b: "ب", c: "ج", d: "د" };

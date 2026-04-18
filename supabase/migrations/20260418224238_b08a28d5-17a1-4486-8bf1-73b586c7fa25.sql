@@ -1,0 +1,1 @@
+ALTER TABLE public.past_exam_models ADD COLUMN IF NOT EXISTS suggested_duration_minutes integer;
