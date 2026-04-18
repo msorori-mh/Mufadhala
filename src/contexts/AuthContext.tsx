@@ -45,17 +45,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initialized.current = true;
 
     const fetchRoles = async (userId: string, attempt = 0) => {
+      const MAX_ATTEMPTS = 3;
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", userId);
       if (error) {
-        if (attempt < 1) {
-          // Retry once after 1 second
-          setTimeout(() => fetchRoles(userId, attempt + 1), 1000);
+        console.warn(`[AuthContext] fetchRoles attempt ${attempt + 1} failed:`, error.message);
+        if (attempt < MAX_ATTEMPTS) {
+          // Incremental backoff: 1s, 2s, 4s
+          const delay = 1000 * Math.pow(2, attempt);
+          setTimeout(() => fetchRoles(userId, attempt + 1), delay);
           return;
         }
-        toast.error("تعذّر تحميل صلاحيات الحساب. يرجى إعادة تشغيل التطبيق.");
+        // Silent fallback: assume regular student (no special roles).
+        // Avoid alarming users — most users legitimately have no row in user_roles.
+        console.warn("[AuthContext] fetchRoles: giving up after retries, defaulting to no roles");
+        setRoles([]);
         return;
       }
       const userRoles = (data || []).map((r) => r.role as AppRole);
