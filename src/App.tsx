@@ -109,6 +109,7 @@ function PageLoader() {
 
 function OfflineExamSyncProvider({ children }: { children: React.ReactNode }) {
   useOfflineExamSync();
+  useAppRefresh();
   return <>{children}</>;
 }
 
