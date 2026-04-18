@@ -102,6 +102,13 @@ const LessonsList = () => {
   const [savedOfflineIds, setSavedOfflineIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSubjectFilter, setActiveSubjectFilter] = useState<string>("all");
+  const [activeGradeFilter, setActiveGradeFilter] = useState<string>(() => {
+    if (typeof window === "undefined") return "all";
+    return localStorage.getItem("lessons:gradeFilter") || "all";
+  });
+  useEffect(() => {
+    try { localStorage.setItem("lessons:gradeFilter", activeGradeFilter); } catch {}
+  }, [activeGradeFilter]);
   const authLoading = accessLoading;
 
   useEffect(() => {
@@ -192,12 +199,17 @@ const LessonsList = () => {
     } else if (activeSubjectFilter !== "all") {
       result = result.filter(l => l.subject_id === activeSubjectFilter);
     }
+    if (activeGradeFilter !== "all") {
+      const g = Number(activeGradeFilter);
+      // Lessons with no grade_level are always shown to avoid hiding legacy content
+      result = result.filter(l => !l.grade_level || l.grade_level === g);
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter(l => l.title.toLowerCase().includes(q) || l.summary.toLowerCase().includes(q));
     }
     return result;
-  }, [lessons, searchQuery, activeSubjectFilter]);
+  }, [lessons, searchQuery, activeSubjectFilter, activeGradeFilter]);
 
   const progressPct = lessons.length > 0 ? Math.round((completedLessons.size / lessons.length) * 100) : 0;
 
