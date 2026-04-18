@@ -369,8 +369,15 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
 
           <div className="space-y-4 py-2">
             {savedDuration && (
-              <div className="text-[11px] text-center text-secondary-foreground bg-secondary/20 border border-secondary/30 rounded-md py-1.5 px-2">
-                ⏱️ آخر مدة استخدمتها: <span className="font-bold">{savedDuration} دقيقة</span>
+              <div className="flex items-center justify-between gap-2 text-[11px] text-secondary-foreground bg-secondary/20 border border-secondary/30 rounded-md py-1.5 px-2">
+                <span>⏱️ آخر مدة استخدمتها: <span className="font-bold">{savedDuration} دقيقة</span></span>
+                <button
+                  type="button"
+                  onClick={handleResetSavedDuration}
+                  className="text-[10px] underline text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                >
+                  إعادة تعيين
+                </button>
               </div>
             )}
             {model.suggested_duration_minutes && model.suggested_duration_minutes >= MIN_DURATION && (
