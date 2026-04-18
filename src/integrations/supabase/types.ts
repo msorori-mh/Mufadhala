@@ -783,6 +783,7 @@ export type Database = {
           id: string
           is_paid: boolean
           is_published: boolean
+          suggested_duration_minutes: number | null
           title: string
           track: string | null
           university_id: string
@@ -795,6 +796,7 @@ export type Database = {
           id?: string
           is_paid?: boolean
           is_published?: boolean
+          suggested_duration_minutes?: number | null
           title: string
           track?: string | null
           university_id: string
@@ -807,6 +809,7 @@ export type Database = {
           id?: string
           is_paid?: boolean
           is_published?: boolean
+          suggested_duration_minutes?: number | null
           title?: string
           track?: string | null
           university_id?: string
