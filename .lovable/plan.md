@@ -1,43 +1,38 @@
 
 
-## التشخيص
+## الفهم
+إضافة شارة برتقالية بجانب اسم المادة في مصفوفة `/admin/reports/content` عندما تكون المادة فارغة (لا دروس ولا أسئلة عبر كل الصفوف).
 
-المستخدم يُظهر أن في صفحة `/admin/content`، الدرس "موقع وتعريف العناصر الانتقالية" (CH301) يعرض **10 أسئلة فقط**، بينما الفعلي 20 سؤالاً. وكذلك الدرس الثاني CH302 يعرض 10 فقط.
+## الحل
 
-السبب الأرجح: في `AdminContent.tsx`، عند تحميل عدد الأسئلة لكل درس في القائمة (وليس عند فتح الدرس)، يوجد **استعلام إضافي محدود بـ 10** أو هناك استخدام لـ `count` بطريقة لا تُحدّث، أو أن الأسئلة تُعدّ من مصدر آخر.
+في `src/pages/admin/AdminReportsContent.tsx`، داخل خلية اسم المادة في الجدول، أضف شارة `Badge` (variant مخصص برتقالي) عند تحقق:
+```ts
+row.totalLessons === 0 && row.totalQuestions === 0
+```
 
-## خطوات الاستكشاف المطلوبة (قبل تقديم الحل)
-
-سأحتاج إلى:
-
-1. قراءة `src/pages/admin/AdminContent.tsx` بالكامل لفهم:
-   - من أين يأتي عدد "10 سؤال" المعروض في بطاقة كل درس
-   - هل يستخدم `count` query، أم تجميع محلي من `questions[]`
-   - هل هناك `.limit(10)` في مكان ما لكل درس
-
-2. التحقق من الواقع الفعلي في قاعدة البيانات:
-   ```sql
-   SELECT l.lesson_code, l.title, COUNT(q.id) as q_count
-   FROM lessons l
-   LEFT JOIN questions q ON q.lesson_id = l.id
-   WHERE l.lesson_code IN ('CH301', 'CH302')
-   GROUP BY l.id, l.lesson_code, l.title;
-   ```
-
-## الحل المتوقع
-
-إذا تأكد أن عدد الأسئلة الفعلي 20 لكل درس وأن الكود يعرض 10، فالإصلاح:
-
-- **إن كان هناك `.limit(10)` لكل درس**: حذفه واستخدام `count: 'exact', head: true`.
-- **إن كان التجميع محلي من مصفوفة `questions` التي ربما لم تكتمل**: التأكد من استخدام `fetchAllQuestions` المُضافة سابقاً (التي تستخدم pagination) لجميع المواد، وليس فقط للإجمالي العام.
-- **أو**: استبدال العدّ المحلي بعدّ مباشر من السيرفر باستخدام:
-  ```ts
-  supabase.from('questions').select('*', { count: 'exact', head: true }).eq('lesson_id', lessonId)
+### التغييرات
+- ملف واحد: `src/pages/admin/AdminReportsContent.tsx`
+- استيراد `Badge` من `@/components/ui/badge` وأيقونة `AlertCircle` من `lucide-react`
+- تحديث خلية `<TableCell className="font-medium">{row.name_ar}</TableCell>`:
+  ```tsx
+  <TableCell className="font-medium">
+    <div className="flex items-center gap-2">
+      <span>{row.name_ar}</span>
+      {row.totalLessons === 0 && row.totalQuestions === 0 && (
+        <Badge className="bg-orange-500 hover:bg-orange-500 text-white text-[10px] gap-1">
+          <AlertCircle className="w-3 h-3" />
+          فارغة
+        </Badge>
+      )}
+    </div>
+  </TableCell>
   ```
 
-## النطاق
-- ملف واحد: `src/pages/admin/AdminContent.tsx`
-- لا تغييرات DB
+### اختياري (بنفس المنطق)
+نفس الشارة للجامعات الفارغة في مصفوفة الجامعات عند `row.models === 0 && row.questions === 0` بنص "بدون نماذج".
 
-سأقوم بالاستكشاف الفعلي ثم تطبيق الإصلاح الدقيق فور الموافقة.
+### النطاق
+- ملف واحد فقط
+- لا تغييرات DB
+- لا استعلامات إضافية
 
