@@ -242,7 +242,21 @@ export async function generateBrochurePDF(_qrCanvas: HTMLCanvasElement): Promise
   document.body.appendChild(container);
 
   try {
-    // Wait one frame so layout/fonts settle
+    // Ensure Cairo font is fully loaded BEFORE snapshot, otherwise html2canvas
+    // captures with a fallback font that breaks Arabic letter joining (مُفَاضَلَة → م ف ا ض ل ة).
+    try {
+      if (document.fonts) {
+        await Promise.all([
+          document.fonts.load("700 36px Cairo"),
+          document.fonts.load("700 16px Cairo"),
+          document.fonts.load("400 14px Cairo"),
+        ]);
+        await document.fonts.ready;
+      }
+    } catch {
+      // ignore — system-ui fallback still shapes Arabic correctly on most OS
+    }
+    // One more frame so layout settles after fonts swap
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
     const canvas = await html2canvas(container, {
