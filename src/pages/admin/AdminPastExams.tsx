@@ -126,6 +126,22 @@ const AdminPastExams = () => {
       toast({ variant: "destructive", title: "يرجى ملء جميع الحقول المطلوبة" });
       return;
     }
+    const parseDuration = (raw: string): number | null => {
+      const t = raw.trim();
+      if (!t) return null;
+      const n = parseInt(t, 10);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+    const durationParsed = parseDuration(durationMinutes);
+    const suggestedParsed = parseDuration(suggestedDurationMinutes);
+    if (durationMinutes.trim() && durationParsed === null) {
+      toast({ variant: "destructive", title: "مدة غير صالحة", description: "أدخل عدداً صحيحاً موجباً للمدة الإلزامية" });
+      return;
+    }
+    if (suggestedDurationMinutes.trim() && (suggestedParsed === null || suggestedParsed < 30)) {
+      toast({ variant: "destructive", title: "المدة المقترحة غير صالحة", description: "يجب ألا تقل المدة المقترحة عن 30 دقيقة" });
+      return;
+    }
     setSaving(true);
     try {
       if (editingModel) {
@@ -140,7 +156,9 @@ const AdminPastExams = () => {
         }
         const { error } = await supabase.from("past_exam_models").update({
           title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: isPublished,
-        }).eq("id", editingModel.id);
+          duration_minutes: durationParsed,
+          suggested_duration_minutes: suggestedParsed,
+        } as any).eq("id", editingModel.id);
         if (error) throw error;
         toast({ title: "تم تحديث النموذج" });
         qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
@@ -151,7 +169,9 @@ const AdminPastExams = () => {
         // New model: never allow publishing on creation (no questions yet)
         const { data: created, error } = await supabase.from("past_exam_models").insert({
           title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: false,
-        }).select("id").single();
+          duration_minutes: durationParsed,
+          suggested_duration_minutes: suggestedParsed,
+        } as any).select("id").single();
         if (error) throw error;
         if (!created?.id) throw new Error("no id returned");
         toast({ title: "تم إنشاء النموذج", description: "الآن أضف الأسئلة ثم انشره" });
