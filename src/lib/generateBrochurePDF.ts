@@ -57,14 +57,14 @@ async function generateBrandedQR(size = 480): Promise<string> {
   ctx.stroke();
   ctx.restore();
 
-  // 3) Draw the "م" letter (Mufadhala mark) inside the white square
+  // 3) Draw the "M" letter (Mufadhala mark) inside the white square — Latin
+  //    glyph guarantees correct rendering in any environment (no font dependency).
   ctx.save();
   ctx.fillStyle = BRAND_PRIMARY;
-  ctx.font = `bold ${Math.round(logoSize * 0.62)}px 'Cairo', system-ui, sans-serif`;
+  ctx.font = `900 ${Math.round(logoSize * 0.7)}px "Arial Black", "Helvetica", system-ui, sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  // Slight vertical nudge for optical centering of Arabic glyph
-  ctx.fillText("م", cx, cy + Math.round(logoSize * 0.04));
+  ctx.fillText("M", cx, cy + Math.round(logoSize * 0.02));
   ctx.restore();
 
   return qrCanvas.toDataURL("image/png");
@@ -119,16 +119,17 @@ export async function generateBrochurePDF(_qrCanvas: HTMLCanvasElement): Promise
         <div style="text-align:center; position:relative;">
           <div style="
             display:inline-flex; align-items:center; justify-content:center;
-            width:72px; height:72px; border-radius:18px;
+            width:78px; height:78px; border-radius:20px;
             background: linear-gradient(135deg, #1A237E, #3949AB);
             box-shadow: 0 8px 20px rgba(26,35,126,0.35);
             margin-bottom:14px;
-          ">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-              <path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5"/>
-            </svg>
-          </div>
+            color:#ffffff;
+            font-family: 'Arial Black', Helvetica, system-ui, sans-serif;
+            font-weight: 900;
+            font-size: 48px;
+            line-height: 1;
+            letter-spacing: -2px;
+          ">M</div>
           <h1 style="margin:0; font-size:36px; font-weight:800; color:#1A237E; letter-spacing:-0.5px;">
             مُفَاضَلَة
           </h1>
