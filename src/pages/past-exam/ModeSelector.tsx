@@ -357,6 +357,11 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
           </DialogHeader>
 
           <div className="space-y-4 py-2">
+            {savedDuration && (
+              <div className="text-[11px] text-center text-secondary-foreground bg-secondary/20 border border-secondary/30 rounded-md py-1.5 px-2">
+                ⏱️ آخر مدة استخدمتها: <span className="font-bold">{savedDuration} دقيقة</span>
+              </div>
+            )}
             {model.suggested_duration_minutes && model.suggested_duration_minutes >= MIN_DURATION && (
               <div className="text-[11px] text-center text-muted-foreground bg-muted/40 rounded-md py-1.5 px-2">
                 💡 المدة المقترحة من قِبَل الإدارة: <span className="font-bold text-foreground">{model.suggested_duration_minutes} دقيقة</span>
