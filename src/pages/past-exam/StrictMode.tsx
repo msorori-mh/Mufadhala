@@ -361,6 +361,16 @@ const StrictMode = ({ model, questions, onBackToSelect, customDurationMinutes }:
   const progressPct = ((currentIndex + 1) / total) * 100;
   const isLowTime = timeLeft <= 120;
   const answeredCount = Object.keys(answers).length;
+  const timePct = durationSec > 0 ? Math.max(0, Math.min(100, (timeLeft / durationSec) * 100)) : 0;
+  const timePctRounded = Math.round(timePct);
+  const timeBarColorClass =
+    timePct < 10
+      ? "[&>div]:bg-destructive motion-safe:animate-pulse"
+      : timePct < 20
+        ? "[&>div]:bg-destructive"
+        : timePct < 50
+          ? "[&>div]:bg-secondary"
+          : "[&>div]:bg-primary";
   const options = [
     { key: "a", text: question?.q_option_a },
     { key: "b", text: question?.q_option_b },
