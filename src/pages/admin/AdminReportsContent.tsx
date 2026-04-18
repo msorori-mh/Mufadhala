@@ -8,7 +8,8 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReportFilters from "@/components/admin/ReportFilters";
-import { BookOpen, FileQuestion, ScrollText, ListChecks } from "lucide-react";
+import { BookOpen, FileQuestion, ScrollText, ListChecks, AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import type { ExportData } from "@/lib/exportReport";
 
 const GRADE_LEVELS = [
