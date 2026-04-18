@@ -380,7 +380,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Duration Picker Dialog (only when admin didn't set a duration) */}
+      {/* Duration Picker Dialog (always available — student can always adjust duration) */}
       <Dialog open={durationPickerOpen} onOpenChange={setDurationPickerOpen}>
         <DialogContent dir="rtl" className="max-w-md">
           <DialogHeader>
@@ -389,7 +389,7 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
             </div>
             <DialogTitle className="text-center text-lg">حدد مدة الاختبار</DialogTitle>
             <DialogDescription className="text-center text-sm">
-              اختر المدة التي ترغب بإكمال الاختبار خلالها (الحد الأدنى {MIN_DURATION} دقيقة).
+              اختر المدة التي ترغب بإكمال الاختبار خلالها (الحد الأدنى {MIN_DURATION} دقائق).
             </DialogDescription>
           </DialogHeader>
 
