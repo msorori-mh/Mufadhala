@@ -186,9 +186,17 @@ export default function Install() {
 
             {/* Share Row */}
             <div className="w-full pt-3 border-t border-border/60 space-y-2">
-              <p className="text-xs text-center text-muted-foreground font-medium">
-                شارك التطبيق مع أصدقائك
-              </p>
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                <p className="text-xs text-center text-muted-foreground font-medium">
+                  شارك التطبيق مع أصدقائك
+                </p>
+                {typeof shareCount === "number" && shareCount > 0 && (
+                  <Badge variant="secondary" className="text-[10px] gap-1 px-2 py-0 h-5">
+                    <Share2 className="w-3 h-3" />
+                    تمت مشاركته {shareCount.toLocaleString("ar-EG")} مرة
+                  </Badge>
+                )}
+              </div>
               <div className="flex flex-wrap gap-2 justify-center">
                 <Button onClick={shareWhatsApp} variant="outline" size="sm" className="gap-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 border-[#25D366]/30 text-[#128C7E]">
                   <Share2 className="w-4 h-4" />
