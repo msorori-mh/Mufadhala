@@ -91,7 +91,7 @@ export default function Install() {
             <div className="text-center space-y-1">
               <p className="text-sm text-muted-foreground flex items-center justify-center gap-1.5">
                 <Globe className="w-3.5 h-3.5" />
-                <span dir="ltr">mufadhala.com/install</span>
+                <span dir="ltr">www.mufadhala.com/install</span>
               </p>
               <p className="text-xs text-muted-foreground">
                 وجّه كاميرا جوالك نحو الرمز لفتح التطبيق فوراً
