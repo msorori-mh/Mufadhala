@@ -147,10 +147,14 @@ const AdminPastExams = () => {
     setSaving(true);
     try {
       if (editingModel) {
-        // Block publishing empty models
+        // Block publishing empty models — verify against DB directly (cache may be stale)
         if (isPublished && !editingModel.is_published) {
-          const currentCount = questionCounts[editingModel.id] || 0;
-          if (currentCount === 0) {
+          const { count, error: countErr } = await supabase
+            .from("past_exam_model_questions")
+            .select("id", { count: "exact", head: true })
+            .eq("model_id", editingModel.id);
+          if (countErr) throw countErr;
+          if ((count || 0) === 0) {
             toast({ variant: "destructive", title: "لا يمكن نشر نموذج فارغ", description: "أضف الأسئلة أولاً قبل النشر" });
             setSaving(false);
             return;
@@ -162,8 +166,12 @@ const AdminPastExams = () => {
           suggested_duration_minutes: suggestedParsed,
         } as any).eq("id", editingModel.id);
         if (error) throw error;
-        toast({ title: "تم تحديث النموذج" });
+        toast({
+          title: "تم تحديث النموذج",
+          description: isPublished ? "✓ النموذج منشور للطلاب الآن" : "تم الحفظ كمسودة",
+        });
         qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
+        qc.invalidateQueries({ queryKey: ["admin-past-exam-question-counts"] });
         setShowForm(false);
         resetForm();
         // Editing: do NOT show success banner, do NOT auto-open questions editor
