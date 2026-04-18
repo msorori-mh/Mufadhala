@@ -55,6 +55,7 @@ const AdminReportsPayments = lazy(() => import("./pages/admin/AdminReportsPaymen
 const AdminReportsSubscriptions = lazy(() => import("./pages/admin/AdminReportsSubscriptions"));
 const AdminReportsExams = lazy(() => import("./pages/admin/AdminReportsExams"));
 const AdminReportsComparison = lazy(() => import("./pages/admin/AdminReportsComparison"));
+const AdminReportsContent = lazy(() => import("./pages/admin/AdminReportsContent"));
 const AdminConversionFunnel = lazy(() => import("./pages/admin/AdminConversionFunnel"));
 const AdminContent = lazy(() => import("./pages/admin/AdminContent"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
@@ -179,6 +180,7 @@ function App() {
                   <Route path="/admin/reports/subscriptions" element={<AdminReportsSubscriptions />} />
                   <Route path="/admin/reports/exams" element={<AdminReportsExams />} />
                   <Route path="/admin/reports/comparison" element={<AdminReportsComparison />} />
+                  <Route path="/admin/reports/content" element={<AdminReportsContent />} />
                   <Route path="/admin/conversion-funnel" element={<AdminConversionFunnel />} />
                   <Route path="/admin/content" element={<AdminContent />} />
                   <Route path="/admin/users" element={<AdminUsers />} />
