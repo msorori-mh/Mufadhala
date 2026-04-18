@@ -54,6 +54,35 @@ export default function Install() {
     }
   };
 
+  const shareMessage = `📚 منصة مُفَاضَلَة | Mufadhala\nمنصتك الذكية للتحضير لاختبارات القبول الجامعي في اليمن\n\nثبّت التطبيق وابدأ التحضير الآن:\n${canonicalUrl}`;
+
+  const shareNative = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "مُفَاضَلَة | Mufadhala",
+          text: shareMessage,
+          url: canonicalUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareMessage);
+        toast.success("تم نسخ الرابط، الصقه في أي تطبيق");
+      }
+    } catch (err) {
+      // user cancelled or error — silent
+    }
+  };
+
+  const shareWhatsApp = () => {
+    const url = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const shareTelegram = () => {
+    const url = `https://t.me/share/url?url=${encodeURIComponent(canonicalUrl)}&text=${encodeURIComponent(shareMessage)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background pt-safe">
       <div className="container max-w-3xl mx-auto px-4 py-8 space-y-8">
