@@ -509,7 +509,21 @@ const AdminPastExams = () => {
                         </Button>
                       </>
                     ) : (
-                      <Badge variant="outline" className="text-[10px]">مسودة</Badge>
+                      <>
+                        <Badge variant="outline" className="text-[10px]">مسودة</Badge>
+                        {!isEmpty && (
+                          <Button
+                            size="sm"
+                            className="h-7 text-[11px] px-2 gap-1 bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                            title="نشر النموذج للطلاب فوراً"
+                            disabled={publishingId === m.id}
+                            onClick={() => handleQuickPublish(m)}
+                          >
+                            <Eye className="w-3 h-3" />
+                            {publishingId === m.id ? "..." : "نشر سريع"}
+                          </Button>
+                        )}
+                      </>
                     )}
                     <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setJustCreatedId(null); setShowQuestions(m.id); }}>الأسئلة</Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>تعديل</Button>
