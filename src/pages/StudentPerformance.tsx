@@ -92,15 +92,37 @@ const StudentPerformance = () => {
 
       const lessonIds = uniqueLessons.map((l: any) => l.id);
       let questions: QuestionRow[] = [];
+      const questionCountMap = new Map<string, number>();
+
       if (lessonIds.length > 0) {
-        const { data: qs } = await supabase.from("questions").select("id, lesson_id, correct_option, subject").in("lesson_id", lessonIds);
-        if (qs) questions = qs as QuestionRow[];
+        // 1) Accurate per-lesson counts via RPC (bypasses 1000-row default limit)
+        const { data: counts } = await supabase.rpc("get_lesson_question_counts", { _lesson_ids: lessonIds });
+        (counts || []).forEach((c: any) => {
+          questionCountMap.set(c.lesson_id, Number(c.q_count) || 0);
+        });
+
+        // 2) Paginated fetch of all question rows (needed for subject-level analytics)
+        const PAGE = 1000;
+        let from = 0;
+        // Safety cap to avoid infinite loops
+        for (let i = 0; i < 20; i++) {
+          const { data: page, error } = await supabase
+            .from("questions")
+            .select("id, lesson_id, correct_option, subject")
+            .in("lesson_id", lessonIds)
+            .range(from, from + PAGE - 1);
+          if (error || !page || page.length === 0) break;
+          questions = questions.concat(page as QuestionRow[]);
+          if (page.length < PAGE) break;
+          from += PAGE;
+        }
       }
 
       return {
         attempts: (exams || []) as ExamRow[],
         lessons: uniqueLessons,
         questions,
+        questionCountMap,
         completedLessonIds: new Set((prog || []).map((p: any) => p.lesson_id)),
         peerAttempts: (peers || []).filter((p: any) => p.student_id !== student.id) as { score: number; total: number }[],
         subjects: (subjectsData || []) as SubjectInfo[],
@@ -108,12 +130,14 @@ const StudentPerformance = () => {
     },
     enabled: !!student && !!student.college_id,
     staleTime: 2 * 60 * 1000,
+    refetchOnMount: "always",
   });
 
   const loading = authLoading || studentLoading || perfLoading;
   const attempts = perfData?.attempts ?? [];
   const lessons = perfData?.lessons ?? [];
   const questions = perfData?.questions ?? [];
+  const questionCountMap = perfData?.questionCountMap ?? new Map<string, number>();
   const completedLessonIds = perfData?.completedLessonIds ?? new Set<string>();
   const peerAttempts = perfData?.peerAttempts ?? [];
   const subjects = perfData?.subjects ?? [];
@@ -509,7 +533,7 @@ const StudentPerformance = () => {
             <div className="space-y-1.5">
               {filteredLessons.map((l) => {
                 const done = completedLessonIds.has(l.id);
-                const qCount = questions.filter((q) => q.lesson_id === l.id).length;
+                const qCount = questionCountMap.get(l.id) ?? 0;
                 return (
                   <div key={l.id} className={`flex items-center justify-between text-sm p-2 rounded-lg ${done ? "bg-green-50 dark:bg-green-950/20" : "bg-muted/50"}`}>
                     <div className="flex items-center gap-2 truncate max-w-[65%]">
