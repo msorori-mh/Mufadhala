@@ -53,7 +53,7 @@ const AdminReportsContent = () => {
           let from = 0;
           const all: T[] = [];
           while (true) {
-            const { data, error } = await supabase.from(table as any).select(columns).range(from, from + PAGE - 1);
+            const { data, error } = await supabase.from(table as any).select(columns).order("id", { ascending: true }).range(from, from + PAGE - 1);
             if (error || !data) break;
             all.push(...(data as T[]));
             if (data.length < PAGE) break;
