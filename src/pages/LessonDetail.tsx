@@ -701,8 +701,10 @@ const LessonDetail = () => {
                         </Button>
                       </CardContent>
                     </Card>
+                    </div>
                   );
-                })}
+                  });
+                })()}
               </>
             )}
           </TabsContent>
