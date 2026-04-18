@@ -223,7 +223,17 @@ const AdminReportsContent = () => {
                   <TableBody>
                     {subjectMatrix.map((row) => (
                       <TableRow key={row.id}>
-                        <TableCell className="font-medium">{row.name_ar}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span>{row.name_ar}</span>
+                            {row.totalLessons === 0 && row.totalQuestions === 0 && (
+                              <Badge className="bg-orange-500 hover:bg-orange-500 text-white text-[10px] gap-1 px-1.5 py-0">
+                                <AlertCircle className="w-3 h-3" />
+                                فارغة
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
                         {row.byGrade.map((g, i) => (
                           <TableCell key={i} className="text-center text-xs">
                             <span className="text-foreground font-medium">{g.lessons}</span>
