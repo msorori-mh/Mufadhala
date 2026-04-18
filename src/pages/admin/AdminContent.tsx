@@ -110,6 +110,7 @@ const AdminContent = () => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Filters — subject-based
   const [filterSubject, setFilterSubject] = useState("");
