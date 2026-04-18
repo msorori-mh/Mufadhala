@@ -176,15 +176,20 @@ const AdminPastExams = () => {
         resetForm();
         // Editing: do NOT show success banner, do NOT auto-open questions editor
       } else {
-        // New model: never allow publishing on creation (no questions yet)
+        // New model: respect admin's choice for is_published (no questions exist yet, but admin can fill them after)
         const { data: created, error } = await supabase.from("past_exam_models").insert({
-          title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: false,
+          title: title.trim(), university_id: universityId, year, is_paid: isPaid, is_published: isPublished,
           duration_minutes: durationParsed,
           suggested_duration_minutes: suggestedParsed,
         } as any).select("id").single();
         if (error) throw error;
         if (!created?.id) throw new Error("no id returned");
-        toast({ title: "تم إنشاء النموذج", description: "الآن أضف الأسئلة ثم انشره" });
+        toast({
+          title: "تم إنشاء النموذج",
+          description: isPublished
+            ? "✓ النموذج محفوظ كمنشور — أضف الأسئلة الآن ليتمكن الطلاب من التدرّب"
+            : "تم الحفظ كمسودة — أضف الأسئلة ثم انشره",
+        });
         qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
         setShowForm(false);
         resetForm();
