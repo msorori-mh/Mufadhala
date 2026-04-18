@@ -38,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => sessionStorage.getItem("supabase_recovery_mode") === "true"
   );
   const initialized = useRef(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (initialized.current) return;
