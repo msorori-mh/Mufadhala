@@ -334,8 +334,15 @@ const AdminPastExams = () => {
                   <Label>يتطلب اشتراك</Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Switch checked={isPublished} onCheckedChange={setIsPublished} />
+                  <Switch
+                    checked={isPublished}
+                    onCheckedChange={setIsPublished}
+                    disabled={!!editingModel && (questionCounts[editingModel.id] || 0) === 0}
+                  />
                   <Label>منشور</Label>
+                  {editingModel && (questionCounts[editingModel.id] || 0) === 0 && (
+                    <span className="text-[11px] text-destructive">أضف الأسئلة أولاً</span>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2">
