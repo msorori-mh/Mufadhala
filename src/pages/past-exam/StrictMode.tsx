@@ -36,9 +36,13 @@ const StrictMode = ({ model, questions, onBackToSelect, customDurationMinutes }:
   const { user } = useAuth();
   const { data: student } = useStudentData(user?.id);
   const total = questions.length;
-  const effectiveDurationMinutes = (model.duration_minutes && model.duration_minutes > 0)
+  // Priority: admin-set duration > student-custom duration > 1-min-per-question fallback > min 5 min
+  const rawDurationMinutes = (model.duration_minutes && model.duration_minutes > 0)
     ? model.duration_minutes
-    : (customDurationMinutes ?? 0);
+    : (customDurationMinutes && customDurationMinutes > 0)
+      ? customDurationMinutes
+      : Math.max(5, total); // 1 minute per question, min 5 min
+  const effectiveDurationMinutes = Math.max(1, rawDurationMinutes);
   const durationSec = effectiveDurationMinutes * 60;
 
   const [phase, setPhase] = useState<Phase>("intro");
