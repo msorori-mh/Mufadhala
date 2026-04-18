@@ -68,7 +68,7 @@ const StudentPerformance = () => {
 
       // Fetch deduplicated lessons + exams + progress + subjects in parallel
       const [{ data: exams }, lessonResult, { data: prog }, { data: peers }, { data: subjectsData }] = await Promise.all([
-        supabase.from("exam_attempts").select("id, score, total, completed_at, major_id")
+        supabase.from("exam_attempts").select("id, score, total, completed_at, major_id, answers")
           .eq("student_id", student.id).not("completed_at", "is", null).order("completed_at", { ascending: true }),
         supabase.from("lessons").select("id, title, major_id, subject_id")
           .in("subject_id", subjectIds).eq("is_published", true).order("display_order"),
