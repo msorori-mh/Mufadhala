@@ -68,15 +68,22 @@ function pickExamQuestions(allQuestions: Question[]): Question[] {
   const pickedTF = shuffleArray(trueFalse).slice(0, EXAM_TRUE_FALSE_COUNT);
   const pickedMCQ = shuffleArray(mcq).slice(0, EXAM_MCQ_COUNT);
 
-  // If not enough of one type, fill from the other
-  let combined = [...pickedTF, ...pickedMCQ];
-  if (combined.length < EXAM_TOTAL_QUESTIONS) {
-    const usedIds = new Set(combined.map(q => q.id));
+  // If not enough of one type, fill from the other (preserve type for sorting below)
+  let combinedTF = [...pickedTF];
+  let combinedMCQ = [...pickedMCQ];
+  const totalPicked = combinedTF.length + combinedMCQ.length;
+  if (totalPicked < EXAM_TOTAL_QUESTIONS) {
+    const usedIds = new Set([...combinedTF, ...combinedMCQ].map(q => q.id));
     const remaining = shuffleArray(allQuestions.filter(q => !usedIds.has(q.id)));
-    combined = [...combined, ...remaining.slice(0, EXAM_TOTAL_QUESTIONS - combined.length)];
+    for (const q of remaining) {
+      if (combinedTF.length + combinedMCQ.length >= EXAM_TOTAL_QUESTIONS) break;
+      if (q.question_type === "true_false") combinedTF.push(q);
+      else combinedMCQ.push(q);
+    }
   }
 
-  return shuffleArray(combined).slice(0, EXAM_TOTAL_QUESTIONS);
+  // TF questions first, then MCQ — within each group order is shuffled (random selection)
+  return [...combinedTF, ...combinedMCQ].slice(0, EXAM_TOTAL_QUESTIONS);
 }
 
 // ── Data fetcher ───────────────────────────────────────────

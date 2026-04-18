@@ -156,7 +156,13 @@ const AIPracticeQuestions = ({ hasSubscription }: Props) => {
         setRemaining(0);
         if (data?.hasSubscription !== undefined) setPaidSubscriber(!!data.hasSubscription);
       } else if (data?.questions) {
-        setQuestions(data.questions);
+        // TF questions first, then MCQ — preserve order within each group
+        const sorted = [...data.questions].sort((a: any, b: any) => {
+          const aTf = a.question_type === "true_false" ? 0 : 1;
+          const bTf = b.question_type === "true_false" ? 0 : 1;
+          return aTf - bTf;
+        });
+        setQuestions(sorted);
         // Backend is the single source of truth for limit + remaining + paid status
         if (data.limit !== undefined) setDailyLimit(data.limit);
         if (data.hasSubscription !== undefined) setPaidSubscriber(!!data.hasSubscription);
