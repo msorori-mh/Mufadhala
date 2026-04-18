@@ -411,6 +411,14 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
                 💡 المدة المقترحة من قِبَل الإدارة: <span className="font-bold text-foreground">{model.suggested_duration_minutes} دقيقة</span>
               </div>
             )}
+            {hasDuration && (
+              <div className="text-[11px] text-center text-muted-foreground bg-muted/40 rounded-md py-1.5 px-2">
+                ⏱️ المدة الافتراضية للنموذج: <span className="font-bold text-foreground">{model.duration_minutes} دقيقة</span>
+              </div>
+            )}
+            <div className="text-[11px] text-center text-muted-foreground bg-primary/5 border border-primary/20 rounded-md py-1.5 px-2">
+              📝 اقتراح ذكي بناءً على عدد الأسئلة: <span className="font-bold text-foreground">{Math.max(MIN_DURATION, totalQuestions)} دقيقة</span> (دقيقة لكل سؤال)
+            </div>
             <div className="grid grid-cols-3 gap-2">
               {QUICK_DURATIONS.map((d) => (
                 <Button
