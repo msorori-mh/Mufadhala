@@ -326,8 +326,9 @@ export async function executeImport(opts: {
   existingLessons: { id: string; title: string; lesson_code: string | null; subject_id: string | null }[];
   existingQuestions: { id: string; lesson_id: string; question_text: string }[];
   fallbackSubjectId?: string;
+  fallbackGradeLevel?: number | null;
 }): Promise<ImportReport> {
-  const { lessonsRows, questionsRows, subjects, existingLessons, existingQuestions, fallbackSubjectId } = opts;
+  const { lessonsRows, questionsRows, subjects, existingLessons, existingQuestions, fallbackSubjectId, fallbackGradeLevel } = opts;
 
   const report: ImportReport = {
     lessonsCreated: 0,
@@ -421,7 +422,7 @@ export async function executeImport(opts: {
       summary: lesson.summary,
       display_order: lesson.display_order,
       is_published: lesson.is_published,
-      grade_level: lesson.grade_level,
+      grade_level: lesson.grade_level ?? fallbackGradeLevel ?? null,
       subject_id: resolvedSubjectId,
       college_id: null,
       major_id: null,

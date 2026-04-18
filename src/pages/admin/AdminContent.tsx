@@ -175,6 +175,7 @@ const AdminContent = () => {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importSubjectId, setImportSubjectId] = useState("");
+  const [importGradeLevel, setImportGradeLevel] = useState("");
   const [importReport, setImportReport] = useState<ImportReport | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -755,6 +756,7 @@ const AdminContent = () => {
           existingLessons,
           existingQuestions,
           fallbackSubjectId: importSubjectId || undefined,
+          fallbackGradeLevel: importGradeLevel ? Number(importGradeLevel) : null,
         });
 
         aggregated.lessonsCreated += report.lessonsCreated;
@@ -818,7 +820,7 @@ const AdminContent = () => {
             <Button onClick={exportLessons} size="sm" variant="outline">
               <Download className="w-4 h-4 ml-1" />تصدير
             </Button>
-            <Button onClick={() => { setImportSubjectId(filterSubject); setImportReport(null); setImportDialogOpen(true); }} size="sm" variant="outline">
+            <Button onClick={() => { setImportSubjectId(filterSubject); setImportGradeLevel(filterGradeLevel); setImportReport(null); setImportDialogOpen(true); }} size="sm" variant="outline">
               <Upload className="w-4 h-4 ml-1" />استيراد
             </Button>
             <Button onClick={openCreateLesson} size="sm"><Plus className="w-4 h-4 ml-1" />إضافة درس</Button>
@@ -1344,10 +1346,29 @@ const AdminContent = () => {
               <p className="text-[11px] text-muted-foreground">تُستخدم فقط للصفوف التي لم تُحدد مادتها داخل الملف</p>
             </div>
 
-            {/* Step 3: Upload */}
+            {/* Step 3: Default grade level */}
             <div className="space-y-2">
               <Label className="flex items-center gap-1.5">
                 <span className="bg-muted text-muted-foreground rounded-full w-5 h-5 inline-flex items-center justify-center text-xs">3</span>
+                الصف الدراسي الافتراضي (اختياري)
+              </Label>
+              <select
+                value={importGradeLevel}
+                onChange={(e) => setImportGradeLevel(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">تحديد من عمود "الصف الدراسي" داخل الملف</option>
+                <option value="1">أول ثانوي</option>
+                <option value="2">ثاني ثانوي</option>
+                <option value="3">ثالث ثانوي</option>
+              </select>
+              <p className="text-[11px] text-muted-foreground">يُطبَّق فقط على الصفوف التي لم يُحدَّد لها صف داخل الملف</p>
+            </div>
+
+            {/* Step 4: Upload */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <span className="bg-muted text-muted-foreground rounded-full w-5 h-5 inline-flex items-center justify-center text-xs">4</span>
                 ارفع ملف Excel واحد أو عدة ملفات (.xlsx, .xls, .csv)
               </Label>
               <Input

@@ -102,6 +102,13 @@ const LessonsList = () => {
   const [savedOfflineIds, setSavedOfflineIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSubjectFilter, setActiveSubjectFilter] = useState<string>("all");
+  const [activeGradeFilter, setActiveGradeFilter] = useState<string>(() => {
+    if (typeof window === "undefined") return "all";
+    return localStorage.getItem("lessons:gradeFilter") || "all";
+  });
+  useEffect(() => {
+    try { localStorage.setItem("lessons:gradeFilter", activeGradeFilter); } catch {}
+  }, [activeGradeFilter]);
   const authLoading = accessLoading;
 
   useEffect(() => {
@@ -192,12 +199,17 @@ const LessonsList = () => {
     } else if (activeSubjectFilter !== "all") {
       result = result.filter(l => l.subject_id === activeSubjectFilter);
     }
+    if (activeGradeFilter !== "all") {
+      const g = Number(activeGradeFilter);
+      // Lessons with no grade_level are always shown to avoid hiding legacy content
+      result = result.filter(l => !l.grade_level || l.grade_level === g);
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter(l => l.title.toLowerCase().includes(q) || l.summary.toLowerCase().includes(q));
     }
     return result;
-  }, [lessons, searchQuery, activeSubjectFilter]);
+  }, [lessons, searchQuery, activeSubjectFilter, activeGradeFilter]);
 
   const progressPct = lessons.length > 0 ? Math.round((completedLessons.size / lessons.length) * 100) : 0;
 
@@ -290,6 +302,38 @@ const LessonsList = () => {
                 )}
               </div>
             )}
+
+            {/* Grade level filter */}
+            {!isOffline && lessons.length > 0 && !searchQuery && (() => {
+              const hasAnyGrade = lessons.some(l => l.grade_level);
+              if (!hasAnyGrade) return null;
+              const grades: { value: string; label: string }[] = [
+                { value: "all", label: "كل الصفوف" },
+                { value: "1", label: "أول ثانوي" },
+                { value: "2", label: "ثاني ثانوي" },
+                { value: "3", label: "ثالث ثانوي" },
+              ];
+              return (
+                <div className="flex gap-1.5 flex-wrap mb-3">
+                  {grades.map(g => {
+                    const count = g.value === "all"
+                      ? lessons.length
+                      : lessons.filter(l => l.grade_level === Number(g.value)).length;
+                    if (g.value !== "all" && count === 0) return null;
+                    return (
+                      <Badge
+                        key={g.value}
+                        variant={activeGradeFilter === g.value ? "default" : "outline"}
+                        className="cursor-pointer text-xs"
+                        onClick={() => setActiveGradeFilter(g.value)}
+                      >
+                        {g.label}{g.value !== "all" ? ` (${count})` : ""}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
             {/* Subject filter tabs */}
             {!isOffline && subjects.length > 0 && !searchQuery && (
