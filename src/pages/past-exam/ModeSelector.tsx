@@ -287,10 +287,22 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
               isPaid={isPaid}
               isFreeModel={isFreeModel}
             />
-            <Button className="w-full" variant="destructive" onClick={(e) => { e.stopPropagation(); openStrictFlow(); }}>
-              <Lock className="w-4 h-4 ml-1.5" />
-              ابدأ الامتحان الصارم
-            </Button>
+            <div className="flex gap-2">
+              <Button className="flex-1" variant="destructive" onClick={(e) => { e.stopPropagation(); openStrictFlow(); }}>
+                <Lock className="w-4 h-4 ml-1.5" />
+                ابدأ الامتحان الصارم
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0 border-destructive/40 text-destructive hover:bg-destructive/10"
+                onClick={(e) => { e.stopPropagation(); openDurationEditor(); }}
+                title="تعديل المدة"
+                aria-label="تعديل المدة"
+              >
+                <Timer className="w-4 h-4" />
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </main>
