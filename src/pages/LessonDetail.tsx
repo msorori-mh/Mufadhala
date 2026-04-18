@@ -586,13 +586,39 @@ const LessonDetail = () => {
                   </Button>
                 </div>
 
-                {questions.map((q, i) => {
+                {(() => {
+                  const tfCount = questions.filter(q => q.question_type === "true_false").length;
+                  const mcCount = questions.length - tfCount;
+                  const firstTfIndex = questions.findIndex(q => q.question_type === "true_false");
+                  const firstMcIndex = questions.findIndex(q => q.question_type !== "true_false");
+                  return questions.map((q, i) => {
                   const isRevealed = revealedAnswers.has(q.id);
                   const isTrueFalse = q.question_type === "true_false";
                   const options = isTrueFalse ? (["a", "b"] as const) : (["a", "b", "c", "d"] as const);
+                  const showTfHeader = i === firstTfIndex && tfCount > 0 && mcCount > 0;
+                  const showMcHeader = i === firstMcIndex && tfCount > 0 && mcCount > 0;
 
                   return (
-                    <Card
+                    <div key={q.id}>
+                      {showTfHeader && (
+                        <div className="flex items-center gap-3 my-4 first:mt-0">
+                          <div className="h-px flex-1 bg-border" />
+                          <span className="text-xs font-semibold text-muted-foreground bg-muted px-3 py-1 rounded-full">
+                            أسئلة الصح والخطأ ({tfCount})
+                          </span>
+                          <div className="h-px flex-1 bg-border" />
+                        </div>
+                      )}
+                      {showMcHeader && (
+                        <div className="flex items-center gap-3 my-4">
+                          <div className="h-px flex-1 bg-border" />
+                          <span className="text-xs font-semibold text-muted-foreground bg-muted px-3 py-1 rounded-full">
+                            أسئلة الاختيار من متعدد ({mcCount})
+                          </span>
+                          <div className="h-px flex-1 bg-border" />
+                        </div>
+                      )}
+                      <Card
                       key={q.id}
                       className={`overflow-hidden border shadow-sm transition-colors ${
                         isRevealed ? "border-primary/30 bg-primary/[0.02]" : "border-border/70"
