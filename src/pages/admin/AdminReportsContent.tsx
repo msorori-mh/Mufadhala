@@ -295,7 +295,17 @@ const AdminReportsContent = () => {
                   <TableBody>
                     {universityMatrix.map((row) => (
                       <TableRow key={row.id}>
-                        <TableCell className="font-medium">{row.name_ar}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span>{row.name_ar}</span>
+                            {row.models === 0 && row.questions === 0 && (
+                              <Badge className="bg-orange-500 hover:bg-orange-500 text-white text-[10px] gap-1 px-1.5 py-0">
+                                <AlertCircle className="w-3 h-3" />
+                                بدون نماذج
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-center">{row.models}</TableCell>
                         <TableCell className="text-center">{row.questions}</TableCell>
                       </TableRow>
