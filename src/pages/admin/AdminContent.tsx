@@ -814,7 +814,9 @@ const AdminContent = () => {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h1 className="text-2xl font-bold">المحتوى التعليمي</h1>
-            <p className="text-sm text-muted-foreground">{filteredLessons.length} درس مشترك</p>
+            <p className="text-sm text-muted-foreground">
+              {filteredLessons.length} درس · {questions.filter((q) => filteredLessons.some((l) => l.id === q.lesson_id)).length} سؤال
+            </p>
           </div>
           <div className="flex gap-2">
             <Button onClick={exportLessons} size="sm" variant="outline">
