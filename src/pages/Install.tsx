@@ -8,6 +8,7 @@ import { generateBrochurePDF } from "@/lib/generateBrochurePDF";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { detectAndroidBrowser, buildChromeIntentUrl } from "@/lib/browserDetect";
+import { INSTALL_COPY } from "@/constants/installCopy";
 
 /**
  * Install page — Public landing for QR brochure scans.
@@ -179,7 +180,7 @@ export default function Install() {
                     افتح التطبيق في Google Chrome
                   </p>
                   <p className="text-xs text-foreground/80 leading-relaxed">
-                    لأجهزة أندرويد: افتح الرابط باستخدام Google Chrome ثم اختر «تثبيت التطبيق». بعض المتصفحات الأخرى قد لا تعرض خيار التثبيت بشكل صحيح.
+                    {INSTALL_COPY.android.full}
                   </p>
                 </div>
               </div>
