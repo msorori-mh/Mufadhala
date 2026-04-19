@@ -3,10 +3,11 @@ import { QRCodeCanvas } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Download, Smartphone, Share2, Plus, MoreVertical, ArrowLeft, FileText, Loader2, Send } from "lucide-react";
+import { Download, Smartphone, Share2, Plus, MoreVertical, ArrowLeft, FileText, Loader2, Send, AlertTriangle, Chrome } from "lucide-react";
 import { generateBrochurePDF } from "@/lib/generateBrochurePDF";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { detectAndroidBrowser, buildChromeIntentUrl } from "@/lib/browserDetect";
 
 /**
  * Install page — Public landing for QR brochure scans.
@@ -20,6 +21,12 @@ export default function Install() {
   const [platform, setPlatform] = useState<"ios" | "android" | "other">("other");
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [shareCount, setShareCount] = useState<number | null>(null);
+  // Android browser support: only Chrome can perform a true PWA install.
+  const androidSupport = detectAndroidBrowser();
+  const isAndroidNonChrome = androidSupport === "android-other";
+  const openInChrome = () => {
+    window.location.href = buildChromeIntentUrl(canonicalUrl);
+  };
 
   useEffect(() => {
     const ua = navigator.userAgent.toLowerCase();
@@ -162,12 +169,33 @@ export default function Install() {
 
         {/* 2) INSTALL ACTION — directly below QR */}
         <div className="space-y-2">
-          <Button asChild size="lg" className="w-full h-14 text-base font-bold gap-2 shadow-lg">
-            <a href="/">
-              <ArrowLeft className="w-5 h-5" />
-              افتح المنصة وثبّت التطبيق
-            </a>
-          </Button>
+          {isAndroidNonChrome ? (
+            // Unsupported Android browser (Samsung Internet, Firefox, etc.) — block install path.
+            <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 space-y-3">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-bold text-sm text-foreground mb-1">
+                    افتح التطبيق في Google Chrome
+                  </p>
+                  <p className="text-xs text-foreground/80 leading-relaxed">
+                    للتثبيت على أندرويد، افتح مُفَاضَلَة باستخدام متصفح Google Chrome ثم اضغط تثبيت التطبيق. بعض المتصفحات الأخرى لا تدعم التثبيت بشكل صحيح.
+                  </p>
+                </div>
+              </div>
+              <Button onClick={openInChrome} size="lg" className="w-full h-12 gap-2">
+                <Chrome className="w-5 h-5" />
+                افتح في Chrome
+              </Button>
+            </div>
+          ) : (
+            <Button asChild size="lg" className="w-full h-14 text-base font-bold gap-2 shadow-lg">
+              <a href="/">
+                <ArrowLeft className="w-5 h-5" />
+                افتح المنصة وثبّت التطبيق
+              </a>
+            </Button>
+          )}
           <Button
             onClick={downloadBrochure}
             variant="outline"
