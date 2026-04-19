@@ -180,16 +180,16 @@ export default function Install() {
                 return (
                   <div
                     key={i}
-                    className={`flex items-center gap-2 rounded-lg p-2 transition-all duration-200 ${
+                    className={`flex items-center gap-2 rounded-lg p-1.5 transition-all duration-200 ${
                       isSmart
                         ? "bg-accent/10 border border-accent/30 hover:bg-accent/15 hover:border-accent/50 hover:scale-[1.02] hover:shadow-sm"
                         : "hover:bg-muted/50"
                     }`}
                   >
-                    <span className="text-lg">{f.emoji}</span>
+                    <span className="text-base">{f.emoji}</span>
                     <div className="min-w-0">
-                      <p className={`text-xs font-semibold ${isSmart ? "text-accent" : "text-foreground"}`}>{f.label}</p>
-                      <p className="text-[10px] text-muted-foreground">{f.sub}</p>
+                      <p className={`text-xs font-semibold leading-tight ${isSmart ? "text-accent" : "text-foreground"}`}>{f.label}</p>
+                      <p className="text-[10px] text-muted-foreground leading-tight">{f.sub}</p>
                     </div>
                   </div>
                 );
@@ -200,25 +200,25 @@ export default function Install() {
 
         {/* 2) QR SECTION */}
         <Card className="border-primary/20 shadow-xl">
-          <CardContent className="p-6 sm:p-8 flex flex-col items-center gap-4">
+          <CardContent className="p-4 sm:p-5 flex flex-col items-center gap-2">
             <div
               ref={qrRef}
-              className="bg-white p-4 rounded-2xl shadow-md ring-1 ring-border"
+              className="bg-white p-3 rounded-2xl shadow-md ring-1 ring-border"
             >
               <QRCodeCanvas
                 value={canonicalUrl}
-                size={240}
+                size={200}
                 level="H"
                 includeMargin={false}
                 bgColor="#FFFFFF"
                 fgColor="#1A237E"
               />
             </div>
-            <p className="text-base font-medium text-foreground text-center">
+            <p className="text-sm font-medium text-foreground text-center">
               امسح الكود لفتح المنصة مباشرة
             </p>
-            <Button onClick={downloadQR} variant="ghost" size="sm" className="gap-2 text-muted-foreground">
-              <Download className="w-4 h-4" />
+            <Button onClick={downloadQR} variant="ghost" size="sm" className="gap-2 text-muted-foreground h-7 text-xs">
+              <Download className="w-3.5 h-3.5" />
               تنزيل QR (PNG)
             </Button>
           </CardContent>
