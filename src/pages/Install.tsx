@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { detectAndroidBrowser, buildChromeIntentUrl } from "@/lib/browserDetect";
 import { INSTALL_COPY } from "@/constants/installCopy";
-import { InstallBrochureFeatures, InstallBrochureHeader } from "@/components/InstallBrochureContent";
+import InstallBrochureContent, { InstallBrochureFeatures, InstallBrochureHeader } from "@/components/InstallBrochureContent";
 
 /**
  * Install page — Public landing for QR brochure scans.
@@ -145,7 +145,12 @@ export default function Install() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background pt-safe">
+    <>
+      <div className="install-print-brochure" aria-hidden="true">
+        <InstallBrochureContent printMode pageSize="A4" qrValue={canonicalUrl} />
+      </div>
+
+      <div className="install-screen min-h-screen bg-gradient-to-b from-primary/5 via-background to-background pt-safe">
       <div className="container max-w-2xl mx-auto px-4 py-3 space-y-3">
         {/* 0) BRAND HEADER — shared with PDF brochure */}
         <div className="pt-1">
@@ -345,6 +350,7 @@ export default function Install() {
           <p>© {new Date().getFullYear()} مُفَاضَلَة</p>
         </footer>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
