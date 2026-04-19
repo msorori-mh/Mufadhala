@@ -146,7 +146,43 @@ export default function Install() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background pt-safe">
       <div className="container max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {/* 1) QR SECTION — first, dominant */}
+        {/* 1) PLATFORM FEATURES — first thing the student reads */}
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="p-4">
+            <h3 className="text-sm font-bold text-foreground mb-3">✨ ما الذي يميّز مُفَاضَلَة؟</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { emoji: "🤖", label: "مساعد مفاضلة الذكي", sub: "يجيب عن أي سؤال فوراً" },
+                { emoji: "✨", label: "مولد الأسئلة الذكي", sub: "أسئلة مخصصة لنقاط ضعفك" },
+                { emoji: "📝", label: "نماذج اختبارات سابقة", sub: "مع إجابات نموذجية" },
+                { emoji: "⏱️", label: "محاكاة واقعية", sub: "لبيئة الاختبار الفعلية" },
+                { emoji: "📚", label: "5000+ سؤال تدريبي", sub: "مراجع ومعتمد" },
+                { emoji: "🧠", label: "شرح علمي مفصّل", sub: "لكل إجابة" },
+                { emoji: "📶", label: "يعمل أوفلاين", sub: "بدون إنترنت" },
+              ].map((f, i) => {
+                const isSmart = i < 4;
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-2 rounded-lg p-2 transition-all duration-200 ${
+                      isSmart
+                        ? "bg-accent/10 border border-accent/30 hover:bg-accent/15 hover:border-accent/50 hover:scale-[1.02] hover:shadow-sm"
+                        : "hover:bg-muted/50"
+                    }`}
+                  >
+                    <span className="text-lg">{f.emoji}</span>
+                    <div className="min-w-0">
+                      <p className={`text-xs font-semibold ${isSmart ? "text-accent" : "text-foreground"}`}>{f.label}</p>
+                      <p className="text-[10px] text-muted-foreground">{f.sub}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 2) QR SECTION */}
         <Card className="border-primary/20 shadow-xl">
           <CardContent className="p-6 sm:p-8 flex flex-col items-center gap-4">
             <div
@@ -301,28 +337,6 @@ export default function Install() {
             </Card>
           </div>
         </section>
-
-        {/* 4) PLATFORM FEATURES — short, grouped */}
-        <Card>
-          <CardContent className="p-5 space-y-4">
-            <div className="space-y-2">
-              <h3 className="text-sm font-bold text-foreground">📚 التدريب</h3>
-              <ul className="space-y-1 text-sm text-foreground/85 pr-1">
-                <li>• نماذج الأعوام السابقة</li>
-                <li>• محاكاة اختبار حقيقي</li>
-                <li>• أسئلة متكررة</li>
-              </ul>
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-sm font-bold text-foreground">🤖 الذكاء الاصطناعي</h3>
-              <ul className="space-y-1 text-sm text-foreground/85 pr-1">
-                <li>• مولد أسئلة</li>
-                <li>• مفاضل</li>
-                <li>• تحليل أداء</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* 5) SHARE SECTION — last */}
         <section className="space-y-3">
