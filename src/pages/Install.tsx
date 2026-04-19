@@ -163,37 +163,77 @@ export default function Install() {
         </header>
 
         {/* 1) PLATFORM FEATURES — first thing the student reads */}
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-3">
-            <h3 className="text-sm font-bold text-foreground mb-2">✨ ما الذي يميّز مُفَاضَلَة؟</h3>
+        <Card className="bg-gradient-to-br from-primary/5 via-background to-accent/5 border-primary/20 ring-1 ring-primary/10 shadow-sm overflow-hidden">
+          {/* gradient header strip */}
+          <div className="h-1 bg-gradient-to-r from-primary via-accent to-primary" />
+          <CardContent className="p-3 space-y-2.5">
+            <div className="text-center space-y-0.5">
+              <h3 className="text-sm font-extrabold text-foreground inline-flex items-center gap-1.5">
+                <span className="inline-block animate-pulse">✨</span>
+                ما الذي يميّز مُفَاضَلَة؟
+              </h3>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                كل ما تحتاجه للنجاح في اختبار القبول، في مكان واحد
+              </p>
+            </div>
+
+            {/* HERO feature — full width */}
+            <div className="relative flex items-center gap-3 rounded-xl p-2.5 bg-gradient-to-l from-primary/15 to-accent/15 border border-primary/30 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200 overflow-hidden">
+              <div className="absolute -left-3 -top-3 w-12 h-12 rounded-full bg-primary/10 blur-xl" />
+              <span className="text-2xl shrink-0 relative">📝</span>
+              <div className="min-w-0 flex-1 relative">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="text-xs font-bold text-primary leading-tight">
+                    التدرب على نماذج الاختبارات السابقة
+                  </p>
+                  <Badge className="text-[9px] h-4 px-1.5 bg-primary text-primary-foreground border-0 shrink-0">
+                    الأكثر طلباً
+                  </Badge>
+                </div>
+                <p className="text-[10px] text-foreground/70 leading-tight mt-0.5">
+                  بوضعين مختلفين: تدريب وصارم
+                </p>
+              </div>
+            </div>
+
+            {/* SMART features — 2x2 grid */}
             <div className="grid grid-cols-2 gap-2">
               {[
-                { emoji: "🤖", label: "مساعد مفاضلة الذكي", sub: "يجيب عن أي سؤال فوراً" },
-                { emoji: "✨", label: "مولد الأسئلة الذكي", sub: "أسئلة مخصصة لنقاط ضعفك" },
-                { emoji: "📝", label: "نماذج اختبارات سابقة", sub: "مع إجابات نموذجية" },
-                { emoji: "⏱️", label: "محاكاة واقعية", sub: "لبيئة الاختبار الفعلية" },
-                { emoji: "📚", label: "5000+ سؤال تدريبي", sub: "مراجع ومعتمد" },
-                { emoji: "🧠", label: "شرح علمي مفصّل", sub: "لكل إجابة" },
-                { emoji: "📶", label: "يعمل أوفلاين", sub: "بدون إنترنت" },
-              ].map((f, i) => {
-                const isSmart = i < 4;
-                return (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-2 rounded-lg p-1.5 transition-all duration-200 ${
-                      isSmart
-                        ? "bg-accent/10 border border-accent/30 hover:bg-accent/15 hover:border-accent/50 hover:scale-[1.02] hover:shadow-sm"
-                        : "hover:bg-muted/50"
-                    }`}
-                  >
-                    <span className="text-base">{f.emoji}</span>
-                    <div className="min-w-0">
-                      <p className={`text-xs font-semibold leading-tight ${isSmart ? "text-accent" : "text-foreground"}`}>{f.label}</p>
-                      <p className="text-[10px] text-muted-foreground leading-tight">{f.sub}</p>
-                    </div>
+                { emoji: "⏱️", label: "محاكي واقعي للاختبارات", sub: "كأنك في قاعة الاختبار" },
+                { emoji: "✨", label: "مولد الأسئلة الذكي", sub: "الأكثر تكراراً والمتوقعة" },
+                { emoji: "🤖", label: "مساعد مُفَاضَلَة الذكي", sub: "استفسر عن أي شيء فوراً" },
+                { emoji: "🧠", label: "تلخيص ذكي للدروس", sub: "ملخصات فورية بالذكاء الاصطناعي" },
+              ].map((f, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 rounded-lg p-1.5 bg-accent/10 border border-accent/30 hover:bg-accent/15 hover:border-accent/50 hover:scale-[1.02] hover:shadow-sm transition-all duration-200"
+                >
+                  <span className="text-base shrink-0">{f.emoji}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold leading-tight text-accent">{f.label}</p>
+                    <p className="text-[10px] text-muted-foreground leading-tight">{f.sub}</p>
                   </div>
-                );
-              })}
+                </div>
+              ))}
+            </div>
+
+            {/* STANDARD features — 2 cols */}
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { emoji: "⚡", label: "وضع المراجعة السريعة", sub: "مثالي لليلة الاختبار" },
+                { emoji: "📚", label: "أكثر من 5000 سؤال", sub: "مراجع ومعتمد" },
+              ].map((f, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 rounded-lg p-1.5 hover:bg-muted/50 transition-all duration-200"
+                >
+                  <span className="text-base shrink-0">{f.emoji}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold leading-tight text-foreground">{f.label}</p>
+                    <p className="text-[10px] text-muted-foreground leading-tight">{f.sub}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
