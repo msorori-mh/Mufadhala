@@ -145,12 +145,28 @@ export default function Install() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background pt-safe">
-      <div className="container max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="container max-w-2xl mx-auto px-4 py-3 space-y-3">
+        {/* 0) BRAND HEADER */}
+        <header className="flex items-center justify-center gap-2.5 pt-1">
+          <img
+            src="/logo-original.png"
+            alt="شعار مُفَاضَلَة"
+            className="w-10 h-10 rounded-lg shadow-sm ring-1 ring-primary/20"
+            loading="eager"
+          />
+          <div className="text-center">
+            <h1 className="text-lg font-extrabold text-primary leading-tight tracking-tight">
+              مُفَاضَلَة <span className="text-foreground/60 font-bold">|</span> Mufadhala
+            </h1>
+            <p className="text-[10px] text-muted-foreground leading-tight">منصتك الذكية لاختبارات القبول</p>
+          </div>
+        </header>
+
         {/* 1) PLATFORM FEATURES — first thing the student reads */}
         <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4">
-            <h3 className="text-sm font-bold text-foreground mb-3">✨ ما الذي يميّز مُفَاضَلَة؟</h3>
-            <div className="grid grid-cols-2 gap-3">
+          <CardContent className="p-3">
+            <h3 className="text-sm font-bold text-foreground mb-2">✨ ما الذي يميّز مُفَاضَلَة؟</h3>
+            <div className="grid grid-cols-2 gap-2">
               {[
                 { emoji: "🤖", label: "مساعد مفاضلة الذكي", sub: "يجيب عن أي سؤال فوراً" },
                 { emoji: "✨", label: "مولد الأسئلة الذكي", sub: "أسئلة مخصصة لنقاط ضعفك" },
@@ -164,16 +180,16 @@ export default function Install() {
                 return (
                   <div
                     key={i}
-                    className={`flex items-center gap-2 rounded-lg p-2 transition-all duration-200 ${
+                    className={`flex items-center gap-2 rounded-lg p-1.5 transition-all duration-200 ${
                       isSmart
                         ? "bg-accent/10 border border-accent/30 hover:bg-accent/15 hover:border-accent/50 hover:scale-[1.02] hover:shadow-sm"
                         : "hover:bg-muted/50"
                     }`}
                   >
-                    <span className="text-lg">{f.emoji}</span>
+                    <span className="text-base">{f.emoji}</span>
                     <div className="min-w-0">
-                      <p className={`text-xs font-semibold ${isSmart ? "text-accent" : "text-foreground"}`}>{f.label}</p>
-                      <p className="text-[10px] text-muted-foreground">{f.sub}</p>
+                      <p className={`text-xs font-semibold leading-tight ${isSmart ? "text-accent" : "text-foreground"}`}>{f.label}</p>
+                      <p className="text-[10px] text-muted-foreground leading-tight">{f.sub}</p>
                     </div>
                   </div>
                 );
@@ -184,25 +200,25 @@ export default function Install() {
 
         {/* 2) QR SECTION */}
         <Card className="border-primary/20 shadow-xl">
-          <CardContent className="p-6 sm:p-8 flex flex-col items-center gap-4">
+          <CardContent className="p-4 sm:p-5 flex flex-col items-center gap-2">
             <div
               ref={qrRef}
-              className="bg-white p-4 rounded-2xl shadow-md ring-1 ring-border"
+              className="bg-white p-3 rounded-2xl shadow-md ring-1 ring-border"
             >
               <QRCodeCanvas
                 value={canonicalUrl}
-                size={240}
+                size={200}
                 level="H"
                 includeMargin={false}
                 bgColor="#FFFFFF"
                 fgColor="#1A237E"
               />
             </div>
-            <p className="text-base font-medium text-foreground text-center">
+            <p className="text-sm font-medium text-foreground text-center">
               امسح الكود لفتح المنصة مباشرة
             </p>
-            <Button onClick={downloadQR} variant="ghost" size="sm" className="gap-2 text-muted-foreground">
-              <Download className="w-4 h-4" />
+            <Button onClick={downloadQR} variant="ghost" size="sm" className="gap-2 text-muted-foreground h-7 text-xs">
+              <Download className="w-3.5 h-3.5" />
               تنزيل QR (PNG)
             </Button>
           </CardContent>
@@ -230,7 +246,7 @@ export default function Install() {
               </Button>
             </div>
           ) : (
-            <Button asChild size="lg" className="w-full h-14 text-base font-bold gap-2 shadow-lg">
+            <Button asChild size="lg" className="w-full h-12 text-base font-bold gap-2 shadow-lg">
               <a href="/">
                 <ArrowLeft className="w-5 h-5" />
                 افتح المنصة وثبّت التطبيق
@@ -241,7 +257,8 @@ export default function Install() {
             <Button
               onClick={() => downloadBrochure("A4")}
               variant="outline"
-              className="w-full gap-2"
+              size="sm"
+              className="w-full gap-2 h-9"
               disabled={generatingPDF}
             >
               {generatingPDF ? (
@@ -254,7 +271,8 @@ export default function Install() {
             <Button
               onClick={() => downloadBrochure("A5")}
               variant="outline"
-              className="w-full gap-2"
+              size="sm"
+              className="w-full gap-2 h-9"
               disabled={generatingPDF}
             >
               {generatingPDF ? (
@@ -268,36 +286,36 @@ export default function Install() {
         </div>
 
         {/* 3) INSTALL INSTRUCTIONS — directly below install action */}
-        <section className="space-y-3">
-          <h2 className="text-lg font-bold text-center flex items-center justify-center gap-2">
-            <Smartphone className="w-5 h-5 text-primary" />
+        <section className="space-y-2">
+          <h2 className="text-base font-bold text-center flex items-center justify-center gap-2">
+            <Smartphone className="w-4 h-4 text-primary" />
             ثبّت التطبيق على شاشتك الرئيسية
           </h2>
 
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid sm:grid-cols-2 gap-2">
             {/* Android */}
             <Card className={platform === "android" ? "ring-2 ring-primary" : ""}>
-              <CardContent className="p-4 space-y-2.5">
+              <CardContent className="p-3 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-sm">Android</h3>
-                  <Badge variant={platform === "android" ? "default" : "outline"} className="text-xs">
+                  <Badge variant={platform === "android" ? "default" : "outline"} className="text-[10px] h-5 px-1.5">
                     أندرويد
                   </Badge>
                 </div>
-                <ol className="space-y-2 text-sm text-foreground/90">
+                <ol className="space-y-1.5 text-xs text-foreground/90">
                   <li className="flex gap-2">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">1</span>
+                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">1</span>
                     <span>افتح الموقع في متصفح Chrome</span>
                   </li>
                   <li className="flex gap-2">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">2</span>
-                    <span className="flex items-center gap-1.5 flex-wrap">
+                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">2</span>
+                    <span className="flex items-center gap-1 flex-wrap">
                       اضغط على قائمة الخيارات
-                      <MoreVertical className="w-3.5 h-3.5 inline text-muted-foreground" />
+                      <MoreVertical className="w-3 h-3 inline text-muted-foreground" />
                     </span>
                   </li>
                   <li className="flex gap-2">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">3</span>
+                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">3</span>
                     <span>اختر <strong>«تثبيت التطبيق»</strong></span>
                   </li>
                 </ol>
@@ -306,30 +324,30 @@ export default function Install() {
 
             {/* iOS */}
             <Card className={platform === "ios" ? "ring-2 ring-primary" : ""}>
-              <CardContent className="p-4 space-y-2.5">
+              <CardContent className="p-3 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-sm">iPhone / iPad</h3>
-                  <Badge variant={platform === "ios" ? "default" : "outline"} className="text-xs">
+                  <Badge variant={platform === "ios" ? "default" : "outline"} className="text-[10px] h-5 px-1.5">
                     آيفون
                   </Badge>
                 </div>
-                <ol className="space-y-2 text-sm text-foreground/90">
+                <ol className="space-y-1.5 text-xs text-foreground/90">
                   <li className="flex gap-2">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">1</span>
+                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">1</span>
                     <span>افتح الموقع في متصفح Safari</span>
                   </li>
                   <li className="flex gap-2">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">2</span>
-                    <span className="flex items-center gap-1.5 flex-wrap">
+                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">2</span>
+                    <span className="flex items-center gap-1 flex-wrap">
                       اضغط على زر المشاركة
-                      <Share2 className="w-3.5 h-3.5 inline text-muted-foreground" />
+                      <Share2 className="w-3 h-3 inline text-muted-foreground" />
                     </span>
                   </li>
                   <li className="flex gap-2">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">3</span>
-                    <span className="flex items-center gap-1.5 flex-wrap">
+                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">3</span>
+                    <span className="flex items-center gap-1 flex-wrap">
                       اختر <strong>«إضافة إلى الشاشة الرئيسية»</strong>
-                      <Plus className="w-3.5 h-3.5 inline text-muted-foreground" />
+                      <Plus className="w-3 h-3 inline text-muted-foreground" />
                     </span>
                   </li>
                 </ol>
@@ -339,9 +357,9 @@ export default function Install() {
         </section>
 
         {/* 5) SHARE SECTION — last */}
-        <section className="space-y-3">
+        <section className="space-y-2">
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            <h2 className="text-base font-bold text-center">شارك مع أصدقائك</h2>
+            <h2 className="text-sm font-bold text-center">شارك مع أصدقائك</h2>
             {typeof shareCount === "number" && shareCount > 0 && (
               <Badge variant="secondary" className="text-[10px] gap-1 px-2 py-0 h-5">
                 <Share2 className="w-3 h-3" />
@@ -350,23 +368,23 @@ export default function Install() {
             )}
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <Button onClick={shareWhatsApp} variant="outline" size="sm" className="gap-1.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 border-[#25D366]/30 text-[#128C7E]">
-              <Share2 className="w-4 h-4" />
+            <Button onClick={shareWhatsApp} variant="outline" size="sm" className="gap-1.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 border-[#25D366]/30 text-[#128C7E] h-8 text-xs">
+              <Share2 className="w-3.5 h-3.5" />
               واتساب
             </Button>
-            <Button onClick={shareTelegram} variant="outline" size="sm" className="gap-1.5 bg-[#0088cc]/10 hover:bg-[#0088cc]/20 border-[#0088cc]/30 text-[#0088cc]">
-              <Send className="w-4 h-4" />
+            <Button onClick={shareTelegram} variant="outline" size="sm" className="gap-1.5 bg-[#0088cc]/10 hover:bg-[#0088cc]/20 border-[#0088cc]/30 text-[#0088cc] h-8 text-xs">
+              <Send className="w-3.5 h-3.5" />
               تيليجرام
             </Button>
-            <Button onClick={shareNative} variant="outline" size="sm" className="gap-1.5">
-              <Share2 className="w-4 h-4" />
+            <Button onClick={shareNative} variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
+              <Share2 className="w-3.5 h-3.5" />
               مشاركة
             </Button>
           </div>
         </section>
 
         {/* Footer */}
-        <footer className="text-center text-xs text-muted-foreground pt-2 pb-bottom-nav">
+        <footer className="text-center text-xs text-muted-foreground pt-1 pb-bottom-nav">
           <p>© {new Date().getFullYear()} مُفَاضَلَة</p>
         </footer>
       </div>
