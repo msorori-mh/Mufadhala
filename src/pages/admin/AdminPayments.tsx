@@ -326,8 +326,17 @@ const AdminPayments = () => {
         </div>
 
         <div className="space-y-2">
-          {filtered.map((req) => (
-            <Card key={req.id} className={req.fraud_status === "suspicious" ? "border-destructive/50 bg-destructive/5" : req.fraud_status === "review" ? "border-yellow-400/50 bg-yellow-50/30 dark:bg-yellow-950/10" : ""}>
+          {filtered.map((req) => {
+            const s = statusStyles(req.status);
+            const fraudOverride = req.fraud_status === "suspicious"
+              ? "border-destructive/60 bg-destructive/5"
+              : req.fraud_status === "review"
+              ? "border-orange-400/60 bg-orange-50/30 dark:bg-orange-950/10"
+              : "";
+            const cardCls = fraudOverride || `${s.cardBorder} ${s.cardBg}`;
+            return (
+            <Card key={req.id} className={`relative overflow-hidden ${cardCls}`}>
+              <span className={`absolute top-0 bottom-0 right-0 w-1 ${s.accentBar}`} aria-hidden="true" />
               <CardContent className="py-3 px-4">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
@@ -355,7 +364,8 @@ const AdminPayments = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
           {filtered.length === 0 && <p className="text-center text-muted-foreground py-8">لا توجد طلبات</p>}
         </div>
       </div>
