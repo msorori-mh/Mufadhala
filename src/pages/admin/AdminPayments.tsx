@@ -280,12 +280,33 @@ const AdminPayments = () => {
           </div>
         )}
 
+        {/* Status summary bar */}
+        <div className="flex items-center gap-3 text-xs flex-wrap rounded-lg border bg-muted/30 px-3 py-2">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+            <span className="text-muted-foreground">معلق</span>
+            <span className="font-semibold">{pendingCount}</span>
+          </span>
+          <span className="text-muted-foreground">•</span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+            <span className="text-muted-foreground">مقبول</span>
+            <span className="font-semibold">{approvedCount}</span>
+          </span>
+          <span className="text-muted-foreground">•</span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+            <span className="text-muted-foreground">مرفوض</span>
+            <span className="font-semibold">{rejectedCount}</span>
+          </span>
+        </div>
+
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="w-full">
-            <TabsTrigger value="pending" className="flex-1">معلق ({pendingCount})</TabsTrigger>
-            <TabsTrigger value="approved" className="flex-1">مقبول</TabsTrigger>
-            <TabsTrigger value="rejected" className="flex-1">مرفوض</TabsTrigger>
-            <TabsTrigger value="all" className="flex-1">الكل</TabsTrigger>
+            <TabsTrigger value="pending" className={`flex-1 ${statusStyles("pending").tabActive}`}>معلق ({pendingCount})</TabsTrigger>
+            <TabsTrigger value="approved" className={`flex-1 ${statusStyles("approved").tabActive}`}>مقبول ({approvedCount})</TabsTrigger>
+            <TabsTrigger value="rejected" className={`flex-1 ${statusStyles("rejected").tabActive}`}>مرفوض ({rejectedCount})</TabsTrigger>
+            <TabsTrigger value="all" className="flex-1">الكل ({requests.length})</TabsTrigger>
           </TabsList>
         </Tabs>
 
