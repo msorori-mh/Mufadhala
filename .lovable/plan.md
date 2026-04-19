@@ -1,39 +1,63 @@
 
 ## Goal
-Force the brochure PDF to fit in **one A4 page** instead of overflowing to a second page.
+عرض "الأسئلة الأكثر تكراراً" في نماذج الاختبارات السابقة بدون أي تأثير على منطق العمل الحالي (للعرض فقط).
 
-## Why it's printing on 2 pages
-In `generateBrochurePDF.ts`, `html2canvas` captures the off-screen container at `794×1123 px` (A4 @ 96dpi). But the React component `InstallBrochureContent` content is **taller than 1123px** because:
-- Header + features card + QR block + CTA + footer stack vertically with `gap: 14px` and `padding: 28px`
-- The features card alone (hero + 2x2 smart + 2x1 standard) is ~480px tall
-- The QR block with 200px QR + label + badge + paragraph is ~340px tall
-- Total content ≈ 1200–1300px → overflows the captured area, jsPDF then splits it
+## التحدي
+جدول `past_exam_model_questions` يخزّن كل سؤال كصف مستقل لكل نموذج (لا يوجد ربط بين الأسئلة المتشابهة عبر النماذج). لذا التكرار غير مُعرَّف تقنياً ويحتاج آلية كشف تشابه.
 
-Currently we capture only the first 1123px (`height: profile.canvas.h`), but if any element extends below that, the rendered canvas may still be taller and `pdf.addImage` with mismatched dimensions can cause a second auto-page.
+## الآليات الممكنة (3 خيارات)
 
-## Fix (single file: `src/components/InstallBrochureContent.tsx` + tiny tweak in `generateBrochurePDF.ts`)
+### الخيار 1 — تطبيع نصي بسيط (Normalization Hash) ⭐ موصى به
+- لكل سؤال: نأخذ `q_text`، ننظفه (إزالة التشكيل، المسافات الزائدة، علامات الترقيم، توحيد الألف/الياء/الهاء)، ثم نحسب hash.
+- الأسئلة بنفس الـ hash = نفس السؤال (حتى لو كُتب بصيغ مختلفة قليلاً).
+- العدّ + الترتيب تنازلياً = الأكثر تكراراً.
+- **مزايا**: سريع، بدون AI، بدون تكلفة، يعمل على آلاف الأسئلة فوراً.
+- **عيوب**: لا يكتشف إعادة الصياغة العميقة (سؤال بنفس الفكرة لكن بصياغة مختلفة).
 
-### 1. Compact the print-mode layout so it fits in 1123px
-In `InstallBrochureContent.tsx` (printMode A4 branch only):
-- Reduce outer `padding`: `28 → 18`
-- Reduce outer `gap`: `14 → 8`
-- Shrink QR image: `200×200 → 150×150`
-- Reduce QR block `padding`: `p-4 → p-3`, inner white box `p-3 → p-2`
-- Reduce CTA `py-3 → py-2`, font `text-base → text-sm`
-- Reduce footer text margin
-- Tighten the features `CardContent` paddings only when in printMode (pass a `compact` flag, or add a print-only wrapper class)
+### الخيار 2 — تشابه دلالي عبر Embeddings
+- توليد embedding لكل سؤال عبر Lovable AI، ثم تجميع الأسئلة بتشابه ≥85%.
+- **مزايا**: يكتشف إعادة الصياغة والمعنى المتقارب.
+- **عيوب**: يحتاج جدول `pgvector`، تكلفة AI، أبطأ، تعقيد أعلى.
 
-### 2. Guarantee single-page in `generateBrochurePDF.ts`
-- Set the host container `overflow: "hidden"` so anything beyond 1123px is clipped (safety net)
-- When calling `pdf.addImage`, keep current `0,0,210,297` mapping — already correct for single page
-- Remove any chance of jsPDF auto-paging: we only call `addImage` once, so no second page is added by the library — the visual "page 2" the user sees is actually the captured canvas being taller than A4 and getting compressed/cropped weirdly. Clipping at 1123px solves it.
+### الخيار 3 — تجميع يدوي بواسطة الإدمن
+- إضافة حقل `topic_tag` للأسئلة، الإدمن يصنّف يدوياً.
+- **مزايا**: دقة 100%.
+- **عيوب**: عمل يدوي ضخم، غير عملي.
 
-### 3. A5 stays unchanged
-A5 (559×794) already fits — no edits needed.
+## الخطة المقترحة (الخيار 1)
 
-## Files to Edit
-- `src/components/InstallBrochureContent.tsx` — compact print-mode spacing + smaller QR
-- `src/lib/generateBrochurePDF.ts` — add `overflow: hidden` to host container
+### للعرض فقط — لا تغيير في منطق المنصة
+- **لا** نعدّل جدول الأسئلة، **لا** نغيّر التدريب/الاختبار الصارم، **لا** نضيف أعمدة.
+- نضيف صفحة عرض جديدة فقط في لوحة الإدمن.
 
-## Visual outcome
-Single A4 page with: header → features card → QR block → CTA → footer, all comfortably fitting with balanced spacing.
+### المكونات
+1. **دالة Postgres للتطبيع** (read-only helper):
+   - `normalize_arabic_question(text) returns text` — تنظيف نصي خالص.
+   - تُستخدم في view فقط، لا triggers.
+
+2. **View إحصائي**: `v_repeated_past_exam_questions`
+   - يحسب الـ hash من النص المُطبَّع لكل سؤال.
+   - يجمع: `normalized_hash, sample_text, occurrence_count, models_list (سنوات/جامعات)`.
+   - مرتب تنازلياً بعدد التكرار.
+
+3. **صفحة إدمن جديدة**: `/admin/repeated-past-questions`
+   - جدول: السؤال (نموذج)، عدد التكرار، النماذج التي ظهر فيها (سنة + جامعة)، نسبة الظهور.
+   - فلاتر: جامعة، سنة، حد أدنى للتكرار (≥2، ≥3...).
+   - زر تصدير CSV.
+   - Permission gate: `past_exams`.
+
+4. **رابط في AdminLayout** ضمن قسم "النماذج السابقة".
+
+### ما يبقى دون تغيير
+- جدول `past_exam_model_questions` و `past_exam_models` و `past_exam_attempts`.
+- صفحات الطالب (`PastExamPractice`, `TrainingMode`, `StrictMode`).
+- منطق التسعير، الاشتراكات، أو الصلاحيات الأخرى.
+
+## الملفات المطلوبة
+- **Migration جديد**: دالة `normalize_arabic_question` + view `v_repeated_past_exam_questions` (مع RLS مناسبة: staff فقط).
+- **جديد**: `src/pages/admin/AdminRepeatedPastQuestions.tsx`
+- **تعديل**: `src/App.tsx` (إضافة route)
+- **تعديل**: `src/components/admin/AdminLayout.tsx` (إضافة رابط القائمة)
+
+## الناتج البصري
+صفحة إدارية جديدة تعرض جدولاً مرتباً: "هذا السؤال تكرّر 5 مرات في: جامعة صنعاء 2022، عدن 2023، تعز 2024..." — للعرض فقط، بدون أي تأثير على تجربة الطالب.
