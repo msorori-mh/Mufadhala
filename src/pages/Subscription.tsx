@@ -421,21 +421,6 @@ const Subscription = () => {
       </header>
 
       <div className="max-w-2xl mx-auto p-4 md:pb-4 space-y-4">
-        {/* Trial Banner */}
-        {isTrial && subscription?.trial_ends_at && (
-          <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900">
-            <CardContent className="py-3 text-center">
-              <div className="flex items-center justify-center gap-2">
-                <Timer className="w-5 h-5 text-blue-600" />
-                <span className="text-sm font-semibold text-blue-700 dark:text-blue-400">فترة تجريبية مجانية</span>
-              </div>
-              <p className="text-xs text-blue-600 dark:text-blue-500 mt-1">
-                تنتهي في: {new Date(subscription.trial_ends_at).toLocaleString("ar")}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Active status */}
         {isActive && !isTrial && (
           <Card className="border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900">
