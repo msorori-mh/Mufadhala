@@ -440,11 +440,11 @@ async function renderBrochure(size: PaperSize): Promise<void> {
     // Clickable QR + CTA regions (proportional to paper). Coordinates in mm.
     const s = profile.pdf.w / 210; // proportional scaling vs A4 reference
     if (size === "A4") {
-      // QR is in the LEFT column of the two-column layout (left ~45% of width).
-      // Approx QR box: x≈18mm, y≈100mm, 70x70mm
-      pdf.link(18 * s, 100 * s, 70 * s, 70 * s, { url: INSTALL_URL });
+      // Stacked layout: features at top, QR centered in lower half (~y=180mm).
+      // Approx QR box: x≈70mm, y≈180mm, 70x70mm (centered horizontally)
+      pdf.link(70 * s, 180 * s, 70 * s, 70 * s, { url: INSTALL_URL });
       // CTA stays full-width near bottom
-      pdf.link(20 * s, 252 * s, 170 * s, 24 * s, { url: INSTALL_URL });
+      pdf.link(20 * s, 262 * s, 170 * s, 22 * s, { url: INSTALL_URL });
     } else {
       // A5 single-column (unchanged)
       pdf.link(65 * s, 138 * s, 80 * s, 80 * s, { url: INSTALL_URL });
