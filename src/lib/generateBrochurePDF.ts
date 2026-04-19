@@ -329,6 +329,36 @@ function compactFeatureCard(emoji: string, label: string): string {
   `;
 }
 
+/**
+ * Visual website link badge — pill-shaped chip with globe icon + URL.
+ * Reinforces that users can also visit the site directly (not just scan QR).
+ */
+function websiteLinkBadge(): string {
+  return `
+    <div style="
+      display:inline-flex; align-items:center; gap:8px;
+      background: linear-gradient(135deg, ${BRAND_PRIMARY} 0%, #3949AB 100%);
+      color:#ffffff;
+      padding: 8px 14px;
+      border-radius: 999px;
+      box-shadow: 0 6px 14px rgba(26,35,126,0.25);
+      direction: ltr;
+    ">
+      <span style="
+        display:inline-flex; align-items:center; justify-content:center;
+        width:20px; height:20px; border-radius:50%;
+        background:#ffffff; color:${BRAND_PRIMARY};
+        font-size:12px; font-weight:900; line-height:1;
+      ">🌐</span>
+      <span style="
+        font-family:'Courier New', monospace;
+        font-size:12px; font-weight:800; letter-spacing:0.5px;
+        color:#ffffff;
+      ">mufadhala.com/install</span>
+    </div>
+  `;
+}
+
 /** Legacy feature row used by the A5 layout. */
 function legacyFeatureRow(emoji: string, label: string, t: Record<string, string>): string {
   return `
