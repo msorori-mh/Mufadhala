@@ -16,7 +16,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, ArrowRight, FileText, Save, Upload, Download, Copy, EyeOff, Eye } from "lucide-react";
+import { Plus, Trash2, ArrowRight, FileText, Save, Upload, Download, Copy, EyeOff, Eye, Timer, Info, X, Lightbulb } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Tables } from "@/integrations/supabase/types";
 import { parsePastExamFile, downloadTemplate, type ParsedQuestion, type ParseError } from "@/services/pastExamImport";
 
@@ -141,8 +142,8 @@ const AdminPastExams = () => {
       toast({ variant: "destructive", title: "مدة غير صالحة", description: "أدخل عدداً صحيحاً موجباً للمدة الإلزامية" });
       return;
     }
-    if (suggestedDurationMinutes.trim() && (suggestedParsed === null || suggestedParsed < 30)) {
-      toast({ variant: "destructive", title: "المدة المقترحة غير صالحة", description: "يجب ألا تقل المدة المقترحة عن 30 دقيقة" });
+    if (suggestedDurationMinutes.trim() && (suggestedParsed === null || suggestedParsed < 5)) {
+      toast({ variant: "destructive", title: "المدة المقترحة غير صالحة", description: "يجب ألا تقل المدة المقترحة عن 5 دقائق" });
       return;
     }
     setSaving(true);
@@ -444,28 +445,92 @@ const AdminPastExams = () => {
                   <Label>السنة</Label>
                   <Input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} />
                 </div>
-                <div className="space-y-1.5">
-                  <Label>مدة الاختبار الإلزامية (دقائق)</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={durationMinutes}
-                    onChange={(e) => setDurationMinutes(e.target.value)}
-                    placeholder="اتركه فارغاً ليختار الطالب"
-                  />
-                  <p className="text-[11px] text-muted-foreground">إذا حُدِّدت، سيلتزم بها الطالب في الوضع المتقدم.</p>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>المدة المقترحة للطالب (دقائق)</Label>
-                  <Input
-                    type="number"
-                    min={30}
-                    step={5}
-                    value={suggestedDurationMinutes}
-                    onChange={(e) => setSuggestedDurationMinutes(e.target.value)}
-                    placeholder="مثال: 60 (الحد الأدنى 30)"
-                  />
-                  <p className="text-[11px] text-muted-foreground">تظهر كقيمة مبدئية في حوار اختيار المدة عند ترك المدة الإلزامية فارغة.</p>
+                <div className="md:col-span-2">
+                  <Card className="border-dashed bg-muted/30">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Timer className="w-4 h-4 text-primary" />
+                        إعدادات المدة الزمنية
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label className="flex items-center gap-1.5 text-xs">
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-destructive/10 text-destructive text-[10px] font-bold">!</span>
+                            المدة الإلزامية (دقائق)
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              min={1}
+                              value={durationMinutes}
+                              onChange={(e) => setDurationMinutes(e.target.value)}
+                              placeholder="مثال: 60"
+                              className="pl-9"
+                            />
+                            {durationMinutes && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
+                                onClick={() => setDurationMinutes("")}
+                                title="مسح القيمة"
+                                aria-label="مسح المدة الإلزامية"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">
+                            تُعرض كقيمة افتراضية لكل طالب، ويستطيع تعديلها قبل البدء.
+                          </p>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="flex items-center gap-1.5 text-xs">
+                            <Lightbulb className="w-3.5 h-3.5 text-secondary" />
+                            المدة المقترحة (دقائق)
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              min={5}
+                              step={5}
+                              value={suggestedDurationMinutes}
+                              onChange={(e) => setSuggestedDurationMinutes(e.target.value)}
+                              placeholder="مثال: 45"
+                              className="pl-9"
+                            />
+                            {suggestedDurationMinutes && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
+                                onClick={() => setSuggestedDurationMinutes("")}
+                                title="مسح القيمة"
+                                aria-label="مسح المدة المقترحة"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">
+                            اقتراح إرشادي فقط، يظهر داخل حوار اختيار المدة عند ترك المدة الإلزامية فارغة.
+                          </p>
+                        </div>
+                      </div>
+                      <Alert className="bg-background border-primary/20">
+                        <Info className="h-4 w-4 text-primary" />
+                        <AlertDescription className="text-[11px] leading-relaxed text-muted-foreground">
+                          <span className="font-bold text-foreground">💡 ترك كلا الحقلين فارغين:</span> يحسب النظام الوقت تلقائياً بمعدل دقيقة واحدة لكل سؤال (بحد أدنى 5 دقائق).
+                          <br />
+                          <span className="font-bold text-foreground mt-1 inline-block">⚖️ الأولوية عند الطالب:</span> آخر مدة استخدمها → المدة الإلزامية → المدة المقترحة → الحساب التلقائي.
+                        </AlertDescription>
+                      </Alert>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
               <div className="flex items-center gap-6">
