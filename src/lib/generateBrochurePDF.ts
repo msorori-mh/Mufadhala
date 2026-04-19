@@ -289,12 +289,10 @@ function buildA5SingleColumn(qrDataUrl: string, t: Record<string, string>, s: nu
       ">
         <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${t.qrSize}; height:${t.qrSize};" />
       </div>
-      <p style="margin:${px(4 * s)} 0 0; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
-        امسح الرمز وابدأ الآن
+      <p style="margin:${px(4 * s)} 0 ${px(8 * s)}; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
+        دخول وتحميل التطبيق
       </p>
-      <p style="margin:0; font-size:${t.qrUrl}; color:#64748b; direction:ltr; font-family:'Courier New', monospace; font-weight:700; letter-spacing:0.5px;">
-        mufadhala.com/install
-      </p>
+      ${websiteLinkBadge()}
     </div>
 
     <p style="
