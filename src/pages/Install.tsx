@@ -338,28 +338,6 @@ export default function Install() {
           </div>
         </section>
 
-        {/* 4) PLATFORM FEATURES — short, grouped */}
-        <Card>
-          <CardContent className="p-5 space-y-4">
-            <div className="space-y-2">
-              <h3 className="text-sm font-bold text-foreground">📚 التدريب</h3>
-              <ul className="space-y-1 text-sm text-foreground/85 pr-1">
-                <li>• نماذج الأعوام السابقة</li>
-                <li>• محاكاة اختبار حقيقي</li>
-                <li>• أسئلة متكررة</li>
-              </ul>
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-sm font-bold text-foreground">🤖 الذكاء الاصطناعي</h3>
-              <ul className="space-y-1 text-sm text-foreground/85 pr-1">
-                <li>• مولد أسئلة</li>
-                <li>• مفاضل</li>
-                <li>• تحليل أداء</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* 5) SHARE SECTION — last */}
         <section className="space-y-3">
           <div className="flex items-center justify-center gap-2 flex-wrap">
