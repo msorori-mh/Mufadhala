@@ -145,12 +145,28 @@ export default function Install() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background pt-safe">
-      <div className="container max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="container max-w-2xl mx-auto px-4 py-3 space-y-3">
+        {/* 0) BRAND HEADER */}
+        <header className="flex items-center justify-center gap-2.5 pt-1">
+          <img
+            src="/logo-original.png"
+            alt="شعار مُفَاضَلَة"
+            className="w-10 h-10 rounded-lg shadow-sm ring-1 ring-primary/20"
+            loading="eager"
+          />
+          <div className="text-center">
+            <h1 className="text-lg font-extrabold text-primary leading-tight tracking-tight">
+              مُفَاضَلَة <span className="text-foreground/60 font-bold">|</span> Mufadhala
+            </h1>
+            <p className="text-[10px] text-muted-foreground leading-tight">منصتك الذكية لاختبارات القبول</p>
+          </div>
+        </header>
+
         {/* 1) PLATFORM FEATURES — first thing the student reads */}
         <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4">
-            <h3 className="text-sm font-bold text-foreground mb-3">✨ ما الذي يميّز مُفَاضَلَة؟</h3>
-            <div className="grid grid-cols-2 gap-3">
+          <CardContent className="p-3">
+            <h3 className="text-sm font-bold text-foreground mb-2">✨ ما الذي يميّز مُفَاضَلَة؟</h3>
+            <div className="grid grid-cols-2 gap-2">
               {[
                 { emoji: "🤖", label: "مساعد مفاضلة الذكي", sub: "يجيب عن أي سؤال فوراً" },
                 { emoji: "✨", label: "مولد الأسئلة الذكي", sub: "أسئلة مخصصة لنقاط ضعفك" },
