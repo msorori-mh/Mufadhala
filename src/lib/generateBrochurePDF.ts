@@ -314,23 +314,23 @@ function buildA5SingleColumn(qrDataUrl: string, t: Record<string, string>, s: nu
 function compactFeatureCard(emoji: string, label: string): string {
   return `
     <div style="
-      flex: 0 0 calc(50% - 4px);
+      flex: 0 0 calc(50% - 3px);
       box-sizing: border-box;
-      display:flex; align-items:center; gap:9px;
+      display:flex; align-items:center; gap:7px;
       background:#f8fafc;
       border-right: 4px solid ${BRAND_SECONDARY};
-      border-radius: 10px;
-      padding: 8px 11px;
-      min-height: 44px;
+      border-radius: 9px;
+      padding: 6px 9px;
+      min-height: 38px;
     ">
       <div style="
-        flex-shrink:0; width:30px; height:30px; border-radius:8px;
+        flex-shrink:0; width:26px; height:26px; border-radius:7px;
         background:#ffffff;
         display:flex; align-items:center; justify-content:center;
-        font-size: 16px; line-height:1;
-        box-shadow: 0 2px 6px rgba(15,23,42,0.08);
+        font-size: 14px; line-height:1;
+        box-shadow: 0 2px 5px rgba(15,23,42,0.08);
       ">${emoji}</div>
-      <p style="margin:0; font-size:11.5px; font-weight:700; color:#1e293b; line-height:1.35; text-align:right; flex:1;">
+      <p style="margin:0; font-size:11px; font-weight:700; color:#1e293b; line-height:1.25; text-align:right; flex:1;">
         ${label}
       </p>
     </div>
