@@ -117,6 +117,9 @@ const ModeSelector = ({ model, totalQuestions, isFreeModel, onSelectTraining, on
     setOverrideDuration(customDuration);
     setDurationPickerOpen(false);
     setAcknowledged(false);
+    toast.success("تم تعديل مدة الاختبار", {
+      description: `المدة الجديدة: ${customDuration} دقيقة`,
+    });
     setConfirmOpen(true);
   };
 
