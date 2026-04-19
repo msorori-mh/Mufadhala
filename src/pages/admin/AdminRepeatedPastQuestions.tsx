@@ -71,6 +71,22 @@ const AdminRepeatedPastQuestions = () => {
     },
   });
 
+  // إجمالي عدد النماذج المنشورة (مطبق عليه نفس فلتر الجامعة/السنة) لحساب نسبة التكرار
+  const { data: totalModels = 0 } = useQuery({
+    queryKey: ["published-models-count", universityId, year],
+    queryFn: async () => {
+      let q = supabase
+        .from("past_exam_models")
+        .select("id", { count: "exact", head: true })
+        .eq("is_published", true);
+      if (universityId !== "all") q = q.eq("university_id", universityId);
+      if (year !== "all") q = q.eq("year", Number(year));
+      const { count, error } = await q;
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
   const filtered = useMemo(() => {
     if (!search.trim()) return rows;
     const q = search.trim().toLowerCase();
@@ -78,14 +94,15 @@ const AdminRepeatedPastQuestions = () => {
   }, [rows, search]);
 
   const exportCsv = () => {
-    const header = ["السؤال", "عدد التكرار", "النماذج (السنة - الجامعة)"];
+    const header = ["السؤال", "عدد التكرار", "نسبة التكرار", "النماذج (السنة - الجامعة)"];
     const lines = [header.join(",")];
     filtered.forEach((r) => {
       const models = (r.models || [])
         .map((m) => `${m.year} - ${m.university_name ?? "—"}`)
         .join(" | ");
+      const pct = totalModels > 0 ? `${Math.round((r.occurrence_count / totalModels) * 100)}%` : "—";
       const safe = (s: string) => `"${(s ?? "").replace(/"/g, '""')}"`;
-      lines.push([safe(r.sample_text), r.occurrence_count, safe(models)].join(","));
+      lines.push([safe(r.sample_text), r.occurrence_count, pct, safe(models)].join(","));
     });
     const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -169,9 +186,14 @@ const AdminRepeatedPastQuestions = () => {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">
-                النتائج
-                <Badge variant="secondary" className="mr-2">{filtered.length}</Badge>
+              <CardTitle className="text-base flex items-center justify-between gap-2 flex-wrap">
+                <span>
+                  النتائج
+                  <Badge variant="secondary" className="mr-2">{filtered.length}</Badge>
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  إجمالي النماذج المنشورة (وفق الفلتر): <strong className="text-foreground">{totalModels}</strong>
+                </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -188,31 +210,48 @@ const AdminRepeatedPastQuestions = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-right w-[45%]">السؤال</TableHead>
+                        <TableHead className="text-right w-[40%]">السؤال</TableHead>
                         <TableHead className="text-center">التكرار</TableHead>
+                        <TableHead className="text-center">النسبة</TableHead>
                         <TableHead className="text-right">ظهر في النماذج</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filtered.map((r) => (
-                        <TableRow key={r.normalized_hash}>
-                          <TableCell className="text-right align-top">
-                            <div className="text-sm leading-relaxed line-clamp-3">{r.sample_text}</div>
-                          </TableCell>
-                          <TableCell className="text-center align-top">
-                            <Badge className="bg-primary text-primary-foreground">{r.occurrence_count}</Badge>
-                          </TableCell>
-                          <TableCell className="align-top">
-                            <div className="flex flex-wrap gap-1.5">
-                              {(r.models || []).map((m) => (
-                                <Badge key={m.model_id} variant="outline" className="text-xs">
-                                  {m.year} • {m.university_name ?? "—"}
-                                </Badge>
-                              ))}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {filtered.map((r) => {
+                        const pct = totalModels > 0 ? Math.round((r.occurrence_count / totalModels) * 100) : 0;
+                        const pctVariant = pct >= 50 ? "default" : pct >= 25 ? "secondary" : "outline";
+                        return (
+                          <TableRow key={r.normalized_hash}>
+                            <TableCell className="text-right align-top">
+                              <div className="text-sm leading-relaxed line-clamp-3">{r.sample_text}</div>
+                            </TableCell>
+                            <TableCell className="text-center align-top">
+                              <Badge className="bg-primary text-primary-foreground">{r.occurrence_count}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center align-top">
+                              {totalModels > 0 ? (
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <Badge variant={pctVariant as any}>{pct}%</Badge>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {r.occurrence_count}/{totalModels}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="align-top">
+                              <div className="flex flex-wrap gap-1.5">
+                                {(r.models || []).map((m) => (
+                                  <Badge key={m.model_id} variant="outline" className="text-xs">
+                                    {m.year} • {m.university_name ?? "—"}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
