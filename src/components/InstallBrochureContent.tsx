@@ -20,7 +20,7 @@ const SMART_FEATURES = [
   { emoji: "⏱️", label: "محاكي واقعي للاختبارات", sub: "كأنك في قاعة الاختبار" },
   { emoji: "✨", label: "مولد الأسئلة الذكي", sub: "الأكثر تكراراً والمتوقعة" },
   { emoji: "🤖", label: "مساعد مُفَاضَلَة الذكي", sub: "استفسر عن أي شيء فوراً" },
-  { emoji: "🧠", label: "تلخيص ذكي للدروس", sub: "ملخصات فورية بالذكاء الاصطناعي" },
+  { emoji: "🧠", label: "تلخيص ذكي للدروس", sub: "ملخصات ذكية شاملة" },
 ];
 
 const STANDARD_FEATURES = [
@@ -61,9 +61,6 @@ export function InstallBrochureFeatures() {
               <p className="text-xs font-bold text-primary leading-tight">
                 التدرب على نماذج الاختبارات السابقة
               </p>
-              <Badge className="text-[9px] h-4 px-1.5 bg-primary text-primary-foreground border-0 shrink-0">
-                الأكثر طلباً
-              </Badge>
             </div>
             <p className="text-[10px] text-foreground/70 leading-tight mt-0.5">
               بوضعين مختلفين: تدريب وصارم
