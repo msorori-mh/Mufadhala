@@ -171,9 +171,9 @@ export default function Install() {
         <div className="space-y-2">
           {isAndroidNonChrome ? (
             // Unsupported Android browser (Samsung Internet, Firefox, etc.) — block install path.
-            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 space-y-3">
+            <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 space-y-3">
               <div className="flex items-start gap-2">
-                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <p className="font-bold text-sm text-foreground mb-1">
                     افتح التطبيق في Google Chrome

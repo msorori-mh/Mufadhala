@@ -69,7 +69,7 @@ export default function InstallAppPrompt() {
 
       {/* Android non-Chrome browser warning (Samsung Internet, Firefox, etc.) */}
       {!deferredPrompt && isAndroidUnsupported && (
-        <div className="fixed bottom-16 inset-x-4 z-[60] bg-amber-500 text-white rounded-xl p-4 shadow-lg animate-in slide-in-from-bottom-4">
+        <div className="fixed bottom-16 inset-x-4 z-[60] bg-destructive text-destructive-foreground rounded-xl p-4 shadow-lg animate-in slide-in-from-bottom-4">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-6 h-6 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
