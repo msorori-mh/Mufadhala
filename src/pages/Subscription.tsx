@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -477,7 +477,7 @@ const Subscription = () => {
 
           // Hero plan = popular paid plan (or first available)
           const heroPlan = popularPlan || plans[0];
-          const otherPlans = plans.filter((p) => p.id !== heroPlan?.id);
+          
           const heroPrice = heroPlan ? getPlanPriceByZone(heroPlan, universityPricingZone) : 0;
           const heroFinalPrice = promoDiscount > 0 ? Math.round(heroPrice * (1 - promoDiscount / 100)) : heroPrice;
           const heroZone = universityPricingZone;
