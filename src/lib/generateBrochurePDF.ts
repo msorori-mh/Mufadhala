@@ -139,7 +139,7 @@ function buildBrochureHTML(qrDataUrl: string, scale: number, size: PaperSize): s
   };
 
   const middleSection = size === "A4"
-    ? buildA4TwoColumn(qrDataUrl, t)
+    ? buildA4Stacked(qrDataUrl, t)
     : buildA5SingleColumn(qrDataUrl, t, s);
 
   return `
