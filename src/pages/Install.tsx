@@ -246,7 +246,7 @@ export default function Install() {
               </Button>
             </div>
           ) : (
-            <Button asChild size="lg" className="w-full h-14 text-base font-bold gap-2 shadow-lg">
+            <Button asChild size="lg" className="w-full h-12 text-base font-bold gap-2 shadow-lg">
               <a href="/">
                 <ArrowLeft className="w-5 h-5" />
                 افتح المنصة وثبّت التطبيق
@@ -257,7 +257,8 @@ export default function Install() {
             <Button
               onClick={() => downloadBrochure("A4")}
               variant="outline"
-              className="w-full gap-2"
+              size="sm"
+              className="w-full gap-2 h-9"
               disabled={generatingPDF}
             >
               {generatingPDF ? (
@@ -270,7 +271,8 @@ export default function Install() {
             <Button
               onClick={() => downloadBrochure("A5")}
               variant="outline"
-              className="w-full gap-2"
+              size="sm"
+              className="w-full gap-2 h-9"
               disabled={generatingPDF}
             >
               {generatingPDF ? (
