@@ -1,6 +1,7 @@
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
+import { INSTALL_COPY } from "@/constants/installCopy";
 
 const BRAND_PRIMARY = "#1A237E";
 const BRAND_SECONDARY = "#2E7D32";
@@ -201,7 +202,7 @@ export async function generateBrochurePDF(_qrCanvas: HTMLCanvasElement): Promise
               border-radius:8px; padding:8px 10px;
               font-size:11px; color:#92400E; font-weight:700; line-height:1.5;
             ">
-              لأجهزة أندرويد: افتح الرابط باستخدام Google Chrome ثم اختر «تثبيت التطبيق». بعض المتصفحات الأخرى قد لا تعرض خيار التثبيت بشكل صحيح.
+              ${INSTALL_COPY.android.full}
             </div>
           </div>
 

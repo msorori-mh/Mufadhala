@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { isNativePlatform } from "@/lib/capacitor";
 import { detectAndroidBrowser, buildChromeIntentUrl } from "@/lib/browserDetect";
+import { INSTALL_COPY } from "@/constants/installCopy";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -75,7 +76,7 @@ export default function InstallAppPrompt() {
             <div className="flex-1 min-w-0">
               <p className="font-bold text-sm mb-1">افتح التطبيق في Google Chrome</p>
               <p className="text-xs opacity-95 leading-relaxed mb-2">
-                للتثبيت على أندرويد، افتح مُفَاضَلَة باستخدام Google Chrome ثم اضغط «تثبيت التطبيق».
+                {INSTALL_COPY.android.short}
               </p>
               <Button size="sm" variant="secondary" onClick={openInChrome} className="gap-1.5 h-8">
                 <Chrome className="w-3.5 h-3.5" />
