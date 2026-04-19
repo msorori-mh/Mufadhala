@@ -186,9 +186,14 @@ const AdminRepeatedPastQuestions = () => {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">
-                النتائج
-                <Badge variant="secondary" className="mr-2">{filtered.length}</Badge>
+              <CardTitle className="text-base flex items-center justify-between gap-2 flex-wrap">
+                <span>
+                  النتائج
+                  <Badge variant="secondary" className="mr-2">{filtered.length}</Badge>
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  إجمالي النماذج المنشورة (وفق الفلتر): <strong className="text-foreground">{totalModels}</strong>
+                </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
