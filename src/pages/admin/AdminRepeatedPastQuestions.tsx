@@ -67,7 +67,7 @@ const AdminRepeatedPastQuestions = () => {
         _limit: 300,
       });
       if (error) throw error;
-      return (data ?? []) as RepeatedRow[];
+      return (data ?? []) as unknown as RepeatedRow[];
     },
   });
 
