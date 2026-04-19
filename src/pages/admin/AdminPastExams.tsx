@@ -279,6 +279,59 @@ const AdminPastExams = () => {
     }
   };
 
+  // Inline switches: published & paid
+  const [togglingPublishId, setTogglingPublishId] = useState<string | null>(null);
+  const [togglingPaidId, setTogglingPaidId] = useState<string | null>(null);
+
+  const handleTogglePublished = async (m: Model, next: boolean) => {
+    // Block publishing empty models
+    if (next) {
+      const { count, error: countErr } = await supabase
+        .from("past_exam_model_questions")
+        .select("id", { count: "exact", head: true })
+        .eq("model_id", m.id);
+      if (countErr) {
+        toast({ variant: "destructive", title: "تعذر التحقق من الأسئلة", description: countErr.message });
+        return;
+      }
+      if ((count || 0) === 0) {
+        toast({ variant: "destructive", title: "لا يمكن نشر نموذج فارغ", description: "أضف الأسئلة أولاً قبل النشر" });
+        return;
+      }
+    }
+    setTogglingPublishId(m.id);
+    try {
+      const { error } = await supabase
+        .from("past_exam_models")
+        .update({ is_published: next })
+        .eq("id", m.id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
+      toast({ title: next ? "✓ تم النشر" : "تم الإرجاع إلى مسودة", description: next ? "النموذج منشور للطلاب الآن" : "النموذج لم يعد ظاهراً للطلاب" });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر تحديث حالة النشر", description: err?.message || "حدث خطأ" });
+    } finally {
+      setTogglingPublishId(null);
+    }
+  };
+
+  const handleTogglePaid = async (m: Model, next: boolean) => {
+    setTogglingPaidId(m.id);
+    try {
+      const { error } = await supabase
+        .from("past_exam_models")
+        .update({ is_paid: next })
+        .eq("id", m.id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
+      toast({ title: next ? "✓ النموذج أصبح مدفوعاً" : "✓ النموذج أصبح مجانياً", description: next ? "يتطلب اشتراكاً نشطاً" : "متاح لجميع الطلاب" });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر تحديث حالة الدفع", description: err?.message || "حدث خطأ" });
+    } finally {
+      setTogglingPaidId(null);
+    }
+  };
+
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const handleDuplicate = async (m: Model) => {
     if (!confirm(`نسخ النموذج "${m.title}" مع جميع أسئلته؟`)) return;
@@ -744,7 +797,7 @@ const AdminPastExams = () => {
                       {(m as any).university?.name_ar} — {m.year}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                     <Badge
                       variant={isEmpty ? "destructive" : "outline"}
                       className="text-[10px]"
@@ -752,39 +805,46 @@ const AdminPastExams = () => {
                     >
                       {isEmpty ? "فارغ" : `${qCount} سؤال`}
                     </Badge>
-                    {m.is_paid && <Badge variant="secondary" className="text-[10px]">اشتراك</Badge>}
-                    {m.is_published ? (
-                      <>
-                        <Badge className="text-[10px] bg-secondary">منشور</Badge>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-[11px] px-2 gap-1"
-                          title="إرجاع إلى مسودة"
-                          disabled={unpublishingId === m.id}
-                          onClick={() => handleUnpublish(m)}
-                        >
-                          <EyeOff className="w-3 h-3" />
-                          {unpublishingId === m.id ? "..." : "إلغاء النشر"}
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Badge variant="outline" className="text-[10px]">مسودة</Badge>
-                        {!isEmpty && (
-                          <Button
-                            size="sm"
-                            className="h-7 text-[11px] px-2 gap-1 bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                            title="نشر النموذج للطلاب فوراً"
-                            disabled={publishingId === m.id}
-                            onClick={() => handleQuickPublish(m)}
-                          >
-                            <Eye className="w-3 h-3" />
-                            {publishingId === m.id ? "..." : "نشر سريع"}
-                          </Button>
-                        )}
-                      </>
-                    )}
+
+                    {/* Inline toggle: Published */}
+                    <div
+                      className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] ${
+                        m.is_published
+                          ? "border-green-300 bg-green-50/60 text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-300"
+                          : "border-border bg-muted/40 text-muted-foreground"
+                      }`}
+                      title={m.is_published ? "منشور للطلاب — اضغط لإلغاء النشر" : (isEmpty ? "نموذج فارغ — أضف الأسئلة أولاً" : "مسودة — اضغط للنشر")}
+                    >
+                      {m.is_published ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                      <span className="font-medium">{m.is_published ? "منشور" : "مسودة"}</span>
+                      <Switch
+                        checked={m.is_published}
+                        disabled={togglingPublishId === m.id || (!m.is_published && isEmpty)}
+                        onCheckedChange={(v) => handleTogglePublished(m, v)}
+                        className="scale-75 origin-center -my-1"
+                        aria-label="تبديل حالة النشر"
+                      />
+                    </div>
+
+                    {/* Inline toggle: Paid */}
+                    <div
+                      className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] ${
+                        m.is_paid
+                          ? "border-amber-300 bg-amber-50/60 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
+                          : "border-border bg-muted/40 text-muted-foreground"
+                      }`}
+                      title={m.is_paid ? "مدفوع — يتطلب اشتراكاً" : "مجاني — متاح للجميع"}
+                    >
+                      <span className="font-medium">{m.is_paid ? "مدفوع" : "مجاني"}</span>
+                      <Switch
+                        checked={m.is_paid}
+                        disabled={togglingPaidId === m.id}
+                        onCheckedChange={(v) => handleTogglePaid(m, v)}
+                        className="scale-75 origin-center -my-1"
+                        aria-label="تبديل حالة الدفع"
+                      />
+                    </div>
+
                     <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setJustCreatedId(null); setShowQuestions(m.id); }}>الأسئلة</Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>تعديل</Button>
                     <Button variant="ghost" size="icon" title="نسخ النموذج" disabled={duplicatingId === m.id} onClick={() => handleDuplicate(m)}>
