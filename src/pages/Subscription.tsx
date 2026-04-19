@@ -504,7 +504,7 @@ const Subscription = () => {
               </div>
 
               {/* Benefits */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {[
                   { emoji: "🔓", text: "الوصول الكامل لجميع نماذج الأعوام السابقة في جميع الجامعات" },
                   { emoji: "🎯", text: "وصول غير محدود لمحاكي الاختبار الحقيقي" },
