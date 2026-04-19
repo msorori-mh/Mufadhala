@@ -241,14 +241,12 @@ function buildA4TwoColumn(qrDataUrl: string, t: Record<string, string>): string 
         ">
           <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${t.qrSize}; height:${t.qrSize};" />
         </div>
-        <p style="margin:4px 0 2px; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
-          امسح الرمز وابدأ الآن
+        <p style="margin:4px 0 8px; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
+          دخول وتحميل التطبيق
         </p>
-        <p style="margin:0 0 10px; font-size:${t.qrUrl}; color:#64748b; direction:ltr; font-family:'Courier New', monospace; font-weight:700; letter-spacing:0.5px;">
-          mufadhala.com/install
-        </p>
+        ${websiteLinkBadge()}
         <p style="
-          margin: 0; font-size: ${t.install}; color:#64748b; line-height:1.6;
+          margin: 10px 0 0; font-size: ${t.install}; color:#64748b; line-height:1.6;
         ">
           ${INSTALL_COPY.android.full}
         </p>
@@ -291,12 +289,10 @@ function buildA5SingleColumn(qrDataUrl: string, t: Record<string, string>, s: nu
       ">
         <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${t.qrSize}; height:${t.qrSize};" />
       </div>
-      <p style="margin:${px(4 * s)} 0 0; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
-        امسح الرمز وابدأ الآن
+      <p style="margin:${px(4 * s)} 0 ${px(8 * s)}; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
+        دخول وتحميل التطبيق
       </p>
-      <p style="margin:0; font-size:${t.qrUrl}; color:#64748b; direction:ltr; font-family:'Courier New', monospace; font-weight:700; letter-spacing:0.5px;">
-        mufadhala.com/install
-      </p>
+      ${websiteLinkBadge()}
     </div>
 
     <p style="
@@ -329,6 +325,36 @@ function compactFeatureCard(emoji: string, label: string): string {
       <p style="margin:0; font-size:13px; font-weight:700; color:#1e293b; line-height:1.4; text-align:right; flex:1;">
         ${label}
       </p>
+    </div>
+  `;
+}
+
+/**
+ * Visual website link badge — pill-shaped chip with globe icon + URL.
+ * Reinforces that users can also visit the site directly (not just scan QR).
+ */
+function websiteLinkBadge(): string {
+  return `
+    <div style="
+      display:inline-flex; align-items:center; gap:8px;
+      background: linear-gradient(135deg, ${BRAND_PRIMARY} 0%, #3949AB 100%);
+      color:#ffffff;
+      padding: 8px 14px;
+      border-radius: 999px;
+      box-shadow: 0 6px 14px rgba(26,35,126,0.25);
+      direction: ltr;
+    ">
+      <span style="
+        display:inline-flex; align-items:center; justify-content:center;
+        width:20px; height:20px; border-radius:50%;
+        background:#ffffff; color:${BRAND_PRIMARY};
+        font-size:12px; font-weight:900; line-height:1;
+      ">🌐</span>
+      <span style="
+        font-family:'Courier New', monospace;
+        font-size:12px; font-weight:800; letter-spacing:0.5px;
+        color:#ffffff;
+      ">mufadhala.com/install</span>
     </div>
   `;
 }
