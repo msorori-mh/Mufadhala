@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, BookOpen, Timer, AlertTriangle, Lock, EyeOff, LogOut, Sparkles, Lightbulb, Smile, Flame, Trophy, GraduationCap, Scale } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import type { PastExamModelInfo } from "./types";
 import { useAuth } from "@/hooks/useAuth";
 import { useStudentData } from "@/hooks/useStudentData";
