@@ -1526,6 +1526,7 @@ export type Database = {
           _year?: number
         }
         Returns: {
+          linked_lesson_id: string
           models: Json
           normalized_hash: string
           occurrence_count: number
