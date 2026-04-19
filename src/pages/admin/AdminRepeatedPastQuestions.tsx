@@ -205,31 +205,48 @@ const AdminRepeatedPastQuestions = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-right w-[45%]">السؤال</TableHead>
+                        <TableHead className="text-right w-[40%]">السؤال</TableHead>
                         <TableHead className="text-center">التكرار</TableHead>
+                        <TableHead className="text-center">النسبة</TableHead>
                         <TableHead className="text-right">ظهر في النماذج</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filtered.map((r) => (
-                        <TableRow key={r.normalized_hash}>
-                          <TableCell className="text-right align-top">
-                            <div className="text-sm leading-relaxed line-clamp-3">{r.sample_text}</div>
-                          </TableCell>
-                          <TableCell className="text-center align-top">
-                            <Badge className="bg-primary text-primary-foreground">{r.occurrence_count}</Badge>
-                          </TableCell>
-                          <TableCell className="align-top">
-                            <div className="flex flex-wrap gap-1.5">
-                              {(r.models || []).map((m) => (
-                                <Badge key={m.model_id} variant="outline" className="text-xs">
-                                  {m.year} • {m.university_name ?? "—"}
-                                </Badge>
-                              ))}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {filtered.map((r) => {
+                        const pct = totalModels > 0 ? Math.round((r.occurrence_count / totalModels) * 100) : 0;
+                        const pctVariant = pct >= 50 ? "default" : pct >= 25 ? "secondary" : "outline";
+                        return (
+                          <TableRow key={r.normalized_hash}>
+                            <TableCell className="text-right align-top">
+                              <div className="text-sm leading-relaxed line-clamp-3">{r.sample_text}</div>
+                            </TableCell>
+                            <TableCell className="text-center align-top">
+                              <Badge className="bg-primary text-primary-foreground">{r.occurrence_count}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center align-top">
+                              {totalModels > 0 ? (
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <Badge variant={pctVariant as any}>{pct}%</Badge>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {r.occurrence_count}/{totalModels}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="align-top">
+                              <div className="flex flex-wrap gap-1.5">
+                                {(r.models || []).map((m) => (
+                                  <Badge key={m.model_id} variant="outline" className="text-xs">
+                                    {m.year} • {m.university_name ?? "—"}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
