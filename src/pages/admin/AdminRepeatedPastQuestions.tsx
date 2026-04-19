@@ -94,14 +94,15 @@ const AdminRepeatedPastQuestions = () => {
   }, [rows, search]);
 
   const exportCsv = () => {
-    const header = ["السؤال", "عدد التكرار", "النماذج (السنة - الجامعة)"];
+    const header = ["السؤال", "عدد التكرار", "نسبة التكرار", "النماذج (السنة - الجامعة)"];
     const lines = [header.join(",")];
     filtered.forEach((r) => {
       const models = (r.models || [])
         .map((m) => `${m.year} - ${m.university_name ?? "—"}`)
         .join(" | ");
+      const pct = totalModels > 0 ? `${Math.round((r.occurrence_count / totalModels) * 100)}%` : "—";
       const safe = (s: string) => `"${(s ?? "").replace(/"/g, '""')}"`;
-      lines.push([safe(r.sample_text), r.occurrence_count, safe(models)].join(","));
+      lines.push([safe(r.sample_text), r.occurrence_count, pct, safe(models)].join(","));
     });
     const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
