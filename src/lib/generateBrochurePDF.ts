@@ -191,11 +191,18 @@ export async function generateBrochurePDF(_qrCanvas: HTMLCanvasElement): Promise
                 background:#2E7D3215; padding:3px 10px; border-radius:999px;
               ">أندرويد</span>
             </div>
-            <ol style="margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px;">
-              ${androidStep(1, "افتح الموقع في متصفح Chrome")}
+            <ol style="margin:0 0 8px; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px;">
+              ${androidStep(1, "افتح الموقع في متصفح Google Chrome")}
               ${androidStep(2, "اضغط على قائمة الخيارات (⋮)")}
               ${androidStep(3, "اختر «تثبيت التطبيق»")}
             </ol>
+            <div style="
+              background:#FEF3C7; border:1px solid #F59E0B40;
+              border-radius:8px; padding:8px 10px;
+              font-size:11px; color:#92400E; font-weight:700; line-height:1.5;
+            ">
+              ⚠ التثبيت يعمل عبر <span style="font-family:'Courier New',monospace;">Chrome</span> فقط — Samsung Internet وغيره لا يدعم التثبيت.
+            </div>
           </div>
 
           <!-- iOS -->
