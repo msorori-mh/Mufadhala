@@ -1,33 +1,9 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Clock, Shield, TrendingUp, Flame, Star, Zap } from "lucide-react";
+import { Users, Target, Shield, TrendingUp, Flame, Star, Zap } from "lucide-react";
 
 const ConversionBoosters = () => {
-  const [timeLeft, setTimeLeft] = useState("");
   const [recentCount, setRecentCount] = useState(0);
-
-  useEffect(() => {
-    // 48h urgency countdown from first visit
-    const key = "promo_start";
-    let start = localStorage.getItem(key);
-    if (!start) {
-      start = Date.now().toString();
-      localStorage.setItem(key, start);
-    }
-    const deadline = parseInt(start) + 48 * 60 * 60 * 1000;
-
-    const tick = () => {
-      const diff = deadline - Date.now();
-      if (diff <= 0) { setTimeLeft(""); return; }
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
-    };
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Simulate recent subscriber count (seeded random for consistency)
   useEffect(() => {
