@@ -75,7 +75,7 @@ export default function InstallAppPrompt() {
             <div className="flex-1 min-w-0">
               <p className="font-bold text-sm mb-1">افتح التطبيق في Google Chrome</p>
               <p className="text-xs opacity-95 leading-relaxed mb-2">
-                للتثبيت على أندرويد، افتح مُفَاضَلَة باستخدام متصفح Google Chrome ثم اضغط تثبيت التطبيق. بعض المتصفحات الأخرى لا تدعم التثبيت بشكل صحيح.
+                للتثبيت على أندرويد، افتح مُفَاضَلَة باستخدام Google Chrome ثم اضغط «تثبيت التطبيق».
               </p>
               <Button size="sm" variant="secondary" onClick={openInChrome} className="gap-1.5 h-8">
                 <Chrome className="w-3.5 h-3.5" />
