@@ -12,7 +12,9 @@ import { toast } from "sonner";
 import { OPTION_LABELS, type PastExamQuestion, type PastExamModelInfo } from "./types";
 import { useAuth } from "@/hooks/useAuth";
 import { useStudentData } from "@/hooks/useStudentData";
+import { useSubscription } from "@/hooks/useSubscription";
 import { savePastExamAttempt } from "@/lib/pastExamAttempts";
+import AIPerformanceAnalysis from "@/components/AIPerformanceAnalysis";
 import { isNativePlatform } from "@/lib/capacitor";
 import { App as CapacitorApp } from "@capacitor/app";
 
@@ -35,6 +37,7 @@ const StrictMode = ({ model, questions, onBackToSelect, customDurationMinutes }:
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: student } = useStudentData(user?.id);
+  const { isPaid } = useSubscription(user?.id);
   const total = questions.length;
   // Priority: admin-set duration > student-custom duration > 1-min-per-question fallback > min 5 min
   const rawDurationMinutes = (model.duration_minutes && model.duration_minutes > 0)
@@ -276,6 +279,25 @@ const StrictMode = ({ model, questions, onBackToSelect, customDurationMinutes }:
           <div className="text-center text-xs text-muted-foreground">
             الوقت المستغرق: <span className="font-bold text-foreground">{formatTime(elapsedSec)}</span>
           </div>
+
+          {/* AI Performance Analysis (paid only) */}
+          {isPaid && (
+            <AIPerformanceAnalysis
+              questions={questions.map((q) => ({
+                id: q.id,
+                question_text: q.q_text || "",
+                subject: model.title,
+                correct_option: q.q_correct || "",
+              }))}
+              answers={questions.reduce<Record<string, string>>((acc, q, idx) => {
+                const a = answers[idx];
+                if (a) acc[q.id] = a;
+                return acc;
+              }, {})}
+              percentage={stats.pct}
+              hasSubscription={isPaid}
+            />
+          )}
 
           {/* Review section */}
           <div className="space-y-3 pt-2">
