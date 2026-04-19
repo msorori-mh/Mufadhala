@@ -142,8 +142,8 @@ const AdminPastExams = () => {
       toast({ variant: "destructive", title: "مدة غير صالحة", description: "أدخل عدداً صحيحاً موجباً للمدة الإلزامية" });
       return;
     }
-    if (suggestedDurationMinutes.trim() && (suggestedParsed === null || suggestedParsed < 30)) {
-      toast({ variant: "destructive", title: "المدة المقترحة غير صالحة", description: "يجب ألا تقل المدة المقترحة عن 30 دقيقة" });
+    if (suggestedDurationMinutes.trim() && (suggestedParsed === null || suggestedParsed < 5)) {
+      toast({ variant: "destructive", title: "المدة المقترحة غير صالحة", description: "يجب ألا تقل المدة المقترحة عن 5 دقائق" });
       return;
     }
     setSaving(true);
