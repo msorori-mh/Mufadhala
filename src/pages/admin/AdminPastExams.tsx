@@ -279,6 +279,59 @@ const AdminPastExams = () => {
     }
   };
 
+  // Inline switches: published & paid
+  const [togglingPublishId, setTogglingPublishId] = useState<string | null>(null);
+  const [togglingPaidId, setTogglingPaidId] = useState<string | null>(null);
+
+  const handleTogglePublished = async (m: Model, next: boolean) => {
+    // Block publishing empty models
+    if (next) {
+      const { count, error: countErr } = await supabase
+        .from("past_exam_model_questions")
+        .select("id", { count: "exact", head: true })
+        .eq("model_id", m.id);
+      if (countErr) {
+        toast({ variant: "destructive", title: "تعذر التحقق من الأسئلة", description: countErr.message });
+        return;
+      }
+      if ((count || 0) === 0) {
+        toast({ variant: "destructive", title: "لا يمكن نشر نموذج فارغ", description: "أضف الأسئلة أولاً قبل النشر" });
+        return;
+      }
+    }
+    setTogglingPublishId(m.id);
+    try {
+      const { error } = await supabase
+        .from("past_exam_models")
+        .update({ is_published: next })
+        .eq("id", m.id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
+      toast({ title: next ? "✓ تم النشر" : "تم الإرجاع إلى مسودة", description: next ? "النموذج منشور للطلاب الآن" : "النموذج لم يعد ظاهراً للطلاب" });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر تحديث حالة النشر", description: err?.message || "حدث خطأ" });
+    } finally {
+      setTogglingPublishId(null);
+    }
+  };
+
+  const handleTogglePaid = async (m: Model, next: boolean) => {
+    setTogglingPaidId(m.id);
+    try {
+      const { error } = await supabase
+        .from("past_exam_models")
+        .update({ is_paid: next })
+        .eq("id", m.id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["admin-past-exam-models"] });
+      toast({ title: next ? "✓ النموذج أصبح مدفوعاً" : "✓ النموذج أصبح مجانياً", description: next ? "يتطلب اشتراكاً نشطاً" : "متاح لجميع الطلاب" });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر تحديث حالة الدفع", description: err?.message || "حدث خطأ" });
+    } finally {
+      setTogglingPaidId(null);
+    }
+  };
+
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const handleDuplicate = async (m: Model) => {
     if (!confirm(`نسخ النموذج "${m.title}" مع جميع أسئلته؟`)) return;
