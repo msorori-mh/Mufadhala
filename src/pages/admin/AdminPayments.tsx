@@ -256,6 +256,8 @@ const AdminPayments = () => {
     filtered = filtered.filter((r) => r.fraud_status === fraudFilter);
   }
   const pendingCount = requests.filter((r) => r.status === "pending").length;
+  const approvedCount = requests.filter((r) => r.status === "approved").length;
+  const rejectedCount = requests.filter((r) => r.status === "rejected").length;
 
   return (
     <AdminLayout>
