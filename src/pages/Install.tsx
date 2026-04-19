@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Download, Smartphone, Share2, Plus, MoreVertical, ArrowLeft, FileText, Loader2, Send, AlertTriangle, Chrome } from "lucide-react";
-import { generateBrochurePDF } from "@/lib/generateBrochurePDF";
+import { generateBrochurePDF, generateBrochurePDFA5 } from "@/lib/generateBrochurePDF";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { detectAndroidBrowser, buildChromeIntentUrl } from "@/lib/browserDetect";
@@ -79,13 +79,17 @@ export default function Install() {
     document.body.removeChild(a);
   };
 
-  const downloadBrochure = async () => {
+  const downloadBrochure = async (size: "A4" | "A5" = "A4") => {
     const canvas = qrRef.current?.querySelector("canvas") as HTMLCanvasElement | null;
     if (!canvas) return;
     setGeneratingPDF(true);
     try {
-      await generateBrochurePDF(canvas);
-      toast.success("تم تنزيل البروشور بنجاح");
+      if (size === "A5") {
+        await generateBrochurePDFA5();
+      } else {
+        await generateBrochurePDF(canvas);
+      }
+      toast.success(`تم تنزيل البروشور (${size}) بنجاح`);
       // Track brochure download as a conversion event (fire-and-forget)
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -93,7 +97,7 @@ export default function Install() {
           user_id: user?.id ?? null,
           source: "brochure_download",
           event_type: "click",
-          metadata: { format: "pdf_a4" } as never,
+          metadata: { format: size === "A5" ? "pdf_a5" : "pdf_a4" } as never,
         });
       } catch {
         // silent — analytics never blocks UX
@@ -197,19 +201,34 @@ export default function Install() {
               </a>
             </Button>
           )}
-          <Button
-            onClick={downloadBrochure}
-            variant="outline"
-            className="w-full gap-2"
-            disabled={generatingPDF}
-          >
-            {generatingPDF ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <FileText className="w-4 h-4" />
-            )}
-            {generatingPDF ? "جاري الإنشاء..." : "تنزيل بروشور PDF (A4)"}
-          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={() => downloadBrochure("A4")}
+              variant="outline"
+              className="w-full gap-2"
+              disabled={generatingPDF}
+            >
+              {generatingPDF ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <FileText className="w-4 h-4" />
+              )}
+              بروشور A4
+            </Button>
+            <Button
+              onClick={() => downloadBrochure("A5")}
+              variant="outline"
+              className="w-full gap-2"
+              disabled={generatingPDF}
+            >
+              {generatingPDF ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <FileText className="w-4 h-4" />
+              )}
+              ملصق A5
+            </Button>
+          </div>
         </div>
 
         {/* 3) INSTALL INSTRUCTIONS — directly below install action */}
