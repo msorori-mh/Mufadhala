@@ -1,58 +1,55 @@
 
 ## Goal
-Redesign the "ما الذي يميّز مُفَاضَلَة؟" features card on `/install` with new content (7 items, new order, new wording) and a more attention-grabbing visual hook.
+1. Improve the **A4 brochure PDF** (`generateBrochurePDF.ts`) — compact the content, tighten cards, better use of empty space.
+2. Add a **new 8th feature** to the brochure: "استخدام ذكي لميزات الذكاء الاصطناعي التوليدي في المساعدة على اجتياز اختبار المفاضلة".
 
-## New Features (exact order & wording)
+## Current State
+- File: `src/lib/generateBrochurePDF.ts`
+- A4 brochure currently has **7 features** in a 2-column grid at the top (compact cards), then headline + QR + CTA below.
+- Issue: cards have noticeable empty space, and adding an 8th item without compaction will overflow the page.
 
-| # | Emoji | Label | Sub | Style tier |
-|---|---|---|---|---|
-| 1 | 📝 | التدرب على نماذج الاختبارات السابقة | بوضعين: تدريب وصارم | **Hero (full width)** |
-| 2 | ⏱️ | محاكي واقعي للاختبارات | كأنك في قاعة الاختبار | Smart |
-| 3 | ✨ | مولد الأسئلة الذكي | الأكثر تكراراً والمتوقعة | Smart |
-| 4 | 🤖 | مساعد مُفَاضَلَة الذكي | استفسر عن أي شيء فوراً | Smart |
-| 5 | 🧠 | تلخيص ذكي للدروس | ملخصات فورية بالذكاء الاصطناعي | Smart |
-| 6 | ⚡ | وضع المراجعة السريعة | مثالي لليلة الاختبار | Standard |
-| 7 | 📚 | أكثر من 5000 سؤال تدريبي | مراجع ومعتمد | Standard |
+## Plan
 
-## Visual Hook (the "wow")
-
-To give the card more presence and convert better:
-
-1. **Hero feature on top (full-width)** — Item #1 (نماذج الاختبارات السابقة) gets a prominent full-width card with bigger emoji, gradient background (`from-primary/15 to-accent/15`), a small "الأكثر طلباً" badge, and tighter contrast. This is the platform's killer feature.
-2. **Smart features (items 2–5)** — 2-column grid with accent-tinted cards (existing style, slightly enhanced with subtle gradient + shadow on hover).
-3. **Standard features (items 6–7)** — 2-column grid with neutral hover cards.
-4. **Card header** — Add a small animated sparkle accent next to "✨ ما الذي يميّز مُفَاضَلَة؟" and a one-line tagline below it: "كل ما تحتاجه للنجاح في اختبار القبول، في مكان واحد".
-5. **Subtle visual cues** — Use `ring-1 ring-primary/10` on the outer card, gradient header strip, and slightly increased padding for readability without breaking compactness.
-
-```text
-┌──────────────────────────────────────────┐
-│ ✨ ما الذي يميّز مُفَاضَلَة؟              │
-│ كل ما تحتاجه للنجاح في اختبار القبول     │
-├──────────────────────────────────────────┤
-│ ┌──────────────────────────────────────┐ │
-│ │ 📝  نماذج الاختبارات السابقة  [الأكثر│ │  ← Hero (full width)
-│ │     بوضعين: تدريب وصارم       طلباً] │ │
-│ └──────────────────────────────────────┘ │
-│ ┌────────────┐ ┌────────────┐            │
-│ │ ⏱️ محاكي   │ │ ✨ مولد    │            │  ← Smart row 1
-│ └────────────┘ └────────────┘            │
-│ ┌────────────┐ ┌────────────┐            │
-│ │ 🤖 مساعد   │ │ 🧠 تلخيص   │            │  ← Smart row 2
-│ └────────────┘ └────────────┘            │
-│ ┌────────────┐ ┌────────────┐            │
-│ │ ⚡ مراجعة  │ │ 📚 5000+   │            │  ← Standard
-│ └────────────┘ └────────────┘            │
-└──────────────────────────────────────────┘
+### 1. Add the new feature (becomes #8)
+Update `BROCHURE_FEATURES` array — append:
+```ts
+{ icon: "🧠", title: "استخدام ذكي لميزات الذكاء الاصطناعي التوليدي للمساعدة في اجتياز اختبار المفاضلة" }
 ```
+Result: **8 features** → perfect 4×2 grid (no orphan card).
 
-## Implementation Steps
+### 2. Compact the feature cards (A4)
+In `compactFeatureCard()`:
+- Reduce icon box: `30px → 26px`, font `16px → 14px`
+- Reduce card padding: `8px 11px → 6px 9px`
+- Reduce min-height: `44px → 38px`
+- Reduce gap between icon and text: `9px → 7px`
+- Slightly tighter line-height for label: `1.35 → 1.25`
+- Font size stays at `11.5px` (still readable)
 
-Single file edit: `src/pages/Install.tsx`
+### 3. Tighten the features section header (A4)
+In `buildA4Stacked()`:
+- Section header bottom margin: `10px → 6px`
+- Section margin-bottom: `18px → 12px`
+- Grid gap: `8px → 6px`
 
-1. Replace the existing features array + JSX block (the `<Card className="bg-primary/5 border-primary/20">` section) with the new 3-tier layout (hero + smart + standard).
-2. Add the small tagline under the title.
-3. Keep all other sections (QR, install action, instructions, share) untouched.
-4. Maintain compactness — hero card stays small (~64px tall), grid cards remain at current density.
+### 4. Reclaim freed space for the middle section
+- Headline margin: `0 0 6px → 0 0 4px`
+- Subtitle margin: `0 0 12px → 0 0 8px`
+- QR padding box & website badge stay the same (already optimal)
+- Add a subtle accent stripe behind the QR area to visually fill empty space
+
+### 5. Update PDF clickable link coordinates
+QR moves slightly (the features section is now shorter). Recalculate `pdf.link()` for QR region (~y=170mm instead of ~180mm).
+
+### 6. A5 stays unchanged
+The A5 layout uses a different code path (`buildA5SingleColumn` with only 3 summary features). It already fits perfectly — no changes there.
+
+## What Stays Untouched
+- A5 brochure layout
+- QR generation (`generateBrandedQR`)
+- Header (logo + brand name)
+- CTA button + footer
+- All `pdf.link()` regions for the CTA
 
 ## Files to Edit
-- `src/pages/Install.tsx` (only)
+- `src/lib/generateBrochurePDF.ts` (only)
