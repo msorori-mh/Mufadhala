@@ -526,6 +526,7 @@ const AdminPayments = () => {
               </div>
             </div>
           )}
+          </div>
         </DialogContent>
       </Dialog>
 
