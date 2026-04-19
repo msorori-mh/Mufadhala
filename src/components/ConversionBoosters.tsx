@@ -32,27 +32,22 @@ const ConversionBoosters = () => {
 
   return (
     <div className="space-y-3">
-      {/* Urgency countdown */}
-      {timeLeft && (
-        <Card className="border-orange-200 bg-gradient-to-l from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 dark:border-orange-900/50">
-          <CardContent className="py-3 px-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shrink-0 shadow-md">
-              <Clock className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-orange-700 dark:text-orange-400">
-                🔥 عرض خاص — ينتهي قريباً!
-              </p>
-              <p className="text-xs text-orange-600 dark:text-orange-500">
-                باقي على انتهاء العرض
-              </p>
-            </div>
-            <div className="font-mono text-lg font-black text-red-600 dark:text-red-400 tabular-nums tracking-wider bg-white/60 dark:bg-black/20 rounded-lg px-3 py-1">
-              {timeLeft}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Motivational hero card */}
+      <Card className="border-primary/30 bg-gradient-to-l from-primary/10 via-primary/5 to-secondary/10 dark:from-primary/20 dark:via-primary/10 dark:to-secondary/20">
+        <CardContent className="py-4 px-4 flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0 shadow-md">
+            <Target className="w-5 h-5 text-primary-foreground" />
+          </div>
+          <div className="flex-1 space-y-1">
+            <p className="text-sm font-bold text-foreground">
+              ادخل المفاضلة وأنت مستعد
+            </p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              درّب نفسك على نماذج حقيقية واختبر مستواك قبل يوم القبول
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Weekly subscribers counter */}
       <Card className="border-green-200 bg-gradient-to-l from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 dark:border-green-900/50">
