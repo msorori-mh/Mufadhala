@@ -241,14 +241,12 @@ function buildA4TwoColumn(qrDataUrl: string, t: Record<string, string>): string 
         ">
           <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${t.qrSize}; height:${t.qrSize};" />
         </div>
-        <p style="margin:4px 0 2px; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
-          امسح الرمز وابدأ الآن
+        <p style="margin:4px 0 8px; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
+          دخول وتحميل التطبيق
         </p>
-        <p style="margin:0 0 10px; font-size:${t.qrUrl}; color:#64748b; direction:ltr; font-family:'Courier New', monospace; font-weight:700; letter-spacing:0.5px;">
-          mufadhala.com/install
-        </p>
+        ${websiteLinkBadge()}
         <p style="
-          margin: 0; font-size: ${t.install}; color:#64748b; line-height:1.6;
+          margin: 10px 0 0; font-size: ${t.install}; color:#64748b; line-height:1.6;
         ">
           ${INSTALL_COPY.android.full}
         </p>
