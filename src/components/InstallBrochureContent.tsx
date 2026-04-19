@@ -1,5 +1,5 @@
+import { QRCodeCanvas } from "qrcode.react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { INSTALL_COPY } from "@/constants/installCopy";
 
 /**
@@ -35,6 +35,8 @@ interface InstallBrochureContentProps {
   pageSize?: "A4" | "A5";
   /** QR code as data URL (PNG). Required in printMode. */
   qrDataUrl?: string;
+  /** URL used to render a live QR when no branded PNG is provided (browser print mode). */
+  qrValue?: string;
 }
 
 export function InstallBrochureFeatures() {
@@ -132,6 +134,7 @@ export default function InstallBrochureContent({
   printMode,
   pageSize = "A4",
   qrDataUrl,
+  qrValue,
 }: InstallBrochureContentProps) {
   if (!printMode) {
     return <InstallBrochureFeatures />;
@@ -163,13 +166,24 @@ export default function InstallBrochureContent({
         data-brochure-qr-block
         className="flex flex-col items-center gap-1.5 mt-auto rounded-2xl border border-primary/20 bg-card p-3 shadow-sm"
       >
-        {qrDataUrl && (
+        {(qrDataUrl || qrValue) && (
           <div className="bg-white p-2 rounded-xl ring-1 ring-border">
-            <img
-              src={qrDataUrl}
-              alt="QR"
-              style={{ width: pageSize === "A4" ? 150 : 140, height: pageSize === "A4" ? 150 : 140, display: "block" }}
-            />
+            {qrDataUrl ? (
+              <img
+                src={qrDataUrl}
+                alt="QR"
+                style={{ width: pageSize === "A4" ? 150 : 140, height: pageSize === "A4" ? 150 : 140, display: "block" }}
+              />
+            ) : (
+              <QRCodeCanvas
+                value={qrValue ?? "https://mufadhala.com/install"}
+                size={pageSize === "A4" ? 150 : 140}
+                level="H"
+                includeMargin={false}
+                bgColor="#FFFFFF"
+                fgColor="hsl(var(--primary))"
+              />
+            )}
           </div>
         )}
         <p className="text-xs font-bold text-foreground text-center">

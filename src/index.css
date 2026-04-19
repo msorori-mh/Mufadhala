@@ -158,6 +158,49 @@
   }
 }
 
+@media screen {
+  .install-print-brochure {
+    display: none;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: white !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .install-screen {
+    display: none !important;
+  }
+
+  .install-print-brochure,
+  .install-print-brochure * {
+    visibility: visible;
+  }
+
+  .install-print-brochure {
+    display: block !important;
+    position: absolute;
+    inset: 0;
+    width: 794px;
+    margin: 0 auto;
+    background: white;
+    overflow: hidden;
+  }
+}
+
 @keyframes confetti-fall {
   0% {
     transform: translateY(0) rotate(0deg) scale(1);
