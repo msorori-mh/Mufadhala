@@ -217,7 +217,7 @@ const PastExams = () => {
                             variant={locked ? "default" : "secondary"}
                             className="text-[10px] shrink-0"
                           >
-                            {locked ? "مدفوع" : "اشتراك ✓"}
+                            {locked ? "اشتراك" : "اشتراك ✓"}
                           </Badge>
                         ) : (
                           <Badge
@@ -247,7 +247,7 @@ const PastExams = () => {
                           }}
                         >
                           <Crown className="w-4 h-4" />
-                          <span>اشترك للوصول لهذا النموذج</span>
+                          <span>اشترك مرة واحدة للوصول لجميع المحتويات</span>
                         </Button>
                       )}
                     </CardContent>
