@@ -205,31 +205,37 @@ function buildA4Stacked(qrDataUrl: string, t: Record<string, string>): string {
 
   return `
     <!-- TOP: Features panel (first thing the student reads) -->
-    <section style="margin-bottom: 18px;">
+    <section style="margin-bottom: 12px;">
       <h3 style="
-        margin:0 0 10px; text-align:right;
-        font-size:16px; font-weight:900; color:${BRAND_PRIMARY};
-        padding-bottom:6px; border-bottom:2px solid ${BRAND_SECONDARY};
+        margin:0 0 6px; text-align:right;
+        font-size:15px; font-weight:900; color:${BRAND_PRIMARY};
+        padding-bottom:4px; border-bottom:2px solid ${BRAND_SECONDARY};
       ">
         ✨ ماذا تقدم لك مُفَاضَلَة؟
       </h3>
-      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+      <div style="display:flex; flex-wrap:wrap; gap:6px;">
         ${featureCards}
       </div>
     </section>
 
     <!-- MIDDLE: Headline + QR -->
-    <section style="display:flex; flex-direction:column; align-items:center; text-align:center; flex:1; min-height:0;">
+    <section style="
+      display:flex; flex-direction:column; align-items:center; text-align:center;
+      flex:1; min-height:0;
+      background: radial-gradient(ellipse at center, ${BRAND_PRIMARY}0D 0%, transparent 70%);
+      border-radius: 14px;
+      padding: 8px 4px;
+    ">
       <h2 style="
-        margin: 0 0 6px;
-        font-size: ${t.headline}; font-weight: 900; line-height:1.35;
+        margin: 0 0 4px;
+        font-size: ${t.headline}; font-weight: 900; line-height:1.3;
         color: ${BRAND_PRIMARY}; letter-spacing:-0.5px;
       ">
         🎯 استعد لاختبار القبول بثقة
       </h2>
       <p style="
-        margin: 0 0 12px;
-        font-size: ${t.value}; font-weight: 600; color:#475569; line-height:1.6;
+        margin: 0 0 8px;
+        font-size: ${t.value}; font-weight: 600; color:#475569; line-height:1.5;
       ">
         كل ما تحتاجه للنجاح في تطبيق واحد
       </p>
@@ -237,16 +243,16 @@ function buildA4Stacked(qrDataUrl: string, t: Record<string, string>): string {
       <div style="
         background:#ffffff; padding:${t.qrPad}; border-radius:${t.qrRadius};
         box-shadow: 0 12px 30px rgba(26,35,126,0.18);
-        margin-bottom:8px;
+        margin-bottom:6px;
       ">
         <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${t.qrSize}; height:${t.qrSize};" />
       </div>
-      <p style="margin:4px 0 8px; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
+      <p style="margin:2px 0 6px; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
         دخول وتحميل التطبيق
       </p>
       ${websiteLinkBadge()}
       <p style="
-        margin: 8px 0 0; font-size: ${t.install}; color:#64748b; line-height:1.5;
+        margin: 6px 0 0; font-size: ${t.install}; color:#64748b; line-height:1.4;
       ">
         ${INSTALL_COPY.android.full}
       </p>
