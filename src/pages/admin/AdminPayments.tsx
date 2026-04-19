@@ -82,11 +82,45 @@ const AdminPayments = () => {
   const getMethodName = (methodId: string | null) => methodId ? methods.find((m) => m.id === methodId)?.name || "-" : "-";
   const getMethodAccountName = (methodId: string | null) => methodId ? methods.find((m) => m.id === methodId)?.account_name || null : null;
 
-  const statusBadge = (status: string) => {
+  const statusStyles = (status: string) => {
     switch (status) {
-      case "pending": return <Badge variant="outline" className="text-yellow-600 border-yellow-300"><Clock className="w-3 h-3 ml-1" />معلق</Badge>;
-      case "approved": return <Badge className="bg-green-100 text-green-700 hover:bg-green-100"><CheckCircle className="w-3 h-3 ml-1" />مقبول</Badge>;
-      case "rejected": return <Badge variant="destructive"><XCircle className="w-3 h-3 ml-1" />مرفوض</Badge>;
+      case "approved":
+        return {
+          cardBorder: "border-green-300 dark:border-green-800",
+          cardBg: "bg-green-50/40 dark:bg-green-950/20",
+          accentBar: "bg-green-500",
+          badgeClass: "bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-950/40 dark:text-green-300",
+          headerBar: "bg-green-500",
+          tabActive: "data-[state=active]:bg-green-100 data-[state=active]:text-green-700 dark:data-[state=active]:bg-green-950/40 dark:data-[state=active]:text-green-300",
+        };
+      case "rejected":
+        return {
+          cardBorder: "border-red-300 dark:border-red-800",
+          cardBg: "bg-red-50/40 dark:bg-red-950/20",
+          accentBar: "bg-red-500",
+          badgeClass: "bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300",
+          headerBar: "bg-red-500",
+          tabActive: "data-[state=active]:bg-red-100 data-[state=active]:text-red-700 dark:data-[state=active]:bg-red-950/40 dark:data-[state=active]:text-red-300",
+        };
+      case "pending":
+      default:
+        return {
+          cardBorder: "border-yellow-300 dark:border-yellow-800",
+          cardBg: "bg-yellow-50/40 dark:bg-yellow-950/20",
+          accentBar: "bg-yellow-500",
+          badgeClass: "bg-yellow-100 text-yellow-700 hover:bg-yellow-100 dark:bg-yellow-950/40 dark:text-yellow-300",
+          headerBar: "bg-yellow-500",
+          tabActive: "data-[state=active]:bg-yellow-100 data-[state=active]:text-yellow-700 dark:data-[state=active]:bg-yellow-950/40 dark:data-[state=active]:text-yellow-300",
+        };
+    }
+  };
+
+  const statusBadge = (status: string) => {
+    const s = statusStyles(status);
+    switch (status) {
+      case "pending": return <Badge className={s.badgeClass}><Clock className="w-3 h-3 ml-1" />معلق</Badge>;
+      case "approved": return <Badge className={s.badgeClass}><CheckCircle className="w-3 h-3 ml-1" />مقبول</Badge>;
+      case "rejected": return <Badge className={s.badgeClass}><XCircle className="w-3 h-3 ml-1" />مرفوض</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };
