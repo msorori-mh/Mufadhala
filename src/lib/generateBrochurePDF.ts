@@ -104,6 +104,7 @@ async function renderBrochure(size: PaperSize): Promise<void> {
   host.style.height = `${profile.canvas.h}px`;
   host.style.background = "#ffffff";
   host.style.zIndex = "-1";
+  host.style.overflow = "hidden";
   host.setAttribute("dir", "rtl");
   document.body.appendChild(host);
 

@@ -148,9 +148,10 @@ export default function InstallBrochureContent({
       style={{
         width: pageSize === "A4" ? 794 : 559,
         height: pageSize === "A4" ? 1123 : 794,
-        padding: pageSize === "A4" ? 28 : 20,
-        gap: pageSize === "A4" ? 14 : 10,
+        padding: pageSize === "A4" ? 18 : 20,
+        gap: pageSize === "A4" ? 8 : 10,
         fontFamily: "'Cairo', system-ui, sans-serif",
+        overflow: "hidden",
       }}
     >
       <InstallBrochureHeader />
@@ -160,33 +161,33 @@ export default function InstallBrochureContent({
       {/* QR + CTA block */}
       <div
         data-brochure-qr-block
-        className="flex flex-col items-center gap-2 mt-auto rounded-2xl border border-primary/20 bg-card p-4 shadow-sm"
+        className="flex flex-col items-center gap-1.5 mt-auto rounded-2xl border border-primary/20 bg-card p-3 shadow-sm"
       >
         {qrDataUrl && (
-          <div className="bg-white p-3 rounded-xl ring-1 ring-border">
+          <div className="bg-white p-2 rounded-xl ring-1 ring-border">
             <img
               src={qrDataUrl}
               alt="QR"
-              style={{ width: pageSize === "A4" ? 200 : 170, height: pageSize === "A4" ? 200 : 170, display: "block" }}
+              style={{ width: pageSize === "A4" ? 150 : 140, height: pageSize === "A4" ? 150 : 140, display: "block" }}
             />
           </div>
         )}
-        <p className="text-sm font-bold text-foreground text-center">
+        <p className="text-xs font-bold text-foreground text-center">
           امسح الكود لفتح المنصة مباشرة
         </p>
 
         {/* Website badge — pill */}
         <div
           dir="ltr"
-          className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-4 py-1.5 shadow"
+          className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-3 py-1 shadow"
         >
-          <span className="text-xs">🌐</span>
-          <span className="text-xs font-extrabold tracking-wide" style={{ fontFamily: "'Courier New', monospace" }}>
+          <span className="text-[10px]">🌐</span>
+          <span className="text-[11px] font-extrabold tracking-wide" style={{ fontFamily: "'Courier New', monospace" }}>
             mufadhala.com/install
           </span>
         </div>
 
-        <p className="text-[11px] text-muted-foreground text-center leading-relaxed max-w-md">
+        <p className="text-[10px] text-muted-foreground text-center leading-snug max-w-md">
           {INSTALL_COPY.android.full}
         </p>
       </div>
@@ -194,14 +195,14 @@ export default function InstallBrochureContent({
       {/* CTA */}
       <div
         data-brochure-cta
-        className="rounded-2xl bg-gradient-to-l from-primary to-accent px-5 py-3 text-center shadow-lg"
+        className="rounded-2xl bg-gradient-to-l from-primary to-accent px-5 py-2 text-center shadow-lg"
       >
-        <p className="text-base font-extrabold text-primary-foreground leading-snug">
+        <p className="text-sm font-extrabold text-primary-foreground leading-snug">
           🚀 ابدأ التدريب الآن ونافس على مقعدك الجامعي
         </p>
       </div>
 
-      <p className="text-[10px] text-muted-foreground text-center font-semibold">
+      <p className="text-[9px] text-muted-foreground text-center font-semibold">
         © {new Date().getFullYear()} مُفَاضَلَة • منصتك للتحضير لاختبارات القبول الجامعي
       </p>
     </div>
