@@ -1518,6 +1518,20 @@ export type Database = {
           title: string
         }[]
       }
+      get_repeated_past_questions: {
+        Args: {
+          _limit?: number
+          _min_count?: number
+          _university_id?: string
+          _year?: number
+        }
+        Returns: {
+          models: Json
+          normalized_hash: string
+          occurrence_count: number
+          sample_text: string
+        }[]
+      }
       get_top_repeated_questions: {
         Args: { _limit?: number; _university_id?: string }
         Returns: {
@@ -1545,6 +1559,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      normalize_arabic_question: { Args: { _text: string }; Returns: string }
       refresh_leaderboard: { Args: never; Returns: undefined }
       set_cache: {
         Args: { _key: string; _ttl_seconds?: number; _value: Json }
