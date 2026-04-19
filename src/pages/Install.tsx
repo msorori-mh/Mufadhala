@@ -284,36 +284,36 @@ export default function Install() {
         </div>
 
         {/* 3) INSTALL INSTRUCTIONS — directly below install action */}
-        <section className="space-y-3">
-          <h2 className="text-lg font-bold text-center flex items-center justify-center gap-2">
-            <Smartphone className="w-5 h-5 text-primary" />
+        <section className="space-y-2">
+          <h2 className="text-base font-bold text-center flex items-center justify-center gap-2">
+            <Smartphone className="w-4 h-4 text-primary" />
             ثبّت التطبيق على شاشتك الرئيسية
           </h2>
 
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid sm:grid-cols-2 gap-2">
             {/* Android */}
             <Card className={platform === "android" ? "ring-2 ring-primary" : ""}>
-              <CardContent className="p-4 space-y-2.5">
+              <CardContent className="p-3 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-sm">Android</h3>
-                  <Badge variant={platform === "android" ? "default" : "outline"} className="text-xs">
+                  <Badge variant={platform === "android" ? "default" : "outline"} className="text-[10px] h-5 px-1.5">
                     أندرويد
                   </Badge>
                 </div>
-                <ol className="space-y-2 text-sm text-foreground/90">
+                <ol className="space-y-1.5 text-xs text-foreground/90">
                   <li className="flex gap-2">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">1</span>
+                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">1</span>
                     <span>افتح الموقع في متصفح Chrome</span>
                   </li>
                   <li className="flex gap-2">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">2</span>
-                    <span className="flex items-center gap-1.5 flex-wrap">
+                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">2</span>
+                    <span className="flex items-center gap-1 flex-wrap">
                       اضغط على قائمة الخيارات
-                      <MoreVertical className="w-3.5 h-3.5 inline text-muted-foreground" />
+                      <MoreVertical className="w-3 h-3 inline text-muted-foreground" />
                     </span>
                   </li>
                   <li className="flex gap-2">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">3</span>
+                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">3</span>
                     <span>اختر <strong>«تثبيت التطبيق»</strong></span>
                   </li>
                 </ol>
@@ -322,30 +322,30 @@ export default function Install() {
 
             {/* iOS */}
             <Card className={platform === "ios" ? "ring-2 ring-primary" : ""}>
-              <CardContent className="p-4 space-y-2.5">
+              <CardContent className="p-3 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-sm">iPhone / iPad</h3>
-                  <Badge variant={platform === "ios" ? "default" : "outline"} className="text-xs">
+                  <Badge variant={platform === "ios" ? "default" : "outline"} className="text-[10px] h-5 px-1.5">
                     آيفون
                   </Badge>
                 </div>
-                <ol className="space-y-2 text-sm text-foreground/90">
+                <ol className="space-y-1.5 text-xs text-foreground/90">
                   <li className="flex gap-2">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">1</span>
+                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">1</span>
                     <span>افتح الموقع في متصفح Safari</span>
                   </li>
                   <li className="flex gap-2">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">2</span>
-                    <span className="flex items-center gap-1.5 flex-wrap">
+                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">2</span>
+                    <span className="flex items-center gap-1 flex-wrap">
                       اضغط على زر المشاركة
-                      <Share2 className="w-3.5 h-3.5 inline text-muted-foreground" />
+                      <Share2 className="w-3 h-3 inline text-muted-foreground" />
                     </span>
                   </li>
                   <li className="flex gap-2">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">3</span>
-                    <span className="flex items-center gap-1.5 flex-wrap">
+                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">3</span>
+                    <span className="flex items-center gap-1 flex-wrap">
                       اختر <strong>«إضافة إلى الشاشة الرئيسية»</strong>
-                      <Plus className="w-3.5 h-3.5 inline text-muted-foreground" />
+                      <Plus className="w-3 h-3 inline text-muted-foreground" />
                     </span>
                   </li>
                 </ol>
@@ -355,9 +355,9 @@ export default function Install() {
         </section>
 
         {/* 5) SHARE SECTION — last */}
-        <section className="space-y-3">
+        <section className="space-y-2">
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            <h2 className="text-base font-bold text-center">شارك مع أصدقائك</h2>
+            <h2 className="text-sm font-bold text-center">شارك مع أصدقائك</h2>
             {typeof shareCount === "number" && shareCount > 0 && (
               <Badge variant="secondary" className="text-[10px] gap-1 px-2 py-0 h-5">
                 <Share2 className="w-3 h-3" />
@@ -366,23 +366,23 @@ export default function Install() {
             )}
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <Button onClick={shareWhatsApp} variant="outline" size="sm" className="gap-1.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 border-[#25D366]/30 text-[#128C7E]">
-              <Share2 className="w-4 h-4" />
+            <Button onClick={shareWhatsApp} variant="outline" size="sm" className="gap-1.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 border-[#25D366]/30 text-[#128C7E] h-8 text-xs">
+              <Share2 className="w-3.5 h-3.5" />
               واتساب
             </Button>
-            <Button onClick={shareTelegram} variant="outline" size="sm" className="gap-1.5 bg-[#0088cc]/10 hover:bg-[#0088cc]/20 border-[#0088cc]/30 text-[#0088cc]">
-              <Send className="w-4 h-4" />
+            <Button onClick={shareTelegram} variant="outline" size="sm" className="gap-1.5 bg-[#0088cc]/10 hover:bg-[#0088cc]/20 border-[#0088cc]/30 text-[#0088cc] h-8 text-xs">
+              <Send className="w-3.5 h-3.5" />
               تيليجرام
             </Button>
-            <Button onClick={shareNative} variant="outline" size="sm" className="gap-1.5">
-              <Share2 className="w-4 h-4" />
+            <Button onClick={shareNative} variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
+              <Share2 className="w-3.5 h-3.5" />
               مشاركة
             </Button>
           </div>
         </section>
 
         {/* Footer */}
-        <footer className="text-center text-xs text-muted-foreground pt-2 pb-bottom-nav">
+        <footer className="text-center text-xs text-muted-foreground pt-1 pb-bottom-nav">
           <p>© {new Date().getFullYear()} مُفَاضَلَة</p>
         </footer>
       </div>
