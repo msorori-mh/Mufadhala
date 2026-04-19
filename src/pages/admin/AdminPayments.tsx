@@ -82,11 +82,45 @@ const AdminPayments = () => {
   const getMethodName = (methodId: string | null) => methodId ? methods.find((m) => m.id === methodId)?.name || "-" : "-";
   const getMethodAccountName = (methodId: string | null) => methodId ? methods.find((m) => m.id === methodId)?.account_name || null : null;
 
-  const statusBadge = (status: string) => {
+  const statusStyles = (status: string) => {
     switch (status) {
-      case "pending": return <Badge variant="outline" className="text-yellow-600 border-yellow-300"><Clock className="w-3 h-3 ml-1" />معلق</Badge>;
-      case "approved": return <Badge className="bg-green-100 text-green-700 hover:bg-green-100"><CheckCircle className="w-3 h-3 ml-1" />مقبول</Badge>;
-      case "rejected": return <Badge variant="destructive"><XCircle className="w-3 h-3 ml-1" />مرفوض</Badge>;
+      case "approved":
+        return {
+          cardBorder: "border-green-300 dark:border-green-800",
+          cardBg: "bg-green-50/40 dark:bg-green-950/20",
+          accentBar: "bg-green-500",
+          badgeClass: "bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-950/40 dark:text-green-300",
+          headerBar: "bg-green-500",
+          tabActive: "data-[state=active]:bg-green-100 data-[state=active]:text-green-700 dark:data-[state=active]:bg-green-950/40 dark:data-[state=active]:text-green-300",
+        };
+      case "rejected":
+        return {
+          cardBorder: "border-red-300 dark:border-red-800",
+          cardBg: "bg-red-50/40 dark:bg-red-950/20",
+          accentBar: "bg-red-500",
+          badgeClass: "bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300",
+          headerBar: "bg-red-500",
+          tabActive: "data-[state=active]:bg-red-100 data-[state=active]:text-red-700 dark:data-[state=active]:bg-red-950/40 dark:data-[state=active]:text-red-300",
+        };
+      case "pending":
+      default:
+        return {
+          cardBorder: "border-yellow-300 dark:border-yellow-800",
+          cardBg: "bg-yellow-50/40 dark:bg-yellow-950/20",
+          accentBar: "bg-yellow-500",
+          badgeClass: "bg-yellow-100 text-yellow-700 hover:bg-yellow-100 dark:bg-yellow-950/40 dark:text-yellow-300",
+          headerBar: "bg-yellow-500",
+          tabActive: "data-[state=active]:bg-yellow-100 data-[state=active]:text-yellow-700 dark:data-[state=active]:bg-yellow-950/40 dark:data-[state=active]:text-yellow-300",
+        };
+    }
+  };
+
+  const statusBadge = (status: string) => {
+    const s = statusStyles(status);
+    switch (status) {
+      case "pending": return <Badge className={s.badgeClass}><Clock className="w-3 h-3 ml-1" />معلق</Badge>;
+      case "approved": return <Badge className={s.badgeClass}><CheckCircle className="w-3 h-3 ml-1" />مقبول</Badge>;
+      case "rejected": return <Badge className={s.badgeClass}><XCircle className="w-3 h-3 ml-1" />مرفوض</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };
@@ -222,6 +256,8 @@ const AdminPayments = () => {
     filtered = filtered.filter((r) => r.fraud_status === fraudFilter);
   }
   const pendingCount = requests.filter((r) => r.status === "pending").length;
+  const approvedCount = requests.filter((r) => r.status === "approved").length;
+  const rejectedCount = requests.filter((r) => r.status === "rejected").length;
 
   return (
     <AdminLayout>
@@ -244,12 +280,33 @@ const AdminPayments = () => {
           </div>
         )}
 
+        {/* Status summary bar */}
+        <div className="flex items-center gap-3 text-xs flex-wrap rounded-lg border bg-muted/30 px-3 py-2">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+            <span className="text-muted-foreground">معلق</span>
+            <span className="font-semibold">{pendingCount}</span>
+          </span>
+          <span className="text-muted-foreground">•</span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+            <span className="text-muted-foreground">مقبول</span>
+            <span className="font-semibold">{approvedCount}</span>
+          </span>
+          <span className="text-muted-foreground">•</span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+            <span className="text-muted-foreground">مرفوض</span>
+            <span className="font-semibold">{rejectedCount}</span>
+          </span>
+        </div>
+
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="w-full">
-            <TabsTrigger value="pending" className="flex-1">معلق ({pendingCount})</TabsTrigger>
-            <TabsTrigger value="approved" className="flex-1">مقبول</TabsTrigger>
-            <TabsTrigger value="rejected" className="flex-1">مرفوض</TabsTrigger>
-            <TabsTrigger value="all" className="flex-1">الكل</TabsTrigger>
+            <TabsTrigger value="pending" className={`flex-1 ${statusStyles("pending").tabActive}`}>معلق ({pendingCount})</TabsTrigger>
+            <TabsTrigger value="approved" className={`flex-1 ${statusStyles("approved").tabActive}`}>مقبول ({approvedCount})</TabsTrigger>
+            <TabsTrigger value="rejected" className={`flex-1 ${statusStyles("rejected").tabActive}`}>مرفوض ({rejectedCount})</TabsTrigger>
+            <TabsTrigger value="all" className="flex-1">الكل ({requests.length})</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -269,8 +326,17 @@ const AdminPayments = () => {
         </div>
 
         <div className="space-y-2">
-          {filtered.map((req) => (
-            <Card key={req.id} className={req.fraud_status === "suspicious" ? "border-destructive/50 bg-destructive/5" : req.fraud_status === "review" ? "border-yellow-400/50 bg-yellow-50/30 dark:bg-yellow-950/10" : ""}>
+          {filtered.map((req) => {
+            const s = statusStyles(req.status);
+            const fraudOverride = req.fraud_status === "suspicious"
+              ? "border-destructive/60 bg-destructive/5"
+              : req.fraud_status === "review"
+              ? "border-orange-400/60 bg-orange-50/30 dark:bg-orange-950/10"
+              : "";
+            const cardCls = fraudOverride || `${s.cardBorder} ${s.cardBg}`;
+            return (
+            <Card key={req.id} className={`relative overflow-hidden ${cardCls}`}>
+              <span className={`absolute top-0 bottom-0 right-0 w-1 ${s.accentBar}`} aria-hidden="true" />
               <CardContent className="py-3 px-4">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
@@ -298,15 +364,25 @@ const AdminPayments = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
           {filtered.length === 0 && <p className="text-center text-muted-foreground py-8">لا توجد طلبات</p>}
         </div>
       </div>
 
       {/* Review Dialog */}
       <Dialog open={reviewDialog} onOpenChange={setReviewDialog}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>مراجعة طلب الدفع</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0">
+          {selectedRequest && (
+            <div className={`h-1.5 w-full ${statusStyles(selectedRequest.status).headerBar}`} aria-hidden="true" />
+          )}
+          <div className="p-6 space-y-4">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-2">
+              <span>مراجعة طلب الدفع</span>
+              {selectedRequest && statusBadge(selectedRequest.status)}
+            </DialogTitle>
+          </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
               <div className="space-y-2 text-sm">
@@ -450,6 +526,7 @@ const AdminPayments = () => {
               </div>
             </div>
           )}
+          </div>
         </DialogContent>
       </Dialog>
 
