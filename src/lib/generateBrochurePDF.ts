@@ -303,24 +303,27 @@ function buildA5SingleColumn(qrDataUrl: string, t: Record<string, string>, s: nu
   `;
 }
 
-/** Compact feature card used in the A4 right column (7 fit cleanly). */
+/** Compact feature card used in the A4 features grid (2-column wrap). */
 function compactFeatureCard(emoji: string, label: string): string {
   return `
     <div style="
-      display:flex; align-items:center; gap:10px;
+      flex: 0 0 calc(50% - 4px);
+      box-sizing: border-box;
+      display:flex; align-items:center; gap:9px;
       background:#f8fafc;
       border-right: 4px solid ${BRAND_SECONDARY};
       border-radius: 10px;
-      padding: 9px 12px;
+      padding: 8px 11px;
+      min-height: 44px;
     ">
       <div style="
-        flex-shrink:0; width:32px; height:32px; border-radius:8px;
+        flex-shrink:0; width:30px; height:30px; border-radius:8px;
         background:#ffffff;
         display:flex; align-items:center; justify-content:center;
-        font-size: 18px; line-height:1;
+        font-size: 16px; line-height:1;
         box-shadow: 0 2px 6px rgba(15,23,42,0.08);
       ">${emoji}</div>
-      <p style="margin:0; font-size:13px; font-weight:700; color:#1e293b; line-height:1.4; text-align:right; flex:1;">
+      <p style="margin:0; font-size:11.5px; font-weight:700; color:#1e293b; line-height:1.35; text-align:right; flex:1;">
         ${label}
       </p>
     </div>
