@@ -16,7 +16,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, ArrowRight, FileText, Save, Upload, Download, Copy, EyeOff, Eye } from "lucide-react";
+import { Plus, Trash2, ArrowRight, FileText, Save, Upload, Download, Copy, EyeOff, Eye, Timer, Info, X, Lightbulb } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Tables } from "@/integrations/supabase/types";
 import { parsePastExamFile, downloadTemplate, type ParsedQuestion, type ParseError } from "@/services/pastExamImport";
 
