@@ -7,7 +7,7 @@ const BRAND_PRIMARY = "#1A237E";
 const BRAND_SECONDARY = "#2E7D32";
 const INSTALL_URL = "https://mufadhala.com/install";
 
-/** The 7 platform features showcased in the A4 brochure right column. */
+/** The 7 platform features showcased at the TOP of the A4 brochure (v2 - exact wording). */
 const BROCHURE_FEATURES: Array<{ icon: string; title: string }> = [
   { icon: "📚", title: "شرح اكاديمي مراجع لمحتوى الدروس" },
   { icon: "✨", title: "ملخصات ذكية للدروس" },
