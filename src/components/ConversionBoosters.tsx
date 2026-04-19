@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Target, Shield, TrendingUp, Flame, Star, Zap } from "lucide-react";
+import { Users, Clock, Target, Shield, TrendingUp, Flame, Star, Zap } from "lucide-react";
 
 const ConversionBoosters = () => {
   const [recentCount, setRecentCount] = useState(0);
