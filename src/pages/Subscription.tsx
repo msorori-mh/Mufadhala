@@ -16,7 +16,7 @@ import {
   Crown, Zap, Brain, BarChart3, BookOpen, ClipboardCheck, Lock, Bot, AlertTriangle
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
-import ConversionBoosters from "@/components/ConversionBoosters";
+
 import { getZone, getPlanPrice, getZoneFromUniversity, getPlanPriceByZone, PriceZone } from "@/domain/pricing";
 import { trackFunnelEvent } from "@/lib/funnelTracking";
 import { isPaymentUIEnabled } from "@/lib/platformGate";
