@@ -71,6 +71,22 @@ const AdminRepeatedPastQuestions = () => {
     },
   });
 
+  // إجمالي عدد النماذج المنشورة (مطبق عليه نفس فلتر الجامعة/السنة) لحساب نسبة التكرار
+  const { data: totalModels = 0 } = useQuery({
+    queryKey: ["published-models-count", universityId, year],
+    queryFn: async () => {
+      let q = supabase
+        .from("past_exam_models")
+        .select("id", { count: "exact", head: true })
+        .eq("is_published", true);
+      if (universityId !== "all") q = q.eq("university_id", universityId);
+      if (year !== "all") q = q.eq("year", Number(year));
+      const { count, error } = await q;
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
   const filtered = useMemo(() => {
     if (!search.trim()) return rows;
     const q = search.trim().toLowerCase();
