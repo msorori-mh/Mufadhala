@@ -797,7 +797,7 @@ const AdminPastExams = () => {
                       {(m as any).university?.name_ar} — {m.year}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                     <Badge
                       variant={isEmpty ? "destructive" : "outline"}
                       className="text-[10px]"
@@ -805,39 +805,46 @@ const AdminPastExams = () => {
                     >
                       {isEmpty ? "فارغ" : `${qCount} سؤال`}
                     </Badge>
-                    {m.is_paid && <Badge variant="secondary" className="text-[10px]">اشتراك</Badge>}
-                    {m.is_published ? (
-                      <>
-                        <Badge className="text-[10px] bg-secondary">منشور</Badge>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-[11px] px-2 gap-1"
-                          title="إرجاع إلى مسودة"
-                          disabled={unpublishingId === m.id}
-                          onClick={() => handleUnpublish(m)}
-                        >
-                          <EyeOff className="w-3 h-3" />
-                          {unpublishingId === m.id ? "..." : "إلغاء النشر"}
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Badge variant="outline" className="text-[10px]">مسودة</Badge>
-                        {!isEmpty && (
-                          <Button
-                            size="sm"
-                            className="h-7 text-[11px] px-2 gap-1 bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                            title="نشر النموذج للطلاب فوراً"
-                            disabled={publishingId === m.id}
-                            onClick={() => handleQuickPublish(m)}
-                          >
-                            <Eye className="w-3 h-3" />
-                            {publishingId === m.id ? "..." : "نشر سريع"}
-                          </Button>
-                        )}
-                      </>
-                    )}
+
+                    {/* Inline toggle: Published */}
+                    <div
+                      className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] ${
+                        m.is_published
+                          ? "border-green-300 bg-green-50/60 text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-300"
+                          : "border-border bg-muted/40 text-muted-foreground"
+                      }`}
+                      title={m.is_published ? "منشور للطلاب — اضغط لإلغاء النشر" : (isEmpty ? "نموذج فارغ — أضف الأسئلة أولاً" : "مسودة — اضغط للنشر")}
+                    >
+                      {m.is_published ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                      <span className="font-medium">{m.is_published ? "منشور" : "مسودة"}</span>
+                      <Switch
+                        checked={m.is_published}
+                        disabled={togglingPublishId === m.id || (!m.is_published && isEmpty)}
+                        onCheckedChange={(v) => handleTogglePublished(m, v)}
+                        className="scale-75 origin-center -my-1"
+                        aria-label="تبديل حالة النشر"
+                      />
+                    </div>
+
+                    {/* Inline toggle: Paid */}
+                    <div
+                      className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] ${
+                        m.is_paid
+                          ? "border-amber-300 bg-amber-50/60 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
+                          : "border-border bg-muted/40 text-muted-foreground"
+                      }`}
+                      title={m.is_paid ? "مدفوع — يتطلب اشتراكاً" : "مجاني — متاح للجميع"}
+                    >
+                      <span className="font-medium">{m.is_paid ? "مدفوع" : "مجاني"}</span>
+                      <Switch
+                        checked={m.is_paid}
+                        disabled={togglingPaidId === m.id}
+                        onCheckedChange={(v) => handleTogglePaid(m, v)}
+                        className="scale-75 origin-center -my-1"
+                        aria-label="تبديل حالة الدفع"
+                      />
+                    </div>
+
                     <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setJustCreatedId(null); setShowQuestions(m.id); }}>الأسئلة</Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>تعديل</Button>
                     <Button variant="ghost" size="icon" title="نسخ النموذج" disabled={duplicatingId === m.id} onClick={() => handleDuplicate(m)}>
