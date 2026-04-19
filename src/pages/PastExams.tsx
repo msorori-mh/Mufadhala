@@ -153,7 +153,7 @@ const PastExams = () => {
               sortedModels.some((m) => m.is_paid) && (
                 <div className="flex items-center gap-2 rounded-lg bg-secondary/10 border border-secondary/30 px-3 py-2 text-xs text-foreground/90">
                   <Crown className="w-3.5 h-3.5 text-secondary shrink-0" />
-                  <span>أنت في الفترة التجريبية. اشترك الآن لفتح النماذج المدفوعة</span>
+                  <span>أنت الآن في النسخة المجانية.. اشترك الآن لفتح جميع نماذج الاختبارات السابقة لجامعتك وبقية الجامعات</span>
                 </div>
               )}
             {/* Conversion hint banner — only shown on web when there are locked paid models */}
