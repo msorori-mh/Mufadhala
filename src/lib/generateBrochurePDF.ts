@@ -16,6 +16,7 @@ const BROCHURE_FEATURES: Array<{ icon: string; title: string }> = [
   { icon: "🤖", title: "مولد الاسئلة الذكي للأسئلة الاكثر تكرارا في النماذج السابقة والأسئلة المتوقعة" },
   { icon: "🌙", title: "مراجعة ذكية سريعة ليلة الاختبار" },
   { icon: "💬", title: "مساعد مفاضلة الذكي للاستفسار عن اي معلومة" },
+  { icon: "🧠", title: "استخدام ذكي لميزات الذكاء الاصطناعي التوليدي للمساعدة في اجتياز اختبار المفاضلة" },
 ];
 
 /**
@@ -204,31 +205,37 @@ function buildA4Stacked(qrDataUrl: string, t: Record<string, string>): string {
 
   return `
     <!-- TOP: Features panel (first thing the student reads) -->
-    <section style="margin-bottom: 18px;">
+    <section style="margin-bottom: 12px;">
       <h3 style="
-        margin:0 0 10px; text-align:right;
-        font-size:16px; font-weight:900; color:${BRAND_PRIMARY};
-        padding-bottom:6px; border-bottom:2px solid ${BRAND_SECONDARY};
+        margin:0 0 6px; text-align:right;
+        font-size:15px; font-weight:900; color:${BRAND_PRIMARY};
+        padding-bottom:4px; border-bottom:2px solid ${BRAND_SECONDARY};
       ">
         ✨ ماذا تقدم لك مُفَاضَلَة؟
       </h3>
-      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+      <div style="display:flex; flex-wrap:wrap; gap:6px;">
         ${featureCards}
       </div>
     </section>
 
     <!-- MIDDLE: Headline + QR -->
-    <section style="display:flex; flex-direction:column; align-items:center; text-align:center; flex:1; min-height:0;">
+    <section style="
+      display:flex; flex-direction:column; align-items:center; text-align:center;
+      flex:1; min-height:0;
+      background: radial-gradient(ellipse at center, ${BRAND_PRIMARY}0D 0%, transparent 70%);
+      border-radius: 14px;
+      padding: 8px 4px;
+    ">
       <h2 style="
-        margin: 0 0 6px;
-        font-size: ${t.headline}; font-weight: 900; line-height:1.35;
+        margin: 0 0 4px;
+        font-size: ${t.headline}; font-weight: 900; line-height:1.3;
         color: ${BRAND_PRIMARY}; letter-spacing:-0.5px;
       ">
         🎯 استعد لاختبار القبول بثقة
       </h2>
       <p style="
-        margin: 0 0 12px;
-        font-size: ${t.value}; font-weight: 600; color:#475569; line-height:1.6;
+        margin: 0 0 8px;
+        font-size: ${t.value}; font-weight: 600; color:#475569; line-height:1.5;
       ">
         كل ما تحتاجه للنجاح في تطبيق واحد
       </p>
@@ -236,16 +243,16 @@ function buildA4Stacked(qrDataUrl: string, t: Record<string, string>): string {
       <div style="
         background:#ffffff; padding:${t.qrPad}; border-radius:${t.qrRadius};
         box-shadow: 0 12px 30px rgba(26,35,126,0.18);
-        margin-bottom:8px;
+        margin-bottom:6px;
       ">
         <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${t.qrSize}; height:${t.qrSize};" />
       </div>
-      <p style="margin:4px 0 8px; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
+      <p style="margin:2px 0 6px; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
         دخول وتحميل التطبيق
       </p>
       ${websiteLinkBadge()}
       <p style="
-        margin: 8px 0 0; font-size: ${t.install}; color:#64748b; line-height:1.5;
+        margin: 6px 0 0; font-size: ${t.install}; color:#64748b; line-height:1.4;
       ">
         ${INSTALL_COPY.android.full}
       </p>
@@ -307,23 +314,23 @@ function buildA5SingleColumn(qrDataUrl: string, t: Record<string, string>, s: nu
 function compactFeatureCard(emoji: string, label: string): string {
   return `
     <div style="
-      flex: 0 0 calc(50% - 4px);
+      flex: 0 0 calc(50% - 3px);
       box-sizing: border-box;
-      display:flex; align-items:center; gap:9px;
+      display:flex; align-items:center; gap:7px;
       background:#f8fafc;
       border-right: 4px solid ${BRAND_SECONDARY};
-      border-radius: 10px;
-      padding: 8px 11px;
-      min-height: 44px;
+      border-radius: 9px;
+      padding: 6px 9px;
+      min-height: 38px;
     ">
       <div style="
-        flex-shrink:0; width:30px; height:30px; border-radius:8px;
+        flex-shrink:0; width:26px; height:26px; border-radius:7px;
         background:#ffffff;
         display:flex; align-items:center; justify-content:center;
-        font-size: 16px; line-height:1;
-        box-shadow: 0 2px 6px rgba(15,23,42,0.08);
+        font-size: 14px; line-height:1;
+        box-shadow: 0 2px 5px rgba(15,23,42,0.08);
       ">${emoji}</div>
-      <p style="margin:0; font-size:11.5px; font-weight:700; color:#1e293b; line-height:1.35; text-align:right; flex:1;">
+      <p style="margin:0; font-size:11px; font-weight:700; color:#1e293b; line-height:1.25; text-align:right; flex:1;">
         ${label}
       </p>
     </div>
@@ -440,9 +447,9 @@ async function renderBrochure(size: PaperSize): Promise<void> {
     // Clickable QR + CTA regions (proportional to paper). Coordinates in mm.
     const s = profile.pdf.w / 210; // proportional scaling vs A4 reference
     if (size === "A4") {
-      // Stacked layout: features at top, QR centered in lower half (~y=180mm).
-      // Approx QR box: x≈70mm, y≈180mm, 70x70mm (centered horizontally)
-      pdf.link(70 * s, 180 * s, 70 * s, 70 * s, { url: INSTALL_URL });
+      // Stacked layout: features at top, QR centered in lower half (~y=170mm after compaction).
+      // Approx QR box: x≈70mm, y≈170mm, 70x70mm (centered horizontally)
+      pdf.link(70 * s, 170 * s, 70 * s, 70 * s, { url: INSTALL_URL });
       // CTA stays full-width near bottom
       pdf.link(20 * s, 262 * s, 170 * s, 22 * s, { url: INSTALL_URL });
     } else {
