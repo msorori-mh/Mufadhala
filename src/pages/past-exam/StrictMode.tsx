@@ -280,6 +280,25 @@ const StrictMode = ({ model, questions, onBackToSelect, customDurationMinutes }:
             الوقت المستغرق: <span className="font-bold text-foreground">{formatTime(elapsedSec)}</span>
           </div>
 
+          {/* AI Performance Analysis (paid only) */}
+          {isPaid && (
+            <AIPerformanceAnalysis
+              questions={questions.map((q) => ({
+                id: q.id,
+                question_text: q.q_text || "",
+                subject: model.title,
+                correct_option: q.q_correct || "",
+              }))}
+              answers={questions.reduce<Record<string, string>>((acc, q, idx) => {
+                const a = answers[idx];
+                if (a) acc[q.id] = a;
+                return acc;
+              }, {})}
+              percentage={stats.pct}
+              hasSubscription={isPaid}
+            />
+          )}
+
           {/* Review section */}
           <div className="space-y-3 pt-2">
             <h2 className="text-base font-bold flex items-center gap-2">
