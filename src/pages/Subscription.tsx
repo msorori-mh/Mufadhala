@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -477,7 +477,7 @@ const Subscription = () => {
 
           // Hero plan = popular paid plan (or first available)
           const heroPlan = popularPlan || plans[0];
-          const otherPlans = plans.filter((p) => p.id !== heroPlan?.id);
+          
           const heroPrice = heroPlan ? getPlanPriceByZone(heroPlan, universityPricingZone) : 0;
           const heroFinalPrice = promoDiscount > 0 ? Math.round(heroPrice * (1 - promoDiscount / 100)) : heroPrice;
           const heroZone = universityPricingZone;
@@ -514,8 +514,8 @@ const Subscription = () => {
                         <ul className="space-y-1.5">
                           {[
                             "الوصول الكامل لجميع نماذج الأعوام السابقة في جميع الجامعات",
-                            "وصول غير محدود للتدرب على محاكي الاختبار الحقيقي",
-                            "التركيز أثناء التدريب على الأسئلة الأكثر تكراراً والأقرب لاختبارات القبول",
+                            "التدريب على محاكي الاختبار الحقيقي بدون حدود",
+                            "التركيز على الأسئلة الأكثر تكراراً والأقرب للاختبار",
                           ].map((t, i) => (
                             <li key={i} className="flex items-start gap-2 text-xs text-foreground/90 leading-relaxed">
                               <CheckCircle className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
@@ -531,9 +531,9 @@ const Subscription = () => {
                         </h3>
                         <ul className="space-y-1.5">
                           {[
-                            "وصول غير محدود لاستخدام مولد الأسئلة الذكي",
-                            "استخدام غير محدود لمساعد مفاضلة الذكي (مفاضل)",
-                            "الاستفادة الكاملة من قوة الذكاء الاصطناعي داخل التطبيق",
+                            "مولد أسئلة ذكي",
+                            "مساعد مفاضلة (مفاضل)",
+                            "تحليل ذكي لمستواك",
                           ].map((t, i) => (
                             <li key={i} className="flex items-start gap-2 text-xs text-foreground/90 leading-relaxed">
                               <CheckCircle className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
@@ -594,50 +594,6 @@ const Subscription = () => {
                 </Card>
               )}
 
-              {/* Other plans (compact, optional) */}
-              {otherPlans.length > 0 && (
-                <Collapsible>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="sm" className="w-full flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground">
-                      <span>عرض الخطط الأخرى</span>
-                      <ChevronDown className="w-4 h-4 transition-transform [[data-state=open]_&]:rotate-180" />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-2 mt-2">
-                    {otherPlans.map((plan) => {
-                      const price = getPlanPriceByZone(plan, universityPricingZone);
-                      const finalPrice = promoDiscount > 0 ? Math.round(price * (1 - promoDiscount / 100)) : price;
-                      return (
-                        <Card key={plan.id} className="border-border">
-                          <CardContent className="py-3 px-4 flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="font-semibold text-sm text-foreground truncate">{plan.name}</p>
-                              {!plan.is_free ? (
-                                <p className="text-xs text-muted-foreground">
-                                  {finalPrice.toLocaleString()} {plan.currency}
-                                </p>
-                              ) : (
-                                <p className="text-xs text-muted-foreground">مجاني</p>
-                              )}
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="shrink-0"
-                              onClick={() => {
-                                trackFunnelEvent("subscribe_clicked", { plan: plan.slug });
-                                handleSelectPlan(plan);
-                              }}
-                            >
-                              {plan.is_free ? "تفعيل" : "اختيار"}
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
 
               {/* 8. Payment methods preview */}
               {methods.length > 0 && (
