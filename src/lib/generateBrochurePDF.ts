@@ -198,60 +198,58 @@ function buildBrochureHTML(qrDataUrl: string, scale: number, size: PaperSize): s
   `;
 }
 
-/** A4: two-column layout. Right = features panel, Left = headline/value/QR/install. */
-function buildA4TwoColumn(qrDataUrl: string, t: Record<string, string>): string {
+/** A4: stacked layout. Features panel at TOP, then headline + QR centered below. */
+function buildA4Stacked(qrDataUrl: string, t: Record<string, string>): string {
   const featureCards = BROCHURE_FEATURES.map((f) => compactFeatureCard(f.icon, f.title)).join("");
 
   return `
-    <div style="display:flex; flex-direction:row-reverse; gap:18px; margin-bottom:18px; flex:1; min-height:0;">
-      <!-- RIGHT column (features) -->
-      <div style="flex: 0 0 55%; display:flex; flex-direction:column;">
-        <h3 style="
-          margin:0 0 12px; text-align:right;
-          font-size:16px; font-weight:900; color:${BRAND_PRIMARY};
-          padding-bottom:8px; border-bottom:2px solid ${BRAND_SECONDARY};
-        ">
-          ✨ ماذا تقدم لك مُفَاضَلَة؟
-        </h3>
-        <div style="display:flex; flex-direction:column; gap:7px;">
-          ${featureCards}
-        </div>
+    <!-- TOP: Features panel (first thing the student reads) -->
+    <section style="margin-bottom: 18px;">
+      <h3 style="
+        margin:0 0 10px; text-align:right;
+        font-size:16px; font-weight:900; color:${BRAND_PRIMARY};
+        padding-bottom:6px; border-bottom:2px solid ${BRAND_SECONDARY};
+      ">
+        ✨ ماذا تقدم لك مُفَاضَلَة؟
+      </h3>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        ${featureCards}
       </div>
+    </section>
 
-      <!-- LEFT column (hero + QR) -->
-      <div style="flex: 1 1 45%; display:flex; flex-direction:column; align-items:center; text-align:center;">
-        <h2 style="
-          margin: 0 0 8px;
-          font-size: ${t.headline}; font-weight: 900; line-height:1.35;
-          color: ${BRAND_PRIMARY}; letter-spacing:-0.5px;
-        ">
-          🎯 استعد لاختبار القبول بثقة
-        </h2>
-        <p style="
-          margin: 0 0 14px;
-          font-size: ${t.value}; font-weight: 600; color:#475569; line-height:1.6;
-        ">
-          كل ما تحتاجه للنجاح في تطبيق واحد
-        </p>
+    <!-- MIDDLE: Headline + QR -->
+    <section style="display:flex; flex-direction:column; align-items:center; text-align:center; flex:1; min-height:0;">
+      <h2 style="
+        margin: 0 0 6px;
+        font-size: ${t.headline}; font-weight: 900; line-height:1.35;
+        color: ${BRAND_PRIMARY}; letter-spacing:-0.5px;
+      ">
+        🎯 استعد لاختبار القبول بثقة
+      </h2>
+      <p style="
+        margin: 0 0 12px;
+        font-size: ${t.value}; font-weight: 600; color:#475569; line-height:1.6;
+      ">
+        كل ما تحتاجه للنجاح في تطبيق واحد
+      </p>
 
-        <div style="
-          background:#ffffff; padding:${t.qrPad}; border-radius:${t.qrRadius};
-          box-shadow: 0 12px 30px rgba(26,35,126,0.18);
-          margin-bottom:10px;
-        ">
-          <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${t.qrSize}; height:${t.qrSize};" />
-        </div>
-        <p style="margin:4px 0 8px; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
-          دخول وتحميل التطبيق
-        </p>
-        ${websiteLinkBadge()}
-        <p style="
-          margin: 10px 0 0; font-size: ${t.install}; color:#64748b; line-height:1.6;
-        ">
-          ${INSTALL_COPY.android.full}
-        </p>
+      <div style="
+        background:#ffffff; padding:${t.qrPad}; border-radius:${t.qrRadius};
+        box-shadow: 0 12px 30px rgba(26,35,126,0.18);
+        margin-bottom:8px;
+      ">
+        <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${t.qrSize}; height:${t.qrSize};" />
       </div>
-    </div>
+      <p style="margin:4px 0 8px; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
+        دخول وتحميل التطبيق
+      </p>
+      ${websiteLinkBadge()}
+      <p style="
+        margin: 8px 0 0; font-size: ${t.install}; color:#64748b; line-height:1.5;
+      ">
+        ${INSTALL_COPY.android.full}
+      </p>
+    </section>
   `;
 }
 
