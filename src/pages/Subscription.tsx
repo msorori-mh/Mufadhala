@@ -594,50 +594,6 @@ const Subscription = () => {
                 </Card>
               )}
 
-              {/* Other plans (compact, optional) */}
-              {otherPlans.length > 0 && (
-                <Collapsible>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="sm" className="w-full flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground">
-                      <span>عرض الخطط الأخرى</span>
-                      <ChevronDown className="w-4 h-4 transition-transform [[data-state=open]_&]:rotate-180" />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-2 mt-2">
-                    {otherPlans.map((plan) => {
-                      const price = getPlanPriceByZone(plan, universityPricingZone);
-                      const finalPrice = promoDiscount > 0 ? Math.round(price * (1 - promoDiscount / 100)) : price;
-                      return (
-                        <Card key={plan.id} className="border-border">
-                          <CardContent className="py-3 px-4 flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="font-semibold text-sm text-foreground truncate">{plan.name}</p>
-                              {!plan.is_free ? (
-                                <p className="text-xs text-muted-foreground">
-                                  {finalPrice.toLocaleString()} {plan.currency}
-                                </p>
-                              ) : (
-                                <p className="text-xs text-muted-foreground">مجاني</p>
-                              )}
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="shrink-0"
-                              onClick={() => {
-                                trackFunnelEvent("subscribe_clicked", { plan: plan.slug });
-                                handleSelectPlan(plan);
-                              }}
-                            >
-                              {plan.is_free ? "تفعيل" : "اختيار"}
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
 
               {/* 8. Payment methods preview */}
               {methods.length > 0 && (
