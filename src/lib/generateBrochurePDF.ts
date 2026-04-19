@@ -7,6 +7,17 @@ const BRAND_PRIMARY = "#1A237E";
 const BRAND_SECONDARY = "#2E7D32";
 const INSTALL_URL = "https://mufadhala.com/install";
 
+/** The 7 platform features showcased in the A4 brochure right column. */
+const BROCHURE_FEATURES: Array<{ icon: string; title: string }> = [
+  { icon: "📚", title: "شرح أكاديمي مرجعي لمحتوى الدروس" },
+  { icon: "✨", title: "ملخصات ذكية للدروس" },
+  { icon: "📝", title: "نماذج الاختبارات السابقة (مبتدئ + صارم)" },
+  { icon: "🎯", title: "محاكي الاختبار الحقيقي" },
+  { icon: "🤖", title: "مولد الأسئلة الذكي (الأكثر تكراراً + المتوقعة)" },
+  { icon: "🌙", title: "مراجعة ذكية سريعة ليلة الاختبار" },
+  { icon: "💬", title: "مساعد مُفَاضَلَة الذكي للاستفسار" },
+];
+
 /**
  * Paper-size profiles. A4 is the full sheet; A5 is exactly half (148×210 mm).
  * Working canvas pixels @ ~96 DPI; html2canvas scale=2 keeps everything sharp.
@@ -91,21 +102,33 @@ async function generateBrandedQR(size = 520): Promise<string> {
 }
 
 /** Builds the brochure HTML at the requested paper scale. */
-function buildBrochureHTML(qrDataUrl: string, scale: number): string {
+function buildBrochureHTML(qrDataUrl: string, scale: number, size: PaperSize): string {
   const s = scale;
   // Token helpers — every visual unit scales together so A5 looks like a true mini A4.
   const t = {
-    padX: px(44 * s),
-    padTop: px(40 * s),
-    padBottom: px(32 * s),
+    padX: px(36 * s),
+    padTop: px(34 * s),
+    padBottom: px(28 * s),
     accentBar: px(6 * s),
-    logoBox: px(64 * s),
-    logoRadius: px(18 * s),
-    logoFont: px(38 * s),
-    brand: px(28 * s),
-    brandLetter: px(11 * s),
-    headline: px(30 * s),
-    value: px(16 * s),
+    logoBox: px(56 * s),
+    logoRadius: px(16 * s),
+    logoFont: px(34 * s),
+    brand: px(26 * s),
+    brandLetter: px(10 * s),
+    headline: px(size === "A4" ? 24 : 30 * s),
+    value: px(size === "A4" ? 13 : 16 * s),
+    qrSize: px(size === "A4" ? 200 : 230 * s),
+    qrPad: px(10 * s),
+    qrRadius: px(16 * s),
+    qrCaption: px(size === "A4" ? 15 : 18 * s),
+    qrUrl: px(11 * s),
+    install: px(11 * s),
+    ctaPadY: px(16 * s),
+    ctaPadX: px(20 * s),
+    ctaRadius: px(14 * s),
+    ctaFont: px(size === "A4" ? 18 : 20 * s),
+    footer: px(11 * s),
+    // A5-only legacy tokens
     featureGap: px(10 * s),
     featurePad: px(14 * s),
     featurePadX: px(16 * s),
@@ -113,18 +136,11 @@ function buildBrochureHTML(qrDataUrl: string, scale: number): string {
     featureRadius: px(12 * s),
     featureFont: px(15 * s),
     featureBorder: px(4 * s),
-    qrSize: px(230 * s),
-    qrPad: px(10 * s),
-    qrRadius: px(18 * s),
-    qrCaption: px(18 * s),
-    qrUrl: px(12 * s),
-    install: px(12 * s),
-    ctaPadY: px(18 * s),
-    ctaPadX: px(20 * s),
-    ctaRadius: px(16 * s),
-    ctaFont: px(20 * s),
-    footer: px(11 * s),
   };
+
+  const middleSection = size === "A4"
+    ? buildA4TwoColumn(qrDataUrl, t)
+    : buildA5SingleColumn(qrDataUrl, t, s);
 
   return `
     <div style="
@@ -140,7 +156,7 @@ function buildBrochureHTML(qrDataUrl: string, scale: number): string {
       <div style="position:absolute; bottom:0; left:0; right:0; height:${t.accentBar};
         background: linear-gradient(to right, ${BRAND_PRIMARY}, ${BRAND_SECONDARY});"></div>
 
-      <header style="text-align:center; margin-bottom: ${px(18 * s)};">
+      <header style="text-align:center; margin-bottom: ${px(14 * s)};">
         <div style="
           display:inline-flex; align-items:center; justify-content:center;
           width:${t.logoBox}; height:${t.logoBox}; border-radius:${t.logoRadius};
@@ -150,7 +166,7 @@ function buildBrochureHTML(qrDataUrl: string, scale: number): string {
           font-weight: 900; font-size: ${t.logoFont}; line-height: 1;
           letter-spacing:-2px;
           box-shadow: 0 6px 16px rgba(26,35,126,0.30);
-          margin-bottom: ${px(10 * s)};
+          margin-bottom: ${px(8 * s)};
         ">M</div>
         <h1 style="margin:0; font-size:${t.brand}; font-weight:800; color:${BRAND_PRIMARY}; letter-spacing:-0.5px;">
           مُفَاضَلَة
@@ -160,52 +176,7 @@ function buildBrochureHTML(qrDataUrl: string, scale: number): string {
         </p>
       </header>
 
-      <h2 style="
-        margin: ${px(6 * s)} 0 ${px(10 * s)}; text-align:center;
-        font-size: ${t.headline}; font-weight: 900; line-height:1.35;
-        color: ${BRAND_PRIMARY}; letter-spacing:-0.5px;
-      ">
-        🎯 استعد لاختبار القبول وادخل المفاضلة بثقة
-      </h2>
-
-      <p style="
-        margin: 0 0 ${px(22 * s)}; text-align:center;
-        font-size: ${t.value}; font-weight: 600; color:#475569; line-height:1.6;
-      ">
-        كل ما تحتاجه للنجاح في اختبار القبول في تطبيق واحد
-      </p>
-
-      <div style="display:flex; flex-direction:column; gap:${t.featureGap}; margin-bottom: ${px(24 * s)};">
-        ${featureRow("📝", "نماذج اختبارات حقيقية من السنوات السابقة", t)}
-        ${featureRow("🤖", "تدريب ذكي بالذكاء الاصطناعي حسب مستواك", t)}
-        ${featureRow("🎯", "محاكاة اختبار حقيقي قبل يوم القبول", t)}
-      </div>
-
-      <div style="
-        display:flex; flex-direction:column; align-items:center; gap:${px(12 * s)};
-        margin: ${px(4 * s)} 0 ${px(22 * s)};
-      ">
-        <div style="
-          background:#ffffff; padding:${t.qrPad}; border-radius:${t.qrRadius};
-          box-shadow: 0 12px 30px rgba(26,35,126,0.18);
-        ">
-          <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${t.qrSize}; height:${t.qrSize};" />
-        </div>
-        <p style="margin:${px(4 * s)} 0 0; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
-          امسح الرمز وابدأ الآن
-        </p>
-        <p style="margin:0; font-size:${t.qrUrl}; color:#64748b; direction:ltr; font-family:'Courier New', monospace; font-weight:700; letter-spacing:0.5px;">
-          mufadhala.com/install
-        </p>
-      </div>
-
-      <p style="
-        margin: 0 auto ${px(20 * s)}; text-align:center;
-        font-size: ${t.install}; color:#64748b; line-height:1.7;
-        max-width: ${px(620 * s)};
-      ">
-        ${INSTALL_COPY.android.full}
-      </p>
+      ${middleSection}
 
       <div style="margin-top:auto;">
         <div style="
@@ -219,10 +190,169 @@ function buildBrochureHTML(qrDataUrl: string, scale: number): string {
             🚀 ابدأ التدريب الآن ونافس على مقعدك الجامعي
           </p>
         </div>
-        <p style="margin:${px(14 * s)} 0 0; text-align:center; font-size:${t.footer}; color:#94a3b8; font-weight:600;">
+        <p style="margin:${px(12 * s)} 0 0; text-align:center; font-size:${t.footer}; color:#94a3b8; font-weight:600;">
           © ${new Date().getFullYear()} مُفَاضَلَة • منصتك للتحضير لاختبارات القبول الجامعي
         </p>
       </div>
+    </div>
+  `;
+}
+
+/** A4: two-column layout. Right = features panel, Left = headline/value/QR/install. */
+function buildA4TwoColumn(qrDataUrl: string, t: Record<string, string>): string {
+  const featureCards = BROCHURE_FEATURES.map((f) => compactFeatureCard(f.icon, f.title)).join("");
+
+  return `
+    <div style="display:flex; flex-direction:row-reverse; gap:18px; margin-bottom:18px; flex:1; min-height:0;">
+      <!-- RIGHT column (features) -->
+      <div style="flex: 0 0 55%; display:flex; flex-direction:column;">
+        <h3 style="
+          margin:0 0 12px; text-align:right;
+          font-size:16px; font-weight:900; color:${BRAND_PRIMARY};
+          padding-bottom:8px; border-bottom:2px solid ${BRAND_SECONDARY};
+        ">
+          ✨ ماذا تقدم لك مُفَاضَلَة؟
+        </h3>
+        <div style="display:flex; flex-direction:column; gap:7px;">
+          ${featureCards}
+        </div>
+      </div>
+
+      <!-- LEFT column (hero + QR) -->
+      <div style="flex: 1 1 45%; display:flex; flex-direction:column; align-items:center; text-align:center;">
+        <h2 style="
+          margin: 0 0 8px;
+          font-size: ${t.headline}; font-weight: 900; line-height:1.35;
+          color: ${BRAND_PRIMARY}; letter-spacing:-0.5px;
+        ">
+          🎯 استعد لاختبار القبول بثقة
+        </h2>
+        <p style="
+          margin: 0 0 14px;
+          font-size: ${t.value}; font-weight: 600; color:#475569; line-height:1.6;
+        ">
+          كل ما تحتاجه للنجاح في تطبيق واحد
+        </p>
+
+        <div style="
+          background:#ffffff; padding:${t.qrPad}; border-radius:${t.qrRadius};
+          box-shadow: 0 12px 30px rgba(26,35,126,0.18);
+          margin-bottom:10px;
+        ">
+          <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${t.qrSize}; height:${t.qrSize};" />
+        </div>
+        <p style="margin:4px 0 2px; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
+          امسح الرمز وابدأ الآن
+        </p>
+        <p style="margin:0 0 10px; font-size:${t.qrUrl}; color:#64748b; direction:ltr; font-family:'Courier New', monospace; font-weight:700; letter-spacing:0.5px;">
+          mufadhala.com/install
+        </p>
+        <p style="
+          margin: 0; font-size: ${t.install}; color:#64748b; line-height:1.6;
+        ">
+          ${INSTALL_COPY.android.full}
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+/** A5: original single-column layout with 3 features (kept untouched). */
+function buildA5SingleColumn(qrDataUrl: string, t: Record<string, string>, s: number): string {
+  return `
+    <h2 style="
+      margin: ${px(6 * s)} 0 ${px(10 * s)}; text-align:center;
+      font-size: ${t.headline}; font-weight: 900; line-height:1.35;
+      color: ${BRAND_PRIMARY}; letter-spacing:-0.5px;
+    ">
+      🎯 استعد لاختبار القبول وادخل المفاضلة بثقة
+    </h2>
+
+    <p style="
+      margin: 0 0 ${px(22 * s)}; text-align:center;
+      font-size: ${t.value}; font-weight: 600; color:#475569; line-height:1.6;
+    ">
+      كل ما تحتاجه للنجاح في اختبار القبول في تطبيق واحد
+    </p>
+
+    <div style="display:flex; flex-direction:column; gap:${t.featureGap}; margin-bottom: ${px(24 * s)};">
+      ${legacyFeatureRow("📝", "نماذج اختبارات حقيقية من السنوات السابقة", t)}
+      ${legacyFeatureRow("🤖", "تدريب ذكي بالذكاء الاصطناعي حسب مستواك", t)}
+      ${legacyFeatureRow("🎯", "محاكاة اختبار حقيقي قبل يوم القبول", t)}
+    </div>
+
+    <div style="
+      display:flex; flex-direction:column; align-items:center; gap:${px(12 * s)};
+      margin: ${px(4 * s)} 0 ${px(22 * s)};
+    ">
+      <div style="
+        background:#ffffff; padding:${t.qrPad}; border-radius:${t.qrRadius};
+        box-shadow: 0 12px 30px rgba(26,35,126,0.18);
+      ">
+        <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${t.qrSize}; height:${t.qrSize};" />
+      </div>
+      <p style="margin:${px(4 * s)} 0 0; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
+        امسح الرمز وابدأ الآن
+      </p>
+      <p style="margin:0; font-size:${t.qrUrl}; color:#64748b; direction:ltr; font-family:'Courier New', monospace; font-weight:700; letter-spacing:0.5px;">
+        mufadhala.com/install
+      </p>
+    </div>
+
+    <p style="
+      margin: 0 auto ${px(20 * s)}; text-align:center;
+      font-size: ${t.install}; color:#64748b; line-height:1.7;
+      max-width: ${px(620 * s)};
+    ">
+      ${INSTALL_COPY.android.full}
+    </p>
+  `;
+}
+
+/** Compact feature card used in the A4 right column (7 fit cleanly). */
+function compactFeatureCard(emoji: string, label: string): string {
+  return `
+    <div style="
+      display:flex; align-items:center; gap:10px;
+      background:#f8fafc;
+      border-right: 4px solid ${BRAND_SECONDARY};
+      border-radius: 10px;
+      padding: 9px 12px;
+    ">
+      <div style="
+        flex-shrink:0; width:32px; height:32px; border-radius:8px;
+        background:#ffffff;
+        display:flex; align-items:center; justify-content:center;
+        font-size: 18px; line-height:1;
+        box-shadow: 0 2px 6px rgba(15,23,42,0.08);
+      ">${emoji}</div>
+      <p style="margin:0; font-size:13px; font-weight:700; color:#1e293b; line-height:1.4; text-align:right; flex:1;">
+        ${label}
+      </p>
+    </div>
+  `;
+}
+
+/** Legacy feature row used by the A5 layout. */
+function legacyFeatureRow(emoji: string, label: string, t: Record<string, string>): string {
+  return `
+    <div style="
+      display:flex; align-items:center; gap:${px(14)};
+      background:#f8fafc;
+      border-right: ${t.featureBorder} solid ${BRAND_SECONDARY};
+      border-radius: ${t.featureRadius};
+      padding: ${t.featurePad} ${t.featurePadX};
+    ">
+      <div style="
+        flex-shrink:0; width:${t.featureIcon}; height:${t.featureIcon}; border-radius:${t.featureRadius};
+        background:#ffffff;
+        display:flex; align-items:center; justify-content:center;
+        font-size: ${px(parseInt(t.featureIcon) * 0.55)}; line-height:1;
+        box-shadow: 0 2px 6px rgba(15,23,42,0.06);
+      ">${emoji}</div>
+      <p style="margin:0; font-size:${t.featureFont}; font-weight:700; color:#1e293b; line-height:1.5;">
+        ${label}
+      </p>
     </div>
   `;
 }
@@ -242,7 +372,7 @@ async function renderBrochure(size: PaperSize): Promise<void> {
   container.style.background = "#ffffff";
   container.style.fontFamily = "'Cairo', system-ui, sans-serif";
   container.setAttribute("dir", "rtl");
-  container.innerHTML = buildBrochureHTML(qrDataUrl, profile.scale);
+  container.innerHTML = buildBrochureHTML(qrDataUrl, profile.scale, size);
 
   document.body.appendChild(container);
 
@@ -282,8 +412,17 @@ async function renderBrochure(size: PaperSize): Promise<void> {
 
     // Clickable QR + CTA regions (proportional to paper). Coordinates in mm.
     const s = profile.pdf.w / 210; // proportional scaling vs A4 reference
-    pdf.link(65 * s, 138 * s, 80 * s, 80 * s, { url: INSTALL_URL });
-    pdf.link(20 * s, 252 * s, 170 * s, 24 * s, { url: INSTALL_URL });
+    if (size === "A4") {
+      // QR is in the LEFT column of the two-column layout (left ~45% of width).
+      // Approx QR box: x≈18mm, y≈100mm, 70x70mm
+      pdf.link(18 * s, 100 * s, 70 * s, 70 * s, { url: INSTALL_URL });
+      // CTA stays full-width near bottom
+      pdf.link(20 * s, 252 * s, 170 * s, 24 * s, { url: INSTALL_URL });
+    } else {
+      // A5 single-column (unchanged)
+      pdf.link(65 * s, 138 * s, 80 * s, 80 * s, { url: INSTALL_URL });
+      pdf.link(20 * s, 252 * s, 170 * s, 24 * s, { url: INSTALL_URL });
+    }
 
     pdf.save(profile.filename);
   } finally {
@@ -293,7 +432,7 @@ async function renderBrochure(size: PaperSize): Promise<void> {
 
 /**
  * Generates a high-conversion A4 marketing brochure for Mufadhala.
- * Structure: Brand → Headline → Value → 3 features → QR (hero) → 1-line install hint → final CTA.
+ * A4 layout: 2 columns (right = 7 feature cards, left = headline/QR/CTA).
  */
 export async function generateBrochurePDF(_qrCanvas: HTMLCanvasElement): Promise<void> {
   await renderBrochure("A4");
@@ -301,31 +440,8 @@ export async function generateBrochurePDF(_qrCanvas: HTMLCanvasElement): Promise
 
 /**
  * Generates the same brochure on A5 paper (half size — perfect for sticker prints).
- * Uses identical structure & QR; all visual tokens are scaled proportionally.
+ * Uses the original single-column layout with 3 summary features.
  */
 export async function generateBrochurePDFA5(): Promise<void> {
   await renderBrochure("A5");
-}
-
-function featureRow(emoji: string, label: string, t: Record<string, string>): string {
-  return `
-    <div style="
-      display:flex; align-items:center; gap:${px(14)};
-      background:#f8fafc;
-      border-right: ${t.featureBorder} solid ${BRAND_SECONDARY};
-      border-radius: ${t.featureRadius};
-      padding: ${t.featurePad} ${t.featurePadX};
-    ">
-      <div style="
-        flex-shrink:0; width:${t.featureIcon}; height:${t.featureIcon}; border-radius:${t.featureRadius};
-        background:#ffffff;
-        display:flex; align-items:center; justify-content:center;
-        font-size: ${px(parseInt(t.featureIcon) * 0.55)}; line-height:1;
-        box-shadow: 0 2px 6px rgba(15,23,42,0.06);
-      ">${emoji}</div>
-      <p style="margin:0; font-size:${t.featureFont}; font-weight:700; color:#1e293b; line-height:1.5;">
-        ${label}
-      </p>
-    </div>
-  `;
 }
