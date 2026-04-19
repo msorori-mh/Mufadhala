@@ -98,9 +98,7 @@ export default function InstallAppPrompt() {
             <div className="flex-1">
               <p className="font-bold text-sm mb-1">أضف مُفَاضَلَة لشاشتك الرئيسية</p>
               <p className="text-xs opacity-90 leading-relaxed">
-                اضغط على زر المشاركة
-                <Share className="w-3 h-3 inline mx-1" />
-                ثم اختر <strong>"إضافة إلى الشاشة الرئيسية"</strong>
+                {INSTALL_COPY.ios.short}
               </p>
             </div>
             <button onClick={() => setDismissed(true)} className="p-1 opacity-70 hover:opacity-100" aria-label="إغلاق">
