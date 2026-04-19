@@ -531,9 +531,9 @@ const Subscription = () => {
                         </h3>
                         <ul className="space-y-1.5">
                           {[
-                            "وصول غير محدود لاستخدام مولد الأسئلة الذكي",
-                            "استخدام غير محدود لمساعد مفاضلة الذكي (مفاضل)",
-                            "الاستفادة الكاملة من قوة الذكاء الاصطناعي داخل التطبيق",
+                            "مولد أسئلة ذكي",
+                            "مساعد مفاضلة (مفاضل)",
+                            "تحليل ذكي لمستواك",
                           ].map((t, i) => (
                             <li key={i} className="flex items-start gap-2 text-xs text-foreground/90 leading-relaxed">
                               <CheckCircle className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
