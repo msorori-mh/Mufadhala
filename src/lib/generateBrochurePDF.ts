@@ -9,13 +9,13 @@ const INSTALL_URL = "https://mufadhala.com/install";
 
 /** The 7 platform features showcased in the A4 brochure right column. */
 const BROCHURE_FEATURES: Array<{ icon: string; title: string }> = [
-  { icon: "📚", title: "شرح أكاديمي مرجعي لمحتوى الدروس" },
+  { icon: "📚", title: "شرح اكاديمي مراجع لمحتوى الدروس" },
   { icon: "✨", title: "ملخصات ذكية للدروس" },
-  { icon: "📝", title: "نماذج الاختبارات السابقة (مبتدئ + صارم)" },
-  { icon: "🎯", title: "محاكي الاختبار الحقيقي" },
-  { icon: "🤖", title: "مولد الأسئلة الذكي (الأكثر تكراراً + المتوقعة)" },
+  { icon: "📝", title: "التدرب على جميع نماذج الاختبارات السابقة بوضعين (مبتدئي - صارم)" },
+  { icon: "🎯", title: "التدرب على محاكي الاختبار الحقيقي" },
+  { icon: "🤖", title: "مولد الاسئلة الذكي للأسئلة الاكثر تكرارا في النماذج السابقة والأسئلة المتوقعة" },
   { icon: "🌙", title: "مراجعة ذكية سريعة ليلة الاختبار" },
-  { icon: "💬", title: "مساعد مُفَاضَلَة الذكي للاستفسار" },
+  { icon: "💬", title: "مساعد مفاضلة الذكي للاستفسار عن اي معلومة" },
 ];
 
 /**
@@ -139,7 +139,7 @@ function buildBrochureHTML(qrDataUrl: string, scale: number, size: PaperSize): s
   };
 
   const middleSection = size === "A4"
-    ? buildA4TwoColumn(qrDataUrl, t)
+    ? buildA4Stacked(qrDataUrl, t)
     : buildA5SingleColumn(qrDataUrl, t, s);
 
   return `
@@ -198,60 +198,58 @@ function buildBrochureHTML(qrDataUrl: string, scale: number, size: PaperSize): s
   `;
 }
 
-/** A4: two-column layout. Right = features panel, Left = headline/value/QR/install. */
-function buildA4TwoColumn(qrDataUrl: string, t: Record<string, string>): string {
+/** A4: stacked layout. Features panel at TOP, then headline + QR centered below. */
+function buildA4Stacked(qrDataUrl: string, t: Record<string, string>): string {
   const featureCards = BROCHURE_FEATURES.map((f) => compactFeatureCard(f.icon, f.title)).join("");
 
   return `
-    <div style="display:flex; flex-direction:row-reverse; gap:18px; margin-bottom:18px; flex:1; min-height:0;">
-      <!-- RIGHT column (features) -->
-      <div style="flex: 0 0 55%; display:flex; flex-direction:column;">
-        <h3 style="
-          margin:0 0 12px; text-align:right;
-          font-size:16px; font-weight:900; color:${BRAND_PRIMARY};
-          padding-bottom:8px; border-bottom:2px solid ${BRAND_SECONDARY};
-        ">
-          ✨ ماذا تقدم لك مُفَاضَلَة؟
-        </h3>
-        <div style="display:flex; flex-direction:column; gap:7px;">
-          ${featureCards}
-        </div>
+    <!-- TOP: Features panel (first thing the student reads) -->
+    <section style="margin-bottom: 18px;">
+      <h3 style="
+        margin:0 0 10px; text-align:right;
+        font-size:16px; font-weight:900; color:${BRAND_PRIMARY};
+        padding-bottom:6px; border-bottom:2px solid ${BRAND_SECONDARY};
+      ">
+        ✨ ماذا تقدم لك مُفَاضَلَة؟
+      </h3>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        ${featureCards}
       </div>
+    </section>
 
-      <!-- LEFT column (hero + QR) -->
-      <div style="flex: 1 1 45%; display:flex; flex-direction:column; align-items:center; text-align:center;">
-        <h2 style="
-          margin: 0 0 8px;
-          font-size: ${t.headline}; font-weight: 900; line-height:1.35;
-          color: ${BRAND_PRIMARY}; letter-spacing:-0.5px;
-        ">
-          🎯 استعد لاختبار القبول بثقة
-        </h2>
-        <p style="
-          margin: 0 0 14px;
-          font-size: ${t.value}; font-weight: 600; color:#475569; line-height:1.6;
-        ">
-          كل ما تحتاجه للنجاح في تطبيق واحد
-        </p>
+    <!-- MIDDLE: Headline + QR -->
+    <section style="display:flex; flex-direction:column; align-items:center; text-align:center; flex:1; min-height:0;">
+      <h2 style="
+        margin: 0 0 6px;
+        font-size: ${t.headline}; font-weight: 900; line-height:1.35;
+        color: ${BRAND_PRIMARY}; letter-spacing:-0.5px;
+      ">
+        🎯 استعد لاختبار القبول بثقة
+      </h2>
+      <p style="
+        margin: 0 0 12px;
+        font-size: ${t.value}; font-weight: 600; color:#475569; line-height:1.6;
+      ">
+        كل ما تحتاجه للنجاح في تطبيق واحد
+      </p>
 
-        <div style="
-          background:#ffffff; padding:${t.qrPad}; border-radius:${t.qrRadius};
-          box-shadow: 0 12px 30px rgba(26,35,126,0.18);
-          margin-bottom:10px;
-        ">
-          <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${t.qrSize}; height:${t.qrSize};" />
-        </div>
-        <p style="margin:4px 0 8px; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
-          دخول وتحميل التطبيق
-        </p>
-        ${websiteLinkBadge()}
-        <p style="
-          margin: 10px 0 0; font-size: ${t.install}; color:#64748b; line-height:1.6;
-        ">
-          ${INSTALL_COPY.android.full}
-        </p>
+      <div style="
+        background:#ffffff; padding:${t.qrPad}; border-radius:${t.qrRadius};
+        box-shadow: 0 12px 30px rgba(26,35,126,0.18);
+        margin-bottom:8px;
+      ">
+        <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${t.qrSize}; height:${t.qrSize};" />
       </div>
-    </div>
+      <p style="margin:4px 0 8px; font-size:${t.qrCaption}; font-weight:800; color:${BRAND_PRIMARY};">
+        دخول وتحميل التطبيق
+      </p>
+      ${websiteLinkBadge()}
+      <p style="
+        margin: 8px 0 0; font-size: ${t.install}; color:#64748b; line-height:1.5;
+      ">
+        ${INSTALL_COPY.android.full}
+      </p>
+    </section>
   `;
 }
 
@@ -305,24 +303,27 @@ function buildA5SingleColumn(qrDataUrl: string, t: Record<string, string>, s: nu
   `;
 }
 
-/** Compact feature card used in the A4 right column (7 fit cleanly). */
+/** Compact feature card used in the A4 features grid (2-column wrap). */
 function compactFeatureCard(emoji: string, label: string): string {
   return `
     <div style="
-      display:flex; align-items:center; gap:10px;
+      flex: 0 0 calc(50% - 4px);
+      box-sizing: border-box;
+      display:flex; align-items:center; gap:9px;
       background:#f8fafc;
       border-right: 4px solid ${BRAND_SECONDARY};
       border-radius: 10px;
-      padding: 9px 12px;
+      padding: 8px 11px;
+      min-height: 44px;
     ">
       <div style="
-        flex-shrink:0; width:32px; height:32px; border-radius:8px;
+        flex-shrink:0; width:30px; height:30px; border-radius:8px;
         background:#ffffff;
         display:flex; align-items:center; justify-content:center;
-        font-size: 18px; line-height:1;
+        font-size: 16px; line-height:1;
         box-shadow: 0 2px 6px rgba(15,23,42,0.08);
       ">${emoji}</div>
-      <p style="margin:0; font-size:13px; font-weight:700; color:#1e293b; line-height:1.4; text-align:right; flex:1;">
+      <p style="margin:0; font-size:11.5px; font-weight:700; color:#1e293b; line-height:1.35; text-align:right; flex:1;">
         ${label}
       </p>
     </div>
@@ -439,11 +440,11 @@ async function renderBrochure(size: PaperSize): Promise<void> {
     // Clickable QR + CTA regions (proportional to paper). Coordinates in mm.
     const s = profile.pdf.w / 210; // proportional scaling vs A4 reference
     if (size === "A4") {
-      // QR is in the LEFT column of the two-column layout (left ~45% of width).
-      // Approx QR box: x≈18mm, y≈100mm, 70x70mm
-      pdf.link(18 * s, 100 * s, 70 * s, 70 * s, { url: INSTALL_URL });
+      // Stacked layout: features at top, QR centered in lower half (~y=180mm).
+      // Approx QR box: x≈70mm, y≈180mm, 70x70mm (centered horizontally)
+      pdf.link(70 * s, 180 * s, 70 * s, 70 * s, { url: INSTALL_URL });
       // CTA stays full-width near bottom
-      pdf.link(20 * s, 252 * s, 170 * s, 24 * s, { url: INSTALL_URL });
+      pdf.link(20 * s, 262 * s, 170 * s, 22 * s, { url: INSTALL_URL });
     } else {
       // A5 single-column (unchanged)
       pdf.link(65 * s, 138 * s, 80 * s, 80 * s, { url: INSTALL_URL });
