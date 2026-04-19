@@ -492,177 +492,197 @@ const Subscription = () => {
             { label: "توصيات مخصصة", free: "—", basic: "—", premium: "✓ تكيّفية" },
           ];
 
+          // Hero plan = popular paid plan (or first available)
+          const heroPlan = popularPlan || plans[0];
+          const otherPlans = plans.filter((p) => p.id !== heroPlan?.id);
+          const heroPrice = heroPlan ? getPlanPriceByZone(heroPlan, universityPricingZone) : 0;
+          const heroFinalPrice = promoDiscount > 0 ? Math.round(heroPrice * (1 - promoDiscount / 100)) : heroPrice;
+          const heroZone = universityPricingZone;
+          const heroZoneDiscount = heroPlan
+            ? heroZone === "a" ? heroPlan.discount_zone_a : heroZone === "b" ? heroPlan.discount_zone_b : 0
+            : 0;
+          const heroOriginalPrice = heroPlan
+            ? heroZone === "a" ? heroPlan.default_price_zone_a : heroPlan.default_price_zone_b
+            : 0;
+          const showHeroOriginal = heroPlan && !heroPlan.is_free && (heroZoneDiscount > 0 || promoDiscount > 0);
+
           return (
-            <div className="space-y-5">
-              {/* Conversion boosters */}
-              <ConversionBoosters />
-
-              <div className="text-center space-y-2">
-                <h2 className="text-xl font-bold text-foreground">ادخل المفاضلة وأنت مستعد</h2>
-                <p className="text-sm text-muted-foreground">درّب نفسك على نماذج حقيقية واختبر مستواك قبل يوم القبول</p>
-                {universityName && <p className="text-xs text-muted-foreground">{universityName}</p>}
+            <div className="space-y-6">
+              {/* 1+2. Title & Subtitle */}
+              <div className="text-center space-y-2 pt-2">
+                <h1 className="text-2xl font-extrabold text-foreground leading-tight">
+                  استعد للمفاضلة بثقة 🚀
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  كل أدوات التدريب + الذكاء الاصطناعي في مكان واحد
+                </p>
               </div>
 
-              {/* Benefits */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {[
-                  { emoji: "🔓", text: "الوصول الكامل لجميع نماذج الأعوام السابقة في جميع الجامعات" },
-                  { emoji: "🎯", text: "وصول غير محدود لمحاكي الاختبار الحقيقي" },
-                  { emoji: "🤖", text: "استخدام غير محدود لمساعد مفاضلة الذكي «مفاضل»" },
-                  { emoji: "🧠", text: "وصول غير محدود لمولد الأسئلة الذكي" },
-                  { emoji: "📊", text: "تحليل دقيق لمستواك وتقدمك" },
-                  { emoji: "💡", text: "تدريب غير محدود على محاكي الاختبار" },
-                  { emoji: "🏆", text: "التركيز على الأسئلة الأقرب لاختبارات القبول" },
-                ].map((b, i) => (
-                  <div key={i} className="flex items-start gap-2 bg-muted/50 rounded-lg p-2.5 text-xs text-foreground">
-                    <span className="text-sm shrink-0">{b.emoji}</span>
-                    <span>{b.text}</span>
-                  </div>
-                ))}
-              </div>
+              {/* Main subscription card: features + price + CTA */}
+              {heroPlan && (
+                <Card className="border-primary/30 shadow-md overflow-hidden">
+                  <CardContent className="p-5 space-y-5">
+                    {/* 3. Features grouped into 2 sections */}
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                          📚 <span>التدريب الحقيقي</span>
+                        </h3>
+                        <ul className="space-y-1.5">
+                          {[
+                            "الوصول الكامل لجميع نماذج الأعوام السابقة في جميع الجامعات",
+                            "وصول غير محدود للتدرب على محاكي الاختبار الحقيقي",
+                            "التركيز أثناء التدريب على الأسئلة الأكثر تكراراً والأقرب لاختبارات القبول",
+                          ].map((t, i) => (
+                            <li key={i} className="flex items-start gap-2 text-xs text-foreground/90 leading-relaxed">
+                              <CheckCircle className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
+                              <span>{t}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
 
-              {/* Plan cards */}
-              <div className="space-y-3">
-                {plans.map((plan) => {
-                  const isPopular = popularPlan?.id === plan.id && !plan.is_free;
-                  const style = getPlanStyle(plan.slug);
-                  const PlanIcon = style.icon;
-                  const price = getPlanPriceByZone(plan, universityPricingZone);
-                  const finalPrice = promoDiscount > 0 ? Math.round(price * (1 - promoDiscount / 100)) : price;
-                  const zone = universityPricingZone;
-                  const zoneDiscount = zone === "a" ? plan.discount_zone_a : zone === "b" ? plan.discount_zone_b : 0;
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                          🤖 <span>الذكاء الاصطناعي</span>
+                        </h3>
+                        <ul className="space-y-1.5">
+                          {[
+                            "وصول غير محدود لاستخدام مولد الأسئلة الذكي",
+                            "استخدام غير محدود لمساعد مفاضلة الذكي (مفاضل)",
+                            "الاستفادة الكاملة من قوة الذكاء الاصطناعي داخل التطبيق",
+                          ].map((t, i) => (
+                            <li key={i} className="flex items-start gap-2 text-xs text-foreground/90 leading-relaxed">
+                              <CheckCircle className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
+                              <span>{t}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
 
-                  return (
-                    <Card key={plan.id} className={`relative overflow-hidden transition-all ${style.border} ${style.bg}`}>
-                      {isPopular && (
-                        <div className="absolute top-0 left-0 right-0 bg-primary text-primary-foreground text-center text-xs font-bold py-1">
-                          ⭐ الأكثر شعبية
-                        </div>
-                      )}
-                      <CardContent className={`py-5 px-4 ${isPopular ? "pt-8" : ""}`}>
-                        <div className="flex items-start gap-3">
-                          {/* Icon */}
-                          <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${plan.is_free ? "bg-muted" : isPopular ? "bg-primary/10" : "bg-accent/10"}`}>
-                            <PlanIcon className={`w-5 h-5 ${style.accent}`} />
-                          </div>
-                          
-                          {/* Content */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-bold text-base text-foreground">{plan.name}</h3>
-                              {plan.is_free && <Badge variant="secondary" className="text-[10px]">مجاني</Badge>}
-                            </div>
-                            <p className="text-xs text-muted-foreground mb-2">{plan.description}</p>
-                            
-                            {/* Features */}
-                            <div className="flex flex-wrap gap-1.5 mb-3">
-                              {(plan.features || []).slice(0, 4).map((f, i) => (
-                                <span key={i} className="inline-flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/50 rounded-full px-2 py-0.5">
-                                  <CheckCircle className="w-2.5 h-2.5 text-green-500" />{f}
-                                </span>
-                              ))}
-                            </div>
-                            
-                            {/* Price */}
-                            {!plan.is_free && (
-                              <div className="flex items-baseline gap-2">
-                                {(zoneDiscount > 0 || promoDiscount > 0) && (
-                                  <span className="text-sm text-muted-foreground line-through">
-                                    {promoDiscount > 0 ? price.toLocaleString() : (zone === "a" ? plan.default_price_zone_a : plan.default_price_zone_b).toLocaleString()}
-                                  </span>
-                                )}
-                                <span className={`text-xl font-black ${isPopular ? "text-primary" : "text-foreground"}`}>
-                                  {finalPrice.toLocaleString()}
-                                </span>
-                                <span className="text-xs text-muted-foreground">{plan.currency}</span>
-                                {zoneDiscount > 0 && (
-                                  <Badge variant="outline" className="text-[10px] border-green-500 text-green-600 py-0 h-4">خصم {zoneDiscount}%</Badge>
-                                )}
-                              </div>
+                    {/* 4. Value statement */}
+                    <p className="text-center text-sm font-semibold text-foreground border-t border-border pt-4">
+                      كل ما تحتاجه لتدخل المفاضلة وأنت جاهز 100%
+                    </p>
+
+                    {/* 5. Price section */}
+                    {!heroPlan.is_free && (
+                      <div className="text-center space-y-1.5">
+                        {showHeroOriginal && (
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-sm text-muted-foreground line-through">
+                              {(promoDiscount > 0 ? heroPrice : heroOriginalPrice).toLocaleString()} {heroPlan.currency}
+                            </span>
+                            {heroZoneDiscount > 0 && (
+                              <Badge variant="outline" className="text-[10px] border-green-500 text-green-600 py-0 h-4">
+                                خصم {heroZoneDiscount}%
+                              </Badge>
                             )}
                           </div>
-
-                          {/* CTA */}
-                          <Button
-                            size="sm"
-                            variant={isPopular ? "default" : plan.is_free ? "outline" : "secondary"}
-                            className={`shrink-0 self-center ${isPopular ? "px-5" : "px-3"}`}
-                            onClick={() => {
-                              trackFunnelEvent("subscribe_clicked", { plan: plan.slug });
-                              handleSelectPlan(plan);
-                            }}
-                          >
-                            {plan.is_free ? "تفعيل" : "اشترك الآن"}
-                          </Button>
+                        )}
+                        <div className="flex items-baseline justify-center gap-2">
+                          <span className="text-4xl font-black text-primary">
+                            {heroFinalPrice.toLocaleString()}
+                          </span>
+                          <span className="text-sm font-semibold text-muted-foreground">{heroPlan.currency}</span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+                        <p className="text-xs text-muted-foreground">وصول كامل وغير محدود</p>
+                      </div>
+                    )}
 
-              {/* Urgency + Motivational */}
-              <div className="text-center space-y-2">
-                <p className="text-xs font-bold text-destructive flex items-center justify-center gap-1">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  المقاعد محدودة والمنافسة عالية
-                </p>
-                <p className="text-[11px] text-muted-foreground">كل يوم تدريب يقرّبك من مقعدك الجامعي</p>
-                <p className="text-[11px] text-muted-foreground/70">يمكنك تجربة بعض المحتوى مجانًا</p>
-              </div>
+                    {/* 6. Single primary CTA */}
+                    <Button
+                      size="lg"
+                      className="w-full h-14 text-base font-bold"
+                      onClick={() => {
+                        trackFunnelEvent("subscribe_clicked", { plan: heroPlan.slug });
+                        handleSelectPlan(heroPlan);
+                      }}
+                    >
+                      {heroPlan.is_free ? "تفعيل الخطة" : "اشترك الآن"}
+                    </Button>
 
-              {paidPlans.length >= 2 && (
+                    {/* 7. Trust line */}
+                    <p className="text-center text-xs text-muted-foreground">
+                      🔒 دفع آمن — تفعيل فوري
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Other plans (compact, optional) */}
+              {otherPlans.length > 0 && (
                 <Collapsible>
                   <CollapsibleTrigger asChild>
                     <Button variant="ghost" size="sm" className="w-full flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground">
-                      <BarChart3 className="w-4 h-4" />
-                      <span>مقارنة الخطط</span>
+                      <span>عرض الخطط الأخرى</span>
                       <ChevronDown className="w-4 h-4 transition-transform [[data-state=open]_&]:rotate-180" />
                     </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <Card className="mt-2 overflow-hidden">
-                      <CardContent className="p-0">
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm" dir="rtl">
-                            <thead>
-                              <tr className="border-b bg-muted/50">
-                                <th className="text-right p-2.5 text-xs font-semibold text-muted-foreground w-1/4">الميزة</th>
-                                <th className="text-center p-2.5 text-xs font-semibold text-muted-foreground">مجاني</th>
-                                <th className="text-center p-2.5 text-xs font-semibold text-primary bg-primary/5">
-                                  <span className="flex items-center justify-center gap-1">
-                                    <Zap className="w-3 h-3" /> التحضيري
-                                  </span>
-                                </th>
-                                <th className="text-center p-2.5 text-xs font-semibold text-accent">
-                                  <span className="flex items-center justify-center gap-1">
-                                    <Crown className="w-3 h-3" /> بريميوم+
-                                  </span>
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {featureRows.map((row, i) => (
-                                <tr key={i} className={i % 2 === 0 ? "" : "bg-muted/30"}>
-                                  <td className="p-2.5 text-xs font-medium text-foreground">{row.label}</td>
-                                  <td className="p-2.5 text-center text-xs text-muted-foreground">{row.free}</td>
-                                  <td className="p-2.5 text-center text-xs text-foreground bg-primary/5 font-medium">{row.basic}</td>
-                                  <td className="p-2.5 text-center text-xs text-foreground font-medium">{row.premium}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </CardContent>
-                    </Card>
+                  <CollapsibleContent className="space-y-2 mt-2">
+                    {otherPlans.map((plan) => {
+                      const price = getPlanPriceByZone(plan, universityPricingZone);
+                      const finalPrice = promoDiscount > 0 ? Math.round(price * (1 - promoDiscount / 100)) : price;
+                      return (
+                        <Card key={plan.id} className="border-border">
+                          <CardContent className="py-3 px-4 flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="font-semibold text-sm text-foreground truncate">{plan.name}</p>
+                              {!plan.is_free ? (
+                                <p className="text-xs text-muted-foreground">
+                                  {finalPrice.toLocaleString()} {plan.currency}
+                                </p>
+                              ) : (
+                                <p className="text-xs text-muted-foreground">مجاني</p>
+                              )}
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="shrink-0"
+                              onClick={() => {
+                                trackFunnelEvent("subscribe_clicked", { plan: plan.slug });
+                                handleSelectPlan(plan);
+                              }}
+                            >
+                              {plan.is_free ? "تفعيل" : "اختيار"}
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </CollapsibleContent>
                 </Collapsible>
               )}
 
-              {/* Zone info */}
+              {/* 8. Payment methods preview */}
+              {methods.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold text-muted-foreground text-center">طرق الدفع المتاحة</h3>
+                  <Card className="border-border">
+                    <CardContent className="py-3 px-4">
+                      <div className="flex flex-wrap items-center justify-center gap-3">
+                        {methods.slice(0, 8).map((m) => (
+                          <div key={m.id} className="flex items-center gap-1.5" title={m.name}>
+                            {m.logo_url ? (
+                              <img src={m.logo_url} alt={m.name} className="w-7 h-7 rounded object-contain border bg-background p-0.5" />
+                            ) : (
+                              <div className="w-7 h-7 rounded bg-muted flex items-center justify-center">
+                                <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
+                              </div>
+                            )}
+                            <span className="text-[11px] text-muted-foreground">{m.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
 
-              {/* Promo code */}
-              <Card>
+              {/* 9. Coupon section */}
+              <Card className="border-border">
                 <CardContent className="py-3 px-4">
                   <div className="flex items-center gap-2">
                     <Tag className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -670,17 +690,21 @@ const Subscription = () => {
                       placeholder="كود الخصم"
                       value={promoCode}
                       onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                      className="text-sm h-8"
+                      className="text-sm h-9"
                     />
-                    <Button size="sm" variant="outline" onClick={applyPromo} disabled={promoLoading || !promoCode.trim()} className="shrink-0 h-8">
+                    <Button size="sm" variant="outline" onClick={applyPromo} disabled={promoLoading || !promoCode.trim()} className="shrink-0 h-9">
                       {promoLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "تطبيق"}
                     </Button>
                   </div>
                   {promoDiscount > 0 && (
-                    <p className="text-xs text-green-600 mt-1 mr-6">خصم {promoDiscount}% مُطبّق ✓</p>
+                    <p className="text-xs text-green-600 mt-2 mr-6">خصم {promoDiscount}% مُطبّق ✓</p>
                   )}
                 </CardContent>
               </Card>
+
+              {universityName && (
+                <p className="text-center text-[11px] text-muted-foreground">{universityName}</p>
+              )}
             </div>
           );
         })()}
