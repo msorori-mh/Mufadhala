@@ -506,10 +506,13 @@ const Subscription = () => {
               {/* Benefits */}
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { emoji: "🔓", text: "الوصول الكامل لجميع نماذج الأعوام السابقة" },
-                  { emoji: "🧠", text: "تدريب غير محدود على محاكي الاختبار" },
+                  { emoji: "🔓", text: "الوصول الكامل لجميع نماذج الأعوام السابقة في جميع الجامعات" },
+                  { emoji: "🎯", text: "وصول غير محدود لمحاكي الاختبار الحقيقي" },
+                  { emoji: "🤖", text: "استخدام غير محدود لمساعد مفاضلة الذكي «مفاضل»" },
+                  { emoji: "🧠", text: "وصول غير محدود لمولد الأسئلة الذكي" },
                   { emoji: "📊", text: "تحليل دقيق لمستواك وتقدمك" },
-                  { emoji: "🎯", text: "التركيز على الأسئلة الأقرب لاختبارات القبول" },
+                  { emoji: "💡", text: "تدريب غير محدود على محاكي الاختبار" },
+                  { emoji: "🏆", text: "التركيز على الأسئلة الأقرب لاختبارات القبول" },
                 ].map((b, i) => (
                   <div key={i} className="flex items-start gap-2 bg-muted/50 rounded-lg p-2.5 text-xs text-foreground">
                     <span className="text-sm shrink-0">{b.emoji}</span>
