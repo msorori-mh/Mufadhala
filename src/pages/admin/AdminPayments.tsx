@@ -372,8 +372,17 @@ const AdminPayments = () => {
 
       {/* Review Dialog */}
       <Dialog open={reviewDialog} onOpenChange={setReviewDialog}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>مراجعة طلب الدفع</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0">
+          {selectedRequest && (
+            <div className={`h-1.5 w-full ${statusStyles(selectedRequest.status).headerBar}`} aria-hidden="true" />
+          )}
+          <div className="p-6 space-y-4">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-2">
+              <span>مراجعة طلب الدفع</span>
+              {selectedRequest && statusBadge(selectedRequest.status)}
+            </DialogTitle>
+          </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
               <div className="space-y-2 text-sm">
