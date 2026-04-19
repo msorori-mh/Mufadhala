@@ -12,7 +12,9 @@ import { toast } from "sonner";
 import { OPTION_LABELS, type PastExamQuestion, type PastExamModelInfo } from "./types";
 import { useAuth } from "@/hooks/useAuth";
 import { useStudentData } from "@/hooks/useStudentData";
+import { useSubscription } from "@/hooks/useSubscription";
 import { savePastExamAttempt } from "@/lib/pastExamAttempts";
+import AIPerformanceAnalysis from "@/components/AIPerformanceAnalysis";
 import { isNativePlatform } from "@/lib/capacitor";
 import { App as CapacitorApp } from "@capacitor/app";
 
