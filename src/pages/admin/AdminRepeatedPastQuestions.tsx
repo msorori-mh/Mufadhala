@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useQuery } from "@tanstack/react-query";
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Download, Repeat, Filter } from "lucide-react";
+import { Loader2, Download, Repeat, Filter, BookOpen } from "lucide-react";
 
 interface ModelRef {
   model_id: string;
@@ -24,6 +25,7 @@ interface RepeatedRow {
   sample_text: string;
   occurrence_count: number;
   models: ModelRef[];
+  linked_lesson_id: string | null;
 }
 
 const AdminRepeatedPastQuestions = () => {
@@ -210,10 +212,11 @@ const AdminRepeatedPastQuestions = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-right w-[40%]">السؤال</TableHead>
+                        <TableHead className="text-right w-[35%]">السؤال</TableHead>
                         <TableHead className="text-center">التكرار</TableHead>
                         <TableHead className="text-center">النسبة</TableHead>
                         <TableHead className="text-right">ظهر في النماذج</TableHead>
+                        <TableHead className="text-center">الدرس المرتبط</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -248,6 +251,18 @@ const AdminRepeatedPastQuestions = () => {
                                   </Badge>
                                 ))}
                               </div>
+                            </TableCell>
+                            <TableCell className="text-center align-top">
+                              {r.linked_lesson_id ? (
+                                <Button asChild size="sm" variant="outline" className="h-8">
+                                  <Link to={`/lessons/${r.linked_lesson_id}`} target="_blank" rel="noreferrer">
+                                    <BookOpen className="w-3.5 h-3.5 ml-1" />
+                                    فتح الدرس
+                                  </Link>
+                                </Button>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">— غير مرتبط —</span>
+                              )}
                             </TableCell>
                           </TableRow>
                         );
