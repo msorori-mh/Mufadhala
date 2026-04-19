@@ -179,7 +179,7 @@ export default function Install() {
                     افتح التطبيق في Google Chrome
                   </p>
                   <p className="text-xs text-foreground/80 leading-relaxed">
-                    للتثبيت على أندرويد، افتح مُفَاضَلَة باستخدام متصفح Google Chrome ثم اضغط تثبيت التطبيق. بعض المتصفحات الأخرى لا تدعم التثبيت بشكل صحيح.
+                    لأجهزة أندرويد: افتح الرابط باستخدام Google Chrome ثم اختر «تثبيت التطبيق». بعض المتصفحات الأخرى قد لا تعرض خيار التثبيت بشكل صحيح.
                   </p>
                 </div>
               </div>
