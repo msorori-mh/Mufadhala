@@ -474,23 +474,6 @@ const Subscription = () => {
           const popularSlug = "preparation";
           const popularPlan = paidPlans.find(p => p.slug === popularSlug) || (paidPlans.length >= 2 ? paidPlans[Math.floor(paidPlans.length / 2)] : paidPlans[0]);
 
-          // Plan icons & styling
-          const getPlanStyle = (slug: string) => {
-            if (slug === "free" || slug.includes("free")) return { icon: BookOpen, accent: "text-muted-foreground", border: "border-border", bg: "" };
-            if (slug === "preparation" || slug.includes("prep")) return { icon: Zap, accent: "text-primary", border: "border-primary ring-2 ring-primary/20", bg: "bg-primary/5" };
-            if (slug === "premium" || slug.includes("premium")) return { icon: Crown, accent: "text-accent", border: "border-accent ring-2 ring-accent/20", bg: "bg-accent/5" };
-            return { icon: Star, accent: "text-secondary", border: "border-secondary", bg: "" };
-          };
-
-          // Feature comparison data
-          const featureRows = [
-            { label: "الدروس المجانية", free: "محدودة", basic: "✓ جميع الدروس", premium: "✓ جميع الدروس" },
-            { label: "بنك الأسئلة", free: "محدود", basic: "✓ كامل", premium: "✓ كامل" },
-            { label: "محاكاة الاختبار", free: "1 محاولة", basic: "✓ غير محدود", premium: "✓ غير محدود" },
-            { label: "تحليل الأداء", free: "—", basic: "أساسي", premium: "✓ متقدم + AI" },
-            { label: "المعلم الذكي (AI)", free: "—", basic: "—", premium: "✓ مساعد شخصي" },
-            { label: "توصيات مخصصة", free: "—", basic: "—", premium: "✓ تكيّفية" },
-          ];
 
           // Hero plan = popular paid plan (or first available)
           const heroPlan = popularPlan || plans[0];
