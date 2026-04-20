@@ -490,7 +490,159 @@ const AdminPastExams = () => {
     }
   };
 
-  const toggleSelect = (id: string) => {
+  // ===== Multi-import handlers =====
+  const openMultiImport = () => {
+    setMultiPreview(null);
+    setMultiSkipIds(new Set());
+    setMultiProgress({ current: 0, total: 0 });
+    setMultiImportOpen(true);
+  };
+
+  const handleMultiFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const buf = await file.arrayBuffer();
+      const result = parseMultiModelFile(buf);
+      // Auto-skip duplicates (same university+year+title already exists)
+      const skip = new Set<number>();
+      result.models.forEach((m, idx) => {
+        const uni = (universities as any[]).find(
+          (u) => normalizeTitle(u.name_ar) === normalizeTitle(m.universityName),
+        );
+        if (!uni) return;
+        const exists = (models as any[]).some(
+          (existing) =>
+            existing.university_id === uni.id &&
+            existing.year === m.year &&
+            normalizeTitle(existing.title) === normalizeTitle(m.title),
+        );
+        if (exists) skip.add(idx);
+      });
+      setMultiSkipIds(skip);
+      setMultiPreview({ ...result, fileName: file.name });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر قراءة الملف", description: err?.message || String(err) });
+    } finally {
+      if (multiFileInputRef.current) multiFileInputRef.current.value = "";
+    }
+  };
+
+  const toggleMultiSkip = (idx: number) => {
+    setMultiSkipIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx); else next.add(idx);
+      return next;
+    });
+  };
+
+  const handleMultiImport = async () => {
+    if (!multiPreview) return;
+    // Build list of models to import (not skipped, has matching university, has questions)
+    const toImport: { model: MultiParsedModel; universityId: string }[] = [];
+    const importErrors: string[] = [];
+    multiPreview.models.forEach((m, idx) => {
+      if (multiSkipIds.has(idx)) return;
+      const uni = (universities as any[]).find(
+        (u) => normalizeTitle(u.name_ar) === normalizeTitle(m.universityName),
+      );
+      if (!uni) {
+        importErrors.push(`"${m.title}": الجامعة "${m.universityName}" غير معروفة`);
+        return;
+      }
+      if (m.questions.length === 0) {
+        importErrors.push(`"${m.title}": لا توجد أسئلة صالحة`);
+        return;
+      }
+      toImport.push({ model: m, universityId: uni.id });
+    });
+
+    if (toImport.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "لا يوجد نماذج صالحة للاستيراد",
+        description: importErrors[0] || "تحقق من الجامعات والأسئلة",
+      });
+      return;
+    }
+
+    setMultiImporting(true);
+    setMultiProgress({ current: 0, total: toImport.length });
+    let createdCount = 0;
+    const failures: string[] = [];
+
+    try {
+      for (let i = 0; i < toImport.length; i++) {
+        const { model: m, universityId: uniId } = toImport[i];
+        try {
+          const { data: created, error: e1 } = await supabase
+            .from("past_exam_models")
+            .insert({
+              title: m.title,
+              university_id: uniId,
+              year: m.year,
+              is_paid: m.isPaid,
+              is_published: false, // create as draft; admin can publish later
+            } as any)
+            .select("id")
+            .single();
+          if (e1) throw e1;
+          if (!created?.id) throw new Error("لم يُنشأ النموذج");
+
+          const rows = m.questions.map((q, idx) => ({
+            model_id: (created as any).id,
+            order_index: q.order_index ?? idx + 1,
+            q_text: q.q_text,
+            q_option_a: q.q_option_a,
+            q_option_b: q.q_option_b,
+            q_option_c: q.q_option_c,
+            q_option_d: q.q_option_d,
+            q_correct: q.q_correct,
+            q_explanation: q.q_explanation,
+          }));
+          const { error: e2 } = await supabase.from("past_exam_model_questions").insert(rows);
+          if (e2) throw e2;
+
+          // If admin marked it published in the file AND we have questions → publish now
+          if (m.isPublished) {
+            await supabase
+              .from("past_exam_models")
+              .update({ is_published: true } as any)
+              .eq("id", (created as any).id);
+          }
+
+          createdCount++;
+        } catch (err: any) {
+          failures.push(`"${m.title}": ${err?.message || "فشل"}`);
+        }
+        setMultiProgress({ current: i + 1, total: toImport.length });
+      }
+
+      await qc.refetchQueries({ queryKey: ["admin-past-exam-models"] });
+      await qc.refetchQueries({ queryKey: ["admin-past-exam-question-counts"] });
+
+      if (createdCount > 0) {
+        toast({
+          title: `✓ تم استيراد ${createdCount} نموذج`,
+          description: failures.length > 0
+            ? `فشل ${failures.length} نموذج — راجع التفاصيل`
+            : `تم إنشاء كل النماذج كمسودات قابلة للنشر`,
+        });
+      }
+      if (failures.length > 0 && createdCount === 0) {
+        toast({
+          variant: "destructive",
+          title: "فشل الاستيراد",
+          description: failures.slice(0, 2).join(" • "),
+        });
+      } else {
+        setMultiImportOpen(false);
+        setMultiPreview(null);
+      }
+    } finally {
+      setMultiImporting(false);
+    }
+  };
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
