@@ -1024,6 +1024,136 @@ const AdminPastExams = () => {
           );
         })()}
       </div>
+
+      {/* ===== Duplicates Detection Dialog ===== */}
+      <Dialog open={dupDialogOpen} onOpenChange={(o) => { if (!dupBusy) setDupDialogOpen(o); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="w-5 h-5 text-primary" />
+              كشف النماذج المكررة
+            </DialogTitle>
+          </DialogHeader>
+          {(() => {
+            const groups = findDuplicateGroups(models as DupItem[]);
+            const totalDuplicates = groups.reduce((sum, g) => sum + (g.items.length - 1), 0);
+
+            if (groups.length === 0) {
+              return (
+                <div className="py-10 text-center space-y-2">
+                  <p className="text-base font-semibold text-secondary">✓ لا توجد نماذج مكررة</p>
+                  <p className="text-xs text-muted-foreground">
+                    لم يتم العثور على نماذج بنفس الجامعة + السنة + العنوان.
+                  </p>
+                </div>
+              );
+            }
+
+            return (
+              <>
+                <div className="rounded-md border bg-muted/30 p-3 text-xs space-y-1">
+                  <p>
+                    <span className="font-bold">{groups.length}</span> مجموعة مكررة •{" "}
+                    <span className="font-bold text-destructive">{totalDuplicates}</span> نموذج قديم مرشح للحذف •{" "}
+                    <span className="text-secondary font-bold">{selectedDupIds.size}</span> محدد حالياً
+                  </p>
+                  <p className="text-muted-foreground leading-relaxed">
+                    معيار التكرار: نفس الجامعة + نفس السنة + نفس العنوان (حرفياً، تجاهل المسافات الزائدة وحالة الأحرف).
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => autoSelectOlderDuplicates(groups)}
+                    disabled={dupBusy}
+                  >
+                    تحديد الأقدم تلقائياً ({totalDuplicates})
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setSelectedDupIds(new Set())}
+                    disabled={dupBusy || selectedDupIds.size === 0}
+                  >
+                    إلغاء التحديد
+                  </Button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-3 -mx-1 px-1">
+                  {groups.map((g) => (
+                    <Card key={g.key} className="border-amber-300/40 bg-amber-50/30 dark:bg-amber-950/10">
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="text-xs">
+                            <span className="font-semibold">{g.universityName}</span>
+                            <span className="text-muted-foreground"> • {g.year} • </span>
+                            <span className="font-semibold">"{g.title}"</span>
+                          </div>
+                          <Badge variant="secondary" className="text-[10px]">
+                            {g.items.length} نسخ
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0 space-y-1.5">
+                        {g.items.map((it, idx) => {
+                          const isNewest = idx === 0;
+                          const isSelected = selectedDupIds.has(it.id);
+                          const qCount = questionCounts[it.id] || 0;
+                          return (
+                            <div
+                              key={it.id}
+                              className={`flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs ${
+                                isNewest ? "bg-secondary/10 border-secondary/40" : "bg-background"
+                              } ${isSelected ? "ring-2 ring-destructive/40" : ""}`}
+                            >
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={() => toggleDupSelect(it.id)}
+                                disabled={dupBusy}
+                                aria-label={`تحديد ${it.title}`}
+                              />
+                              {isNewest ? (
+                                <Badge className="text-[9px] h-4 bg-secondary text-secondary-foreground">الأحدث</Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[9px] h-4">أقدم</Badge>
+                              )}
+                              <span className="text-muted-foreground">
+                                {new Date(it.created_at).toLocaleDateString("ar")}
+                              </span>
+                              <Badge variant={it.is_published ? "default" : "outline"} className="text-[9px] h-4">
+                                {it.is_published ? "منشور" : "مسودة"}
+                              </Badge>
+                              <Badge variant={qCount === 0 ? "destructive" : "outline"} className="text-[9px] h-4">
+                                {qCount} سؤال
+                              </Badge>
+                            </div>
+                          );
+                        })}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                <DialogFooter className="border-t pt-3">
+                  <Button variant="outline" onClick={() => setDupDialogOpen(false)} disabled={dupBusy}>
+                    إلغاء
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteDuplicates}
+                    disabled={dupBusy || selectedDupIds.size === 0}
+                  >
+                    <Trash2 className="w-4 h-4 ml-1" />
+                    {dupBusy ? "جاري الحذف..." : `حذف المحدد (${selectedDupIds.size})`}
+                  </Button>
+                </DialogFooter>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
       </PermissionGate>
     </AdminLayout>
   );
