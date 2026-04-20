@@ -21,6 +21,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Tables } from "@/integrations/supabase/types";
 import { parsePastExamFile, downloadTemplate, type ParsedQuestion, type ParseError } from "@/services/pastExamImport";
 import { exportModelsToExcel } from "@/services/pastExamExport";
+import { parseMultiModelFile, downloadMultiModelTemplate, type ParsedModel as MultiParsedModel } from "@/services/pastExamMultiImport";
+import { Progress } from "@/components/ui/progress";
 
 type Model = Tables<"past_exam_models">;
 
@@ -384,6 +386,19 @@ const AdminPastExams = () => {
   const [dupBusy, setDupBusy] = useState(false);
   const [selectedDupIds, setSelectedDupIds] = useState<Set<string>>(new Set());
 
+  // ===== Multi-model import =====
+  const [multiImportOpen, setMultiImportOpen] = useState(false);
+  const multiFileInputRef = useRef<HTMLInputElement>(null);
+  const [multiPreview, setMultiPreview] = useState<{
+    models: MultiParsedModel[];
+    errors: string[];
+    warnings: string[];
+    fileName: string;
+  } | null>(null);
+  const [multiSkipIds, setMultiSkipIds] = useState<Set<number>>(new Set()); // indices to skip
+  const [multiImporting, setMultiImporting] = useState(false);
+  const [multiProgress, setMultiProgress] = useState({ current: 0, total: 0 });
+
   const normalizeTitle = (t: string) =>
     (t || "").trim().toLowerCase().replace(/\s+/g, " ");
 
@@ -472,6 +487,160 @@ const AdminPastExams = () => {
       toast({ variant: "destructive", title: "تعذر حذف المكررات", description: err?.message || "حدث خطأ" });
     } finally {
       setDupBusy(false);
+    }
+  };
+
+  // ===== Multi-import handlers =====
+  const openMultiImport = () => {
+    setMultiPreview(null);
+    setMultiSkipIds(new Set());
+    setMultiProgress({ current: 0, total: 0 });
+    setMultiImportOpen(true);
+  };
+
+  const handleMultiFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const buf = await file.arrayBuffer();
+      const result = parseMultiModelFile(buf);
+      // Auto-skip duplicates (same university+year+title already exists)
+      const skip = new Set<number>();
+      result.models.forEach((m, idx) => {
+        const uni = (universities as any[]).find(
+          (u) => normalizeTitle(u.name_ar) === normalizeTitle(m.universityName),
+        );
+        if (!uni) return;
+        const exists = (models as any[]).some(
+          (existing) =>
+            existing.university_id === uni.id &&
+            existing.year === m.year &&
+            normalizeTitle(existing.title) === normalizeTitle(m.title),
+        );
+        if (exists) skip.add(idx);
+      });
+      setMultiSkipIds(skip);
+      setMultiPreview({ ...result, fileName: file.name });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر قراءة الملف", description: err?.message || String(err) });
+    } finally {
+      if (multiFileInputRef.current) multiFileInputRef.current.value = "";
+    }
+  };
+
+  const toggleMultiSkip = (idx: number) => {
+    setMultiSkipIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx); else next.add(idx);
+      return next;
+    });
+  };
+
+  const handleMultiImport = async () => {
+    if (!multiPreview) return;
+    // Build list of models to import (not skipped, has matching university, has questions)
+    const toImport: { model: MultiParsedModel; universityId: string }[] = [];
+    const importErrors: string[] = [];
+    multiPreview.models.forEach((m, idx) => {
+      if (multiSkipIds.has(idx)) return;
+      const uni = (universities as any[]).find(
+        (u) => normalizeTitle(u.name_ar) === normalizeTitle(m.universityName),
+      );
+      if (!uni) {
+        importErrors.push(`"${m.title}": الجامعة "${m.universityName}" غير معروفة`);
+        return;
+      }
+      if (m.questions.length === 0) {
+        importErrors.push(`"${m.title}": لا توجد أسئلة صالحة`);
+        return;
+      }
+      toImport.push({ model: m, universityId: uni.id });
+    });
+
+    if (toImport.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "لا يوجد نماذج صالحة للاستيراد",
+        description: importErrors[0] || "تحقق من الجامعات والأسئلة",
+      });
+      return;
+    }
+
+    setMultiImporting(true);
+    setMultiProgress({ current: 0, total: toImport.length });
+    let createdCount = 0;
+    const failures: string[] = [];
+
+    try {
+      for (let i = 0; i < toImport.length; i++) {
+        const { model: m, universityId: uniId } = toImport[i];
+        try {
+          const { data: created, error: e1 } = await supabase
+            .from("past_exam_models")
+            .insert({
+              title: m.title,
+              university_id: uniId,
+              year: m.year,
+              is_paid: m.isPaid,
+              is_published: false, // create as draft; admin can publish later
+            } as any)
+            .select("id")
+            .single();
+          if (e1) throw e1;
+          if (!created?.id) throw new Error("لم يُنشأ النموذج");
+
+          const rows = m.questions.map((q, idx) => ({
+            model_id: (created as any).id,
+            order_index: q.order_index ?? idx + 1,
+            q_text: q.q_text,
+            q_option_a: q.q_option_a,
+            q_option_b: q.q_option_b,
+            q_option_c: q.q_option_c,
+            q_option_d: q.q_option_d,
+            q_correct: q.q_correct,
+            q_explanation: q.q_explanation,
+          }));
+          const { error: e2 } = await supabase.from("past_exam_model_questions").insert(rows);
+          if (e2) throw e2;
+
+          // If admin marked it published in the file AND we have questions → publish now
+          if (m.isPublished) {
+            await supabase
+              .from("past_exam_models")
+              .update({ is_published: true } as any)
+              .eq("id", (created as any).id);
+          }
+
+          createdCount++;
+        } catch (err: any) {
+          failures.push(`"${m.title}": ${err?.message || "فشل"}`);
+        }
+        setMultiProgress({ current: i + 1, total: toImport.length });
+      }
+
+      await qc.refetchQueries({ queryKey: ["admin-past-exam-models"] });
+      await qc.refetchQueries({ queryKey: ["admin-past-exam-question-counts"] });
+
+      if (createdCount > 0) {
+        toast({
+          title: `✓ تم استيراد ${createdCount} نموذج`,
+          description: failures.length > 0
+            ? `فشل ${failures.length} نموذج — راجع التفاصيل`
+            : `تم إنشاء كل النماذج كمسودات قابلة للنشر`,
+        });
+      }
+      if (failures.length > 0 && createdCount === 0) {
+        toast({
+          variant: "destructive",
+          title: "فشل الاستيراد",
+          description: failures.slice(0, 2).join(" • "),
+        });
+      } else {
+        setMultiImportOpen(false);
+        setMultiPreview(null);
+      }
+    } finally {
+      setMultiImporting(false);
     }
   };
 
@@ -614,7 +783,15 @@ const AdminPastExams = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">نماذج الأعوام السابقة</h1>
           {!showForm && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={openMultiImport}
+                title="استيراد ملف Excel متعدد النماذج (مولّد من زر تصدير المحدد)"
+              >
+                <Upload className="w-4 h-4 ml-1" /> استيراد متعدد
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
@@ -1152,6 +1329,178 @@ const AdminPastExams = () => {
               </>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== Multi-Model Import Dialog ===== */}
+      <Dialog open={multiImportOpen} onOpenChange={(o) => { if (!multiImporting) setMultiImportOpen(o); }}>
+        <DialogContent className="max-w-3xl max-h-[88vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="w-5 h-5 text-primary" />
+              استيراد متعدد النماذج من ملف Excel واحد
+            </DialogTitle>
+          </DialogHeader>
+
+          {!multiPreview && (
+            <div className="space-y-4 py-2">
+              <Alert className="bg-muted/40">
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-xs leading-relaxed">
+                  استخدم نفس بنية ملف <strong>"تصدير المحدد"</strong>: ورقة <strong>📋 الفهرس</strong> + ورقة لكل نموذج.
+                  <br />
+                  إذا لم يكن لديك ملف، نزّل القالب الفارغ كنقطة بداية. الجامعات تُطابَق بالاسم العربي.
+                </AlertDescription>
+              </Alert>
+
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={downloadMultiModelTemplate}>
+                  <Download className="w-4 h-4 ml-1" /> تنزيل القالب
+                </Button>
+              </div>
+
+              <div className="border-2 border-dashed rounded-lg p-6 text-center space-y-3">
+                <FileText className="w-10 h-10 mx-auto text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">اختر ملف Excel متعدد الأوراق (.xlsx)</p>
+                <input
+                  ref={multiFileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={handleMultiFileSelect}
+                />
+                <Button onClick={() => multiFileInputRef.current?.click()}>
+                  <Upload className="w-4 h-4 ml-1" /> اختيار ملف
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {multiPreview && (
+            <>
+              <div className="rounded-md border bg-muted/30 p-3 text-xs space-y-1">
+                <p>
+                  <strong>{multiPreview.fileName}</strong> •{" "}
+                  <span className="font-bold">{multiPreview.models.length}</span> نموذج •{" "}
+                  <span className="font-bold text-secondary">
+                    {multiPreview.models.reduce((s, m) => s + m.questions.length, 0)}
+                  </span>{" "}
+                  سؤال إجمالي
+                  {multiSkipIds.size > 0 && (
+                    <>
+                      {" "}•{" "}
+                      <span className="font-bold text-amber-600">
+                        {multiSkipIds.size} مُتخطّى
+                      </span>
+                    </>
+                  )}
+                </p>
+                {multiPreview.errors.length > 0 && (
+                  <p className="text-destructive">
+                    ⚠ {multiPreview.errors.length} خطأ في الفهرس
+                  </p>
+                )}
+              </div>
+
+              {multiPreview.errors.length > 0 && (
+                <Alert variant="destructive" className="text-xs">
+                  <AlertDescription>
+                    <ul className="list-disc pr-4 space-y-0.5">
+                      {multiPreview.errors.slice(0, 5).map((e, i) => (
+                        <li key={i}>{e}</li>
+                      ))}
+                      {multiPreview.errors.length > 5 && (
+                        <li>... و {multiPreview.errors.length - 5} خطأ آخر</li>
+                      )}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex-1 overflow-y-auto space-y-2 -mx-1 px-1">
+                {multiPreview.models.map((m, idx) => {
+                  const uni = (universities as any[]).find(
+                    (u) => normalizeTitle(u.name_ar) === normalizeTitle(m.universityName),
+                  );
+                  const uniMatched = !!uni;
+                  const isDup = uniMatched && (models as any[]).some(
+                    (existing) =>
+                      existing.university_id === uni.id &&
+                      existing.year === m.year &&
+                      normalizeTitle(existing.title) === normalizeTitle(m.title),
+                  );
+                  const skipped = multiSkipIds.has(idx);
+                  const hasIssue = !uniMatched || m.questions.length === 0;
+
+                  return (
+                    <Card
+                      key={idx}
+                      className={`${skipped ? "opacity-50" : ""} ${
+                        hasIssue ? "border-destructive/40" : isDup ? "border-amber-300/60" : ""
+                      }`}
+                    >
+                      <CardContent className="p-3 flex items-center gap-3">
+                        <Checkbox
+                          checked={!skipped}
+                          onCheckedChange={() => toggleMultiSkip(idx)}
+                          disabled={multiImporting || hasIssue}
+                          aria-label="استيراد هذا النموذج"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-semibold truncate">{m.title}</p>
+                            <Badge variant="outline" className="text-[10px]">{m.year}</Badge>
+                            {isDup && (
+                              <Badge className="text-[10px] bg-amber-500 text-white hover:bg-amber-500">
+                                موجود مسبقاً
+                              </Badge>
+                            )}
+                            {!uniMatched && (
+                              <Badge variant="destructive" className="text-[10px]">
+                                جامعة غير معروفة
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {m.universityName} • {m.questions.length} سؤال
+                            {m.questionErrors.length > 0 && (
+                              <span className="text-destructive"> • {m.questionErrors.length} خطأ في الأسئلة</span>
+                            )}
+                            {m.isPublished && <span className="text-secondary"> • منشور</span>}
+                            {m.isPaid && <span className="text-amber-600"> • مدفوع</span>}
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {multiImporting && (
+                <div className="space-y-1">
+                  <Progress value={(multiProgress.current / Math.max(multiProgress.total, 1)) * 100} />
+                  <p className="text-[11px] text-center text-muted-foreground">
+                    جاري الاستيراد {multiProgress.current} من {multiProgress.total}...
+                  </p>
+                </div>
+              )}
+
+              <DialogFooter className="border-t pt-3">
+                <Button
+                  variant="outline"
+                  onClick={() => { setMultiPreview(null); setMultiSkipIds(new Set()); }}
+                  disabled={multiImporting}
+                >
+                  ملف آخر
+                </Button>
+                <Button onClick={handleMultiImport} disabled={multiImporting}>
+                  {multiImporting
+                    ? "جاري الاستيراد..."
+                    : `استيراد ${multiPreview.models.length - multiSkipIds.size} نموذج`}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
       </PermissionGate>
