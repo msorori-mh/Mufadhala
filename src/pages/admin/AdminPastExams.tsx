@@ -386,6 +386,19 @@ const AdminPastExams = () => {
   const [dupBusy, setDupBusy] = useState(false);
   const [selectedDupIds, setSelectedDupIds] = useState<Set<string>>(new Set());
 
+  // ===== Multi-model import =====
+  const [multiImportOpen, setMultiImportOpen] = useState(false);
+  const multiFileInputRef = useRef<HTMLInputElement>(null);
+  const [multiPreview, setMultiPreview] = useState<{
+    models: MultiParsedModel[];
+    errors: string[];
+    warnings: string[];
+    fileName: string;
+  } | null>(null);
+  const [multiSkipIds, setMultiSkipIds] = useState<Set<number>>(new Set()); // indices to skip
+  const [multiImporting, setMultiImporting] = useState(false);
+  const [multiProgress, setMultiProgress] = useState({ current: 0, total: 0 });
+
   const normalizeTitle = (t: string) =>
     (t || "").trim().toLowerCase().replace(/\s+/g, " ");
 
