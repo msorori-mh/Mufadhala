@@ -20,6 +20,7 @@ import { Plus, Trash2, ArrowRight, FileText, Save, Upload, Download, Copy, EyeOf
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Tables } from "@/integrations/supabase/types";
 import { parsePastExamFile, downloadTemplate, type ParsedQuestion, type ParseError } from "@/services/pastExamImport";
+import { exportModelsToExcel } from "@/services/pastExamExport";
 
 type Model = Tables<"past_exam_models">;
 
@@ -464,6 +465,52 @@ const AdminPastExams = () => {
     }
   };
 
+  const handleBulkExport = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    try {
+      // Selected models from local list (already enriched with university)
+      const selectedModels = models.filter((m) => ids.includes(m.id));
+      if (selectedModels.length === 0) {
+        toast({ variant: "destructive", title: "لم يتم العثور على النماذج المحددة" });
+        return;
+      }
+      // Fetch all questions for the selected models
+      const { data: rows, error } = await supabase
+        .from("past_exam_model_questions")
+        .select("model_id, q_text, q_option_a, q_option_b, q_option_c, q_option_d, q_correct, q_explanation, order_index")
+        .in("model_id", ids)
+        .order("order_index");
+      if (error) throw error;
+
+      const grouped: Record<string, any[]> = {};
+      (rows || []).forEach((r: any) => {
+        (grouped[r.model_id] ||= []).push(r);
+      });
+
+      const exportModels = selectedModels.map((m: any) => ({
+        id: m.id,
+        title: m.title,
+        year: m.year,
+        is_published: m.is_published,
+        is_paid: m.is_paid,
+        university_name: m.university?.name_ar || "—",
+      }));
+
+      exportModelsToExcel(exportModels, grouped);
+
+      const totalQs = (rows || []).length;
+      toast({
+        title: `✓ تم تصدير ${selectedModels.length} نموذج`,
+        description: `إجمالي ${totalQs} سؤال — ورقة فهرس + ورقة لكل نموذج`,
+      });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر تصدير النماذج", description: err?.message || "حدث خطأ" });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <PermissionGate permission="past_exams">
@@ -762,6 +809,15 @@ const AdminPastExams = () => {
                     onClick={() => handleBulkUnpublish(selectedFilteredIds)}
                   >
                     <EyeOff className="w-3.5 h-3.5" /> إلغاء النشر
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs gap-1"
+                    disabled={bulkBusy}
+                    onClick={() => handleBulkExport(selectedFilteredIds)}
+                  >
+                    <Download className="w-3.5 h-3.5" /> تصدير المحدد ({selectedFilteredIds.length})
                   </Button>
                   <Button
                     size="sm"
