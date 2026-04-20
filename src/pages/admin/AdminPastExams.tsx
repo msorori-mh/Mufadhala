@@ -20,6 +20,7 @@ import { Plus, Trash2, ArrowRight, FileText, Save, Upload, Download, Copy, EyeOf
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Tables } from "@/integrations/supabase/types";
 import { parsePastExamFile, downloadTemplate, type ParsedQuestion, type ParseError } from "@/services/pastExamImport";
+import { exportModelsToExcel } from "@/services/pastExamExport";
 
 type Model = Tables<"past_exam_models">;
 
