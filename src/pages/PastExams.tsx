@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import NativeSelect from "@/components/NativeSelect";
-import { ArrowRight, FileText, Lock, ChevronLeft, Crown, Sparkles } from "lucide-react";
+import { ArrowRight, FileText, Lock, ChevronLeft, Crown, Sparkles, Repeat, TrendingUp } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { trackSubscriptionClick } from "@/lib/conversionTracking";
 import { isPaymentUIEnabled } from "@/lib/platformGate";
