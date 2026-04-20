@@ -1117,12 +1117,17 @@ const AdminPastExams = () => {
                 </div>
               )}
             </div>
-            {filtered.map((m) => {
-              const qCount = questionCounts[m.id] || 0;
-              const isEmpty = qCount === 0;
-              const isSelected = selectedIds.has(m.id);
-              return (
-              <Card key={m.id} className={`hover:shadow-sm transition-shadow ${isEmpty ? "border-destructive/30" : ""} ${isSelected ? "ring-2 ring-primary/40" : ""}`}>
+            {(() => {
+              // Group by university only when no university filter is active.
+              // Otherwise keep flat list (current behaviour).
+              const groupByUniversity = !filterUniversityId;
+
+              const renderModelCard = (m: typeof filtered[number]) => {
+                const qCount = questionCounts[m.id] || 0;
+                const isEmpty = qCount === 0;
+                const isSelected = selectedIds.has(m.id);
+                return (
+                <Card key={m.id} className={`hover:shadow-sm transition-shadow ${isEmpty ? "border-destructive/30" : ""} ${isSelected ? "ring-2 ring-primary/40" : ""}`}>
                 <CardContent className="flex items-center gap-3 p-4">
                   <Checkbox
                     checked={isSelected}
