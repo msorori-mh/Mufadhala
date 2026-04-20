@@ -149,16 +149,38 @@ ${canonicalUrl}`;
     }
   };
 
+  /**
+   * Open an external share URL in a way that works inside iframes (preview),
+   * PWAs, and native apps. wa.me/t.me refuse to load inside iframes
+   * (X-Frame-Options), so we must escape the iframe via top-level navigation
+   * or a true new tab. Order:
+   *   1) window.top navigation (escapes preview iframe → opens app handler)
+   *   2) window.open new tab (desktop browsers)
+   *   3) location.href fallback
+   */
+  const openExternal = (url: string) => {
+    try {
+      if (window.top && window.top !== window.self) {
+        window.top.location.href = url;
+        return;
+      }
+    } catch {
+      // cross-origin top — fall through
+    }
+    const w = window.open(url, "_blank", "noopener,noreferrer");
+    if (!w) window.location.href = url;
+  };
+
   const shareWhatsApp = () => {
     void trackShare("whatsapp");
-    const url = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    openExternal(`https://wa.me/?text=${encodeURIComponent(shareMessage)}`);
   };
 
   const shareTelegram = () => {
     void trackShare("telegram");
-    const url = `https://t.me/share/url?url=${encodeURIComponent(canonicalUrl)}&text=${encodeURIComponent(shareMessage)}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    openExternal(
+      `https://t.me/share/url?url=${encodeURIComponent(canonicalUrl)}&text=${encodeURIComponent(shareMessage)}`
+    );
   };
 
   return (
