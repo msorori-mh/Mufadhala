@@ -1331,7 +1331,179 @@ const AdminPastExams = () => {
           })()}
         </DialogContent>
       </Dialog>
-      </PermissionGate>
+
+      {/* ===== Multi-Model Import Dialog ===== */}
+      <Dialog open={multiImportOpen} onOpenChange={(o) => { if (!multiImporting) setMultiImportOpen(o); }}>
+        <DialogContent className="max-w-3xl max-h-[88vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="w-5 h-5 text-primary" />
+              استيراد متعدد النماذج من ملف Excel واحد
+            </DialogTitle>
+          </DialogHeader>
+
+          {!multiPreview && (
+            <div className="space-y-4 py-2">
+              <Alert className="bg-muted/40">
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-xs leading-relaxed">
+                  استخدم نفس بنية ملف <strong>"تصدير المحدد"</strong>: ورقة <strong>📋 الفهرس</strong> + ورقة لكل نموذج.
+                  <br />
+                  إذا لم يكن لديك ملف، نزّل القالب الفارغ كنقطة بداية. الجامعات تُطابَق بالاسم العربي.
+                </AlertDescription>
+              </Alert>
+
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={downloadMultiModelTemplate}>
+                  <Download className="w-4 h-4 ml-1" /> تنزيل القالب
+                </Button>
+              </div>
+
+              <div className="border-2 border-dashed rounded-lg p-6 text-center space-y-3">
+                <FileText className="w-10 h-10 mx-auto text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">اختر ملف Excel متعدد الأوراق (.xlsx)</p>
+                <input
+                  ref={multiFileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={handleMultiFileSelect}
+                />
+                <Button onClick={() => multiFileInputRef.current?.click()}>
+                  <Upload className="w-4 h-4 ml-1" /> اختيار ملف
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {multiPreview && (
+            <>
+              <div className="rounded-md border bg-muted/30 p-3 text-xs space-y-1">
+                <p>
+                  <strong>{multiPreview.fileName}</strong> •{" "}
+                  <span className="font-bold">{multiPreview.models.length}</span> نموذج •{" "}
+                  <span className="font-bold text-secondary">
+                    {multiPreview.models.reduce((s, m) => s + m.questions.length, 0)}
+                  </span>{" "}
+                  سؤال إجمالي
+                  {multiSkipIds.size > 0 && (
+                    <>
+                      {" "}•{" "}
+                      <span className="font-bold text-amber-600">
+                        {multiSkipIds.size} مُتخطّى
+                      </span>
+                    </>
+                  )}
+                </p>
+                {multiPreview.errors.length > 0 && (
+                  <p className="text-destructive">
+                    ⚠ {multiPreview.errors.length} خطأ في الفهرس
+                  </p>
+                )}
+              </div>
+
+              {multiPreview.errors.length > 0 && (
+                <Alert variant="destructive" className="text-xs">
+                  <AlertDescription>
+                    <ul className="list-disc pr-4 space-y-0.5">
+                      {multiPreview.errors.slice(0, 5).map((e, i) => (
+                        <li key={i}>{e}</li>
+                      ))}
+                      {multiPreview.errors.length > 5 && (
+                        <li>... و {multiPreview.errors.length - 5} خطأ آخر</li>
+                      )}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex-1 overflow-y-auto space-y-2 -mx-1 px-1">
+                {multiPreview.models.map((m, idx) => {
+                  const uni = (universities as any[]).find(
+                    (u) => normalizeTitle(u.name_ar) === normalizeTitle(m.universityName),
+                  );
+                  const uniMatched = !!uni;
+                  const isDup = uniMatched && (models as any[]).some(
+                    (existing) =>
+                      existing.university_id === uni.id &&
+                      existing.year === m.year &&
+                      normalizeTitle(existing.title) === normalizeTitle(m.title),
+                  );
+                  const skipped = multiSkipIds.has(idx);
+                  const hasIssue = !uniMatched || m.questions.length === 0;
+
+                  return (
+                    <Card
+                      key={idx}
+                      className={`${skipped ? "opacity-50" : ""} ${
+                        hasIssue ? "border-destructive/40" : isDup ? "border-amber-300/60" : ""
+                      }`}
+                    >
+                      <CardContent className="p-3 flex items-center gap-3">
+                        <Checkbox
+                          checked={!skipped}
+                          onCheckedChange={() => toggleMultiSkip(idx)}
+                          disabled={multiImporting || hasIssue}
+                          aria-label="استيراد هذا النموذج"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-semibold truncate">{m.title}</p>
+                            <Badge variant="outline" className="text-[10px]">{m.year}</Badge>
+                            {isDup && (
+                              <Badge className="text-[10px] bg-amber-500 text-white hover:bg-amber-500">
+                                موجود مسبقاً
+                              </Badge>
+                            )}
+                            {!uniMatched && (
+                              <Badge variant="destructive" className="text-[10px]">
+                                جامعة غير معروفة
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {m.universityName} • {m.questions.length} سؤال
+                            {m.questionErrors.length > 0 && (
+                              <span className="text-destructive"> • {m.questionErrors.length} خطأ في الأسئلة</span>
+                            )}
+                            {m.isPublished && <span className="text-secondary"> • منشور</span>}
+                            {m.isPaid && <span className="text-amber-600"> • مدفوع</span>}
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {multiImporting && (
+                <div className="space-y-1">
+                  <Progress value={(multiProgress.current / Math.max(multiProgress.total, 1)) * 100} />
+                  <p className="text-[11px] text-center text-muted-foreground">
+                    جاري الاستيراد {multiProgress.current} من {multiProgress.total}...
+                  </p>
+                </div>
+              )}
+
+              <DialogFooter className="border-t pt-3">
+                <Button
+                  variant="outline"
+                  onClick={() => { setMultiPreview(null); setMultiSkipIds(new Set()); }}
+                  disabled={multiImporting}
+                >
+                  ملف آخر
+                </Button>
+                <Button onClick={handleMultiImport} disabled={multiImporting}>
+                  {multiImporting
+                    ? "جاري الاستيراد..."
+                    : `استيراد ${multiPreview.models.length - multiSkipIds.size} نموذج`}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
     </AdminLayout>
   );
 };
