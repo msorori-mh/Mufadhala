@@ -1117,12 +1117,17 @@ const AdminPastExams = () => {
                 </div>
               )}
             </div>
-            {filtered.map((m) => {
-              const qCount = questionCounts[m.id] || 0;
-              const isEmpty = qCount === 0;
-              const isSelected = selectedIds.has(m.id);
-              return (
-              <Card key={m.id} className={`hover:shadow-sm transition-shadow ${isEmpty ? "border-destructive/30" : ""} ${isSelected ? "ring-2 ring-primary/40" : ""}`}>
+            {(() => {
+              // Group by university only when no university filter is active.
+              // Otherwise keep flat list (current behaviour).
+              const groupByUniversity = !filterUniversityId;
+
+              const renderModelCard = (m: typeof filtered[number]) => {
+                const qCount = questionCounts[m.id] || 0;
+                const isEmpty = qCount === 0;
+                const isSelected = selectedIds.has(m.id);
+                return (
+                <Card key={m.id} className={`hover:shadow-sm transition-shadow ${isEmpty ? "border-destructive/30" : ""} ${isSelected ? "ring-2 ring-primary/40" : ""}`}>
                 <CardContent className="flex items-center gap-3 p-4">
                   <Checkbox
                     checked={isSelected}
@@ -1195,8 +1200,47 @@ const AdminPastExams = () => {
                   </div>
                 </CardContent>
               </Card>
+                );
+              };
+
+              if (!groupByUniversity) {
+                return <>{filtered.map(renderModelCard)}</>;
+              }
+
+              // Group by university, preserving order from universities list (display_order)
+              const groupsMap = new Map<string, { name: string; items: typeof filtered }>();
+              filtered.forEach((m) => {
+                const uid = m.university_id;
+                const name = (m as any).university?.name_ar || "—";
+                if (!groupsMap.has(uid)) groupsMap.set(uid, { name, items: [] });
+                groupsMap.get(uid)!.items.push(m);
+              });
+              const orderedUniIds = (universities as any[])
+                .map((u) => u.id)
+                .filter((id) => groupsMap.has(id));
+              groupsMap.forEach((_, uid) => {
+                if (!orderedUniIds.includes(uid)) orderedUniIds.push(uid);
+              });
+
+              return (
+                <div className="space-y-5">
+                  {orderedUniIds.map((uid) => {
+                    const group = groupsMap.get(uid)!;
+                    return (
+                      <section key={uid} className="space-y-2">
+                        <div className="flex items-center gap-2 border-b border-border/60 pb-1.5">
+                          <h3 className="text-sm font-bold text-foreground">{group.name}</h3>
+                          <Badge variant="secondary" className="text-[10px]">{group.items.length}</Badge>
+                        </div>
+                        <div className="space-y-2">
+                          {group.items.map(renderModelCard)}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </div>
               );
-            })}
+            })()}
           </div>
           );
         })()}
