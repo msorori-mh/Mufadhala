@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import NativeSelect from "@/components/NativeSelect";
-import { ArrowRight, FileText, Lock, ChevronLeft, Crown, Sparkles } from "lucide-react";
+import { ArrowRight, FileText, Lock, ChevronLeft, Crown, Sparkles, Repeat, TrendingUp } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { trackSubscriptionClick } from "@/lib/conversionTracking";
 import { isPaymentUIEnabled } from "@/lib/platformGate";
@@ -84,6 +84,30 @@ const PastExams = () => {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-5 space-y-5">
+        {/* Highlight: Most repeated questions */}
+        <Card
+          className="cursor-pointer border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent hover:shadow-md transition-shadow"
+          onClick={() => navigate("/past-exams/repeated")}
+        >
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-primary/15 ring-1 ring-primary/30 flex items-center justify-center shrink-0">
+              <Repeat className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <TrendingUp className="w-3.5 h-3.5 text-primary" />
+                <p className="text-sm font-bold text-foreground">
+                  الأسئلة الأكثر تكراراً
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground leading-snug">
+                اعرف الأسئلة التي تظهر سنوياً وركّز جهدك عليها
+              </p>
+            </div>
+            <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0" />
+          </CardContent>
+        </Card>
+
         {/* University selector */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">اختر الجامعة</label>
