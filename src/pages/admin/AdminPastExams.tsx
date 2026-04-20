@@ -614,7 +614,17 @@ const AdminPastExams = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">نماذج الأعوام السابقة</h1>
           {!showForm && (
-            <Button size="sm" onClick={openCreate}><Plus className="w-4 h-4 ml-1" /> نموذج جديد</Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={openDuplicatesDialog}
+                title="كشف النماذج المكررة بنفس الجامعة والسنة والعنوان"
+              >
+                <Copy className="w-4 h-4 ml-1" /> كشف المكرر
+              </Button>
+              <Button size="sm" onClick={openCreate}><Plus className="w-4 h-4 ml-1" /> نموذج جديد</Button>
+            </div>
           )}
         </div>
 
