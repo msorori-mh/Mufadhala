@@ -32,6 +32,7 @@ import MobileBottomNav from "./components/MobileBottomNav";
 const AIGenerator = lazy(() => import("./pages/AIGenerator"));
 const PastExams = lazy(() => import("./pages/PastExams"));
 const PastExamPractice = lazy(() => import("./pages/PastExamPractice"));
+const RepeatedQuestions = lazy(() => import("./pages/RepeatedQuestions"));
 const QuickReview = lazy(() => import("./pages/QuickReview"));
 const Install = lazy(() => import("./pages/Install"));
 
