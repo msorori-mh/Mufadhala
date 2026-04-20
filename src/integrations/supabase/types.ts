@@ -1533,6 +1533,21 @@ export type Database = {
           sample_text: string
         }[]
       }
+      get_top_repeated_past_questions_for_students: {
+        Args: {
+          _limit?: number
+          _min_count?: number
+          _university_id?: string
+          _year?: number
+        }
+        Returns: {
+          linked_lesson_id: string
+          models: Json
+          normalized_hash: string
+          occurrence_count: number
+          sample_text: string
+        }[]
+      }
       get_top_repeated_questions: {
         Args: { _limit?: number; _university_id?: string }
         Returns: {
