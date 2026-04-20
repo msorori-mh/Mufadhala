@@ -166,6 +166,7 @@ function App() {
                   <Route path="/achievements" element={<Achievements />} />
                   <Route path="/college-guide" element={<CollegeGuide />} />
                   <Route path="/past-exams" element={<PastExams />} />
+                  <Route path="/past-exams/repeated" element={<RepeatedQuestions />} />
                   <Route path="/past-exams/:modelId" element={<PastExamPractice />} />
                   <Route path="/quick-review" element={<QuickReview />} />
                   <Route path="/install" element={<Install />} />
