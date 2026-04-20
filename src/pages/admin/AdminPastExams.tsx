@@ -1503,7 +1503,7 @@ const AdminPastExams = () => {
           )}
         </DialogContent>
       </Dialog>
-
+      </PermissionGate>
     </AdminLayout>
   );
 };
