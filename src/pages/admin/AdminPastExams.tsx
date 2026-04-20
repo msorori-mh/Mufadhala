@@ -379,6 +379,102 @@ const AdminPastExams = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
 
+  // ===== Duplicate detection =====
+  const [dupDialogOpen, setDupDialogOpen] = useState(false);
+  const [dupBusy, setDupBusy] = useState(false);
+  const [selectedDupIds, setSelectedDupIds] = useState<Set<string>>(new Set());
+
+  const normalizeTitle = (t: string) =>
+    (t || "").trim().toLowerCase().replace(/\s+/g, " ");
+
+  type DupItem = Model & { university?: { name_ar: string } | null };
+  type DupGroup = {
+    key: string;
+    universityName: string;
+    year: number;
+    title: string;
+    items: DupItem[]; // sorted DESC by created_at (newest first)
+  };
+
+  const findDuplicateGroups = (list: DupItem[]): DupGroup[] => {
+    const map = new Map<string, DupItem[]>();
+    list.forEach((m) => {
+      const key = `${m.university_id}__${m.year}__${normalizeTitle(m.title)}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(m);
+    });
+    const groups: DupGroup[] = [];
+    map.forEach((items, key) => {
+      if (items.length < 2) return;
+      const sorted = items.slice().sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
+      groups.push({
+        key,
+        universityName: sorted[0].university?.name_ar || "—",
+        year: sorted[0].year,
+        title: sorted[0].title,
+        items: sorted,
+      });
+    });
+    // Sort groups by university then year DESC then title
+    return groups.sort((a, b) =>
+      a.universityName.localeCompare(b.universityName, "ar") ||
+      b.year - a.year ||
+      a.title.localeCompare(b.title, "ar"),
+    );
+  };
+
+  const openDuplicatesDialog = () => {
+    setSelectedDupIds(new Set());
+    setDupDialogOpen(true);
+  };
+
+  const autoSelectOlderDuplicates = (groups: DupGroup[]) => {
+    const next = new Set<string>();
+    groups.forEach((g) => {
+      // Keep newest (index 0), mark all older for deletion
+      g.items.slice(1).forEach((it) => next.add(it.id));
+    });
+    setSelectedDupIds(next);
+  };
+
+  const toggleDupSelect = (id: string) => {
+    setSelectedDupIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleDeleteDuplicates = async () => {
+    const ids = Array.from(selectedDupIds);
+    if (ids.length === 0) return;
+    if (!confirm(`حذف ${ids.length} نموذج مكرر وجميع أسئلته نهائياً؟ لا يمكن التراجع.`)) return;
+    setDupBusy(true);
+    try {
+      const { error: e1 } = await supabase
+        .from("past_exam_model_questions")
+        .delete()
+        .in("model_id", ids);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase
+        .from("past_exam_models")
+        .delete()
+        .in("id", ids);
+      if (e2) throw e2;
+      await qc.refetchQueries({ queryKey: ["admin-past-exam-models"] });
+      await qc.refetchQueries({ queryKey: ["admin-past-exam-question-counts"] });
+      toast({ title: `✓ تم حذف ${ids.length} نموذج مكرر` });
+      setSelectedDupIds(new Set());
+      setDupDialogOpen(false);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر حذف المكررات", description: err?.message || "حدث خطأ" });
+    } finally {
+      setDupBusy(false);
+    }
+  };
+
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
