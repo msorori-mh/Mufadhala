@@ -465,8 +465,51 @@ const AdminPastExams = () => {
     }
   };
 
-  return (
-    <AdminLayout>
+  const handleBulkExport = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    try {
+      // Selected models from local list (already enriched with university)
+      const selectedModels = models.filter((m) => ids.includes(m.id));
+      if (selectedModels.length === 0) {
+        toast({ variant: "destructive", title: "لم يتم العثور على النماذج المحددة" });
+        return;
+      }
+      // Fetch all questions for the selected models
+      const { data: rows, error } = await supabase
+        .from("past_exam_model_questions")
+        .select("model_id, q_text, q_option_a, q_option_b, q_option_c, q_option_d, q_correct, q_explanation, order_index")
+        .in("model_id", ids)
+        .order("order_index");
+      if (error) throw error;
+
+      const grouped: Record<string, any[]> = {};
+      (rows || []).forEach((r: any) => {
+        (grouped[r.model_id] ||= []).push(r);
+      });
+
+      const exportModels = selectedModels.map((m: any) => ({
+        id: m.id,
+        title: m.title,
+        year: m.year,
+        is_published: m.is_published,
+        is_paid: m.is_paid,
+        university_name: m.university?.name_ar || "—",
+      }));
+
+      exportModelsToExcel(exportModels, grouped);
+
+      const totalQs = (rows || []).length;
+      toast({
+        title: `✓ تم تصدير ${selectedModels.length} نموذج`,
+        description: `إجمالي ${totalQs} سؤال — ورقة فهرس + ورقة لكل نموذج`,
+      });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "تعذر تصدير النماذج", description: err?.message || "حدث خطأ" });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
       <PermissionGate permission="past_exams">
       <div className="space-y-5">
         <div className="flex items-center justify-between">
