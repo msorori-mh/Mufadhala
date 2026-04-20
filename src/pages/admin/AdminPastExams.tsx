@@ -812,6 +812,15 @@ const AdminPastExams = () => {
                   </Button>
                   <Button
                     size="sm"
+                    variant="outline"
+                    className="h-8 text-xs gap-1"
+                    disabled={bulkBusy}
+                    onClick={() => handleBulkExport(selectedFilteredIds)}
+                  >
+                    <Download className="w-3.5 h-3.5" /> تصدير المحدد ({selectedFilteredIds.length})
+                  </Button>
+                  <Button
+                    size="sm"
                     variant="destructive"
                     className="h-8 text-xs gap-1"
                     disabled={bulkBusy}
