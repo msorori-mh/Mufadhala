@@ -738,45 +738,57 @@ const Subscription = () => {
                         {/* Payment method name */}
                         <div className="text-xs text-muted-foreground">{selectedMethod.name}</div>
 
-                        {/* Account number — large and copyable */}
-                        {selectedMethod.account_number && (
-                          <div>
-                            <p className="text-[11px] text-muted-foreground mb-1">رقم الحساب:</p>
-                            <div
-                              className="flex items-center justify-between bg-muted/60 rounded-lg px-3 py-2.5 cursor-pointer hover:bg-muted transition-colors group"
-                              onClick={() => copyToClipboard(selectedMethod.account_number!, "رقم الحساب")}
-                            >
-                              <span className="font-bold text-base text-foreground font-mono tracking-wide" dir="ltr">{selectedMethod.account_number}</span>
-                              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 shrink-0">
-                                {copiedField === "رقم الحساب" ? (
-                                  <><Check className="w-3.5 h-3.5 text-green-500" /> <span className="text-green-600">تم النسخ</span></>
-                                ) : (
-                                  <><Copy className="w-3.5 h-3.5" /> نسخ</>
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
+                        {/* Dynamic labels: network_transfer uses phone-style labels, others use account-style */}
+                        {(() => {
+                          const isNetworkTransfer = selectedMethod.type === "network_transfer";
+                          const numberLabel = isNetworkTransfer ? "رقم التلفون" : "رقم الحساب";
+                          const nameLabel = isNetworkTransfer ? "اسم مستلم الحوالة" : "اسم صاحب الحساب";
+                          const numberCopyKey = isNetworkTransfer ? "رقم التلفون" : "رقم الحساب";
+                          const nameCopyKey = isNetworkTransfer ? "اسم المستلم" : "اسم الحساب";
+                          return (
+                            <>
+                              {/* Account number / phone — large and copyable */}
+                              {selectedMethod.account_number && (
+                                <div>
+                                  <p className="text-[11px] text-muted-foreground mb-1">{numberLabel}:</p>
+                                  <div
+                                    className="flex items-center justify-between bg-muted/60 rounded-lg px-3 py-2.5 cursor-pointer hover:bg-muted transition-colors group"
+                                    onClick={() => copyToClipboard(selectedMethod.account_number!, numberCopyKey)}
+                                  >
+                                    <span className="font-bold text-base text-foreground font-mono tracking-wide" dir="ltr">{selectedMethod.account_number}</span>
+                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 shrink-0">
+                                      {copiedField === numberCopyKey ? (
+                                        <><Check className="w-3.5 h-3.5 text-green-500" /> <span className="text-green-600">تم النسخ</span></>
+                                      ) : (
+                                        <><Copy className="w-3.5 h-3.5" /> نسخ</>
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
 
-                        {/* Account holder name — copyable */}
-                        {selectedMethod.account_name && (
-                          <div>
-                            <p className="text-[11px] text-muted-foreground mb-1">اسم صاحب الحساب:</p>
-                            <div
-                              className="flex items-center justify-between bg-muted/60 rounded-lg px-3 py-2 cursor-pointer hover:bg-muted transition-colors group"
-                              onClick={() => copyToClipboard(selectedMethod.account_name!, "اسم الحساب")}
-                            >
-                              <span className="font-semibold text-sm text-foreground">{selectedMethod.account_name}</span>
-                              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 shrink-0">
-                                {copiedField === "اسم الحساب" ? (
-                                  <><Check className="w-3.5 h-3.5 text-green-500" /> <span className="text-green-600">تم</span></>
-                                ) : (
-                                  <><Copy className="w-3.5 h-3.5" /> نسخ</>
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
+                              {/* Account holder name / recipient name — copyable */}
+                              {selectedMethod.account_name && (
+                                <div>
+                                  <p className="text-[11px] text-muted-foreground mb-1">{nameLabel}:</p>
+                                  <div
+                                    className="flex items-center justify-between bg-muted/60 rounded-lg px-3 py-2 cursor-pointer hover:bg-muted transition-colors group"
+                                    onClick={() => copyToClipboard(selectedMethod.account_name!, nameCopyKey)}
+                                  >
+                                    <span className="font-semibold text-sm text-foreground">{selectedMethod.account_name}</span>
+                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 shrink-0">
+                                      {copiedField === nameCopyKey ? (
+                                        <><Check className="w-3.5 h-3.5 text-green-500" /> <span className="text-green-600">تم</span></>
+                                      ) : (
+                                        <><Copy className="w-3.5 h-3.5" /> نسخ</>
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
 
                         {/* Extra details */}
                         {selectedMethod.details && (
