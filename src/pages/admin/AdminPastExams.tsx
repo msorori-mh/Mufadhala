@@ -783,7 +783,15 @@ const AdminPastExams = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">نماذج الأعوام السابقة</h1>
           {!showForm && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={openMultiImport}
+                title="استيراد ملف Excel متعدد النماذج (مولّد من زر تصدير المحدد)"
+              >
+                <Upload className="w-4 h-4 ml-1" /> استيراد متعدد
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
